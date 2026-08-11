@@ -1,2 +1,5 @@
 <?php
-class Draft extends PurchaseOrderState {}
+namespace App\Domain\Procurement\States;
+class Draft extends PurchaseOrderState
+{
+}

@@ -1,2 +1,5 @@
 <?php
-class MenungguApprovalFinance extends PurchaseOrderState {}
+namespace App\Domain\Procurement\States;
+class MenungguApprovalFinance extends PurchaseOrderState
+{
+}
