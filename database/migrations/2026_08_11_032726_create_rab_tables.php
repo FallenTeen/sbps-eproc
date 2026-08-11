@@ -4,16 +4,25 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('rab_tables', function (Blueprint $table) {
-            $table->id();
+        Schema::create('rab', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('proyek_id');
+            $table->uuid('titik_id')->nullable();
+            $table->enum('kategori', ['bahan_baku', 'sparepart', 'sdm_tetap', 'sdm_kondisional', 'lainnya']);
+            $table->decimal('rencana', 15, 2);
+            $table->text('catatan')->nullable();
+            $table->uuid('created_by');
             $table->timestamps();
+
+            $table->foreign('proyek_id')->references('id')->on('proyek');
+            $table->foreign('titik_id')->references('id')->on('titik');
+            $table->foreign('created_by')->references('id')->on('users');
         });
     }
 
@@ -22,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rab_tables');
+        Schema::dropIfExists('rab');
     }
 };

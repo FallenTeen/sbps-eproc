@@ -4,16 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('titik_tables', function (Blueprint $table) {
-            $table->id();
+        Schema::create('titik', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('proyek_id');
+            $table->string('nama');
+            $table->decimal('latitude', 10, 8);
+            $table->decimal('longitude', 11, 8);
+            $table->integer('radius_presensi_meter')->default(100);
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
+            $table->foreign('proyek_id')->references('id')->on('proyek');
         });
     }
 
@@ -22,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('titik_tables');
+        Schema::dropIfExists('titik');
     }
 };

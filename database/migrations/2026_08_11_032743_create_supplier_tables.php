@@ -4,15 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('supplier_tables', function (Blueprint $table) {
-            $table->id();
+        Schema::create('supplier', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('kode')->unique();
+            $table->string('nama');
+            $table->string('kontak')->nullable();
+            $table->string('telepon')->nullable();
+            $table->text('alamat')->nullable();
+            $table->boolean('aktif')->default(true);
             $table->timestamps();
         });
     }
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('supplier_tables');
+        Schema::dropIfExists('supplier');
     }
 };
