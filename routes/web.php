@@ -5,6 +5,60 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Core Controllers
+use App\Domain\Core\Http\Controllers\UnitBisnisController;
+use App\Domain\Core\Http\Controllers\ProyekController;
+use App\Domain\Core\Http\Controllers\TitikController;
+use App\Domain\Core\Http\Controllers\RabController;
+
+// Procurement Controllers
+use App\Domain\Procurement\Http\Controllers\BahanBakuController;
+use App\Domain\Procurement\Http\Controllers\SupplierController;
+use App\Domain\Procurement\Http\Controllers\PurchaseOrderController;
+use App\Domain\Procurement\Http\Controllers\PembayaranController;
+
+// Fleet Controllers
+use App\Domain\Fleet\Http\Controllers\ArmadaController;
+use App\Domain\Fleet\Http\Controllers\RitaseController;
+use App\Domain\Fleet\Http\Controllers\SewaAlatJamController;
+use App\Domain\Fleet\Http\Controllers\RuteTarifController;
+use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
+use App\Domain\Fleet\Http\Controllers\BbmLogController;
+use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
+use App\Domain\Fleet\Http\Controllers\ServiceHistoryController;
+
+// Production Controllers
+use App\Domain\Production\Http\Controllers\MesinProduksiController;
+use App\Domain\Production\Http\Controllers\ProdukController;
+use App\Domain\Production\Http\Controllers\ResepProduksiController;
+use App\Domain\Production\Http\Controllers\ProductionSessionController;
+use App\Domain\Production\Http\Controllers\MixDesignController;
+use App\Domain\Production\Http\Controllers\QcSampleController;
+use App\Domain\Production\Http\Controllers\PengirimanController;
+
+// HR Controllers
+use App\Domain\HR\Http\Controllers\KaryawanController;
+use App\Domain\HR\Http\Controllers\CutiController;
+use App\Domain\HR\Http\Controllers\PayrollController;
+
+// Finance Controllers
+use App\Domain\Finance\Http\Controllers\AkunKasBankController;
+use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
+use App\Domain\Finance\Http\Controllers\TransferKasController;
+use App\Domain\Finance\Http\Controllers\InvoiceController;
+use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
+
+// Dashboard & Owner
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OwnerDashboardController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -14,14 +68,300 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Authenticated & Verified routes
+Route::middleware(['auth', 'verified'])->group(function () {
 
-Route::middleware('auth')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Owner Dashboard (hanya untuk role Owner)
+    Route::get('/owner/dashboard', [OwnerDashboardController::class, 'index'])
+        ->middleware(['role:Owner'])
+        ->name('owner.dashboard');
+
+    // ============================================================
+    // CORE MODULE - Proyek, Titik, RAB, Unit Bisnis
+    // ============================================================
+    Route::prefix('core')->name('core.')->group(function () {
+        // Unit Bisnis (hanya untuk admin/owner)
+        Route::resource('unit-bisnis', UnitBisnisController::class)->except(['show']);
+        Route::get('unit-bisnis/{unitBisnis}', [UnitBisnisController::class, 'show'])->name('unit-bisnis.show');
+
+        // Proyek
+        Route::resource('proyek', ProyekController::class);
+        Route::post('proyek/{proyek}/status', [ProyekController::class, 'updateStatus'])->name('proyek.status');
+
+        // Titik
+        Route::resource('titik', TitikController::class)->except(['index']);
+        Route::get('proyek/{proyek}/titik', [TitikController::class, 'index'])->name('titik.index');
+
+        // RAB
+        Route::resource('rab', RabController::class)->except(['index']);
+        Route::get('proyek/{proyek}/rab', [RabController::class, 'index'])->name('rab.index');
+        Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
+        Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
+    });
+
+    // ============================================================
+    // PROCUREMENT MODULE
+    // ============================================================
+    Route::prefix('procurement')->name('procurement.')->group(function () {
+        // Bahan Baku
+        Route::resource('bahan-baku', BahanBakuController::class);
+        Route::post('bahan-baku/{bahanBaku}/harga', [BahanBakuController::class, 'setHarga'])->name('bahan-baku.set-harga');
+        Route::get('bahan-baku/{bahanBaku}/stok', [BahanBakuController::class, 'stok'])->name('bahan-baku.stok');
+
+        // Supplier
+        Route::resource('supplier', SupplierController::class);
+
+        // Purchase Order
+        Route::resource('purchase-orders', PurchaseOrderController::class)->except(['destroy']);
+        Route::post('purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit'])->name('purchase-orders.submit');
+        Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
+        Route::post('purchase-orders/{purchaseOrder}/reject', [PurchaseOrderController::class, 'reject'])->name('purchase-orders.reject');
+        Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+        Route::get('purchase-orders/{purchaseOrder}/payment', [PurchaseOrderController::class, 'paymentForm'])->name('purchase-orders.payment');
+        Route::post('purchase-orders/{purchaseOrder}/payment', [PurchaseOrderController::class, 'storePayment'])->name('purchase-orders.store-payment');
+        Route::get('purchase-orders/approval-queue', [PurchaseOrderController::class, 'approvalQueue'])->name('purchase-orders.approval-queue');
+
+        // Pembayaran (internal)
+        Route::resource('pembayaran', PembayaranController::class)->only(['index', 'show']);
+    });
+
+    // ============================================================
+    // FLEET MODULE (Armada & Alat Berat) - khusus GCS
+    // ============================================================
+    Route::prefix('fleet')->name('fleet.')->group(function () {
+        // Armada
+        Route::resource('armada', ArmadaController::class);
+        Route::post('armada/{armada}/assign-driver', [ArmadaController::class, 'assignDriver'])->name('armada.assign-driver');
+        Route::post('armada/{armada}/remove-driver', [ArmadaController::class, 'removeDriver'])->name('armada.remove-driver');
+        Route::get('armada/{armada}/service-history', [ArmadaController::class, 'serviceHistory'])->name('armada.service-history');
+        Route::get('armada/{armada}/checklists', [ArmadaController::class, 'checklists'])->name('armada.checklists');
+
+        // Service History (polymorphic)
+        Route::resource('service-history', ServiceHistoryController::class)->except(['index']);
+        Route::get('serviceable/{type}/{id}/service-history', [ServiceHistoryController::class, 'index'])->name('service-history.index');
+
+        // Checklist Harian
+        Route::resource('checklist-harian', ChecklistHarianController::class)->only(['store', 'update']);
+        Route::get('checklistable/{type}/{id}/checklists', [ChecklistHarianController::class, 'index'])->name('checklist-harian.index');
+        Route::post('checklist-harian/bulk', [ChecklistHarianController::class, 'bulkStore'])->name('checklist-harian.bulk');
+
+        // BBM
+        Route::resource('bbm', BbmLogController::class)->only(['store', 'update', 'destroy']);
+        Route::get('serviceable/{type}/{id}/bbm', [BbmLogController::class, 'index'])->name('bbm.index');
+
+        // Downtime
+        Route::resource('downtime', DowntimeLogController::class)->only(['store', 'update', 'destroy']);
+        Route::post('downtime/{downtime}/end', [DowntimeLogController::class, 'end'])->name('downtime.end');
+        Route::get('serviceable/{type}/{id}/downtime', [DowntimeLogController::class, 'index'])->name('downtime.index');
+
+        // Ritase
+        Route::resource('ritase', RitaseController::class);
+        Route::post('ritase/{ritase}/approve', [RitaseController::class, 'approve'])->name('ritase.approve');
+        Route::post('ritase/bulk', [RitaseController::class, 'bulkStore'])->name('ritase.bulk');
+        Route::get('ritase/report/harian', [RitaseController::class, 'reportHarian'])->name('ritase.report-harian');
+        Route::get('ritase/report/mingguan', [RitaseController::class, 'reportMingguan'])->name('ritase.report-mingguan');
+
+        // Sewa Alat Jam
+        Route::resource('sewa-alat', SewaAlatJamController::class);
+        Route::post('sewa-alat/{sewaAlat}/approve', [SewaAlatJamController::class, 'approve'])->name('sewa-alat.approve');
+        Route::post('sewa-alat/bulk', [SewaAlatJamController::class, 'bulkStore'])->name('sewa-alat.bulk');
+        Route::get('sewa-alat/report/mingguan', [SewaAlatJamController::class, 'reportMingguan'])->name('sewa-alat.report-mingguan');
+
+        // Rute Tarif
+        Route::resource('rute-tarif', RuteTarifController::class);
+        Route::post('rute-tarif/{ruteTarif}/set-harga', [RuteTarifController::class, 'setHarga'])->name('rute-tarif.set-harga');
+        Route::get('rute-tarif/current/{asal}/{tujuan}', [RuteTarifController::class, 'current'])->name('rute-tarif.current');
+    });
+
+    // ============================================================
+    // PRODUCTION MODULE (CBP/AMP)
+    // ============================================================
+    Route::prefix('production')->name('production.')->group(function () {
+        // Mesin Produksi
+        Route::resource('mesin', MesinProduksiController::class);
+        Route::post('mesin/{mesin}/status', [MesinProduksiController::class, 'updateStatus'])->name('mesin.status');
+        Route::get('mesin/{mesin}/service-history', [MesinProduksiController::class, 'serviceHistory'])->name('mesin.service-history');
+
+        // Produk
+        Route::resource('produk', ProdukController::class);
+        Route::post('produk/{produk}/harga', [ProdukController::class, 'setHarga'])->name('produk.set-harga');
+        Route::get('produk/{produk}/resep', [ProdukController::class, 'resep'])->name('produk.resep');
+
+        // Resep Produksi (BOM)
+        Route::resource('resep', ResepProduksiController::class)->except(['index']);
+        Route::get('produk/{produk}/resep', [ResepProduksiController::class, 'index'])->name('resep.index');
+
+        // Mix Design (khusus CBP)
+        Route::prefix('mix-design')->name('mix-design.')->group(function () {
+            Route::get('/', [MixDesignController::class, 'index'])->name('index');
+            Route::get('/create', [MixDesignController::class, 'create'])->name('create');
+            Route::post('/', [MixDesignController::class, 'store'])->name('store');
+            Route::get('/{mixDesign}', [MixDesignController::class, 'show'])->name('show');
+            Route::get('/{mixDesign}/edit', [MixDesignController::class, 'edit'])->name('edit');
+            Route::put('/{mixDesign}', [MixDesignController::class, 'update'])->name('update');
+            Route::delete('/{mixDesign}', [MixDesignController::class, 'destroy'])->name('destroy');
+            Route::post('/{mixDesign}/generate-resep/{produk}', [MixDesignController::class, 'generateResep'])->name('generate-resep');
+        });
+
+        // Sesi Produksi
+        Route::resource('sessions', ProductionSessionController::class);
+        Route::post('sessions/{session}/start', [ProductionSessionController::class, 'start'])->name('sessions.start');
+        Route::post('sessions/{session}/end', [ProductionSessionController::class, 'end'])->name('sessions.end');
+        Route::post('sessions/{session}/cancel', [ProductionSessionController::class, 'cancel'])->name('sessions.cancel');
+        Route::get('sessions/active', [ProductionSessionController::class, 'active'])->name('sessions.active');
+        Route::get('sessions/report/harian', [ProductionSessionController::class, 'reportHarian'])->name('sessions.report-harian');
+
+        // QC Sample
+        Route::resource('qc', QcSampleController::class)->only(['store', 'update', 'destroy']);
+        Route::post('qc/{qc}/record-result', [QcSampleController::class, 'recordResult'])->name('qc.record-result');
+        Route::get('qc/pending', [QcSampleController::class, 'pending'])->name('qc.pending');
+
+        // Pengiriman
+        Route::resource('pengiriman', PengirimanController::class);
+        Route::post('pengiriman/{pengiriman}/start', [PengirimanController::class, 'start'])->name('pengiriman.start');
+        Route::post('pengiriman/{pengiriman}/complete', [PengirimanController::class, 'complete'])->name('pengiriman.complete');
+        Route::post('pengiriman/{pengiriman}/cancel', [PengirimanController::class, 'cancel'])->name('pengiriman.cancel');
+        Route::get('pengiriman/today', [PengirimanController::class, 'today'])->name('pengiriman.today');
+    });
+
+    // ============================================================
+    // HR MODULE (SDM & Payroll)
+    // ============================================================
+    Route::prefix('hr')->name('hr.')->group(function () {
+        // Karyawan
+        Route::resource('karyawan', KaryawanController::class);
+        Route::post('karyawan/{karyawan}/assign-titik', [KaryawanController::class, 'assignTitik'])->name('karyawan.assign-titik');
+        Route::post('karyawan/{karyawan}/remove-titik', [KaryawanController::class, 'removeTitik'])->name('karyawan.remove-titik');
+        Route::post('karyawan/{karyawan}/status', [KaryawanController::class, 'updateStatus'])->name('karyawan.status');
+
+        // Cuti
+        Route::resource('cuti', CutiController::class)->except(['index']);
+        Route::get('karyawan/{karyawan}/cuti', [CutiController::class, 'index'])->name('cuti.index');
+        Route::post('cuti/{cuti}/approve', [CutiController::class, 'approve'])->name('cuti.approve');
+        Route::post('cuti/{cuti}/reject', [CutiController::class, 'reject'])->name('cuti.reject');
+        Route::get('cuti/pending', [CutiController::class, 'pending'])->name('cuti.pending');
+
+        // Payroll
+        Route::prefix('payroll')->name('payroll.')->group(function () {
+            Route::get('/', [PayrollController::class, 'index'])->name('index');
+            Route::get('/generate', [PayrollController::class, 'generateForm'])->name('generate-form');
+            Route::post('/generate', [PayrollController::class, 'generate'])->name('generate');
+            Route::get('/{periode}', [PayrollController::class, 'show'])->name('show');
+            Route::get('/{periode}/edit', [PayrollController::class, 'edit'])->name('edit');
+            Route::put('/{periode}', [PayrollController::class, 'update'])->name('update');
+            Route::post('/{periode}/pay', [PayrollController::class, 'pay'])->name('pay');
+            Route::post('/{periode}/komponen', [PayrollController::class, 'addKomponen'])->name('add-komponen');
+            Route::delete('/komponen/{komponen}', [PayrollController::class, 'deleteKomponen'])->name('delete-komponen');
+            Route::get('/{periode}/slip/{karyawan}', [PayrollController::class, 'slipGaji'])->name('slip-gaji');
+            Route::get('/report', [PayrollController::class, 'report'])->name('report');
+        });
+    });
+
+    // ============================================================
+    // FINANCE MODULE (Keuangan)
+    // ============================================================
+    Route::prefix('finance')->name('finance.')->group(function () {
+        // Kas & Bank
+        Route::resource('kas-bank', AkunKasBankController::class);
+        Route::get('kas-bank/{akun}/mutasi', [AkunKasBankController::class, 'mutasi'])->name('kas-bank.mutasi');
+        Route::get('kas-bank/{akun}/saldo', [AkunKasBankController::class, 'saldo'])->name('kas-bank.saldo');
+        Route::post('kas-bank/{akun}/saldo-awal', [AkunKasBankController::class, 'setSaldoAwal'])->name('kas-bank.set-saldo-awal');
+
+        // Mutasi Kas (manual)
+        Route::resource('mutasi-kas', MutasiKasBankController::class)->only(['index', 'store']);
+        Route::get('mutasi-kas/report', [MutasiKasBankController::class, 'report'])->name('mutasi-kas.report');
+
+        // Transfer Antar Kas
+        Route::resource('transfer-kas', TransferKasController::class)->only(['create', 'store', 'index']);
+        Route::get('transfer-kas/{transfer}', [TransferKasController::class, 'show'])->name('transfer-kas.show');
+
+        // Invoice & Piutang
+        Route::prefix('invoice')->name('invoice.')->group(function () {
+            Route::get('/', [InvoiceController::class, 'index'])->name('index');
+            Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+            Route::post('/', [InvoiceController::class, 'store'])->name('store');
+            Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+            Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
+            Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
+            Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
+            Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
+            Route::get('/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('pdf');
+            Route::get('/generate-from-production/{proyek}', [InvoiceController::class, 'generateFromProduction'])->name('generate-from-production');
+            Route::get('/generate-from-ritase/{proyek}', [InvoiceController::class, 'generateFromRitase'])->name('generate-from-ritase');
+            Route::get('/generate-from-sewa/{proyek}', [InvoiceController::class, 'generateFromSewa'])->name('generate-from-sewa');
+            Route::get('/outstanding', [InvoiceController::class, 'outstanding'])->name('outstanding');
+            Route::get('/aging', [InvoiceController::class, 'aging'])->name('aging');
+        });
+
+        // Pembayaran Klien
+        Route::resource('pembayaran-klien', PembayaranKlienController::class)->only(['store', 'update', 'destroy']);
+        Route::get('invoice/{invoice}/pembayaran', [PembayaranKlienController::class, 'index'])->name('pembayaran-klien.index');
+        Route::post('invoice/{invoice}/pembayaran', [PembayaranKlienController::class, 'store'])->name('pembayaran-klien.store');
+
+        // Laporan Keuangan Konsolidasi
+        Route::prefix('report')->name('report.')->group(function () {
+            Route::get('/rab-vs-realisasi', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'rabRealisasi'])->name('rab-realisasi');
+            Route::get('/laba-rugi', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'labaRugi'])->name('laba-rugi');
+            Route::get('/cashflow', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'cashflow'])->name('cashflow');
+            Route::get('/neraca', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'neraca'])->name('neraca');
+        });
+    });
+
+    // ============================================================
+    // KONTRAKTOR PORTAL (Eksternal)
+    // ============================================================
+    Route::prefix('kontraktor')->name('kontraktor.')->middleware(['role:Kontraktor'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\KontraktorController::class, 'dashboard'])->name('dashboard');
+        Route::get('/proyek/{proyek}', [\App\Http\Controllers\KontraktorController::class, 'proyekDetail'])->name('proyek.detail');
+        Route::get('/proyek/{proyek}/produksi', [\App\Http\Controllers\KontraktorController::class, 'produksi'])->name('produksi');
+        Route::get('/proyek/{proyek}/invoice', [\App\Http\Controllers\KontraktorController::class, 'invoice'])->name('invoice');
+        Route::post('/proyek/{proyek}/komunikasi', [\App\Http\Controllers\KontraktorController::class, 'sendMessage'])->name('komunikasi.send');
+    });
+
+    // ============================================================
+    // AUDIT LOG (Hanya Owner)
+    // ============================================================
+    Route::prefix('audit')->name('audit.')->middleware(['role:Owner'])->group(function () {
+        Route::get('/logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('logs');
+        Route::get('/logs/{log}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('logs.show');
+        Route::get('/logs/export', [\App\Http\Controllers\AuditLogController::class, 'export'])->name('logs.export');
+    });
+
+    // ============================================================
+    // PROFILE ROUTES
+    // ============================================================
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ============================================================
+    // NOTIFICATION CENTER (semua user)
+    // ============================================================
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
+        Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+    });
+
+    // ============================================================
+    // USER MANAGEMENT (Owner & Admin saja)
+    // ============================================================
+    Route::prefix('users')->name('users.')->middleware(['role:Owner|Admin Keuangan'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\UserManagementController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('update');
+        Route::delete('/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/assign-role', [\App\Http\Controllers\UserManagementController::class, 'assignRole'])->name('assign-role');
+        Route::post('/{user}/remove-role', [\App\Http\Controllers\UserManagementController::class, 'removeRole'])->name('remove-role');
+    });
+
 });
 
+// Auth routes (disediakan oleh Breeze)
 require __DIR__.'/auth.php';
