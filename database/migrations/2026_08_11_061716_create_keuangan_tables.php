@@ -53,7 +53,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('invoice_id');
             $table->string('deskripsi');
-            $table->morphs('referensi'); // production_sessions, ritase, sewa_alat_jam
+            $table->uuidMorphs('referensi'); // production_sessions, ritase, sewa_alat_jam
             $table->decimal('jumlah', 15, 2);
             $table->decimal('harga_satuan', 15, 2);
             $table->decimal('subtotal', 15, 2);

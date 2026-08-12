@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('armada_checklist_harians', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->morphs('checkable'); // armada atau mesin_produksi
+            $table->uuidMorphs('checkable'); // armada atau mesin_produksi
             $table->date('tanggal');
             $table->boolean('kondisi_baik')->default(true);
             $table->text('item_bermasalah')->nullable();

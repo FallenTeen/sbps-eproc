@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string('kategori'); // referensi ke master kategori transaksi
             $table->enum('tipe', ['masuk', 'keluar']);
             $table->decimal('jumlah', 15, 2);
-            $table->nullableMorphs('referensi'); // polymorphic: pembayaran, pembayaran_klien, gaji_periode, dll
+            $table->nullableUuidMorphs('referensi'); // polymorphic: pembayaran, pembayaran_klien, gaji_periode, dll
             $table->date('tanggal');
             $table->text('catatan')->nullable();
             $table->uuid('created_by');

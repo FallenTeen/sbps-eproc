@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->uuid('titik_id');
             $table->enum('tipe', ['masuk', 'keluar']);
             $table->decimal('jumlah', 15, 2);
-            $table->nullableMorphs('referensi'); // polymorphic: purchase_orders, production_sessions, dll
+            $table->nullableUuidMorphs('referensi'); // polymorphic: purchase_orders, production_sessions, dll
             $table->text('catatan')->nullable();
             $table->date('tanggal');
             $table->uuid('created_by');

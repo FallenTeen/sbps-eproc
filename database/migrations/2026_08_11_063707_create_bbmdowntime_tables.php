@@ -13,7 +13,7 @@ return new class extends Migration {
         // bbm_log
         Schema::create('bbm_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->morphs('serviceable');
+            $table->uuidMorphs('serviceable');
             $table->date('tanggal');
             $table->decimal('liter', 10, 2);
             $table->decimal('biaya', 15, 2)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration {
         // downtime_log
         Schema::create('downtime_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->morphs('serviceable');
+            $table->uuidMorphs('serviceable');
             $table->datetime('mulai');
             $table->datetime('selesai')->nullable();
             $table->string('penyebab')->nullable();

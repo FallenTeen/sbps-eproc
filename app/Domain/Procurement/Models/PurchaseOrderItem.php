@@ -3,11 +3,12 @@
 namespace App\Domain\Procurement\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrderItem extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'purchase_order_items';
     protected $fillable = [

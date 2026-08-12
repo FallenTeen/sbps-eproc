@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('armada_drivers', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+            $table->uuid('armada_id');
+            $table->uuid('karyawan_id');
+            $table->enum('tipe', ['standby', 'kondisional'])->default('standby');
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_selesai')->nullable();
+            $table->enum('status', ['aktif', 'selesai'])->default('aktif');
             $table->timestamps();
+
+            $table->foreign('armada_id')->references('id')->on('armadas')->onDelete('cascade');
+            $table->foreign('karyawan_id')->references('id')->on('karyawans');
         });
     }
 

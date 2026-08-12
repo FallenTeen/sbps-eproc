@@ -5,16 +5,21 @@ namespace App\Domain\Procurement\Models;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Domain\Production\Models\ProductionSessionItem;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BahanBaku extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'bahan_bakus';
     protected $fillable = ['kode', 'nama', 'kategori', 'sparepart_untuk', 'satuan', 'aktif'];
     protected $casts = ['aktif' => 'boolean'];
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\BahanBakuFactory::new();
+    }
     // Relasi
     public function hargaBeli()
     {

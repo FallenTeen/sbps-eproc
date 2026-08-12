@@ -7,11 +7,12 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Finance\Models\Invoice;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Proyek extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'proyeks';
     protected $fillable = [
@@ -33,6 +34,11 @@ class Proyek extends Model
         'tanggal_selesai_rencana' => 'date',
         'tanggal_selesai_aktual' => 'date',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\ProyekFactory::new();
+    }
 
     // Relasi
     public function unitBisnis()

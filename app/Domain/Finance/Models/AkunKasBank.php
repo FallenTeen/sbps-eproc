@@ -6,10 +6,11 @@ use App\Domain\Core\Models\UnitBisnis;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AkunKasBank extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'akun_kas_banks';
     protected $fillable = [
@@ -24,6 +25,11 @@ class AkunKasBank extends Model
         'saldo_awal' => 'float',
         'aktif' => 'boolean',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\AkunKasBankFactory::new();
+    }
 
     // Relasi
     public function unitBisnis()

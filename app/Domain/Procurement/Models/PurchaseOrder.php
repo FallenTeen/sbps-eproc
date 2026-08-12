@@ -7,12 +7,13 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Procurement\States\PurchaseOrderState;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\ModelStates\HasStates;
 
 class PurchaseOrder extends Model
 {
-    use HasUuids, HasStates;
+    use HasUuids, HasStates, HasFactory;
 
     protected $table = 'purchase_orders';
     protected $fillable = [
@@ -33,6 +34,28 @@ class PurchaseOrder extends Model
         'total' => 'float',
         'status' => PurchaseOrderState::class,
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\PurchaseOrderFactory::new();
+    }
+    protected function registerStates(): void
+    {
+        $this->addState('status', PurchaseOrderState::class)
+            ->default(Draft::class)
+            ->allowTransition(Draft::class, Diajukan::class)
+            ->allowTransition(Diajukan::class, MenungguApprovalFinance::class)
+            ->allowTransition(Diajukan::class, MenungguApprovalOwner::class)
+            ->allowTransition(Diajukan::class, Ditolak::class)
+            ->allowTransition(MenungguApprovalFinance::class, Disetujui::class) // <-- Tambahkan ini
+            ->allowTransition(MenungguApprovalFinance::class, Ditolak::class)
+            ->allowTransition(MenungguApprovalOwner::class, Disetujui::class) // <-- Tambahkan ini
+            ->allowTransition(MenungguApprovalOwner::class, Ditolak::class)
+            ->allowTransition(Disetujui::class, Diterima::class)
+            ->allowTransition(Diterima::class, DibayarSebagian::class)
+            ->allowTransition(Diterima::class, Lunas::class)
+            ->allowTransition(DibayarSebagian::class, Lunas::class);
+    }
 
     // Relasi
     public function proyek()

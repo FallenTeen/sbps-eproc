@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('service_history', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->morphs('serviceable');
+            $table->uuidMorphs('serviceable');
             $table->date('tanggal');
             $table->string('jenis_servis')->nullable();
             $table->decimal('biaya', 15, 2)->default(0);

@@ -7,11 +7,12 @@ use App\Domain\Fleet\Models\Armada;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Titik extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'titiks';
     protected $fillable = [
@@ -27,6 +28,11 @@ class Titik extends Model
         'longitude' => 'float',
         'radius_presensi_meter' => 'integer',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\TitikFactory::new();
+    }
 
     // Relasi
     public function proyek()

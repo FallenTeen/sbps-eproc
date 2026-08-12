@@ -6,11 +6,12 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Armada extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'armadas';
     protected $fillable = [
@@ -31,6 +32,11 @@ class Armada extends Model
         'tanggal_mulai_pakai' => 'date',
         'tanggal_servis_terakhir' => 'date',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\ArmadaFactory::new();
+    }
 
     // Relasi
     public function unitBisnis()
@@ -82,7 +88,7 @@ class Armada extends Model
 
     public function currentDriver()
     {
-        return $this->driverAssignments()->where('status', 'aktif')->latest()->first();
+        return $this->hasOne(ArmadaDriver::class)->where('status', 'aktif')->latestOfMany();
     }
 
     // Scope

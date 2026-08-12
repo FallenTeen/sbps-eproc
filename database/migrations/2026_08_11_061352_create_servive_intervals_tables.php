@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('service_intervals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->morphs('serviceable'); // armada atau mesin_produksi
+            $table->uuidMorphs('serviceable'); // armada atau mesin_produksi
             $table->integer('interval_bulan')->default(2);
             $table->integer('interval_jam_operasional')->nullable(); // opsional
             $table->timestamps();
