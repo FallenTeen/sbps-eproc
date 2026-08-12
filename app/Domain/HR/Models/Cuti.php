@@ -4,11 +4,12 @@ namespace App\Domain\HR\Models;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Cuti extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'cutis';
     protected $fillable = [

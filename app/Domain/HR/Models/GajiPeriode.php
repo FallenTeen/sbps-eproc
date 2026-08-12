@@ -4,11 +4,12 @@ namespace App\Domain\HR\Models;
 
 use App\Domain\Finance\Models\AkunKasBank;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GajiPeriode extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'gaji_periodes';
     protected $fillable = [

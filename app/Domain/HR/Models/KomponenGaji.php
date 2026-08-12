@@ -3,11 +3,12 @@
 namespace App\Domain\HR\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class KomponenGaji extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'komponen_gajis';
     protected $fillable = ['gaji_periode_id', 'jenis', 'jumlah', 'keterangan'];

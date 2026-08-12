@@ -3,63 +3,61 @@
 namespace App\Domain\HR\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Domain\HR\Models\Cuti;
+use App\Domain\HR\Models\Karyawan;
+use App\Domain\HR\Actions\SubmitCutiAction;
+use App\Domain\HR\Actions\ApproveCutiAction;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class CutiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $status = $request->query('status', 'diajukan'); // default diajukan
+
+        $query = Cuti::with(['karyawan', 'disetujuiOleh'])->orderBy('created_at', 'desc');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $cutis = $query->get();
+        $karyawan = Karyawan::where('status', 'aktif')->get();
+
+        return Inertia::render('HR/Cuti/Index', [
+            'cutis' => $cutis,
+            'karyawan' => $karyawan,
+            'filters' => [
+                'status' => $status
+            ]
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'karyawan_id' => 'required|exists:karyawans,id',
+            'tipe' => 'required|string',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'catatan' => 'nullable|string'
+        ]);
+
+        (new SubmitCutiAction())->execute($request->all());
+
+        return back()->with('success', 'Pengajuan cuti berhasil dibuat.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function approve(Request $request, Cuti $cuti)
     {
-        //
+        (new ApproveCutiAction())->execute($cuti, 'disetujui', $request->input('catatan'));
+        return back()->with('success', 'Cuti berhasil disetujui.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function reject(Request $request, Cuti $cuti)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        (new ApproveCutiAction())->execute($cuti, 'ditolak', $request->input('catatan'));
+        return back()->with('success', 'Cuti berhasil ditolak.');
     }
 }

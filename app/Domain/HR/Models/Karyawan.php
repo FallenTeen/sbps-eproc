@@ -7,11 +7,12 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Karyawan extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'karyawans';
     protected $fillable = [

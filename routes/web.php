@@ -246,25 +246,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('karyawan/{karyawan}/status', [KaryawanController::class, 'updateStatus'])->name('karyawan.status');
 
         // Cuti
-        Route::resource('cuti', CutiController::class)->except(['index']);
-        Route::get('karyawan/{karyawan}/cuti', [CutiController::class, 'index'])->name('cuti.index');
-        Route::post('cuti/{cuti}/approve', [CutiController::class, 'approve'])->name('cuti.approve');
-        Route::post('cuti/{cuti}/reject', [CutiController::class, 'reject'])->name('cuti.reject');
-        Route::get('cuti/pending', [CutiController::class, 'pending'])->name('cuti.pending');
+        Route::prefix('cuti')->name('cuti.')->group(function () {
+            Route::get('/', [CutiController::class, 'index'])->name('index');
+            Route::post('/', [CutiController::class, 'store'])->name('store');
+            Route::post('/{cuti}/approve', [CutiController::class, 'approve'])->name('approve');
+            Route::post('/{cuti}/reject', [CutiController::class, 'reject'])->name('reject');
+        });
 
         // Payroll
         Route::prefix('payroll')->name('payroll.')->group(function () {
             Route::get('/', [PayrollController::class, 'index'])->name('index');
-            Route::get('/generate', [PayrollController::class, 'generateForm'])->name('generate-form');
             Route::post('/generate', [PayrollController::class, 'generate'])->name('generate');
-            Route::get('/{periode}', [PayrollController::class, 'show'])->name('show');
-            Route::get('/{periode}/edit', [PayrollController::class, 'edit'])->name('edit');
-            Route::put('/{periode}', [PayrollController::class, 'update'])->name('update');
-            Route::post('/{periode}/pay', [PayrollController::class, 'pay'])->name('pay');
+            Route::get('/periode/{bulan}/{tahun}', [PayrollController::class, 'show'])->name('show');
+            Route::post('/periode/{bulan}/{tahun}/pay', [PayrollController::class, 'pay'])->name('pay');
+            Route::get('/review/{periode}', [PayrollController::class, 'review'])->name('review');
             Route::post('/{periode}/komponen', [PayrollController::class, 'addKomponen'])->name('add-komponen');
             Route::delete('/komponen/{komponen}', [PayrollController::class, 'deleteKomponen'])->name('delete-komponen');
-            Route::get('/{periode}/slip/{karyawan}', [PayrollController::class, 'slipGaji'])->name('slip-gaji');
-            Route::get('/report', [PayrollController::class, 'report'])->name('report');
         });
     });
 
