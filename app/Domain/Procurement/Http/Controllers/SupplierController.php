@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Http\Controllers;
 
 use App\Domain\Procurement\Models\Supplier;
@@ -8,22 +9,66 @@ use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Procurement/Suppliers/Index', ['suppliers' => Supplier::paginate(10)]);
+        $query = Supplier::query();
+        if ($request->has('search')) {
+            $query->where('nama', 'like', '%' . $request->search . '%')
+                ->orWhere('kode', 'like', '%' . $request->search . '%');
+        }
+        $suppliers = $query->orderBy('nama')->paginate(10)->withQueryString();
+        return Inertia::render('Procurement/Suppliers/Index', [
+            'suppliers' => $suppliers,
+            'filters' => $request->only('search'),
+        ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('Procurement/Suppliers/Create');
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kode' => 'required|unique:supplier',
-            'nama' => 'required|string',
-            'kontak' => 'nullable|string',
-            'telepon' => 'nullable|string',
+            'kode' => 'required|unique:suppliers',
+            'nama' => 'required|string|max:255',
+            'kontak' => 'nullable|string|max:255',
+            'telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
+            'aktif' => 'boolean',
         ]);
         Supplier::create($validated);
-        return redirect()->route('procurement.suppliers.index')->with('success', 'Supplier ditambahkan.');
+        return redirect()->route('procurement.suppliers.index')
+            ->with('success', 'Supplier berhasil ditambahkan.');
     }
-    // ... update, delete similar
+
+    public function edit(Supplier $supplier)
+    {
+        return Inertia::render('Procurement/Suppliers/Edit', ['supplier' => $supplier]);
+    }
+
+    public function update(Request $request, Supplier $supplier)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'kontak' => 'nullable|string|max:255',
+            'telepon' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
+            'aktif' => 'boolean',
+        ]);
+        $supplier->update($validated);
+        return redirect()->route('procurement.suppliers.index')
+            ->with('success', 'Supplier diperbarui.');
+    }
+
+    public function destroy(Supplier $supplier)
+    {
+        if ($supplier->purchaseOrders()->exists()) {
+            return back()->with('error', 'Supplier sudah memiliki PO, tidak bisa dihapus.');
+        }
+        $supplier->delete();
+        return redirect()->route('procurement.suppliers.index')
+            ->with('success', 'Supplier dihapus.');
+    }
 }

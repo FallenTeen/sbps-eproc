@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -11,6 +12,11 @@ class SubmitPurchaseOrderAction
     public function execute(PurchaseOrder $po): PurchaseOrder
     {
         DB::transaction(function () use ($po) {
+            // Cek apakah ada item
+            if ($po->items->count() === 0) {
+                throw new \Exception('PO tidak memiliki item');
+            }
+
             // Validasi RAB
             (new ValidateBudgetAction())->execute($po);
 
@@ -24,8 +30,6 @@ class SubmitPurchaseOrderAction
 
             // Route approval (tier)
             (new RouteApprovalAction())->execute($po);
-
-            // Catat audit log nanti
         });
 
         return $po->fresh();

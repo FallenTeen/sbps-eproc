@@ -1,50 +1,53 @@
 import React, { useState } from "react";
-import { Link, router, usePage } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Truck } from "lucide-react";
 
-export default function Index({ pos, filters }) {
+const JENIS = {
+    dump_truck: "Dump Truck",
+    alat_berat: "Alat Berat",
+    truck_molen: "Truck Molen",
+    lainnya: "Lainnya",
+};
+
+const MODEL_TARIF = {
+    ritase: "Ritase",
+    sewa_jam: "Sewa / Jam",
+    internal: "Internal",
+};
+
+const STATUS = {
+    aktif: "bg-green-200 text-green-800",
+    servis: "bg-yellow-200 text-yellow-800",
+    nonaktif: "bg-red-200 text-red-800",
+};
+
+export default function Index({ armadas, filters }) {
     const [search, setSearch] = useState(filters.search || "");
     const [status, setStatus] = useState(filters.status || "");
+    const [jenis, setJenis] = useState(filters.jenis || "");
 
     const handleSearch = () => {
-        router.get(route("procurement.purchase-orders.index"), {
-            search,
-            status,
-        });
+        router.get(route("fleet.armada.index"), { search, status, jenis });
     };
 
     const clearFilters = () => {
         setSearch("");
         setStatus("");
-        router.get(route("procurement.purchase-orders.index"));
-    };
-
-    const getStatusBadge = (status) => {
-        const colors = {
-            draft: "bg-gray-200 text-gray-800",
-            diajukan: "bg-yellow-200 text-yellow-800",
-            menunggu_approval_finance: "bg-blue-200 text-blue-800",
-            menunggu_approval_owner: "bg-purple-200 text-purple-800",
-            disetujui: "bg-green-200 text-green-800",
-            diterima: "bg-indigo-200 text-indigo-800",
-            dibayar_sebagian: "bg-orange-200 text-orange-800",
-            lunas: "bg-emerald-200 text-emerald-800",
-            ditolak: "bg-red-200 text-red-800",
-        };
-        return colors[status] || "bg-gray-200 text-gray-800";
+        setJenis("");
+        router.get(route("fleet.armada.index"));
     };
 
     return (
         <Layout>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Purchase Orders</h1>
+                <h1 className="text-2xl font-bold">Armada</h1>
                 <Link
-                    href={route("procurement.purchase-orders.create")}
+                    href={route("fleet.armada.create")}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
-                    Buat PO
+                    Tambah Armada
                 </Link>
             </div>
 
@@ -60,7 +63,8 @@ export default function Index({ pos, filters }) {
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari kode PO / supplier..."
+                                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                                placeholder="Cari kode unit / plat nomor..."
                                 className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <button
@@ -73,6 +77,23 @@ export default function Index({ pos, filters }) {
                     </div>
                     <div className="w-48">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Jenis
+                        </label>
+                        <select
+                            value={jenis}
+                            onChange={(e) => setJenis(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Semua</option>
+                            {Object.entries(JENIS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="w-48">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                             Status
                         </label>
                         <select
@@ -81,23 +102,17 @@ export default function Index({ pos, filters }) {
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="">Semua</option>
-                            <option value="draft">Draft</option>
-                            <option value="diajukan">Diajukan</option>
-                            <option value="menunggu_approval_finance">
-                                Menunggu Finance
-                            </option>
-                            <option value="menunggu_approval_owner">
-                                Menunggu Owner
-                            </option>
-                            <option value="disetujui">Disetujui</option>
-                            <option value="diterima">Diterima</option>
-                            <option value="dibayar_sebagian">
-                                Dibayar Sebagian
-                            </option>
-                            <option value="lunas">Lunas</option>
-                            <option value="ditolak">Ditolak</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="servis">Servis</option>
+                            <option value="nonaktif">Nonaktif</option>
                         </select>
                     </div>
+                    <button
+                        onClick={handleSearch}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+                    >
+                        Terapkan
+                    </button>
                     <button
                         onClick={clearFilters}
                         className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
@@ -113,22 +128,28 @@ export default function Index({ pos, filters }) {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Kode
+                                Unit
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Supplier
+                                Plat Nomor
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Proyek
+                                Jenis
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Total
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Model Tarif
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Unit Bisnis
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Titik
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Driver
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Tanggal
                             </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Aksi
@@ -136,53 +157,57 @@ export default function Index({ pos, filters }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {pos.data.length === 0 ? (
+                        {armadas.data.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan="7"
+                                    colSpan="9"
                                     className="px-6 py-4 text-center text-gray-500"
                                 >
                                     Tidak ada data
                                 </td>
                             </tr>
                         ) : (
-                            pos.data.map((po) => (
-                                <tr key={po.id} className="hover:bg-gray-50">
+                            armadas.data.map((armada) => (
+                                <tr key={armada.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {po.kode_po}
+                                        {armada.kode_unit}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {po.supplier?.nama}
+                                        {armada.plat_nomor}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {po.proyek?.nama}
+                                        {JENIS[armada.jenis] || armada.jenis}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        Rp{" "}
-                                        {Number(po.total).toLocaleString(
-                                            "id-ID",
-                                        )}
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {MODEL_TARIF[armada.model_tarif] ||
+                                            armada.model_tarif}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {armada.unit_bisnis?.nama || "-"}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {armada.titik?.nama || "-"}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {armada.current_driver?.karyawan?.nama ||
+                                            "-"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span
-                                            className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(po.status)}`}
+                                            className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS[armada.status] || "bg-gray-200 text-gray-800"}`}
                                         >
-                                            {po.status.replace(/_/g, " ")}
+                                            {armada.status}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {new Date(
-                                            po.created_at,
-                                        ).toLocaleDateString("id-ID")}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <Link
                                             href={route(
-                                                "procurement.purchase-orders.show",
-                                                po.id,
+                                                "fleet.armada.show",
+                                                armada.id,
                                             )}
-                                            className="text-blue-600 hover:text-blue-900"
+                                            className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
                                         >
+                                            <Truck className="w-4 h-4" />
                                             Detail
                                         </Link>
                                     </td>
@@ -196,12 +221,12 @@ export default function Index({ pos, filters }) {
             {/* Pagination */}
             <div className="mt-4 flex justify-between items-center">
                 <div className="text-sm text-gray-500">
-                    Menampilkan {pos.from || 0} - {pos.to || 0} dari{" "}
-                    {pos.total || 0} data
+                    Menampilkan {armadas.from || 0} - {armadas.to || 0} dari{" "}
+                    {armadas.total || 0} data
                 </div>
                 <div className="flex gap-2">
-                    {pos.links &&
-                        pos.links.map((link, index) => (
+                    {armadas.links &&
+                        armadas.links.map((link, index) => (
                             <button
                                 key={index}
                                 onClick={() => link.url && router.get(link.url)}

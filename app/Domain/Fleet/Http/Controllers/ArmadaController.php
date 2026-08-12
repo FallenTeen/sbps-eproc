@@ -22,11 +22,31 @@ class ArmadaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $armadas = Armada::with(['unitBisnis', 'titik', 'currentDriver'])
-            ->paginate(15);
-        return Inertia::render('Fleet/Armada/Index', ['armadas' => $armadas]);
+        $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan']);
+
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('jenis') && $request->jenis) {
+            $query->where('jenis', $request->jenis);
+        }
+
+        if ($request->has('search') && $request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('kode_unit', 'like', '%' . $request->search . '%')
+                  ->orWhere('plat_nomor', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $armadas = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Fleet/Armada/Index', [
+            'armadas' => $armadas,
+            'filters' => $request->only(['status', 'jenis', 'search']),
+        ]);
     }
 
     /**
@@ -34,9 +54,14 @@ class ArmadaController extends Controller
      */
     public function create()
     {
+        $unitBisnis = \App\Domain\Core\Models\UnitBisnis::aktif()->get();
         $titiks = Titik::aktif()->get();
         $drivers = Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get();
-        return Inertia::render('Fleet/Armada/Create', ['titiks' => $titiks, 'drivers' => $drivers]);
+        return Inertia::render('Fleet/Armada/Create', [
+            'unitBisnis' => $unitBisnis,
+            'titiks' => $titiks,
+            'drivers' => $drivers,
+        ]);
     }
 
     /**
@@ -46,13 +71,13 @@ class ArmadaController extends Controller
     {
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
-            'plat_nomor' => 'required|unique:armada',
-            'kode_unit' => 'required|unique:armada',
+            'plat_nomor' => 'required|unique:armadas',
+            'kode_unit' => 'required|unique:armadas',
             'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',
-            'titik_id' => 'nullable|exists:titik,id',
+            'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
         Armada::create($validated);
@@ -68,14 +93,23 @@ class ArmadaController extends Controller
             'unitBisnis',
             'titik',
             'serviceHistories',
-            'checklists' => fn($q) => $q->latest('tanggal')->limit(30),
+            'checklists' => fn($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
             'bbmLogs' => fn($q) => $q->latest('tanggal')->limit(30),
             'downtimes' => fn($q) => $q->latest('mulai')->limit(10),
-            'ritases' => fn($q) => $q->latest('tanggal')->limit(50),
-            'sewaAlatJams' => fn($q) => $q->latest('tanggal')->limit(50),
+            'ritases' => fn($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
+            'sewaAlatJams' => fn($q) => $q->with('proyek')->latest('tanggal')->limit(50),
             'driverAssignments' => fn($q) => $q->with('karyawan')->latest('tanggal_mulai'),
         ]);
-        return Inertia::render('Fleet/Armada/Show', ['armada' => $armada]);
+
+        return Inertia::render('Fleet/Armada/Show', [
+            'armada' => $armada,
+            'options' => [
+                'drivers' => Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get(['id', 'nama', 'jabatan']),
+                'proyeks' => \App\Domain\Core\Models\Proyek::aktif()->get(['id', 'nama', 'kode_proyek']),
+                'ruteTarifs' => \App\Domain\Fleet\Models\RuteTarif::aktif()->get(['id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit']),
+                'titiks' => Titik::aktif()->get(['id', 'nama']),
+            ],
+        ]);
     }
 
     /**
@@ -83,8 +117,13 @@ class ArmadaController extends Controller
      */
     public function edit(Armada $armada)
     {
+        $unitBisnis = \App\Domain\Core\Models\UnitBisnis::aktif()->get();
         $titiks = Titik::aktif()->get();
-        return Inertia::render('Fleet/Armada/Edit', ['armada' => $armada, 'titiks' => $titiks]);
+        return Inertia::render('Fleet/Armada/Edit', [
+            'armada' => $armada,
+            'unitBisnis' => $unitBisnis,
+            'titiks' => $titiks,
+        ]);
     }
 
     /**
@@ -93,13 +132,13 @@ class ArmadaController extends Controller
     public function update(Request $request, Armada $armada)
     {
         $validated = $request->validate([
-            'plat_nomor' => 'required|unique:armada,plat_nomor,' . $armada->id,
-            'kode_unit' => 'required|unique:armada,kode_unit,' . $armada->id,
+            'plat_nomor' => 'required|unique:armadas,plat_nomor,' . $armada->id,
+            'kode_unit' => 'required|unique:armadas,kode_unit,' . $armada->id,
             'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',
-            'titik_id' => 'nullable|exists:titik,id',
+            'titik_id' => 'nullable|exists:titiks,id',
             'status' => 'in:aktif,servis,nonaktif',
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
@@ -121,15 +160,15 @@ class ArmadaController extends Controller
     public function recordRitase(Request $request, Armada $armada)
     {
         $data = $request->validate([
-            'driver_karyawan_id' => 'required|exists:karyawan,id',
+            'driver_karyawan_id' => 'required|exists:karyawans,id',
             'tanggal' => 'required|date',
-            'rute_tarif_id' => 'nullable|exists:rute_tarif,id',
+            'rute_tarif_id' => 'nullable|exists:rute_tarifs,id',
             'kategori' => 'nullable|string',
             'material' => 'nullable|string',
             'jumlah_rit' => 'required|integer|min:1',
             'tarif_per_rit_snapshot' => 'nullable|numeric|min:0',
-            'proyek_id' => 'nullable|exists:proyek,id',
-            'titik_id' => 'nullable|exists:titik,id',
+            'proyek_id' => 'nullable|exists:proyeks,id',
+            'titik_id' => 'nullable|exists:titiks,id',
             'customer' => 'nullable|string',
             'catatan' => 'nullable|string',
             'biaya_lain' => 'nullable|array',
@@ -145,7 +184,7 @@ class ArmadaController extends Controller
     public function recordSewa(Request $request, Armada $armada)
     {
         $data = $request->validate([
-            'proyek_id' => 'nullable|exists:proyek,id',
+            'proyek_id' => 'nullable|exists:proyeks,id',
             'penyewa_eksternal' => 'nullable|string',
             'lokasi_pekerjaan' => 'nullable|string',
             'harga_per_jam_snapshot' => 'required|numeric|min:0',
@@ -179,7 +218,7 @@ class ArmadaController extends Controller
             'tanggal' => 'required|date',
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
-            'dicatat_oleh_karyawan_id' => 'required|exists:karyawan,id',
+            'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
         ]);
         (new RecordChecklistHarianAction())->execute($armada, $data);
         return back()->with('success', 'Checklist harian dicatat.');
@@ -219,7 +258,7 @@ class ArmadaController extends Controller
     public function assignDriver(Request $request, Armada $armada)
     {
         $data = $request->validate([
-            'karyawan_id' => 'required|exists:karyawan,id',
+            'karyawan_id' => 'required|exists:karyawans,id',
             'tipe' => 'required|in:standby,kondisional',
             'tanggal_mulai' => 'required|date',
         ]);

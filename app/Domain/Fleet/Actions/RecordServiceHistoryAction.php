@@ -4,6 +4,7 @@ namespace App\Domain\Fleet\Actions;
 
 use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\ServiceInterval;
+use Illuminate\Support\Facades\Schema;
 
 class RecordServiceHistoryAction
 {
@@ -17,8 +18,8 @@ class RecordServiceHistoryAction
             'purchase_order_id' => $data['purchase_order_id'] ?? null,
         ]);
 
-        // Update tanggal_servis_terakhir di serviceable (jika ada kolom)
-        if (method_exists($serviceable, 'update')) {
+        // Update tanggal_servis_terakhir di serviceable (jika kolomnya ada)
+        if (Schema::hasColumn($serviceable->getTable(), 'tanggal_servis_terakhir')) {
             $serviceable->update(['tanggal_servis_terakhir' => $data['tanggal']]);
         }
 

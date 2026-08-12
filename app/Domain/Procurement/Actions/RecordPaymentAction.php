@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\Pembayaran;
@@ -24,8 +25,10 @@ class RecordPaymentAction
                 'catatan' => $data['catatan'] ?? null,
             ]);
 
-            // Update status PO
-            $totalDibayar = $po->pembayaran->sum('jumlah');
+            // Muat relasi pembayaran untuk menghitung total
+            $po->load('pembayarans');
+            $totalDibayar = $po->pembayarans->sum('jumlah');
+
             if ($totalDibayar >= $po->total) {
                 $po->status->transitionTo(Lunas::class);
             } else {

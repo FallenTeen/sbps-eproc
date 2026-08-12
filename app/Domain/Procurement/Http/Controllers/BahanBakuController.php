@@ -1,68 +1,130 @@
 <?php
+
 namespace App\Domain\Procurement\Http\Controllers;
 
 use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\Supplier;
 use App\Domain\Procurement\Actions\SetHargaBeliAction;
+use App\Domain\Procurement\Actions\GetCurrentHargaAction;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BahanBakuController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bahanBakus = BahanBaku::with([
+        $query = BahanBaku::with([
             'hargaBeli' => function ($q) {
                 $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', now());
             }
-        ])->paginate(10);
-        return Inertia::render('Procurement/BahanBaku/Index', ['bahanBakus' => $bahanBakus]);
+        ]);
+
+        if ($request->has('search')) {
+            $query->where('nama', 'like', '%' . $request->search . '%')
+                ->orWhere('kode', 'like', '%' . $request->search . '%');
+        }
+
+        $bahanBakus = $query->orderBy('nama')->paginate(10)->withQueryString();
+
+        return Inertia::render('Procurement/BahanBaku/Index', [
+            'bahanBakus' => $bahanBakus,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()
     {
-        return Inertia::render('Procurement/BahanBaku/Create');
+        $suppliers = Supplier::where('aktif', true)->get();
+        return Inertia::render('Procurement/BahanBaku/Create', ['suppliers' => $suppliers]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kode' => 'required|unique:bahan_baku',
-            'nama' => 'required|string',
+            'kode' => 'required|unique:bahan_bakus',
+            'nama' => 'required|string|max:255',
             'kategori' => 'required|in:bahan_baku,sparepart',
-            'sparepart_untuk' => 'nullable|string',
-            'satuan' => 'required|string',
+            'sparepart_untuk' => 'nullable|string|max:255',
+            'satuan' => 'required|string|max:50',
+            'aktif' => 'boolean',
         ]);
-        BahanBaku::create($validated);
-        return redirect()->route('procurement.bahan-baku.index')->with('success', 'Bahan baku berhasil ditambahkan.');
+
+        $bahanBaku = BahanBaku::create($validated);
+
+        // Jika ada harga awal
+        if ($request->filled('harga_awal') && $request->filled('supplier_id')) {
+            (new SetHargaBeliAction())->execute(
+                $bahanBaku,
+                $request->supplier_id,
+                $request->harga_awal,
+                $request->berlaku_dari ?? now()
+            );
+        }
+
+        return redirect()->route('procurement.bahan-baku.index')
+            ->with('success', 'Bahan baku berhasil ditambahkan.');
+    }
+
+    public function show(BahanBaku $bahanBaku)
+    {
+        $bahanBaku->load(['hargaBeli.supplier']);
+        return Inertia::render('Procurement/BahanBaku/Show', ['bahanBaku' => $bahanBaku]);
     }
 
     public function edit(BahanBaku $bahanBaku)
     {
-        return Inertia::render('Procurement/BahanBaku/Edit', ['bahanBaku' => $bahanBaku]);
+        $suppliers = Supplier::where('aktif', true)->get();
+        return Inertia::render('Procurement/BahanBaku/Edit', [
+            'bahanBaku' => $bahanBaku,
+            'suppliers' => $suppliers,
+        ]);
     }
 
     public function update(Request $request, BahanBaku $bahanBaku)
     {
         $validated = $request->validate([
-            'nama' => 'required|string',
+            'nama' => 'required|string|max:255',
             'kategori' => 'required|in:bahan_baku,sparepart',
-            'sparepart_untuk' => 'nullable|string',
-            'satuan' => 'required|string',
+            'sparepart_untuk' => 'nullable|string|max:255',
+            'satuan' => 'required|string|max:50',
             'aktif' => 'boolean',
         ]);
+
         $bahanBaku->update($validated);
-        return redirect()->route('procurement.bahan-baku.index')->with('success', 'Bahan baku diperbarui.');
+
+        return redirect()->route('procurement.bahan-baku.index')
+            ->with('success', 'Bahan baku diperbarui.');
     }
 
+    public function destroy(BahanBaku $bahanBaku)
+    {
+        // Cek apakah sudah digunakan di PO
+        if ($bahanBaku->purchaseOrderItems()->exists()) {
+            return back()->with('error', 'Bahan baku sudah digunakan di PO, tidak bisa dihapus.');
+        }
+        $bahanBaku->delete();
+        return redirect()->route('procurement.bahan-baku.index')
+            ->with('success', 'Bahan baku dihapus.');
+    }
+
+    // Tambah harga baru
     public function setHarga(Request $request, BahanBaku $bahanBaku)
     {
         $request->validate([
-            'supplier_id' => 'required|exists:supplier,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'harga' => 'required|numeric|min:0',
             'berlaku_dari' => 'required|date',
         ]);
-        (new SetHargaBeliAction())->execute($bahanBaku, $request->supplier_id, $request->harga, $request->berlaku_dari);
+
+        (new SetHargaBeliAction())->execute(
+            $bahanBaku,
+            $request->supplier_id,
+            $request->harga,
+            $request->berlaku_dari
+        );
+
         return back()->with('success', 'Harga berhasil ditambahkan.');
     }
 }

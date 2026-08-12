@@ -24,6 +24,7 @@
     "dependencies": {
         "dayjs": "^1.11.21",
         "leaflet": "^1.9.4",
+        "lucide-react": "^1.31.0",
         "react-hook-form": "^7.85.0",
         "react-leaflet": "^5.0.0",
         "recharts": "^3.10.1",

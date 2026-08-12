@@ -1,10 +1,8 @@
 <?php
 namespace App\Domain\Fleet\Actions;
 
-use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Fleet\Models\RuteTarif;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+
 class RecordChecklistHarianAction
 {
     public function execute($checkable, array $data): ArmadaChecklistHarian

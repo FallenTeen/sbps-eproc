@@ -50,7 +50,6 @@ use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
 
 // Dashboard & Owner
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\OwnerDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,11 +72,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Owner Dashboard (hanya untuk role Owner)
-    Route::get('/owner/dashboard', [OwnerDashboardController::class, 'index'])
-        ->middleware(['role:Owner'])
-        ->name('owner.dashboard');
 
     // ============================================================
     // CORE MODULE - Proyek, Titik, RAB, Unit Bisnis
@@ -131,13 +125,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // FLEET MODULE (Armada & Alat Berat) - khusus GCS
     // ============================================================
-    Route::prefix('fleet')->name('fleet.')->group(function () {
+    Route::prefix('fleet')->name('fleet.')->middleware(['permission:manage fleet'])->group(function () {
         // Armada
         Route::resource('armada', ArmadaController::class);
         Route::post('armada/{armada}/assign-driver', [ArmadaController::class, 'assignDriver'])->name('armada.assign-driver');
-        Route::post('armada/{armada}/remove-driver', [ArmadaController::class, 'removeDriver'])->name('armada.remove-driver');
-        Route::get('armada/{armada}/service-history', [ArmadaController::class, 'serviceHistory'])->name('armada.service-history');
-        Route::get('armada/{armada}/checklists', [ArmadaController::class, 'checklists'])->name('armada.checklists');
+        Route::post('armada/{armada}/record-ritase', [ArmadaController::class, 'recordRitase'])->name('armada.record-ritase');
+        Route::post('armada/{armada}/record-sewa', [ArmadaController::class, 'recordSewa'])->name('armada.record-sewa');
+        Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');
+        Route::post('armada/{armada}/record-checklist', [ArmadaController::class, 'recordChecklist'])->name('armada.record-checklist');
+        Route::post('armada/{armada}/record-bbm', [ArmadaController::class, 'recordBbm'])->name('armada.record-bbm');
+        Route::post('armada/{armada}/start-downtime', [ArmadaController::class, 'startDowntime'])->name('armada.start-downtime');
+        Route::post('armada/{armada}/downtime/{downtime}/end', [ArmadaController::class, 'endDowntime'])->name('armada.end-downtime');
 
         // Service History (polymorphic)
         Route::resource('service-history', ServiceHistoryController::class)->except(['index']);
@@ -183,16 +181,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Mesin Produksi
         Route::resource('mesin', MesinProduksiController::class);
         Route::post('mesin/{mesin}/status', [MesinProduksiController::class, 'updateStatus'])->name('mesin.status');
-        Route::get('mesin/{mesin}/service-history', [MesinProduksiController::class, 'serviceHistory'])->name('mesin.service-history');
+        Route::post('mesin/{mesin}/record-service', [MesinProduksiController::class, 'recordService'])->name('mesin.record-service');
+        Route::post('mesin/{mesin}/record-checklist', [MesinProduksiController::class, 'recordChecklist'])->name('mesin.record-checklist');
+        Route::post('mesin/{mesin}/record-bbm', [MesinProduksiController::class, 'recordBbm'])->name('mesin.record-bbm');
+        Route::post('mesin/{mesin}/start-downtime', [MesinProduksiController::class, 'startDowntime'])->name('mesin.start-downtime');
+        Route::post('mesin/{mesin}/downtime/{downtime}/end', [MesinProduksiController::class, 'endDowntime'])->name('mesin.end-downtime');
 
         // Produk
         Route::resource('produk', ProdukController::class);
         Route::post('produk/{produk}/harga', [ProdukController::class, 'setHarga'])->name('produk.set-harga');
-        Route::get('produk/{produk}/resep', [ProdukController::class, 'resep'])->name('produk.resep');
 
         // Resep Produksi (BOM)
         Route::resource('resep', ResepProduksiController::class)->except(['index']);
         Route::get('produk/{produk}/resep', [ResepProduksiController::class, 'index'])->name('resep.index');
+        Route::get('produk/{produk}/resep/create', [ResepProduksiController::class, 'create'])->name('resep.create');
+        Route::get('resep/{resep}/edit', [ResepProduksiController::class, 'edit'])->name('resep.edit');
+        Route::put('resep/{resep}', [ResepProduksiController::class, 'update'])->name('resep.update');
+        Route::delete('resep/{resep}', [ResepProduksiController::class, 'destroy'])->name('resep.destroy');
 
         // Mix Design (khusus CBP)
         Route::prefix('mix-design')->name('mix-design.')->group(function () {
@@ -207,12 +212,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // Sesi Produksi
+        Route::get('sessions/active', [ProductionSessionController::class, 'active'])->name('sessions.active');
+        Route::get('sessions/report/harian', [ProductionSessionController::class, 'reportHarian'])->name('sessions.report-harian');
         Route::resource('sessions', ProductionSessionController::class);
         Route::post('sessions/{session}/start', [ProductionSessionController::class, 'start'])->name('sessions.start');
         Route::post('sessions/{session}/end', [ProductionSessionController::class, 'end'])->name('sessions.end');
         Route::post('sessions/{session}/cancel', [ProductionSessionController::class, 'cancel'])->name('sessions.cancel');
-        Route::get('sessions/active', [ProductionSessionController::class, 'active'])->name('sessions.active');
-        Route::get('sessions/report/harian', [ProductionSessionController::class, 'reportHarian'])->name('sessions.report-harian');
 
         // QC Sample
         Route::resource('qc', QcSampleController::class)->only(['store', 'update', 'destroy']);
@@ -220,11 +225,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('qc/pending', [QcSampleController::class, 'pending'])->name('qc.pending');
 
         // Pengiriman
+        Route::get('pengiriman/today', [PengirimanController::class, 'today'])->name('pengiriman.today');
         Route::resource('pengiriman', PengirimanController::class);
         Route::post('pengiriman/{pengiriman}/start', [PengirimanController::class, 'start'])->name('pengiriman.start');
         Route::post('pengiriman/{pengiriman}/complete', [PengirimanController::class, 'complete'])->name('pengiriman.complete');
         Route::post('pengiriman/{pengiriman}/cancel', [PengirimanController::class, 'cancel'])->name('pengiriman.cancel');
-        Route::get('pengiriman/today', [PengirimanController::class, 'today'])->name('pengiriman.today');
     });
 
     // ============================================================

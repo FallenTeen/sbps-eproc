@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -18,8 +19,8 @@ class RouteApprovalAction
         } elseif ($po->total > $thresholdFinance) {
             $po->status->transitionTo(MenungguApprovalFinance::class);
         } else {
-            // Langsung disetujui otomatis? Tergantung bisnis, kita bisa langsung approve
-            // Atau skip approval? Sesuai manual, ada approval tier, jadi minimal finance.
+            // Jika total di bawah threshold finance, bisa langsung disetujui otomatis?
+            // Atau tetap masuk finance? Sesuai manual: minimal finance.
             $po->status->transitionTo(MenungguApprovalFinance::class);
         }
     }

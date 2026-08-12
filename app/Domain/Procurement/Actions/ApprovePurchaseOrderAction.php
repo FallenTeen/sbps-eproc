@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -20,9 +21,7 @@ class ApprovePurchaseOrderAction
                 'catatan' => $catatan,
             ]);
 
-            // Cek apakah semua approval sudah terpenuhi (misal perlu owner juga)
-            // Di sini kita asumsikan langsung disetujui setelah satu level.
-            // Sebaiknya cek role dan kondisi.
+            // Transisi ke Disetujui
             $po->status->transitionTo(Disetujui::class);
         });
 

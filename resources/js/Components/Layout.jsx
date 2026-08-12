@@ -12,7 +12,13 @@ export default function Layout({ children }) {
         { name: 'Procurement', children: [
             { name: 'Purchase Order', href: route('procurement.purchase-orders.index') },
             { name: 'Bahan Baku', href: route('procurement.bahan-baku.index') },
-            { name: 'Supplier', href: route('procurement.suppliers.index') },
+            { name: 'Supplier', href: route('procurement.supplier.index') },
+        ]},
+        { name: 'Fleet', children: [
+            { name: 'Armada', href: route('fleet.armada.index') },
+            { name: 'Ritase', href: route('fleet.ritase.index') },
+            { name: 'Sewa Alat', href: route('fleet.sewa-alat.index') },
+            { name: 'Rute Tarif', href: route('fleet.rute-tarif.index') },
         ]},
         // ... modul lain
     ];

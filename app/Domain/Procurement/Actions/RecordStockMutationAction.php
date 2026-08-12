@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\StokMutasi;
@@ -11,10 +12,18 @@ class RecordStockMutationAction
     public function execute(PurchaseOrder $po): void
     {
         DB::transaction(function () use ($po) {
+            // Jika PO tidak punya titik_id, cari dari proyek? Atau buat titik default?
+            // Sebaiknya PO wajib punya titik_id. Tapi jika nullable, kita handle.
+            $titikId = $po->titik_id ?? $po->proyek->titik->first()->id ?? null;
+
+            if (!$titikId) {
+                throw new \Exception('Titik tidak ditemukan untuk stok masuk.');
+            }
+
             foreach ($po->items as $item) {
                 StokMutasi::create([
                     'bahan_baku_id' => $item->bahan_baku_id,
-                    'titik_id' => $po->titik_id,
+                    'titik_id' => $titikId,
                     'tipe' => 'masuk',
                     'jumlah' => $item->jumlah,
                     'referensi_type' => PurchaseOrder::class,
