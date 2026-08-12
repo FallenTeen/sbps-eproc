@@ -16,10 +16,21 @@ class MesinProduksiController extends Controller
 {
     public function index(Request $request)
     {
-        $mesin = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault'])
+        $mesin = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault', 'serviceHistories' => fn($q) => $q->latest('tanggal')])
             ->when($request->search, function ($query, $search) {
-                $query->where('nama', 'like', "%{$search}%")
+                $query->where(function($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%")
                       ->orWhere('jenis', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->status, function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->when($request->jenis, function ($query, $jenis) {
+                $query->where('jenis', $jenis);
+            })
+            ->when($request->unit_bisnis_id, function ($query, $unitBisnisId) {
+                $query->where('unit_bisnis_id', $unitBisnisId);
             })
             ->latest()
             ->paginate(10)
@@ -27,7 +38,9 @@ class MesinProduksiController extends Controller
 
         return Inertia::render('Production/Mesin/Index', [
             'mesin' => $mesin,
-            'filters' => $request->only(['search'])
+            'filters' => $request->only(['search', 'status', 'jenis', 'unit_bisnis_id']),
+            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'jenisOptions' => MesinProduksi::select('jenis')->distinct()->pluck('jenis')
         ]);
     }
 
@@ -47,7 +60,7 @@ class MesinProduksiController extends Controller
             'titik_id' => 'nullable|exists:titiks,id',
             'produk_id' => 'nullable|exists:produks,id',
             'nama' => 'required|string|max:255',
-            'jenis' => 'required|string|max:255',
+            'jenis' => 'required|in:crusher,mixer_aspal,mixer_beton',
             'kapasitas' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,rusak,maintenance,nonaktif',
             'biaya_per_jam' => 'nullable|numeric|min:0'
@@ -96,7 +109,7 @@ class MesinProduksiController extends Controller
             'titik_id' => 'nullable|exists:titiks,id',
             'produk_id' => 'nullable|exists:produks,id',
             'nama' => 'required|string|max:255',
-            'jenis' => 'required|string|max:255',
+            'jenis' => 'required|in:crusher,mixer_aspal,mixer_beton',
             'kapasitas' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,rusak,maintenance,nonaktif',
             'biaya_per_jam' => 'nullable|numeric|min:0'

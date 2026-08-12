@@ -23,20 +23,41 @@ class ProductionSessionController extends Controller
     {
         $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik']);
 
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('produk_id') && $request->produk_id) {
+        if ($request->filled('produk_id')) {
             $query->where('produk_id', $request->produk_id);
+        }
+
+        if ($request->filled('tanggal')) {
+            $query->whereDate('mulai', $request->tanggal);
+        }
+
+        if ($request->filled('search')) {
+            $query->whereHas('mesin', fn($q) => $q->where('nama', 'like', '%' . $request->search . '%'))
+                ->orWhereHas('produk', fn($q) => $q->where('nama', 'like', '%' . $request->search . '%'));
         }
 
         $sessions = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
+        // Append margin untuk tampilan index
+        $sessions->getCollection()->transform(function ($session) {
+            if ($session->status === 'selesai') {
+                $biaya     = (new CalculateProductionCostAction())->execute($session);
+                $pendapatan = (new CalculateProductionRevenueAction())->execute($session);
+                $session->margin = $pendapatan - $biaya;
+            } else {
+                $session->margin = null;
+            }
+            return $session;
+        });
+
         return Inertia::render('Production/Sessions/Index', [
             'sessions' => $sessions,
-            'produks' => Produk::aktif()->get(),
-            'filters' => $request->only('status', 'produk_id'),
+            'produks'  => Produk::aktif()->get(),
+            'filters'  => $request->only('status', 'produk_id', 'tanggal', 'search'),
         ]);
     }
 
@@ -111,13 +132,13 @@ class ProductionSessionController extends Controller
 
         $session = (new StartProductionSessionAction())->execute($validated);
 
-        return redirect()->route('production.sessions.show', $session)
+        return redirect()->route('production.sessions.show', ['session' => $session->id])
             ->with('success', 'Sesi produksi dimulai.');
     }
 
-    public function show(ProductionSession $productionSession)
+    public function show(ProductionSession $session)
     {
-        $session = $productionSession->load([
+        $session = $session->load([
             'mesin',
             'produk',
             'operator',
@@ -145,13 +166,13 @@ class ProductionSessionController extends Controller
         ]);
     }
 
-    public function start(Request $request, ProductionSession $productionSession)
+    public function start(Request $request, ProductionSession $session)
     {
-        if ($productionSession->status !== 'dibatalkan' && $productionSession->status !== 'selesai') {
+        if ($session->status !== 'dibatalkan' && $session->status !== 'selesai') {
             return back()->with('error', 'Sesi sedang berjalan.');
         }
 
-        $productionSession->update([
+        $session->update([
             'status' => 'berjalan',
             'mulai' => now(),
             'selesai' => null,
@@ -161,9 +182,9 @@ class ProductionSessionController extends Controller
         return back()->with('success', 'Sesi produksi dimulai ulang.');
     }
 
-    public function edit(ProductionSession $productionSession)
+    public function edit(ProductionSession $session)
     {
-        $session = $productionSession->load(['mesin', 'produk', 'operator', 'titik']);
+        $session = $session->load(['mesin', 'produk', 'operator', 'titik']);
 
         return Inertia::render('Production/Sessions/Edit', [
             'session' => $session,
@@ -174,7 +195,7 @@ class ProductionSessionController extends Controller
         ]);
     }
 
-    public function update(Request $request, ProductionSession $productionSession)
+    public function update(Request $request, ProductionSession $session)
     {
         $validated = $request->validate([
             'mesin_id' => 'required|exists:mesin_produksis,id',
@@ -184,13 +205,13 @@ class ProductionSessionController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $productionSession->update($validated);
+        $session->update($validated);
 
-        return redirect()->route('production.sessions.show', $productionSession)
+        return redirect()->route('production.sessions.show', $session)
             ->with('success', 'Sesi produksi diperbarui.');
     }
 
-    public function end(Request $request, ProductionSession $productionSession)
+    public function end(Request $request, ProductionSession $session)
     {
         $validated = $request->validate([
             'hasil_output' => 'required|numeric|min:0.01',
@@ -200,29 +221,29 @@ class ProductionSessionController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $session = (new EndProductionSessionAction())->execute($productionSession, $validated);
+        $sessionResult = (new EndProductionSessionAction())->execute($session, $validated);
 
-        return redirect()->route('production.sessions.show', $session)
+        return redirect()->route('production.sessions.show', ['session' => $sessionResult->id])
             ->with('success', 'Sesi produksi selesai.');
     }
 
-    public function cancel(ProductionSession $productionSession)
+    public function cancel(ProductionSession $session)
     {
-        if ($productionSession->status === 'selesai') {
+        if ($session->status === 'selesai') {
             return back()->with('error', 'Sesi sudah selesai, tidak bisa dibatalkan.');
         }
 
-        $productionSession->update(['status' => 'dibatalkan', 'selesai' => now()]);
+        $session->update(['status' => 'dibatalkan', 'selesai' => now()]);
 
         return back()->with('success', 'Sesi produksi dibatalkan.');
     }
 
-    public function destroy(ProductionSession $productionSession)
+    public function destroy(ProductionSession $session)
     {
-        if ($productionSession->status === 'berjalan') {
+        if ($session->status === 'berjalan') {
             return back()->with('error', 'Sesi sedang berjalan, tidak bisa dihapus.');
         }
-        $productionSession->delete();
+        $session->delete();
         return redirect()->route('production.sessions.index')
             ->with('success', 'Sesi produksi dihapus.');
     }

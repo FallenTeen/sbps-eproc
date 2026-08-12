@@ -51,13 +51,16 @@ export default function Create({ unitBisnis, titiks, produks }) {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Mesin <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
+                            <select
                                 value={data.jenis}
                                 onChange={(e) => setData("jenis", e.target.value)}
                                 className={`w-full rounded-md border ${errors.jenis ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                                placeholder="Misal: Batching Plant, Crusher"
-                            />
+                            >
+                                <option value="">-- Pilih Jenis Mesin --</option>
+                                <option value="crusher">Crusher (Stone Crusher)</option>
+                                <option value="mixer_aspal">Mixer Aspal (AMP)</option>
+                                <option value="mixer_beton">Mixer Beton (Batching Plant)</option>
+                            </select>
                             {errors.jenis && <p className="text-red-500 text-xs mt-1">{errors.jenis}</p>}
                         </div>
 

@@ -177,7 +177,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // PRODUCTION MODULE (CBP/AMP)
     // ============================================================
-    Route::prefix('production')->name('production.')->group(function () {
+    Route::prefix('production')->name('production.')->middleware(['role:Owner|Koordinator CBP|Koordinator AMP'])->group(function () {
+        // Dashboard Produksi
+        Route::get('/dashboard', [\App\Domain\Production\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
         // Mesin Produksi
         Route::resource('mesin', MesinProduksiController::class);
         Route::post('mesin/{mesin}/status', [MesinProduksiController::class, 'updateStatus'])->name('mesin.status');
