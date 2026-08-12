@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('bahan_baku', function (Blueprint $table) {
+        Schema::create('bahan_bakus', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('kode')->unique();
             $table->string('nama');
@@ -27,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('bahan_baku');
+        Schema::dropIfExists('bahan_bakus');
     }
 };

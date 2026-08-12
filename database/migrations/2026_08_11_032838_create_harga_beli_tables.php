@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('harga_beli', function (Blueprint $table) {
+        Schema::create('harga_belis', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('bahan_baku_id');
             $table->uuid('supplier_id');
@@ -19,8 +19,8 @@ return new class extends Migration {
             $table->date('berlaku_sampai')->nullable();
             $table->timestamps();
 
-            $table->foreign('bahan_baku_id')->references('id')->on('bahan_baku');
-            $table->foreign('supplier_id')->references('id')->on('supplier');
+            $table->foreign('bahan_baku_id')->references('id')->on('bahan_bakus');
+            $table->foreign('supplier_id')->references('id')->on('suppliers');
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('harga_beli');
+        Schema::dropIfExists('harga_belis');
     }
 };

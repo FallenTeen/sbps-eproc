@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('rab', function (Blueprint $table) {
+        Schema::create('rabs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('proyek_id');
             $table->uuid('titik_id')->nullable();
@@ -20,8 +20,8 @@ return new class extends Migration {
             $table->uuid('created_by');
             $table->timestamps();
 
-            $table->foreign('proyek_id')->references('id')->on('proyek');
-            $table->foreign('titik_id')->references('id')->on('titik');
+            $table->foreign('proyek_id')->references('id')->on('proyeks');
+            $table->foreign('titik_id')->references('id')->on('titiks');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }

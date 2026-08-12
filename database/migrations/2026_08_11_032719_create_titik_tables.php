@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('titik', function (Blueprint $table) {
+        Schema::create('titiks', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('proyek_id');
             $table->string('nama');
@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->integer('radius_presensi_meter')->default(100);
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
-            $table->foreign('proyek_id')->references('id')->on('proyek');
+            $table->foreign('proyek_id')->references('id')->on('proyeks');
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('titik');
+        Schema::dropIfExists('titiks');
     }
 };

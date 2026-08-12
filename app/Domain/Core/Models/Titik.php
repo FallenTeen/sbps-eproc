@@ -1,19 +1,72 @@
 <?php
 
 namespace App\Domain\Core\Models;
+
+use App\Domain\Procurement\Models\StokMutasi;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Production\Models\MesinProduksi;
+use App\Domain\HR\Models\KaryawanTitikAssignment;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Titik extends Model {
+class Titik extends Model
+{
     use HasUuids;
-    protected $table = 'titik';
-    protected $fillable = ['proyek_id', 'nama', 'latitude', 'longitude', 'radius_presensi_meter', 'status'];
 
-    public function proyek() {
+    protected $table = 'titiks';
+    protected $fillable = [
+        'proyek_id',
+        'nama',
+        'latitude',
+        'longitude',
+        'radius_presensi_meter',
+        'status'
+    ];
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'radius_presensi_meter' => 'integer',
+    ];
+
+    // Relasi
+    public function proyek()
+    {
         return $this->belongsTo(Proyek::class);
     }
 
-    public function rab() {
+    public function rab()
+    {
         return $this->hasMany(Rab::class);
+    }
+
+    public function armadas()
+    {
+        return $this->hasMany(Armada::class);
+    }
+
+    public function mesinProduksis()
+    {
+        return $this->hasMany(MesinProduksi::class);
+    }
+
+    public function stokMutasis()
+    {
+        return $this->hasMany(StokMutasi::class);
+    }
+
+    public function karyawanAssignments()
+    {
+        return $this->hasMany(KaryawanTitikAssignment::class);
+    }
+
+    // Scope
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 'aktif');
+    }
+
+    public function scopeByProyek($query, $proyekId)
+    {
+        return $query->where('proyek_id', $proyekId);
     }
 }

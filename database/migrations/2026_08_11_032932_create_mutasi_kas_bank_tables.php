@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('mutasi_kas_bank', function (Blueprint $table) {
+        Schema::create('mutasi_kas_banks', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('akun_kas_bank_id');
             $table->string('kategori'); // referensi ke master kategori transaksi
@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->uuid('created_by');
             $table->timestamps();
 
-            $table->foreign('akun_kas_bank_id')->references('id')->on('akun_kas_bank');
+            $table->foreign('akun_kas_bank_id')->references('id')->on('akun_kas_banks');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }
@@ -32,6 +32,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('mutasi_kas_bank');
+        Schema::dropIfExists('mutasi_kas_banks');
     }
 };

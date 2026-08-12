@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('stok_mutasi', function (Blueprint $table) {
+        Schema::create('stok_mutasis', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('bahan_baku_id');
             $table->uuid('titik_id');
@@ -22,8 +22,8 @@ return new class extends Migration {
             $table->uuid('created_by');
             $table->timestamps();
 
-            $table->foreign('bahan_baku_id')->references('id')->on('bahan_baku');
-            $table->foreign('titik_id')->references('id')->on('titik');
+            $table->foreign('bahan_baku_id')->references('id')->on('bahan_bakus');
+            $table->foreign('titik_id')->references('id')->on('titiks');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }

@@ -24,9 +24,9 @@ return new class extends Migration {
             $table->text('catatan')->nullable();
             $table->timestamps();
 
-            $table->foreign('proyek_id')->references('id')->on('proyek');
-            $table->foreign('titik_id')->references('id')->on('titik');
-            $table->foreign('supplier_id')->references('id')->on('supplier');
+            $table->foreign('proyek_id')->references('id')->on('proyeks');
+            $table->foreign('titik_id')->references('id')->on('titiks');
+            $table->foreign('supplier_id')->references('id')->on('suppliers');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }

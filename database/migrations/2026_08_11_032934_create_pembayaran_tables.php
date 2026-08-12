@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('pembayaran', function (Blueprint $table) {
+        Schema::create('pembayarans', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('purchase_order_id');
             $table->decimal('jumlah', 15, 2);
@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('cascade');
-            $table->foreign('akun_kas_bank_id')->references('id')->on('akun_kas_bank');
+            $table->foreign('akun_kas_bank_id')->references('id')->on('akun_kas_banks');
             $table->foreign('dicatat_oleh')->references('id')->on('users');
         });
     }
@@ -32,6 +32,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('pembayaran');
+        Schema::dropIfExists('pembayarans');
     }
 };

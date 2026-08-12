@@ -1,15 +1,32 @@
 <?php
 
 namespace App\Domain\Core\Models;
+
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class UnitBisnis extends Model {
+class UnitBisnis extends Model
+{
     use HasUuids;
+
     protected $table = 'unit_bisnis';
     protected $fillable = ['kode', 'nama', 'deskripsi', 'aktif'];
+    protected $casts = ['aktif' => 'boolean'];
 
-    public function proyeks() {
+    // Relasi
+    public function proyeks()
+    {
         return $this->hasMany(Proyek::class);
+    }
+
+    // Scope
+    public function scopeAktif($query)
+    {
+        return $query->where('aktif', true);
+    }
+
+    public function scopeByKode($query, $kode)
+    {
+        return $query->where('kode', $kode);
     }
 }
