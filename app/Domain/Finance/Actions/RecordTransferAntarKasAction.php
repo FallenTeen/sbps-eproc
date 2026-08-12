@@ -2,49 +2,52 @@
 
 namespace App\Domain\Finance\Actions;
 
+use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\TransferAntarKas;
-use App\Domain\Finance\Models\MutasiKasBank;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RecordTransferAntarKasAction
 {
-    public function execute(array $data): TransferAntarKas
+    public function execute(array $data, string $userId): TransferAntarKas
     {
-        $transfer = TransferAntarKas::create([
-            'dari_akun_kas_bank_id' => $data['dari_akun_kas_bank_id'],
-            'ke_akun_kas_bank_id' => $data['ke_akun_kas_bank_id'],
-            'jumlah' => $data['jumlah'],
-            'tanggal' => $data['tanggal'] ?? now(),
-            'catatan' => $data['catatan'] ?? null,
-            'created_by' => Auth::id(),
-        ]);
+        return DB::transaction(function () use ($data, $userId) {
+            // 1. Buat record TransferAntarKas
+            $transfer = TransferAntarKas::create([
+                'dari_akun_kas_bank_id' => $data['dari_akun_kas_bank_id'],
+                'ke_akun_kas_bank_id' => $data['ke_akun_kas_bank_id'],
+                'jumlah' => $data['jumlah'],
+                'tanggal' => $data['tanggal'],
+                'catatan' => $data['catatan'] ?? null,
+                'created_by' => $userId,
+            ]);
 
-        // Buat mutasi keluar (dari)
-        MutasiKasBank::create([
-            'akun_kas_bank_id' => $data['dari_akun_kas_bank_id'],
-            'kategori' => 'TRANSFER_KELUAR',
-            'tipe' => 'keluar',
-            'jumlah' => $data['jumlah'],
-            'referensi_type' => TransferAntarKas::class,
-            'referensi_id' => $transfer->id,
-            'tanggal' => $data['tanggal'] ?? now(),
-            'catatan' => "Transfer ke kas lain",
-            'created_by' => Auth::id(),
-        ]);
+            $transfer->load(['dariAkun', 'keAkun']);
 
-        // Buat mutasi masuk (ke)
-        MutasiKasBank::create([
-            'akun_kas_bank_id' => $data['ke_akun_kas_bank_id'],
-            'kategori' => 'TRANSFER_MASUK',
-            'tipe' => 'masuk',
-            'jumlah' => $data['jumlah'],
-            'referensi_type' => TransferAntarKas::class,
-            'referensi_id' => $transfer->id,
-            'tanggal' => $data['tanggal'] ?? now(),
-            'catatan' => "Transfer dari kas lain",
-            'created_by' => Auth::id(),
-        ]);
+            // 2. Buat mutasi keluar dari akun asal
+            $transfer->dariAkun->mutasis()->create([
+                'kategori' => 'transfer_keluar',
+                'tipe' => 'keluar',
+                'jumlah' => $data['jumlah'],
+                'tanggal' => $data['tanggal'],
+                'catatan' => 'Transfer ke kas tujuan',
+                'referensi_type' => TransferAntarKas::class,
+                'referensi_id' => $transfer->id,
+                'created_by' => $userId,
+            ]);
 
-        return $transfer;
+            // 3. Buat mutasi masuk ke akun tujuan
+            $transfer->keAkun->mutasis()->create([
+                'kategori' => 'transfer_masuk',
+                'tipe' => 'masuk',
+                'jumlah' => $data['jumlah'],
+                'tanggal' => $data['tanggal'],
+                'catatan' => 'Terima transfer dari kas asal',
+                'referensi_type' => TransferAntarKas::class,
+                'referensi_id' => $transfer->id,
+                'created_by' => $userId,
+            ]);
+
+            return $transfer;
+        });
     }
 }

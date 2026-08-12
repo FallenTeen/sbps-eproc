@@ -270,10 +270,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     Route::prefix('finance')->name('finance.')->group(function () {
         // Kas & Bank
-        Route::resource('kas-bank', AkunKasBankController::class);
-        Route::get('kas-bank/{akun}/mutasi', [AkunKasBankController::class, 'mutasi'])->name('kas-bank.mutasi');
-        Route::get('kas-bank/{akun}/saldo', [AkunKasBankController::class, 'saldo'])->name('kas-bank.saldo');
-        Route::post('kas-bank/{akun}/saldo-awal', [AkunKasBankController::class, 'setSaldoAwal'])->name('kas-bank.set-saldo-awal');
+        Route::resource('akun-kas', AkunKasBankController::class);
+        Route::get('akun-kas/{akunKasBank}/mutasi', [AkunKasBankController::class, 'mutasi'])->name('akun-kas.mutasi');
+        Route::post('akun-kas/transfer', [AkunKasBankController::class, 'transfer'])->name('akun-kas.transfer');
 
         // Mutasi Kas (manual)
         Route::resource('mutasi-kas', MutasiKasBankController::class)->only(['index', 'store']);
@@ -288,30 +287,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [InvoiceController::class, 'index'])->name('index');
             Route::get('/create', [InvoiceController::class, 'create'])->name('create');
             Route::post('/', [InvoiceController::class, 'store'])->name('store');
+            Route::get('/unbilled-items', [InvoiceController::class, 'unbilledItems'])->name('unbilled-items');
+            Route::get('/sumber-tagihan', [InvoiceController::class, 'getSumberTagihan'])->name('sumber-tagihan');
+            Route::get('/outstanding', [PembayaranKlienController::class, 'outstanding'])->name('outstanding');
+            Route::get('/aging', [PembayaranKlienController::class, 'outstanding'])->name('aging');
+            Route::get('/generate-from-production/{proyek}', [InvoiceController::class, 'generateFromProduction'])->name('generate-from-production');
+            Route::get('/generate-from-ritase/{proyek}', [InvoiceController::class, 'generateFromRitase'])->name('generate-from-ritase');
+            Route::get('/generate-from-sewa/{proyek}', [InvoiceController::class, 'generateFromSewa'])->name('generate-from-sewa');
             Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
             Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
             Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
             Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
             Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
             Route::get('/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('pdf');
-            Route::get('/generate-from-production/{proyek}', [InvoiceController::class, 'generateFromProduction'])->name('generate-from-production');
-            Route::get('/generate-from-ritase/{proyek}', [InvoiceController::class, 'generateFromRitase'])->name('generate-from-ritase');
-            Route::get('/generate-from-sewa/{proyek}', [InvoiceController::class, 'generateFromSewa'])->name('generate-from-sewa');
-            Route::get('/outstanding', [InvoiceController::class, 'outstanding'])->name('outstanding');
-            Route::get('/aging', [InvoiceController::class, 'aging'])->name('aging');
         });
 
         // Pembayaran Klien
         Route::resource('pembayaran-klien', PembayaranKlienController::class)->only(['store', 'update', 'destroy']);
         Route::get('invoice/{invoice}/pembayaran', [PembayaranKlienController::class, 'index'])->name('pembayaran-klien.index');
-        Route::post('invoice/{invoice}/pembayaran', [PembayaranKlienController::class, 'store'])->name('pembayaran-klien.store');
+        Route::post('invoice/{invoice}/pembayaran', [PembayaranKlienController::class, 'store'])->name('pembayaran-klien.store-invoice');
 
         // Laporan Keuangan Konsolidasi
+        Route::prefix('laporan-keuangan')->name('laporan-keuangan.')->group(function () {
+            Route::get('/', [LaporanKeuanganController::class, 'index'])->name('index');
+            Route::get('/rab-realisasi', [LaporanKeuanganController::class, 'rabRealisasi'])->name('rab-realisasi');
+            Route::get('/laba-rugi', [LaporanKeuanganController::class, 'labaRugi'])->name('laba-rugi');
+            Route::get('/export-excel', [LaporanKeuanganController::class, 'exportExcel'])->name('export-excel');
+        });
         Route::prefix('report')->name('report.')->group(function () {
-            Route::get('/rab-vs-realisasi', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'rabRealisasi'])->name('rab-realisasi');
-            Route::get('/laba-rugi', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'labaRugi'])->name('laba-rugi');
-            Route::get('/cashflow', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'cashflow'])->name('cashflow');
-            Route::get('/neraca', [\App\Domain\Finance\Http\Controllers\LaporanController::class, 'neraca'])->name('neraca');
+            Route::get('/rab-vs-realisasi', [LaporanKeuanganController::class, 'rabRealisasi'])->name('rab-realisasi');
+            Route::get('/laba-rugi', [LaporanKeuanganController::class, 'labaRugi'])->name('laba-rugi');
         });
     });
 
