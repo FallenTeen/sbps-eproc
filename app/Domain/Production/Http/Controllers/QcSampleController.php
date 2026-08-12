@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Domain\Production\Http\Controllers;
+
+use App\Domain\Production\Actions\RecordQCSampleAction;
+use App\Domain\Production\Actions\RecordUjiTekanResultAction;
+use App\Domain\Production\Models\ProductionSession;
+use App\Domain\Production\Models\QCSample;
+use App\Http\Controllers\Controller;
+use Inertia\Inertia;
+use Illuminate\Http\Request;
+
+class QcSampleController extends Controller
+{
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'production_session_id' => 'required|exists:production_sessions,id',
+            'jenis_uji' => 'required|in:slump_test,uji_tekan',
+            'nilai_slump' => 'nullable|numeric|min:0',
+            'tanggal_uji_tekan_rencana' => 'nullable|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        (new RecordQCSampleAction())->execute($validated);
+
+        return back()->with('success', 'Sample QC dicatat.');
+    }
+
+    public function update(Request $request, QCSample $qc)
+    {
+        $validated = $request->validate([
+            'jenis_uji' => 'required|in:slump_test,uji_tekan',
+            'nilai_slump' => 'nullable|numeric|min:0',
+            'tanggal_uji_tekan_rencana' => 'nullable|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $qc->update($validated);
+
+        return back()->with('success', 'Sample QC diperbarui.');
+    }
+
+    public function destroy(QCSample $qc)
+    {
+        $qc->delete();
+
+        return back()->with('success', 'Sample QC dihapus.');
+    }
+
+    public function pending()
+    {
+        $samples = QCSample::with('session.produk')
+            ->menunggu()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Production/QC/Pending', [
+            'samples' => $samples,
+        ]);
+    }
+
+    public function recordResult(Request $request, QCSample $qc)
+    {
+        $validated = $request->validate([
+            'hasil_uji_tekan' => 'required|numeric|min:0',
+            'target_mpa' => 'nullable|numeric|min:0',
+            'catatan' => 'nullable|string',
+        ]);
+
+        (new RecordUjiTekanResultAction())->execute(
+            $qc,
+            $validated['hasil_uji_tekan'],
+            $validated['catatan'] ?? null,
+            $validated['target_mpa'] ?? null,
+        );
+
+        return back()->with('success', 'Hasil uji tekan dicatat.');
+    }
+}

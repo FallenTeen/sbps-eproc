@@ -8,13 +8,18 @@ class CalculateProductionRevenueAction
 {
     public function execute(ProductionSession $session): float
     {
-        $hargaJual = $session->produk->hargaJual()
-            ->where('berlaku_dari', '<=', $session->tanggal)
-            ->where(function ($q) use ($session) {
-                $q->whereNull('berlaku_sampai')
-                  ->orWhere('berlaku_sampai', '>=', $session->tanggal);
-            })->first();
+        $session->load('produk');
+        $through = ($session->selesai ?? $session->mulai);
 
-        return $session->hasil_output * ($hargaJual->harga ?? 0);
+        $hargaJual = $session->produk->hargaJual()
+            ->where('berlaku_dari', '<=', $through)
+            ->where(function ($q) use ($through) {
+                $q->whereNull('berlaku_sampai')
+                  ->orWhere('berlaku_sampai', '>=', $through);
+            })
+            ->orderBy('berlaku_dari', 'desc')
+            ->first();
+
+        return (float) $session->hasil_output * (float) ($hargaJual->harga ?? 0);
     }
 }
