@@ -20,12 +20,12 @@ use App\Domain\Procurement\States\Lunas;
 use App\Domain\Procurement\States\MenungguApprovalFinance;
 use App\Domain\Procurement\States\MenungguApprovalOwner;
 use App\Domain\Finance\Models\AkunKasBank;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class); // <-- penting!
+uses(TestCase::class, DatabaseTransactions::class); // <-- penting!
 
 // ========== HELPER: Setup Data Awal ==========
 beforeEach(function () {

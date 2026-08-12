@@ -20,7 +20,7 @@ use App\Domain\Procurement\Http\Controllers\PembayaranController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\RitaseController;
-use App\Domain\Fleet\Http\Controllers\SewaAlatJamController;
+use App\Domain\Fleet\Http\Controllers\SewaAlatController;
 use App\Domain\Fleet\Http\Controllers\RuteTarifController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
@@ -47,9 +47,12 @@ use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
 use App\Domain\Finance\Http\Controllers\TransferKasController;
 use App\Domain\Finance\Http\Controllers\InvoiceController;
 use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
+use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
 
 // Dashboard & Owner
 use App\Http\Controllers\DashboardController;
+// Notifications
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,6 +75,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+
 
     // ============================================================
     // CORE MODULE - Proyek, Titik, RAB, Unit Bisnis
@@ -99,7 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // PROCUREMENT MODULE
     // ============================================================
-    Route::prefix('procurement')->name('procurement.')->group(function () {
+    Route::prefix('procurement')->name('procurement.')->middleware(['permission:manage procurement'])->group(function () {
         // Bahan Baku
         Route::resource('bahan-baku', BahanBakuController::class);
         Route::post('bahan-baku/{bahanBaku}/harga', [BahanBakuController::class, 'setHarga'])->name('bahan-baku.set-harga');
@@ -163,10 +172,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('ritase/report/mingguan', [RitaseController::class, 'reportMingguan'])->name('ritase.report-mingguan');
 
         // Sewa Alat Jam
-        Route::resource('sewa-alat', SewaAlatJamController::class);
-        Route::post('sewa-alat/{sewaAlat}/approve', [SewaAlatJamController::class, 'approve'])->name('sewa-alat.approve');
-        Route::post('sewa-alat/bulk', [SewaAlatJamController::class, 'bulkStore'])->name('sewa-alat.bulk');
-        Route::get('sewa-alat/report/mingguan', [SewaAlatJamController::class, 'reportMingguan'])->name('sewa-alat.report-mingguan');
+        Route::resource('sewa-alat', SewaAlatController::class);
+        Route::post('sewa-alat/{sewaAlat}/approve', [SewaAlatController::class, 'approve'])->name('sewa-alat.approve');
+        Route::post('sewa-alat/bulk', [SewaAlatController::class, 'bulkStore'])->name('sewa-alat.bulk');
+        Route::get('sewa-alat/report/mingguan', [SewaAlatController::class, 'reportMingguan'])->name('sewa-alat.report-mingguan');
 
         // Rute Tarif
         Route::resource('rute-tarif', RuteTarifController::class);
@@ -238,7 +247,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // HR MODULE (SDM & Payroll)
     // ============================================================
-    Route::prefix('hr')->name('hr.')->group(function () {
+    Route::prefix('hr')->name('hr.')->middleware(['permission:manage hr'])->group(function () {
         // Karyawan
         Route::resource('karyawan', KaryawanController::class);
         Route::post('karyawan/{karyawan}/assign-titik', [KaryawanController::class, 'assignTitik'])->name('karyawan.assign-titik');
@@ -268,7 +277,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // FINANCE MODULE (Keuangan)
     // ============================================================
-    Route::prefix('finance')->name('finance.')->group(function () {
+    Route::prefix('finance')->name('finance.')->middleware(['permission:manage finance'])->group(function () {
         // Kas & Bank
         Route::resource('akun-kas', AkunKasBankController::class);
         Route::get('akun-kas/{akunKasBank}/mutasi', [AkunKasBankController::class, 'mutasi'])->name('akun-kas.mutasi');

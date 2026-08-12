@@ -28,24 +28,22 @@ class GetRABRealisasiAction
 
     private function realisasiBahanBaku($proyekId, $titikId): float
     {
-        // Dari PO yang sudah diterima (stok masuk) untuk bahan baku
-        // Kita ambil dari stok_mutasi yang referensi ke purchase_orders
+        // Dari PO yang sudah diterima (stok masuk) untuk bahan baku.
+        // Jika RAB di level proyek (titik_id null), filter hanya berdasarkan proyek_id.
+        // Jika RAB di level titik, filter juga berdasarkan titik_id.
         $query = PurchaseOrderItem::whereHas('purchaseOrder', function ($q) use ($proyekId, $titikId) {
             $q->where('proyek_id', $proyekId)
-                ->where('titik_id', $titikId)
                 ->whereIn('status', ['diterima', 'dibayar_sebagian', 'lunas']);
+
+            if ($titikId !== null) {
+                $q->where('titik_id', $titikId);
+            }
         })
             ->whereHas('bahanBaku', function ($q) {
                 $q->where('kategori', 'bahan_baku');
             })
             ->sum('subtotal');
 
-        // Tambahkan jika ada stok_mutasi masuk manual (untuk bahan baku internal)
-        $manual = StokMutasi::where('titik_id', $titikId)
-            ->where('tipe', 'masuk')
-            ->whereNull('referensi_type')
-            ->sum('jumlah'); // kita perlu harga rata-rata? Tapi manual book bilang ini untuk sumber internal, kita asumsikan nilai 0 untuk RAB? Sebaiknya dihitung terpisah, tapi untuk realisasi RAB bahan baku, kita ambil hanya dari PO. Sesuai manual, "Masuk manual" tidak mempengaruhi RAB, hanya stok fisik.
-        // Untuk saat ini, kita abaikan manual, karena RAB realisasi bahan baku berasal dari pembelian.
         return (float) $query;
     }
 

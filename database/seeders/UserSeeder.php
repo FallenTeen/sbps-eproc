@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Domain\Core\Models\UnitBisnis;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,28 +11,188 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Hapus user lama jika perlu (opsional)
-        // User::where('email', 'admin@example.com')->delete();
-        // User::where('email', 'procurement@example.com')->delete();
+        $gcs = UnitBisnis::where('kode', 'GCS')->first();
+        $cbp = UnitBisnis::where('kode', 'CBP')->first();
+        $amp = UnitBisnis::where('kode', 'AMP')->first();
 
-        $user = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+        $users = [
             [
-                'name' => 'Admin Utama',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $user->assignRole('Owner');
+                'email' => 'owner@example.com',
+                'name' => 'Owner Utama',
+                'nama_lengkap' => 'Bapak Owner Holding',
+                'jabatan' => 'Owner / Direktur Utama',
+                'role' => 'Owner',
+                'unit_bisnis_id' => null,
+                'divisi' => 'Manajemen',
+            ],
+            [
+                'email' => 'adminkeug@example.com',
+                'name' => 'Admin Keuangan',
+                'nama_lengkap' => 'Ibu Admin Keuangan Pusat',
+                'jabatan' => 'Admin Keuangan & RAB',
+                'role' => 'Admin Keuangan',
+                'unit_bisnis_id' => null,
+                'divisi' => 'Finance',
+            ],
+            [
+                'email'         => 'ketua.finance@example.com',
+                'name'          => 'Ketua Divisi Keuangan',
+                'nama_lengkap'  => 'Bapak Ketua Finance',
+                'jabatan'       => 'Head of Finance Division',
+                'role'          => 'Ketua Divisi Keuangan',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Finance',
+            ],
+            [
+                'email'         => 'ketua.armada@example.com',
+                'name'          => 'Ketua Divisi Armada',
+                'nama_lengkap'  => 'Bapak Ketua Armada GCS',
+                'jabatan'       => 'Head of Fleet & Transport',
+                'role'          => 'Ketua Divisi Armada',
+                'unit_bisnis_id' => $gcs ? $gcs->id : null,
+                'divisi'        => 'Armada',
+            ],
+            [
+                'email'         => 'ketua.kontraktor@example.com',
+                'name'          => 'Ketua Divisi Kontraktor',
+                'nama_lengkap'  => 'Bapak Ketua Divisi Kontraktor',
+                'jabatan'       => 'Head of Contractor Relations',
+                'role'          => 'Ketua Divisi Kontraktor',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Kontraktor',
+            ],
+            [
+                'email'         => 'ketua.cbp@example.com',
+                'name'          => 'Ketua Divisi Produksi CBP',
+                'nama_lengkap'  => 'Bapak Ketua Produksi CBP',
+                'jabatan'       => 'Head of CBP Plant',
+                'role'          => 'Ketua Divisi Produksi CBP',
+                'unit_bisnis_id' => $cbp ? $cbp->id : null,
+                'divisi'        => 'Produksi',
+            ],
+            [
+                'email'         => 'ketua.amp@example.com',
+                'name'          => 'Ketua Divisi Produksi AMP',
+                'nama_lengkap'  => 'Bapak Ketua Produksi AMP',
+                'jabatan'       => 'Head of AMP Plant',
+                'role'          => 'Ketua Divisi Produksi AMP',
+                'unit_bisnis_id' => $amp ? $amp->id : null,
+                'divisi'        => 'Produksi',
+            ],
+            [
+                'email'         => 'procurement@example.com',
+                'name'          => 'Koordinator Procurement',
+                'nama_lengkap'  => 'Staf Koordinator Procurement',
+                'jabatan'       => 'Procurement Officer',
+                'role'          => 'Koordinator Procurement',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Procurement',
+            ],
+            [
+                'email'         => 'gcs@example.com',
+                'name'          => 'Koordinator GCS',
+                'nama_lengkap'  => 'Staf Operasional Armada GCS',
+                'jabatan'       => 'GCS Fleet Officer',
+                'role'          => 'Koordinator GCS',
+                'unit_bisnis_id' => $gcs ? $gcs->id : null,
+                'divisi'        => 'Armada',
+            ],
+            [
+                'email'         => 'cbp@example.com',
+                'name'          => 'Koordinator CBP',
+                'nama_lengkap'  => 'Staf Operasional Batching Plant',
+                'jabatan'       => 'CBP Plant Officer',
+                'role'          => 'Koordinator CBP',
+                'unit_bisnis_id' => $cbp ? $cbp->id : null,
+                'divisi'        => 'Produksi',
+            ],
+            [
+                'email'         => 'amp@example.com',
+                'name'          => 'Koordinator AMP',
+                'nama_lengkap'  => 'Staf Operasional Hotmix Plant',
+                'jabatan'       => 'AMP Plant Officer',
+                'role'          => 'Koordinator AMP',
+                'unit_bisnis_id' => $amp ? $amp->id : null,
+                'divisi'        => 'Produksi',
+            ],
+            [
+                'email'         => 'sdm@example.com',
+                'name'          => 'Koordinator SDM',
+                'nama_lengkap'  => 'Staf HRD & General Affairs',
+                'jabatan'       => 'HR Coordinator',
+                'role'          => 'Koordinator SDM',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'HR',
+            ],
+            [
+                'email'         => 'mandor@example.com',
+                'name'          => 'Mandor Proyek',
+                'nama_lengkap'  => 'Mandor Lapangan Utama',
+                'jabatan'       => 'Site Supervisor',
+                'role'          => 'Mandor Proyek',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Lapangan',
+            ],
+            [
+                'email'         => 'mandor.titik@example.com',
+                'name'          => 'Mandor Titik',
+                'nama_lengkap'  => 'Mandor Per-Titik Lapangan',
+                'jabatan'       => 'Mandor Titik',
+                'role'          => 'Mandor Titik',
+                'unit_bisnis_id' => $gcs ? $gcs->id : null,
+                'divisi'        => 'Lapangan',
+            ],
+            [
+                'email'         => 'driver.standby@example.com',
+                'name'          => 'Driver Standby',
+                'nama_lengkap'  => 'Pengemudi Standby Harian',
+                'jabatan'       => 'Driver Standby',
+                'role'          => 'Driver Standby',
+                'unit_bisnis_id' => $gcs ? $gcs->id : null,
+                'divisi'        => 'Armada',
+            ],
+            [
+                'email'         => 'driver.kondisional@example.com',
+                'name'          => 'Driver Kondisional',
+                'nama_lengkap'  => 'Pengemudi Borongan/Kondisional',
+                'jabatan'       => 'Driver Kondisional',
+                'role'          => 'Driver Kondisional',
+                'unit_bisnis_id' => $gcs ? $gcs->id : null,
+                'divisi'        => 'Armada',
+            ],
+            [
+                'email'         => 'sdm.lapangan@example.com',
+                'name'          => 'SDM Lapangan',
+                'nama_lengkap'  => 'Tenaga Harian Lapangan',
+                'jabatan'       => 'SDM Lapangan Kondisional',
+                'role'          => 'SDM Lapangan Kondisional',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Lapangan',
+            ],
+            [
+                'email'         => 'kontraktor@example.com',
+                'name'          => 'Mitra Kontraktor Klien',
+                'nama_lengkap'  => 'Perwakilan Kontraktor Klien',
+                'jabatan'       => 'External Contractor Lead',
+                'role'          => 'Kontraktor',
+                'unit_bisnis_id' => null,
+                'divisi'        => 'Eksternal',
+            ],
+        ];
 
-        $user2 = User::firstOrCreate(
-            ['email' => 'procurement@example.com'],
-            [
-                'name' => 'Koordinator Procurement',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $user2->assignRole('Koordinator Procurement');
+        foreach ($users as $uData) {
+            $roleName = $uData['role'];
+            unset($uData['role']);
+
+            $user = User::updateOrCreate(
+                ['email' => $uData['email']],
+                array_merge($uData, [
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ])
+            );
+
+            $user->syncRoles([$roleName]);
+        }
     }
 }

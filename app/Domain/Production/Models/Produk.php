@@ -4,11 +4,17 @@ namespace App\Domain\Production\Models;
 
 use App\Domain\Core\Models\UnitBisnis;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\ProdukFactory::new();
+    }
 
     protected $table = 'produks';
     protected $fillable = [

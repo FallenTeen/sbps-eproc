@@ -8,22 +8,39 @@ use Illuminate\Support\Facades\Auth;
 
 class GenerateInvoiceFromProductionAction
 {
-    public function execute(int $proyekId, array $sessionIds = null): Invoice
+    public function execute(string $proyekId, array $sessionIdsOrOptions = null): Invoice
     {
-        $query = ProductionSession::where('proyek_id', $proyekId)
+        $sessionIds = null;
+        $options = [];
+        if (is_array($sessionIdsOrOptions)) {
+            if (isset($sessionIdsOrOptions[0]) && is_string($sessionIdsOrOptions[0])) {
+                $sessionIds = $sessionIdsOrOptions;
+            } else {
+                $options = $sessionIdsOrOptions;
+                $sessionIds = $options['session_ids'] ?? null;
+            }
+        }
+
+        $query = ProductionSession::whereHas('titik', function ($q) use ($proyekId) {
+            $q->where('proyek_id', $proyekId);
+        })
             ->where('status', 'selesai')
             ->whereDoesntHave('invoiceItems') // belum ditagih
             ->when($sessionIds, fn($q) => $q->whereIn('id', $sessionIds));
 
         $sessions = $query->get();
 
+        $proyek = \App\Domain\Core\Models\Proyek::findOrFail($proyekId);
+
         $invoice = Invoice::create([
-            'unit_bisnis_id' => $sessions->first()->produk->unit_bisnis_id ?? null,
+            'unit_bisnis_id' => $proyek->unit_bisnis_id,
             'proyek_id' => $proyekId,
             'kode_invoice' => 'INV-' . date('Ymd') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
-            'tanggal_terbit' => now(),
-            'tanggal_jatuh_tempo' => now()->addDays(30),
-            'created_by' => Auth::id(),
+            'status' => 'draft',
+            'tanggal_terbit' => $options['tanggal_terbit'] ?? now(),
+            'tanggal_jatuh_tempo' => isset($options['termin_pembayaran_hari']) ? now()->addDays($options['termin_pembayaran_hari']) : now()->addDays(30),
+            'catatan' => $options['catatan'] ?? null,
+            'created_by' => $options['created_by'] ?? Auth::id(),
         ]);
 
         foreach ($sessions as $session) {

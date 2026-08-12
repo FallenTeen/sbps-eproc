@@ -22,8 +22,10 @@ class HRModuleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // create a user and authenticate as admin/HR to pass auth middlewares
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'manage hr']);
         $this->user = User::factory()->create();
+        $this->user->givePermissionTo('manage hr');
         $this->actingAs($this->user);
     }
 

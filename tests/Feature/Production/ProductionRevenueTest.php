@@ -4,7 +4,7 @@ namespace Tests\Feature\Production;
 
 use Tests\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(\Illuminate\Foundation\Testing\DatabaseTransactions::class);
 
 class ProductionRevenueTest extends TestCase
 {

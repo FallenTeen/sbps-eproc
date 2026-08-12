@@ -14,12 +14,12 @@ use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, DatabaseTransactions::class);
 
 function fleetUser(): User
 {

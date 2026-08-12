@@ -33,8 +33,12 @@ class Ritase extends Model
         'tanggal' => 'date',
         'jumlah_rit' => 'integer',
         'tarif_per_rit_snapshot' => 'float',
-        'total_upah_rit' => 'float', // ini generated, tapi kita tetap cast
     ];
+
+    public function getTotalUpahRitAttribute(): float
+    {
+        return (float) (($this->jumlah_rit ?? 0) * ($this->tarif_per_rit_snapshot ?? 0));
+    }
 
     // Relasi
     public function armada()

@@ -20,10 +20,10 @@ class GenerateInvoiceFromRitaseAction
      * @return Invoice
      */
     public function execute(
-        ?int $proyekId = null,
+        ?string $proyekId = null,
         ?string $customer = null,
         ?array $ritaseIds = null,
-        ?int $unitBisnisId = null
+        ?string $unitBisnisId = null
     ): Invoice {
         // Query ritase yang eligible
         $query = Ritase::where('status', 'disetujui')
@@ -66,11 +66,9 @@ class GenerateInvoiceFromRitaseAction
                 'catatan' => $customer ? "Invoice untuk customer eksternal: {$customer}" : null,
             ]);
 
-            // Tambahkan item per ritase atau kelompokkan berdasarkan rute/kategori?
-            // Di sini kita buat satu item per ritase, atau bisa dikelompokkan.
-            // Sesuai manual, satu baris invoice bisa mewakili satu transaksi sumber.
+            // Tambahkan item per ritase
             foreach ($ritases as $ritase) {
-                $deskripsi = "Ritase {$ritase->kategori} - {$ritase->armada->plat_nomor} - {$ritase->jumlah_rit} rit";
+                $deskripsi = "Ritase - {$ritase->armada->plat_nomor} - {$ritase->jumlah_rit} rit";
                 $subtotal = $ritase->total_upah_rit + $ritase->biayaLain->sum('jumlah');
 
                 $invoice->items()->create([
@@ -95,7 +93,7 @@ class GenerateInvoiceFromRitaseAction
     /**
      * Generate kode invoice unik per unit bisnis.
      */
-    private function generateInvoiceCode(int $unitBisnisId): string
+    private function generateInvoiceCode(string $unitBisnisId): string
     {
         $unitKode = \App\Domain\Core\Models\UnitBisnis::find($unitBisnisId)->kode;
         $year = date('Y');

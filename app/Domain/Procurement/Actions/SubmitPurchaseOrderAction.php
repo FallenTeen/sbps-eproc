@@ -34,4 +34,23 @@ class SubmitPurchaseOrderAction
 
         return $po->fresh();
     }
+
+    public function executeAsOwner(PurchaseOrder $po): PurchaseOrder
+    {
+        DB::transaction(function () use ($po) {
+            if ($po->items->count() === 0) {
+                throw new \Exception('PO tidak memiliki item');
+            }
+
+            $total = $po->items->sum('subtotal');
+            $po->total = $total;
+            $po->rab_overridden = true;
+            $po->save();
+
+            $po->status->transitionTo(Diajukan::class);
+            (new RouteApprovalAction())->execute($po);
+        });
+
+        return $po->fresh();
+    }
 }

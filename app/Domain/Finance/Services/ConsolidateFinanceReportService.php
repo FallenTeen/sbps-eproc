@@ -27,7 +27,9 @@ class ConsolidateFinanceReportService
             ->sum('total_upah_rit');
 
         // Biaya produksi (CBP/AMP)
-        $produksiTotal = ProductionSession::where('proyek_id', $proyek->id)
+        $produksiTotal = ProductionSession::whereHas('titik', function ($q) use ($proyek) {
+            $q->where('proyek_id', $proyek->id);
+        })
             ->whereYear('created_at', $tahun)
             ->whereMonth('created_at', $bulan)
             ->where('status', 'selesai')
@@ -38,7 +40,7 @@ class ConsolidateFinanceReportService
             });
 
         // Gaji (untuk SDM)
-        $gajiTotal = GajiPeriode::whereHas('karyawan.assignments', function ($q) use ($proyek) {
+        $gajiTotal = GajiPeriode::whereHas('karyawan.assignments.titik', function ($q) use ($proyek) {
             $q->where('proyek_id', $proyek->id);
         })
             ->whereYear('periode_tahun', $tahun)

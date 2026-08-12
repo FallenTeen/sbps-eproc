@@ -9,8 +9,21 @@ class CalculateNextServiceDateAction
 {
     public function execute(ServiceInterval $interval): Carbon
     {
-        $lastService = $interval->serviceable->serviceHistories()->latest('tanggal')->first();
-        $lastDate = $lastService ? Carbon::parse($lastService->tanggal) : Carbon::parse($interval->serviceable->tanggal_mulai_pakai ?? now());
+        $serviceable = $interval->serviceable;
+        $lastDate = null;
+
+        if ($serviceable) {
+            $lastService = $serviceable->serviceHistories()->latest('tanggal')->first();
+            if ($lastService && $lastService->tanggal) {
+                $lastDate = Carbon::parse($lastService->tanggal);
+            } elseif (!empty($serviceable->tanggal_servis_terakhir)) {
+                $lastDate = Carbon::parse($serviceable->tanggal_servis_terakhir);
+            } elseif (!empty($serviceable->tanggal_mulai_pakai)) {
+                $lastDate = Carbon::parse($serviceable->tanggal_mulai_pakai);
+            }
+        }
+
+        $lastDate = $lastDate ?? now();
 
         // Cek interval bulan
         $nextByMonth = $lastDate->copy()->addMonths($interval->interval_bulan);
