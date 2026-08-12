@@ -1,5 +1,4 @@
 <?php
-// app/Domain/Procurement/Http/Controllers/BahanBakuController.php
 namespace App\Domain\Procurement\Http\Controllers;
 
 use App\Domain\Procurement\Models\BahanBaku;
