@@ -63,10 +63,11 @@ use App\Http\Controllers\NotificationController;
 // Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+        'canLogin'       => Route::has('login'),
+        'canRegister'    => Route::has('register'),
+        'appName'        => config('app.name', 'SBPS Multi-Unit Enterprise'),
         'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'phpVersion'     => PHP_VERSION,
     ]);
 });
 

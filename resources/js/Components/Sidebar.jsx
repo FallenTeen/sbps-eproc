@@ -20,346 +20,329 @@ import {
     Package,
 } from 'lucide-react';
 
-// =========================================================================
-// MENU CONFIGURATION BY ROLE (Max 2 Levels)
-// =========================================================================
+/**
+ * Safe wrapper for Ziggy route helper to prevent runtime crashes when a route name is missing or mismatched.
+ */
+function safeRoute(name, params = {}, fallback = '/dashboard') {
+    try {
+        if (typeof route === 'function' && route().has(name)) {
+            return route(name, params);
+        }
+    } catch (e) {
+        console.warn(`[Ziggy SafeRoute] Route "${name}" not found, using fallback: ${fallback}`);
+    }
+    return fallback;
+}
 
-const MENU_CONFIG = {
-    Owner: [
-        {
-            title: 'Dashboard Owner',
-            icon: LayoutDashboard,
-            href: route('owner.dashboard'),
-            routeName: 'owner.dashboard',
-        },
-        {
-            title: 'Proyek & RAB',
-            icon: FolderKanban,
-            items: [
-                { title: 'Daftar Proyek', href: route('core.proyek.index'), routeName: 'core.proyek.*' },
-                { title: 'RAB Proyek', href: route('core.rab.index'), routeName: 'core.rab.*' },
-            ],
-        },
-        {
-            title: 'Procurement',
-            icon: ShoppingCart,
-            items: [
-                { title: 'Purchase Orders', href: route('procurement.purchase-orders.index'), routeName: 'procurement.purchase-orders.*' },
-                { title: 'Stok Bahan Baku', href: route('procurement.stok.index'), routeName: 'procurement.stok.*' },
-                { title: 'Daftar Supplier', href: route('procurement.suppliers.index'), routeName: 'procurement.suppliers.*' },
-            ],
-        },
-        {
-            title: 'Manajemen Aset',
-            icon: Truck,
-            items: [
-                { title: 'Armada (GCS)', href: route('fleet.armada.index'), routeName: 'fleet.armada.*' },
-                { title: 'Mesin Produksi', href: route('production.mesin.index'), routeName: 'production.mesin.*' },
-            ],
-        },
-        {
-            title: 'Produksi (CBP/AMP)',
-            icon: Factory,
-            items: [
-                { title: 'Dashboard Produksi', href: route('production.dashboard'), routeName: 'production.dashboard' },
-                { title: 'Sesi Produksi', href: route('production.sessions.index'), routeName: 'production.sessions.*' },
-                { title: 'Mix Design (BOM)', href: route('production.mix-design.index'), routeName: 'production.mix-design.*' },
-                { title: 'QC Samples', href: route('production.qc.index'), routeName: 'production.qc.*' },
-                { title: 'Pengiriman', href: route('production.pengiriman.index'), routeName: 'production.pengiriman.*' },
-            ],
-        },
-        {
-            title: 'SDM & Presensi',
-            icon: Users,
-            items: [
-                { title: 'Data Karyawan', href: route('hr.karyawan.index'), routeName: 'hr.karyawan.*' },
-                { title: 'Presensi', href: route('hr.presensi.index'), routeName: 'hr.presensi.*' },
-                { title: 'Pengajuan Cuti', href: route('hr.cuti.index'), routeName: 'hr.cuti.*' },
-                { title: 'Payroll', href: route('hr.payroll.index'), routeName: 'hr.payroll.*' },
-            ],
-        },
-        {
-            title: 'Keuangan & Kas',
-            icon: Wallet,
-            items: [
-                { title: 'Kas & Bank', href: route('finance.akun-kas.index'), routeName: 'finance.akun-kas.*' },
-                { title: 'Daftar Invoice', href: route('finance.invoices.index'), routeName: 'finance.invoices.*' },
-                { title: 'Piutang Klien', href: route('finance.pembayaran.outstanding'), routeName: 'finance.pembayaran.*' },
-                { title: 'Laporan Keuangan', href: route('finance.laporan-keuangan.index'), routeName: 'finance.laporan-keuangan.*' },
-            ],
-        },
-    ],
+/**
+ * Dynamic menu builder based on user active role.
+ * Uses safeRoute helper to avoid top-level Ziggy crashes.
+ */
+function getMenuConfig(currentRole) {
+    const menus = {
+        Owner: [
+            {
+                title: 'Dashboard Utama',
+                icon: LayoutDashboard,
+                href: safeRoute('dashboard', {}, '/dashboard'),
+                routeName: 'dashboard',
+            },
+            {
+                title: 'Proyek & RAB',
+                icon: FolderKanban,
+                items: [
+                    { title: 'Daftar Proyek', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*' },
+                    { title: 'Titik Lokasi', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.titik.*' },
+                ],
+            },
+            {
+                title: 'Procurement',
+                icon: ShoppingCart,
+                items: [
+                    { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*' },
+                    { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*' },
+                    { title: 'Daftar Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*' },
+                ],
+            },
+            {
+                title: 'Manajemen Aset (Fleet)',
+                icon: Truck,
+                items: [
+                    { title: 'Armada (GCS)', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*' },
+                    { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*' },
+                    { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*' },
+                    { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*' },
+                ],
+            },
+            {
+                title: 'Produksi (CBP/AMP)',
+                icon: Factory,
+                items: [
+                    { title: 'Dashboard Produksi', href: safeRoute('production.dashboard', {}, '/production/dashboard'), routeName: 'production.dashboard' },
+                    { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*' },
+                    { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*' },
+                    { title: 'Pengiriman Molen', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*' },
+                ],
+            },
+            {
+                title: 'SDM & Payroll',
+                icon: Users,
+                items: [
+                    { title: 'Data Karyawan', href: safeRoute('hr.karyawan.index', {}, '/hr/karyawan'), routeName: 'hr.karyawan.*' },
+                    { title: 'Pengajuan Cuti', href: safeRoute('hr.cuti.index', {}, '/hr/cuti'), routeName: 'hr.cuti.*' },
+                    { title: 'Payroll 3-Skema', href: safeRoute('hr.payroll.index', {}, '/hr/payroll'), routeName: 'hr.payroll.*' },
+                ],
+            },
+            {
+                title: 'Keuangan & Invoice',
+                icon: Wallet,
+                items: [
+                    { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*' },
+                    { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: 'finance.invoice.*' },
+                    { title: 'Piutang Klien', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: 'finance.invoice.outstanding' },
+                    { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*' },
+                ],
+            },
+        ],
 
-    'Admin Keuangan': [
-        {
-            title: 'Dashboard Keuangan',
-            icon: LayoutDashboard,
-            href: route('finance.dashboard'),
-            routeName: 'finance.dashboard',
-        },
-        {
-            title: 'Keuangan & Kas',
-            icon: Wallet,
-            items: [
-                { title: 'Kas & Bank', href: route('finance.akun-kas.index'), routeName: 'finance.akun-kas.*' },
-                { title: 'Daftar Invoice', href: route('finance.invoices.index'), routeName: 'finance.invoices.*' },
-                { title: 'Piutang Outstanding', href: route('finance.pembayaran.outstanding'), routeName: 'finance.pembayaran.*' },
-                { title: 'Laporan Konsolidasi', href: route('finance.laporan-keuangan.index'), routeName: 'finance.laporan-keuangan.*' },
-            ],
-        },
-        {
-            title: 'Procurement (Payment)',
-            icon: ShoppingCart,
-            items: [
-                { title: 'PO Approval & Payment', href: route('procurement.purchase-orders.index'), routeName: 'procurement.purchase-orders.*' },
-                { title: 'Daftar Supplier', href: route('procurement.suppliers.index'), routeName: 'procurement.suppliers.*' },
-            ],
-        },
-        {
-            title: 'Proyek & RAB (View)',
-            icon: FolderKanban,
-            items: [
-                { title: 'Monitoring Proyek', href: route('core.proyek.index'), routeName: 'core.proyek.*' },
-                { title: 'Ringkasan RAB', href: route('core.rab.index'), routeName: 'core.rab.*' },
-            ],
-        },
-    ],
+        'Admin Keuangan': [
+            {
+                title: 'Dashboard Keuangan',
+                icon: LayoutDashboard,
+                href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'),
+                routeName: 'finance.*',
+            },
+            {
+                title: 'Keuangan & Kas',
+                icon: Wallet,
+                items: [
+                    { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*' },
+                    { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: 'finance.invoice.*' },
+                    { title: 'Piutang Outstanding', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: 'finance.invoice.outstanding' },
+                    { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*' },
+                ],
+            },
+            {
+                title: 'Procurement (Payment)',
+                icon: ShoppingCart,
+                items: [
+                    { title: 'PO Approval & Payment', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*' },
+                    { title: 'Daftar Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*' },
+                ],
+            },
+            {
+                title: 'Proyek & RAB (View)',
+                icon: FolderKanban,
+                href: safeRoute('core.proyek.index', {}, '/core/proyek'),
+                routeName: 'core.proyek.*',
+            },
+        ],
 
-    'Koordinator Procurement': [
-        {
-            title: 'Dashboard Procurement',
-            icon: LayoutDashboard,
-            href: route('procurement.dashboard'),
-            routeName: 'procurement.dashboard',
-        },
-        {
-            title: 'Procurement',
-            icon: ShoppingCart,
-            items: [
-                { title: 'Purchase Orders', href: route('procurement.purchase-orders.index'), routeName: 'procurement.purchase-orders.*' },
-                { title: 'Stok Mutasi', href: route('procurement.stok.index'), routeName: 'procurement.stok.*' },
-                { title: 'Master Supplier', href: route('procurement.suppliers.index'), routeName: 'procurement.suppliers.*' },
-                { title: 'Bahan Baku & Price List', href: route('procurement.bahan-baku.index'), routeName: 'procurement.bahan-baku.*' },
-            ],
-        },
-    ],
+        'Koordinator Procurement': [
+            {
+                title: 'Dashboard Procurement',
+                icon: LayoutDashboard,
+                href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'),
+                routeName: 'procurement.*',
+            },
+            {
+                title: 'Procurement',
+                icon: ShoppingCart,
+                items: [
+                    { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*' },
+                    { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*' },
+                    { title: 'Master Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*' },
+                ],
+            },
+        ],
 
-    'Ketua Divisi Finance': [
-        {
-            title: 'Dashboard Divisi',
-            icon: LayoutDashboard,
-            href: route('finance.dashboard'),
-            routeName: 'finance.dashboard',
-        },
-        {
-            title: 'Keuangan Divisi',
-            icon: Wallet,
-            items: [
-                { title: 'Kas & Bank Divisi', href: route('finance.akun-kas.index'), routeName: 'finance.akun-kas.*' },
-                { title: 'Invoice Divisi', href: route('finance.invoices.index'), routeName: 'finance.invoices.*' },
-                { title: 'Laporan Keuangan', href: route('finance.laporan-keuangan.index'), routeName: 'finance.laporan-keuangan.*' },
-            ],
-        },
-        {
-            title: 'Procurement Approval (≤ 50jt)',
-            icon: ShoppingCart,
-            href: route('procurement.purchase-orders.index'),
-            routeName: 'procurement.purchase-orders.*',
-        },
-        {
-            title: 'Proyek (View)',
-            icon: FolderKanban,
-            href: route('core.proyek.index'),
-            routeName: 'core.proyek.*',
-        },
-    ],
+        'Ketua Divisi Finance': [
+            {
+                title: 'Dashboard Keuangan',
+                icon: LayoutDashboard,
+                href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'),
+                routeName: 'finance.*',
+            },
+            {
+                title: 'Keuangan Divisi',
+                icon: Wallet,
+                items: [
+                    { title: 'Kas & Bank Divisi', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*' },
+                    { title: 'Invoice Divisi', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: 'finance.invoice.*' },
+                    { title: 'Laporan Keuangan', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*' },
+                ],
+            },
+            {
+                title: 'Procurement Approval (≤ 50jt)',
+                icon: ShoppingCart,
+                href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'),
+                routeName: 'procurement.purchase-orders.*',
+            },
+            {
+                title: 'Proyek (View)',
+                icon: FolderKanban,
+                href: safeRoute('core.proyek.index', {}, '/core/proyek'),
+                routeName: 'core.proyek.*',
+            },
+        ],
 
-    'Ketua Divisi Armada': [
-        {
-            title: 'Dashboard Fleet',
-            icon: LayoutDashboard,
-            href: route('fleet.dashboard'),
-            routeName: 'fleet.dashboard',
-        },
-        {
-            title: 'Manajemen Armada',
-            icon: Truck,
-            items: [
-                { title: 'Daftar Armada', href: route('fleet.armada.index'), routeName: 'fleet.armada.*' },
-                { title: 'Jadwal Servis', href: route('fleet.armada.index', { status: 'servis' }), routeName: 'fleet.armada.service' },
-            ],
-        },
-        {
-            title: 'Ops Ritase & Sewa',
-            icon: Layers,
-            items: [
-                { title: 'Log Ritase', href: route('fleet.ritase.index'), routeName: 'fleet.ritase.*' },
-                { title: 'Sewa Alat Jam', href: route('fleet.sewa-alat.index'), routeName: 'fleet.sewa-alat.*' },
-            ],
-        },
-        {
-            title: 'Procurement Sparepart (≤ 25jt)',
-            icon: ShoppingCart,
-            href: route('procurement.purchase-orders.index'),
-            routeName: 'procurement.purchase-orders.*',
-        },
-    ],
+        'Ketua Divisi Armada': [
+            {
+                title: 'Dashboard Fleet',
+                icon: LayoutDashboard,
+                href: safeRoute('fleet.armada.index', {}, '/fleet/armada'),
+                routeName: 'fleet.*',
+            },
+            {
+                title: 'Manajemen Armada',
+                icon: Truck,
+                items: [
+                    { title: 'Daftar Armada', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*' },
+                    { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*' },
+                    { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*' },
+                ],
+            },
+            {
+                title: 'Procurement Sparepart (≤ 25jt)',
+                icon: ShoppingCart,
+                href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'),
+                routeName: 'procurement.purchase-orders.*',
+            },
+        ],
 
-    'Ketua Divisi Kontraktor': [
-        {
-            title: 'Dashboard Kontraktor',
-            icon: LayoutDashboard,
-            href: route('core.dashboard'),
-            routeName: 'core.dashboard',
-        },
-        {
-            title: 'Proyek & RAB',
-            icon: FolderKanban,
-            items: [
-                { title: 'Proyek Kontrak', href: route('core.proyek.index'), routeName: 'core.proyek.*' },
-                { title: 'RAB & Realisasi', href: route('core.rab.index'), routeName: 'core.rab.*' },
-            ],
-        },
-        {
-            title: 'SDM & Lapangan',
-            icon: Users,
-            items: [
-                { title: 'Karyawan Proyek', href: route('hr.karyawan.index'), routeName: 'hr.karyawan.*' },
-                { title: 'Presensi & Overtime', href: route('hr.presensi.index'), routeName: 'hr.presensi.*' },
-            ],
-        },
-        {
-            title: 'Procurement (≤ 30jt)',
-            icon: ShoppingCart,
-            href: route('procurement.purchase-orders.index'),
-            routeName: 'procurement.purchase-orders.*',
-        },
-    ],
+        'Ketua Divisi Kontraktor': [
+            {
+                title: 'Dashboard Proyek',
+                icon: LayoutDashboard,
+                href: safeRoute('core.proyek.index', {}, '/core/proyek'),
+                routeName: 'core.*',
+            },
+            {
+                title: 'Proyek & RAB',
+                icon: FolderKanban,
+                items: [
+                    { title: 'Proyek Kontrak', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*' },
+                ],
+            },
+            {
+                title: 'SDM Proyek',
+                icon: Users,
+                href: safeRoute('hr.karyawan.index', {}, '/hr/karyawan'),
+                routeName: 'hr.karyawan.*',
+            },
+            {
+                title: 'Procurement (≤ 30jt)',
+                icon: ShoppingCart,
+                href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'),
+                routeName: 'procurement.purchase-orders.*',
+            },
+        ],
 
-    'Ketua Divisi Produksi CBP': [
-        {
-            title: 'Dashboard Produksi CBP',
-            icon: LayoutDashboard,
-            href: route('production.dashboard'),
-            routeName: 'production.dashboard',
-        },
-        {
-            title: 'Produksi CBP',
-            icon: Factory,
-            items: [
-                { title: 'Sesi Produksi', href: route('production.sessions.index'), routeName: 'production.sessions.*' },
-                { title: 'Mix Design (BOM)', href: route('production.mix-design.index'), routeName: 'production.mix-design.*' },
-                { title: 'Uji QC Sample', href: route('production.qc.index'), routeName: 'production.qc.*' },
-                { title: 'Pengiriman Molen', href: route('production.pengiriman.index'), routeName: 'production.pengiriman.*' },
-            ],
-        },
-        {
-            title: 'Mesin Batching Plant',
-            icon: Wrench,
-            href: route('production.mesin.index'),
-            routeName: 'production.mesin.*',
-        },
-        {
-            title: 'Stok & Procurement (≤ 20jt)',
-            icon: ShoppingCart,
-            items: [
-                { title: 'Stok Bahan Baku', href: route('procurement.stok.index'), routeName: 'procurement.stok.*' },
-                { title: 'Purchase Orders', href: route('procurement.purchase-orders.index'), routeName: 'procurement.purchase-orders.*' },
-            ],
-        },
-    ],
+        'Ketua Divisi Produksi CBP': [
+            {
+                title: 'Dashboard Produksi CBP',
+                icon: LayoutDashboard,
+                href: safeRoute('production.dashboard', {}, '/production/dashboard'),
+                routeName: 'production.dashboard',
+            },
+            {
+                title: 'Produksi CBP',
+                icon: Factory,
+                items: [
+                    { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*' },
+                    { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*' },
+                    { title: 'Pengiriman Molen', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*' },
+                ],
+            },
+            {
+                title: 'Mesin Batching Plant',
+                icon: Wrench,
+                href: safeRoute('production.mesin.index', {}, '/production/mesin'),
+                routeName: 'production.mesin.*',
+            },
+            {
+                title: 'Procurement (≤ 20jt)',
+                icon: ShoppingCart,
+                href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'),
+                routeName: 'procurement.purchase-orders.*',
+            },
+        ],
 
-    'Ketua Divisi Produksi AMP': [
-        {
-            title: 'Dashboard Produksi AMP',
-            icon: LayoutDashboard,
-            href: route('production.dashboard'),
-            routeName: 'production.dashboard',
-        },
-        {
-            title: 'Produksi AMP (Hotmix)',
-            icon: Factory,
-            items: [
-                { title: 'Sesi Produksi Hotmix', href: route('production.sessions.index'), routeName: 'production.sessions.*' },
-                { title: 'Mix Design AMP', href: route('production.mix-design.index'), routeName: 'production.mix-design.*' },
-                { title: 'QC Hotmix', href: route('production.qc.index'), routeName: 'production.qc.*' },
-            ],
-        },
-        {
-            title: 'Mesin AMP',
-            icon: Wrench,
-            href: route('production.mesin.index'),
-            routeName: 'production.mesin.*',
-        },
-        {
-            title: 'Stok Bitumen & Agg',
-            icon: Package,
-            href: route('procurement.stok.index'),
-            routeName: 'procurement.stok.*',
-        },
-    ],
+        'Ketua Divisi Produksi AMP': [
+            {
+                title: 'Dashboard Produksi AMP',
+                icon: LayoutDashboard,
+                href: safeRoute('production.dashboard', {}, '/production/dashboard'),
+                routeName: 'production.dashboard',
+            },
+            {
+                title: 'Produksi AMP (Hotmix)',
+                icon: Factory,
+                items: [
+                    { title: 'Sesi Produksi Hotmix', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*' },
+                    { title: 'Mix Design AMP', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*' },
+                ],
+            },
+            {
+                title: 'Mesin AMP',
+                icon: Wrench,
+                href: safeRoute('production.mesin.index', {}, '/production/mesin'),
+                routeName: 'production.mesin.*',
+            },
+            {
+                title: 'Stok Bahan Baku',
+                icon: Package,
+                href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'),
+                routeName: 'procurement.bahan-baku.*',
+            },
+        ],
 
-    'Mandor Proyek': [
-        {
-            title: 'Dashboard Lapangan',
-            icon: LayoutDashboard,
-            href: route('dashboard'),
-            routeName: 'dashboard',
-        },
-        {
-            title: 'Proyek & RAB (View)',
-            icon: FolderKanban,
-            href: route('core.proyek.index'),
-            routeName: 'core.proyek.*',
-        },
-        {
-            title: 'Review Presensi & Cuti',
-            icon: Users,
-            items: [
-                { title: 'Presensi Karyawan', href: route('hr.presensi.index'), routeName: 'hr.presensi.*' },
-                { title: 'Pengajuan Cuti', href: route('hr.cuti.index'), routeName: 'hr.cuti.*' },
-            ],
-        },
-        {
-            title: 'Produksi Sesi',
-            icon: Factory,
-            href: route('production.sessions.index'),
-            routeName: 'production.sessions.*',
-        },
-    ],
+        'Mandor Proyek': [
+            {
+                title: 'Dashboard Utama',
+                icon: LayoutDashboard,
+                href: safeRoute('dashboard', {}, '/dashboard'),
+                routeName: 'dashboard',
+            },
+            {
+                title: 'Proyek (View)',
+                icon: FolderKanban,
+                href: safeRoute('core.proyek.index', {}, '/core/proyek'),
+                routeName: 'core.proyek.*',
+            },
+            {
+                title: 'Karyawan Proyek',
+                icon: Users,
+                href: safeRoute('hr.karyawan.index', {}, '/hr/karyawan'),
+                routeName: 'hr.karyawan.*',
+            },
+            {
+                title: 'Sesi Produksi',
+                icon: Factory,
+                href: safeRoute('production.sessions.index', {}, '/production/sessions'),
+                routeName: 'production.sessions.*',
+            },
+        ],
 
-    'Kontraktor': [
-        {
-            title: 'Portal Kontraktor',
-            icon: LayoutDashboard,
-            href: route('kontraktor.dashboard'),
-            routeName: 'kontraktor.dashboard',
-        },
-        {
-            title: 'Daftar Invoice (Read-only)',
-            icon: DollarSign,
-            href: route('kontraktor.invoices.index'),
-            routeName: 'kontraktor.invoices.*',
-        },
-        {
-            title: 'Log Komunikasi',
-            icon: MessageSquare,
-            href: route('kontraktor.log-komunikasi.index'),
-            routeName: 'kontraktor.log-komunikasi.*',
-        },
-    ],
-};
+        'Kontraktor': [
+            {
+                title: 'Portal Kontraktor',
+                icon: LayoutDashboard,
+                href: safeRoute('kontraktor.dashboard', {}, '/kontraktor/dashboard'),
+                routeName: 'kontraktor.*',
+            },
+        ],
+    };
 
-// =========================================================================
-// SIDEBAR COMPONENT IMPLEMENTATION
-// =========================================================================
+    return menus[currentRole] || menus['Owner'];
+}
 
 export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClose }) {
     const roles = user?.roles?.map((r) => r.name) || [user?.role || 'Owner'];
     const currentRole = activeRole || roles[0] || 'Owner';
 
-    // Get menu list for active role (fallback to Owner)
-    const menuList = MENU_CONFIG[currentRole] || MENU_CONFIG['Owner'] || [];
+    // Get dynamic menu list safely inside the render cycle
+    const menuList = getMenuConfig(currentRole);
 
     // Submenu collapse state
     const [openSubmenu, setOpenSubmenu] = useState({});
@@ -371,14 +354,17 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
     const isRouteActive = (pattern) => {
         if (!pattern) return false;
         try {
-            if (pattern.endsWith('.*')) {
-                const prefix = pattern.replace('.*', '');
-                return route().current().startsWith(prefix);
+            if (typeof route === 'function') {
+                if (pattern.endsWith('.*')) {
+                    const prefix = pattern.replace('.*', '');
+                    return route().current() ? route().current().startsWith(prefix) : false;
+                }
+                return route().current(pattern);
             }
-            return route().current(pattern);
         } catch (e) {
             return false;
         }
+        return false;
     };
 
     return (

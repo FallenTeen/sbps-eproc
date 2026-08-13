@@ -1,360 +1,680 @@
+import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
+import {
+    Building2, ShieldCheck, Truck, Factory, Users, Wallet, ShoppingCart,
+    FolderKanban, ArrowRight, CheckCircle2, ChevronRight, BookOpen, Presentation,
+    Award, BarChart3, Clock, DollarSign, Layers, FileText, Search, Play,
+    Check, Sparkles, AlertCircle, HelpCircle, Lock
+} from 'lucide-react';
 
-export default function Welcome({ auth, laravelVersion, phpVersion }) {
-    const handleImageError = () => {
-        document
-            .getElementById('screenshot-container')
-            ?.classList.add('!hidden');
-        document.getElementById('docs-card')?.classList.add('!row-span-1');
-        document
-            .getElementById('docs-card-content')
-            ?.classList.add('!flex-row');
-        document.getElementById('background')?.classList.add('!hidden');
+export default function Welcome({ auth, appName = 'SBPS OPS/Control', laravelVersion, phpVersion }) {
+    const [activeTab, setActiveTab] = useState('overview');
+    const [manualSection, setManualSection] = useState('bab1');
+    const [manualSearch, setManualSearch] = useState('');
+    const [selectedRole, setSelectedRole] = useState('Owner');
+
+    // System Modules Data
+    const modules = [
+        {
+            id: 'core',
+            title: 'Core Proyek & RAB',
+            icon: FolderKanban,
+            color: 'from-blue-600 to-indigo-600',
+            textColor: 'text-blue-600',
+            bgColor: 'bg-blue-50',
+            desc: 'Struktur hirarki Unit Bisnis → Proyek → Titik Lokasi. Kalkulasi realisasi RAB dilakukan on-the-fly dari akumulasi PO, ritase, produksi, dan gaji.',
+            features: [
+                'Manajemen Unit Bisnis (GCS, CBP, AMP, Kontraktor)',
+                'Pemetaan Titik Lokasi dengan koordinat GPS',
+                'Penyusunan RAB (Material, Sewa Alat, Upah, Overhead)',
+                'Perbandingan Realisasi RAB vs Rencana Anggaran Real-time',
+                'Penguncian RAB otomatis pada proses Procurement'
+            ]
+        },
+        {
+            id: 'procurement',
+            title: 'Procurement & PO Control',
+            icon: ShoppingCart,
+            color: 'from-orange-500 to-amber-600',
+            textColor: 'text-orange-600',
+            bgColor: 'bg-orange-50',
+            desc: 'Alur PO ketat: Draft → Submit (Validasi RAB) → Approval Matrix → Receive (Stok Bertambah) → Pay (Kas Berkurang).',
+            features: [
+                'Batas Approval PO Granular per Ketua Divisi (20jt - 50jt)',
+                'Owner Overrule untuk PO melebihi plafon RAB',
+                'Pengecualian PO Sparepart dari RAB (Keputusan Final #1)',
+                'Pencatatan Stok Bahan Baku & Price List Supplier',
+                'Penyelesaian Pembayaran Internal & Eksternal'
+            ]
+        },
+        {
+            id: 'fleet',
+            title: 'Fleet & GCS (Armada & Alat)',
+            icon: Truck,
+            color: 'from-emerald-600 to-teal-600',
+            textColor: 'text-emerald-600',
+            bgColor: 'bg-emerald-50',
+            desc: 'Pengelolaan armada dump truck, molen & alat berat. Pencatatan ritase harian, sewa alat HM, log BBM, downtime, dan reminder servis.',
+            features: [
+                'Log Ritase Harian dengan snapshot tarif rute otomatis',
+                'Pencatatan Sewa Alat Berat berbasis HM (Jam Mesin)',
+                'Manajemen Checklist Harian kondisi fisik armada',
+                'Monitoring BBM & Durasi Downtime Per-Unit',
+                'Integrasi otomatis ke Payroll Driver Borongan Rit'
+            ]
+        },
+        {
+            id: 'production',
+            title: 'Produksi (CBP & AMP)',
+            icon: Factory,
+            color: 'from-purple-600 to-indigo-600',
+            textColor: 'text-purple-600',
+            bgColor: 'bg-purple-50',
+            desc: 'Pengendalian operasional Batching Plant Concrete (CBP) dan Hotmix Asphalt (AMP) dari resep BOM hingga pengiriman.',
+            features: [
+                'Sesi Produksi Batching Plant & Asphalt Mix',
+                'Mix Design / Bill of Materials (BOM) pemakaian bahan baku',
+                'Sampling Quality Control (QC) & Pengujian Mutu',
+                'Pengiriman Truck Molen / Dump Truck',
+                'Otomatisasi pemotongan stok bahan baku & perhitungan HPP'
+            ]
+        },
+        {
+            id: 'hr',
+            title: 'HR & Payroll 3-Skema',
+            icon: Users,
+            color: 'from-rose-600 to-pink-600',
+            textColor: 'text-rose-600',
+            bgColor: 'bg-rose-50',
+            desc: 'Sistem pengupahan fleksibel mendukung 3 skema kerja industri konstruksi & manufaktur.',
+            features: [
+                'Skema Gaji Tetap (Bulanan)',
+                'Skema Gaji Harian (Presensi & Jam Lembur)',
+                'Skema Borongan Rit (Otomatis dari Akumulasi Ritase)',
+                'Pengelolaan Presensi, Overtime, dan Pengajuan Cuti',
+                'Formulir Pajak NPWP, PTKP & BPJS Kesehatan/Ketenagakerjaan'
+            ]
+        },
+        {
+            id: 'finance',
+            title: 'Keuangan & Invoice',
+            icon: Wallet,
+            color: 'from-cyan-600 to-blue-600',
+            textColor: 'text-cyan-600',
+            bgColor: 'bg-cyan-50',
+            desc: 'Konsolidasi keuangan holding, kas per divisi, invoicing unit bisnis, hingga Laporan Laba Rugi.',
+            features: [
+                'Manajemen Rekening Kas & Bank per Unit Bisnis',
+                'Transfer Internal antar Kas & Rekonsiliasi Mutasi',
+                'Generate Invoice dari Sesi Produksi, Ritase, & Sewa Alat',
+                'Pelacakan Piutang Klien & Kartu Piutang',
+                'Laporan Konsolidasi Laba Rugi & Perbandingan RAB'
+            ]
+        }
+    ];
+
+    // Manual Book Content
+    const manualSections = [
+        {
+            id: 'bab1',
+            title: 'Bab 1: Pendahuluan & Arsitektur System',
+            content: `
+### 1.1 Latar Belakang & Tujuan
+Aplikasi **${appName}** dirancang khusus untuk mengintegrasikan seluruh operasional usaha holding yang memiliki multi-unit bisnis:
+1. **Unit GCS (Galian C & Support Armada)** — Pengelolaan armada, ritase, dan sewa alat berat.
+2. **Unit CBP (Concrete Batching Plant)** — Produksi beton ready-mix, mix design, dan pengiriman molen.
+3. **Unit AMP (Asphalt Mixing Plant)** — Produksi hotmix asphalt dan QC pengaspalan.
+4. **Unit Kontraktor / Eksternal** — Pengawasan proyek kontrak klien dan portal invoice.
+
+### 1.2 Arsitektur Sistem
+Sistem menggunakan pendekatan **Domain-Driven Design (DDD)** yang membagi modul berdasarkan batas konteks (*bounded context*). Seluruh kalkulasi Realisasi RAB dihitung **on-the-fly** untuk menjamin data selalu mutakhir (*real-time*).
+            `
+        },
+        {
+            id: 'bab2',
+            title: 'Bab 2: Manajemen Proyek, Titik & RAB',
+            content: `
+### 2.1 Struktur Hirarki Data
+- **Unit Bisnis**: Entitas induk pemilik proyek atau penyedia armada/alat.
+- **Proyek**: Kontrak pekerjaan dengan klien atau proyek internal holding.
+- **Titik Lokasi**: Area spesifik tempat operasional berlangsung (misal: Quarry A, Titik Km 12).
+- **RAB (Rencana Anggaran Biaya)**: Dokumen anggaran Biaya Bahan Baku, Sewa Alat, Upah, dan Overhead.
+
+### 2.2 Aturan Validasi RAB
+- Setiap pengajuan Procurement PO bahan baku akan divalidasi secara otomatis terhadap sisa kuota RAB proyek.
+- Jika nominal PO melebihi sisa RAB, pengajuan ditolak sistem kecuali disetujui langsung oleh **Owner** (Owner Overrule).
+- PO Sparepart armada **dikecualikan** dari validasi RAB proyek.
+            `
+        },
+        {
+            id: 'bab3',
+            title: 'Bab 3: Alur Procurement & Matriks Approval',
+            content: `
+### 3.1 Siklus Purchase Order (PO)
+1. **Draft**: Pembuatan PO oleh Procurement Officer.
+2. **Submit**: Pengecekan sisa RAB & penguncian status.
+3. **Approval Matrix**:
+   - PO Armada (Sparepart): Limit Rp 25.000.000 (Ketua Divisi Armada).
+   - PO Bahan Baku Produksi: Limit Rp 20.000.000 (Ketua Divisi Produksi).
+   - PO Kontrak: Limit Rp 30.000.000 (Ketua Divisi Kontraktor).
+   - PO Keuangan Umum: Limit Rp 50.000.000 (Ketua Divisi Keuangan).
+   - PO di atas limit / over-budget: Wajib Approval **Owner**.
+4. **Receive**: Penerimaan barang di gudang → Stok bertambah otomatis.
+5. **Payment**: Pembayaran oleh Admin Keuangan → Mutasi kas berkurang.
+            `
+        },
+        {
+            id: 'bab4',
+            title: 'Bab 4: Operasional Fleet, Ritase & Sewa Alat',
+            content: `
+### 4.1 Pencatatan Ritase
+- Setiap pengiriman material dicatat berdasarkan rute perjalanan (` + '`RuteTarif`' + `).
+- Sistem mengambil *snapshot* tarif rute pada saat penginputan untuk mencegah perubahan data historis jika tarif rute diperbarui di kemudian hari.
+- Total upah borongan ritase dihitung dari: ` + '`Jumlah Rit × Tarif Snapshot`' + `.
+
+### 4.2 Sewa Alat Berat (HM)
+- Pencatatan dilakukan berdasarkan Jam Mesin (HM Awal & HM Akhir).
+- Pendapatan sewa dihitung otomatis dari total jam kerja dikali tarif/HM snapshot.
+- Sistem memberikan peringatan dini jika armada/alat belum melakukan servis rutin dalam 90 hari.
+            `
+        },
+        {
+            id: 'bab5',
+            title: 'Bab 5: Produksi CBP & AMP',
+            content: `
+### 5.1 Mix Design & Pengurangan Stok
+- Setiap formula beton (CBP) atau hotmix (AMP) menggunakan ` + '`MixDesign`' + ` (BOM).
+- Ketika sesi produksi diselesaikan, stok bahan baku (Semen, Pasir, Split, Bitumen, Additive) akan terpotong secara otomatis sesuai takaran porsi produksi.
+
+### 5.2 QC & Pengiriman
+- Sampel QC dicatat per batch produksi untuk pengujian kuat tekan / slump test.
+- Surat jalan pengiriman molen/dump truck langsung terhubung dengan laporan realisasi harian.
+            `
+        },
+        {
+            id: 'bab6',
+            title: 'Bab 6: SDM & Skema Payroll',
+            content: `
+### 6.1 Tiga Skema Pengupahan
+1. **Tetap (Bulanan)**: Menerima Gaji Pokok bulanan tetap + tunjangan.
+2. **Harian**: Dihitung dari jumlah hari presensi masuk × rate harian + jam lembur.
+3. **Borongan Rit**: Akumulasi nilai upah ritase dari log pengiriman armada selama periode payroll.
+
+### 6.2 Formulir Administrasi Karyawan
+- Pencatatan NPWP, Status PTKP (TK/0, K/1, dst.), No BPJS Kesehatan, dan No BPJS Ketenagakerjaan untuk pelaporan SPT & klaim jaminan.
+            `
+        },
+        {
+            id: 'bab7',
+            title: 'Bab 7: Konsolidasi Keuangan & Invoice',
+            content: `
+### 7.1 Pembukuan Kas & Bank
+- Setiap unit bisnis memegang rekening kas/bank tersendiri.
+- Mutasi antar rekening dilakukan melalui fitur ` + '`TransferKas`' + ` dengan approval penerima.
+
+### 7.2 Invoicing Unit Bisnis
+- Invoice ditagihkan ke klien berdasarkan 3 sumber tagihan:
+  1. Sesi Produksi CBP/AMP.
+  2. Ritase Armada GCS.
+  3. Sewa Alat Berat (HM).
+- Rekapitulasi Piutang Klien menyajikan kartu umur piutang (*Aging Receivables*).
+            `
+        },
+        {
+            id: 'bab8',
+            title: 'Bab 8: Matriks 14 Role & Wewenang Akses',
+            content: `
+### 8.1 Daftar Hak Akses Granular
+- **Owner**: Akses Super Admin menyeluruh + bypass approval & overrule RAB.
+- **Admin Keuangan**: Pembayaran PO, pencatatan kas, invoice & konsolidasi laba rugi.
+- **Ketua Divisi (5 Roles)**: Otorisasi operasional & approval PO sesuai limit divisi.
+- **Koordinator (5 Roles)**: Pengelolaan input operasional harian (Armada, CBP, AMP, Procurement, SDM).
+- **Mandor Proyek / Titik**: Monitoring proyek, presensi & formulir lapangan.
+- **Mitra Kontraktor**: Portal read-only invoice & log komunikasi eksternal.
+            `
+        }
+    ];
+
+    // Role Sandbox Options
+    const roleProfiles = {
+        Owner: {
+            title: 'Owner / Direktur Utama',
+            desc: 'Akses penuh ke seluruh unit bisnis, dashboard eksekutif, peta titik operasional, serta wewenang bypass PO over-budget.',
+            permissions: ['View Owner Dashboard', 'Approve All PO', 'Manage All Units', 'RAB Overrule', 'Konsolidasi Keuangan']
+        },
+        'Admin Keuangan': {
+            title: 'Admin Keuangan Holding',
+            desc: 'Mengelola transaksi kas/bank, pembayaran PO supplier, penagihan invoice klien, dan pengolahan laporan laba rugi.',
+            permissions: ['Manage Finance', 'Pay Approved PO', 'Generate Invoice', 'Manage Kas & Bank']
+        },
+        'Ketua Divisi Armada': {
+            title: 'Ketua Divisi Armada (GCS)',
+            desc: 'Memimpin operasional armada dump truck & alat berat, approval PO sparepart max 25jt, dan evaluasi performa ritase.',
+            permissions: ['Manage Fleet', 'Approve Fleet PO (≤25M)', 'View Proyek', 'Monitor Servis Armada']
+        },
+        'Koordinator CBP': {
+            title: 'Koordinator Plant CBP',
+            desc: 'Mengontrol sesi produksi beton ready-mix, pemakaian mix design (BOM), QC slump test, dan pengiriman molen.',
+            permissions: ['Manage Production CBP', 'Record Batching', 'Manage Mix Design', 'QC Sampling']
+        },
+        'Kontraktor': {
+            title: 'Mitra Kontraktor Klien',
+            desc: 'Portal khusus mitra eksternal untuk memantau progres produksi, ringkasan RAB agregat, invoice, dan log komunikasi.',
+            permissions: ['View Proyek Kontrak', 'Read-only Invoices', 'Post Log Komunikasi']
+        }
     };
+
+    const filteredManual = manualSections.filter(s =>
+        s.title.toLowerCase().includes(manualSearch.toLowerCase()) ||
+        s.content.toLowerCase().includes(manualSearch.toLowerCase())
+    );
 
     return (
         <>
-            <Head title="Welcome" />
-            <div className="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
-                <img
-                    id="background"
-                    className="absolute -left-20 top-0 max-w-[877px]"
-                    src="https://laravel.com/assets/img/welcome/background.svg"
-                />
-                <div className="relative flex min-h-screen flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
-                    <div className="relative w-full max-w-2xl px-6 lg:max-w-7xl">
-                        <header className="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3">
-                            <div className="flex lg:col-start-2 lg:justify-center">
-                                <svg
-                                    className="h-12 w-auto text-white lg:h-16 lg:text-[#FF2D20]"
-                                    viewBox="0 0 62 65"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M61.8548 14.6253C61.8778 14.7102 61.8895 14.7978 61.8897 14.8858V28.5615C61.8898 28.737 61.8434 28.9095 61.7554 29.0614C61.6675 29.2132 61.5409 29.3392 61.3887 29.4265L49.9104 36.0351V49.1337C49.9104 49.4902 49.7209 49.8192 49.4118 49.9987L25.4519 63.7916C25.3971 63.8227 25.3372 63.8427 25.2774 63.8639C25.255 63.8714 25.2338 63.8851 25.2101 63.8913C25.0426 63.9354 24.8666 63.9354 24.6991 63.8913C24.6716 63.8838 24.6467 63.8689 24.6205 63.8589C24.5657 63.8389 24.5084 63.8215 24.456 63.7916L0.501061 49.9987C0.348882 49.9113 0.222437 49.7853 0.134469 49.6334C0.0465019 49.4816 0.000120578 49.3092 0 49.1337L0 8.10652C0 8.01678 0.0124642 7.92953 0.0348998 7.84477C0.0423783 7.8161 0.0598282 7.78993 0.0697995 7.76126C0.0884958 7.70891 0.105946 7.65531 0.133367 7.6067C0.152063 7.5743 0.179485 7.54812 0.20192 7.51821C0.230588 7.47832 0.256763 7.43719 0.290416 7.40229C0.319084 7.37362 0.356476 7.35243 0.388883 7.32751C0.425029 7.29759 0.457436 7.26518 0.498568 7.2415L12.4779 0.345059C12.6296 0.257786 12.8015 0.211853 12.9765 0.211853C13.1515 0.211853 13.3234 0.257786 13.475 0.345059L25.4531 7.2415H25.4556C25.4955 7.26643 25.5292 7.29759 25.5653 7.32626C25.5977 7.35119 25.6339 7.37362 25.6625 7.40104C25.6974 7.43719 25.7224 7.47832 25.7523 7.51821C25.7735 7.54812 25.8021 7.5743 25.8196 7.6067C25.8483 7.65656 25.8645 7.70891 25.8844 7.76126C25.8944 7.78993 25.9118 7.8161 25.9193 7.84602C25.9423 7.93096 25.954 8.01853 25.9542 8.10652V33.7317L35.9355 27.9844V14.8846C35.9355 14.7973 35.948 14.7088 35.9704 14.6253C35.9792 14.5954 35.9954 14.5692 36.0053 14.5405C36.0253 14.4882 36.0427 14.4346 36.0702 14.386C36.0888 14.3536 36.1163 14.3274 36.1375 14.2975C36.1674 14.2576 36.1923 14.2165 36.2272 14.1816C36.2559 14.1529 36.292 14.1317 36.3244 14.1068C36.3618 14.0769 36.3942 14.0445 36.4341 14.0208L48.4147 7.12434C48.5663 7.03694 48.7383 6.99094 48.9133 6.99094C49.0883 6.99094 49.2602 7.03694 49.4118 7.12434L61.3899 14.0208C61.4323 14.0457 61.4647 14.0769 61.5021 14.1055C61.5333 14.1305 61.5694 14.1529 61.5981 14.1803C61.633 14.2165 61.6579 14.2576 61.6878 14.2975C61.7103 14.3274 61.7377 14.3536 61.7551 14.386C61.7838 14.4346 61.8 14.4882 61.8199 14.5405C61.8312 14.5692 61.8474 14.5954 61.8548 14.6253ZM59.893 27.9844V16.6121L55.7013 19.0252L49.9104 22.3593V33.7317L59.8942 27.9844H59.893ZM47.9149 48.5566V37.1768L42.2187 40.4299L25.953 49.7133V61.2003L47.9149 48.5566ZM1.99677 9.83281V48.5566L23.9562 61.199V49.7145L12.4841 43.2219L12.4804 43.2194L12.4754 43.2169C12.4368 43.1945 12.4044 43.1621 12.3682 43.1347C12.3371 43.1097 12.3009 43.0898 12.2735 43.0624L12.271 43.0586C12.2386 43.0275 12.2162 42.9888 12.1887 42.9539C12.1638 42.9203 12.1339 42.8916 12.114 42.8567L12.1127 42.853C12.0903 42.8156 12.0766 42.7707 12.0604 42.7283C12.0442 42.6909 12.023 42.656 12.013 42.6161C12.0005 42.5688 11.998 42.5177 11.9931 42.4691C11.9881 42.4317 11.9781 42.3943 11.9781 42.3569V15.5801L6.18848 12.2446L1.99677 9.83281ZM12.9777 2.36177L2.99764 8.10652L12.9752 13.8513L22.9541 8.10527L12.9752 2.36177H12.9777ZM18.1678 38.2138L23.9574 34.8809V9.83281L19.7657 12.2459L13.9749 15.5801V40.6281L18.1678 38.2138ZM48.9133 9.14105L38.9344 14.8858L48.9133 20.6305L58.8909 14.8846L48.9133 9.14105ZM47.9149 22.3593L42.124 19.0252L37.9323 16.6121V27.9844L43.7219 31.3174L47.9149 33.7317V22.3593ZM24.9533 47.987L39.59 39.631L46.9065 35.4555L36.9352 29.7145L25.4544 36.3242L14.9907 42.3482L24.9533 47.987Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
+            <Head title={`Landing & Manual Book — ${appName}`} />
+
+            <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+
+                {/* ─── TOP NAVIGATION BAR ─────────────────────────────────────── */}
+                <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-indigo-500/30">
+                                S
                             </div>
-                            <nav className="-mx-3 flex flex-1 justify-end">
-                                {auth.user ? (
+                            <div>
+                                <span className="text-lg font-extrabold tracking-tight text-white">{appName}</span>
+                                <span className="hidden sm:block text-[10px] text-indigo-400 font-semibold tracking-wider uppercase">Enterprise Multi-Unit System v5</span>
+                            </div>
+                        </div>
+
+                        {/* Navigation Links */}
+                        <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-slate-300">
+                            <button
+                                onClick={() => setActiveTab('overview')}
+                                className={`px-3.5 py-2 rounded-lg transition ${activeTab === 'overview' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-semibold' : 'hover:bg-slate-800/60 hover:text-white'}`}
+                            >
+                                Overview
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('modules')}
+                                className={`px-3.5 py-2 rounded-lg transition ${activeTab === 'modules' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-semibold' : 'hover:bg-slate-800/60 hover:text-white'}`}
+                            >
+                                Fitur & Modul
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('pitch')}
+                                className={`px-3.5 py-2 rounded-lg transition ${activeTab === 'pitch' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-semibold' : 'hover:bg-slate-800/60 hover:text-white'}`}
+                            >
+                                <Presentation className="w-4 h-4 inline mr-1 text-amber-400" /> Pitch Deck
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('manual')}
+                                className={`px-3.5 py-2 rounded-lg transition ${activeTab === 'manual' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-semibold' : 'hover:bg-slate-800/60 hover:text-white'}`}
+                            >
+                                <BookOpen className="w-4 h-4 inline mr-1 text-blue-400" /> Manual Book (v5)
+                            </button>
+                        </nav>
+
+                        {/* Action CTA */}
+                        <div className="flex items-center gap-3">
+                            {auth.user ? (
+                                <Link
+                                    href={route('dashboard')}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-indigo-600/30"
+                                >
+                                    <ShieldCheck className="w-4 h-4" /> Buka Dashboard
+                                </Link>
+                            ) : (
+                                <>
                                     <Link
-                                        href={route('dashboard')}
-                                        className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
+                                        href={route('login')}
+                                        className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition"
                                     >
-                                        Dashboard
+                                        Log in
                                     </Link>
-                                ) : (
-                                    <>
-                                        <Link
-                                            href={route('login')}
-                                            className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                                        >
-                                            Log in
-                                        </Link>
-                                        <Link
-                                            href={route('register')}
-                                            className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                                        >
-                                            Register
-                                        </Link>
-                                    </>
-                                )}
-                            </nav>
-                        </header>
-
-                        <main className="mt-6">
-                            <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-                                <a
-                                    href="https://laravel.com/docs"
-                                    id="docs-card"
-                                    className="flex flex-col items-start gap-6 overflow-hidden rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] md:row-span-3 lg:p-10 lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div
-                                        id="screenshot-container"
-                                        className="relative flex w-full flex-1 items-stretch"
+                                    <Link
+                                        href={route('login')}
+                                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-indigo-600/30"
                                     >
-                                        <img
-                                            src="https://laravel.com/assets/img/welcome/docs-light.svg"
-                                            alt="Laravel documentation screenshot"
-                                            className="aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.06)] dark:hidden"
-                                            onError={handleImageError}
-                                        />
-                                        <img
-                                            src="https://laravel.com/assets/img/welcome/docs-dark.svg"
-                                            alt="Laravel documentation screenshot"
-                                            className="hidden aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.25)] dark:block"
-                                        />
-                                        <div className="absolute -bottom-16 -left-16 h-40 w-[calc(100%+8rem)] bg-gradient-to-b from-transparent via-white to-white dark:via-zinc-900 dark:to-zinc-900"></div>
-                                    </div>
+                                        Masuk System <ArrowRight className="w-3.5 h-3.5" />
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </header>
 
-                                    <div className="relative flex items-center gap-6 lg:items-end">
-                                        <div
-                                            id="docs-card-content"
-                                            className="flex items-start gap-6 lg:flex-col"
-                                        >
-                                            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                                <svg
-                                                    className="size-5 sm:size-6"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        fill="#FF2D20"
-                                                        d="M23 4a1 1 0 0 0-1.447-.894L12.224 7.77a.5.5 0 0 1-.448 0L2.447 3.106A1 1 0 0 0 1 4v13.382a1.99 1.99 0 0 0 1.105 1.79l9.448 4.728c.14.065.293.1.447.1.154-.005.306-.04.447-.105l9.453-4.724a1.99 1.99 0 0 0 1.1-1.789V4ZM3 6.023a.25.25 0 0 1 .362-.223l7.5 3.75a.251.251 0 0 1 .138.223v11.2a.25.25 0 0 1-.362.224l-7.5-3.75a.25.25 0 0 1-.138-.22V6.023Zm18 11.2a.25.25 0 0 1-.138.224l-7.5 3.75a.249.249 0 0 1-.329-.099.249.249 0 0 1-.033-.12V9.772a.251.251 0 0 1 .138-.224l7.5-3.75a.25.25 0 0 1 .362.224v11.2Z"
-                                                    />
-                                                    <path
-                                                        fill="#FF2D20"
-                                                        d="m3.55 1.893 8 4.048a1.008 1.008 0 0 0 .9 0l8-4.048a1 1 0 0 0-.9-1.785l-7.322 3.706a.506.506 0 0 1-.452 0L4.454.108a1 1 0 0 0-.9 1.785H3.55Z"
-                                                    />
-                                                </svg>
-                                            </div>
+                {/* ─── HERO BANNER SECTION ───────────────────────────────────── */}
+                <section className="relative overflow-hidden pt-16 pb-20 border-b border-slate-800/60">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-3xl pointer-events-none"></div>
 
-                                            <div className="pt-3 sm:pt-5 lg:pt-0">
-                                                <h2 className="text-xl font-semibold text-black dark:text-white">
-                                                    Documentation
-                                                </h2>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-6">
+                            <Sparkles className="w-4 h-4 text-indigo-400" />
+                            <span>System Architecture v5.0 — Multi-Unit Enterprise Suite</span>
+                        </div>
 
-                                                <p className="mt-4 text-sm/relaxed">
-                                                    Laravel has wonderful
-                                                    documentation covering every
-                                                    aspect of the framework.
-                                                    Whether you are a newcomer
-                                                    or have prior experience
-                                                    with Laravel, we recommend
-                                                    reading our documentation
-                                                    from beginning to end.
-                                                </p>
-                                            </div>
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+                            Pengendalian Terpadu <br />
+                            <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+                                Realisasi RAB, Fleet & Produksi Holding
+                            </span>
+                        </h1>
+
+                        <p className="mt-6 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                            Platform terintegrasi untuk mengendalikan operasional <strong>Armada (GCS)</strong>, <strong>Batching Plant (CBP)</strong>, <strong>Hotmix (AMP)</strong>, serta <strong>Portal Kontraktor</strong> secara real-time tanpa kebocoran anggaran.
+                        </p>
+
+                        {/* CTA Buttons */}
+                        <div className="mt-10 flex flex-wrap justify-center gap-4">
+                            <button
+                                onClick={() => setActiveTab('pitch')}
+                                className="flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-bold text-sm shadow-xl shadow-indigo-600/25 transition transform hover:-translate-y-0.5"
+                            >
+                                <Presentation className="w-4 h-4" /> Lihat Pitch Deck Eksekutif
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('manual')}
+                                className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl font-bold text-sm transition"
+                            >
+                                <BookOpen className="w-4 h-4 text-blue-400" /> Buka Manual Book v5
+                            </button>
+                        </div>
+
+                        {/* Metrics Bar */}
+                        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
+                            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                                <p className="text-3xl font-black text-indigo-400">7 Module</p>
+                                <p className="text-xs text-slate-400 mt-1">Core, Fleet, Production, HR, Procurement, Finance, Kontraktor</p>
+                            </div>
+                            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                                <p className="text-3xl font-black text-emerald-400">14 Roles</p>
+                                <p className="text-xs text-slate-400 mt-1">Owner, Admin, 5 Ketua Divisi, Mandor, Driver, Kontraktor</p>
+                            </div>
+                            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                                <p className="text-3xl font-black text-amber-400">0% Leakage</p>
+                                <p className="text-xs text-slate-400 mt-1">Penguncian RAB Otomatis saat Submit Purchase Order</p>
+                            </div>
+                            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                                <p className="text-3xl font-black text-purple-400">3 Skema</p>
+                                <p className="text-xs text-slate-400 mt-1">Payroll Tetap, Harian Lembur, dan Borongan Ritase</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─── MAIN TABS CONTENT AREA ────────────────────────────────── */}
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+                    {/* TAB 1: OVERVIEW & ARCHITECTURE */}
+                    {activeTab === 'overview' && (
+                        <div className="space-y-16">
+                            {/* Value Proposition */}
+                            <div>
+                                <div className="text-center max-w-2xl mx-auto mb-12">
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white">Mengapa {appName}?</h2>
+                                    <p className="text-sm text-slate-400 mt-2">
+                                        Dirancang spesifik untuk memecahkan kompleksitas pengelolaan multi-unit bisnis dalam satu holding terintegrasi.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                                            <BarChart3 className="w-5 h-5" />
                                         </div>
-
-                                        <svg
-                                            className="size-6 shrink-0 stroke-[#FF2D20]"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                            />
-                                        </svg>
-                                    </div>
-                                </a>
-
-                                <a
-                                    href="https://laracasts.com"
-                                    className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M24 8.25a.5.5 0 0 0-.5-.5H.5a.5.5 0 0 0-.5.5v12a2.5 2.5 0 0 0 2.5 2.5h19a2.5 2.5 0 0 0 2.5-2.5v-12Zm-7.765 5.868a1.221 1.221 0 0 1 0 2.264l-6.626 2.776A1.153 1.153 0 0 1 8 18.123v-5.746a1.151 1.151 0 0 1 1.609-1.035l6.626 2.776ZM19.564 1.677a.25.25 0 0 0-.177-.427H15.6a.106.106 0 0 0-.072.03l-4.54 4.543a.25.25 0 0 0 .177.427h3.783c.027 0 .054-.01.073-.03l4.543-4.543ZM22.071 1.318a.047.047 0 0 0-.045.013l-4.492 4.492a.249.249 0 0 0 .038.385.25.25 0 0 0 .14.042h5.784a.5.5 0 0 0 .5-.5v-2a2.5 2.5 0 0 0-1.925-2.432ZM13.014 1.677a.25.25 0 0 0-.178-.427H9.101a.106.106 0 0 0-.073.03l-4.54 4.543a.25.25 0 0 0 .177.427H8.4a.106.106 0 0 0 .073-.03l4.54-4.543ZM6.513 1.677a.25.25 0 0 0-.177-.427H2.5A2.5 2.5 0 0 0 0 3.75v2a.5.5 0 0 0 .5.5h1.4a.106.106 0 0 0 .073-.03l4.54-4.543Z" />
-                                            </g>
-                                        </svg>
-                                    </div>
-
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Laracasts
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laracasts offers thousands of video
-                                            tutorials on Laravel, PHP, and
-                                            JavaScript development. Check them
-                                            out, see for yourself, and massively
-                                            level up your development skills in
-                                            the process.
+                                        <h3 className="text-lg font-bold text-white">Real-Time RAB Realisasi</h3>
+                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                            Realisasi RAB dihitung secara dinamis dari transaksi PO yang diterima, log ritase, produksi batch, dan payroll karyawan tanpa penyimpan statis.
                                         </p>
                                     </div>
 
-                                    <svg
-                                        className="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                        />
-                                    </svg>
-                                </a>
-
-                                <a
-                                    href="https://laravel-news.com"
-                                    className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M8.75 4.5H5.5c-.69 0-1.25.56-1.25 1.25v4.75c0 .69.56 1.25 1.25 1.25h3.25c.69 0 1.25-.56 1.25-1.25V5.75c0-.69-.56-1.25-1.25-1.25Z" />
-                                                <path d="M24 10a3 3 0 0 0-3-3h-2V2.5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2V20a3.5 3.5 0 0 0 3.5 3.5h17A3.5 3.5 0 0 0 24 20V10ZM3.5 21.5A1.5 1.5 0 0 1 2 20V3a.5.5 0 0 1 .5-.5h14a.5.5 0 0 1 .5.5v17c0 .295.037.588.11.874a.5.5 0 0 1-.484.625L3.5 21.5ZM22 20a1.5 1.5 0 1 1-3 0V9.5a.5.5 0 0 1 .5-.5H21a1 1 0 0 1 1 1v10Z" />
-                                                <path d="M12.751 6.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 7.3v-.5a.75.75 0 0 1 .751-.753ZM12.751 10.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 11.3v-.5a.75.75 0 0 1 .751-.753ZM4.751 14.047h10a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-10A.75.75 0 0 1 4 15.3v-.5a.75.75 0 0 1 .751-.753ZM4.75 18.047h7.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-7.5A.75.75 0 0 1 4 19.3v-.5a.75.75 0 0 1 .75-.753Z" />
-                                            </g>
-                                        </svg>
-                                    </div>
-
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Laravel News
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laravel News is a community driven
-                                            portal and newsletter aggregating
-                                            all of the latest and most important
-                                            news in the Laravel ecosystem,
-                                            including new package releases and
-                                            tutorials.
+                                    <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                            <Truck className="w-5 h-5" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-white">Armada & Sewa Alat HM</h3>
+                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                            Snapshot tarif rute otomatis mengunci upah ritase driver. Jam Mesin (HM) alat berat terpantau akurat dengan pemicu pengingat jadwal servis.
                                         </p>
                                     </div>
 
-                                    <svg
-                                        className="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                        />
-                                    </svg>
-                                </a>
-
-                                <div className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800">
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M16.597 12.635a.247.247 0 0 0-.08-.237 2.234 2.234 0 0 1-.769-1.68c.001-.195.03-.39.084-.578a.25.25 0 0 0-.09-.267 8.8 8.8 0 0 0-4.826-1.66.25.25 0 0 0-.268.181 2.5 2.5 0 0 1-2.4 1.824.045.045 0 0 0-.045.037 12.255 12.255 0 0 0-.093 3.86.251.251 0 0 0 .208.214c2.22.366 4.367 1.08 6.362 2.118a.252.252 0 0 0 .32-.079 10.09 10.09 0 0 0 1.597-3.733ZM13.616 17.968a.25.25 0 0 0-.063-.407A19.697 19.697 0 0 0 8.91 15.98a.25.25 0 0 0-.287.325c.151.455.334.898.548 1.328.437.827.981 1.594 1.619 2.28a.249.249 0 0 0 .32.044 29.13 29.13 0 0 0 2.506-1.99ZM6.303 14.105a.25.25 0 0 0 .265-.274 13.048 13.048 0 0 1 .205-4.045.062.062 0 0 0-.022-.07 2.5 2.5 0 0 1-.777-.982.25.25 0 0 0-.271-.149 11 11 0 0 0-5.6 2.815.255.255 0 0 0-.075.163c-.008.135-.02.27-.02.406.002.8.084 1.598.246 2.381a.25.25 0 0 0 .303.193 19.924 19.924 0 0 1 5.746-.438ZM9.228 20.914a.25.25 0 0 0 .1-.393 11.53 11.53 0 0 1-1.5-2.22 12.238 12.238 0 0 1-.91-2.465.248.248 0 0 0-.22-.187 18.876 18.876 0 0 0-5.69.33.249.249 0 0 0-.179.336c.838 2.142 2.272 4 4.132 5.353a.254.254 0 0 0 .15.048c1.41-.01 2.807-.282 4.117-.802ZM18.93 12.957l-.005-.008a.25.25 0 0 0-.268-.082 2.21 2.21 0 0 1-.41.081.25.25 0 0 0-.217.2c-.582 2.66-2.127 5.35-5.75 7.843a.248.248 0 0 0-.09.299.25.25 0 0 0 .065.091 28.703 28.703 0 0 0 2.662 2.12.246.246 0 0 0 .209.037c2.579-.701 4.85-2.242 6.456-4.378a.25.25 0 0 0 .048-.189 13.51 13.51 0 0 0-2.7-6.014ZM5.702 7.058a.254.254 0 0 0 .2-.165A2.488 2.488 0 0 1 7.98 5.245a.093.093 0 0 0 .078-.062 19.734 19.734 0 0 1 3.055-4.74.25.25 0 0 0-.21-.41 12.009 12.009 0 0 0-10.4 8.558.25.25 0 0 0 .373.281 12.912 12.912 0 0 1 4.826-1.814ZM10.773 22.052a.25.25 0 0 0-.28-.046c-.758.356-1.55.635-2.365.833a.25.25 0 0 0-.022.48c1.252.43 2.568.65 3.893.65.1 0 .2 0 .3-.008a.25.25 0 0 0 .147-.444c-.526-.424-1.1-.917-1.673-1.465ZM18.744 8.436a.249.249 0 0 0 .15.228 2.246 2.246 0 0 1 1.352 2.054c0 .337-.08.67-.23.972a.25.25 0 0 0 .042.28l.007.009a15.016 15.016 0 0 1 2.52 4.6.25.25 0 0 0 .37.132.25.25 0 0 0 .096-.114c.623-1.464.944-3.039.945-4.63a12.005 12.005 0 0 0-5.78-10.258.25.25 0 0 0-.373.274c.547 2.109.85 4.274.901 6.453ZM9.61 5.38a.25.25 0 0 0 .08.31c.34.24.616.561.8.935a.25.25 0 0 0 .3.127.631.631 0 0 1 .206-.034c2.054.078 4.036.772 5.69 1.991a.251.251 0 0 0 .267.024c.046-.024.093-.047.141-.067a.25.25 0 0 0 .151-.23A29.98 29.98 0 0 0 15.957.764a.25.25 0 0 0-.16-.164 11.924 11.924 0 0 0-2.21-.518.252.252 0 0 0-.215.076A22.456 22.456 0 0 0 9.61 5.38Z" />
-                                            </g>
-                                        </svg>
-                                    </div>
-
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Vibrant Ecosystem
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laravel's robust library of
-                                            first-party tools and libraries,
-                                            such as{' '}
-                                            <a
-                                                href="https://forge.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white dark:focus-visible:ring-[#FF2D20]"
-                                            >
-                                                Forge
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://vapor.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Vapor
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://nova.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Nova
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://envoyer.io"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Envoyer
-                                            </a>
-                                            , and{' '}
-                                            <a
-                                                href="https://herd.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Herd
-                                            </a>{' '}
-                                            help you take your projects to the
-                                            next level. Pair them with powerful
-                                            open source libraries like{' '}
-                                            <a
-                                                href="https://laravel.com/docs/billing"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Cashier
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://laravel.com/docs/dusk"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Dusk
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://laravel.com/docs/broadcasting"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Echo
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://laravel.com/docs/horizon"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Horizon
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://laravel.com/docs/sanctum"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Sanctum
-                                            </a>
-                                            ,{' '}
-                                            <a
-                                                href="https://laravel.com/docs/telescope"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Telescope
-                                            </a>
-                                            , and more.
+                                    <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+                                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                                            <ShieldCheck className="w-5 h-5" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-white">Approval Limit Granular</h3>
+                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                            Otorisasi bertingkat sesuai batas kewenangan Ketua Divisi (20jt - 50jt) serta hak Istimewa Owner untuk pembatalan over-budget.
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                        </main>
 
-                        <footer className="py-16 text-center text-sm text-black dark:text-white/70">
-                            Laravel v{laravelVersion} (PHP v{phpVersion})
-                        </footer>
+                            {/* Interactive Role Sandbox Preview */}
+                            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">Pratinjau Hak Akses Role (14 Roles)</h3>
+                                        <p className="text-xs text-slate-400 mt-1">Pilih role di bawah ini untuk melihat cakupan hak akses dalam sistem</p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Object.keys(roleProfiles).map((r) => (
+                                            <button
+                                                key={r}
+                                                onClick={() => setSelectedRole(r)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${selectedRole === r ? 'bg-indigo-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                                            >
+                                                {r}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {roleProfiles[selectedRole] && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-1 space-y-3">
+                                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Profil Jabatan</span>
+                                            <h4 className="text-lg font-bold text-white">{roleProfiles[selectedRole].title}</h4>
+                                            <p className="text-xs text-slate-400 leading-relaxed">{roleProfiles[selectedRole].desc}</p>
+                                        </div>
+
+                                        <div className="md:col-span-2 space-y-3">
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cakupan Otoritas System</span>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                {roleProfiles[selectedRole].permissions.map((p, idx) => (
+                                                    <div key={idx} className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200">
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                                        <span>{p}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 2: MODULES DETAILED BREAKDOWN */}
+                    {activeTab === 'modules' && (
+                        <div className="space-y-12">
+                            <div className="text-center max-w-2xl mx-auto">
+                                <h2 className="text-3xl font-bold text-white">Modul & Kapabilitas Utama</h2>
+                                <p className="text-sm text-slate-400 mt-2">Penjelasan komprehensif 6 modul inti penopang operasional holding</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {modules.map((m) => {
+                                    const Icon = m.icon;
+                                    return (
+                                        <div key={m.id} className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className={`p-3 rounded-2xl bg-gradient-to-br ${m.color} text-white shadow-lg`}>
+                                                        <Icon className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-white">{m.title}</h3>
+                                                        <span className={`text-[11px] font-semibold ${m.textColor}`}>Domain Module</span>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-xs text-slate-400 leading-relaxed mb-5">{m.desc}</p>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Fitur Inti:</p>
+                                                    {m.features.map((f, i) => (
+                                                        <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                                                            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                                            <span>{f}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-6 pt-4 border-t border-slate-800">
+                                                <Link href={route('login')} className="flex items-center justify-between text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                                                    <span>Buka Modul {m.title}</span>
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 3: PITCH DECK FOR EXECUTIVES */}
+                    {activeTab === 'pitch' && (
+                        <div className="space-y-12">
+                            <div className="bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 border border-indigo-500/30 rounded-3xl p-8 text-center max-w-3xl mx-auto space-y-4">
+                                <span className="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider">Executive Presentation</span>
+                                <h2 className="text-3xl font-black text-white">Presentasi Pitching Direksi</h2>
+                                <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
+                                    Transformasi Digital Pengendalian Multi-Unit Bisnis Kontraktor & Transportasi Berbasis Data Terintegrasi.
+                                </p>
+                            </div>
+
+                            {/* Challenges vs Solutions Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="bg-slate-900 border border-red-900/40 rounded-3xl p-6 space-y-4">
+                                    <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                                        <AlertCircle className="w-5 h-5" /> Tantangan Operasional Sebelum {appName}
+                                    </div>
+                                    <ul className="space-y-3 text-xs text-slate-400">
+                                        <li className="p-3 bg-red-950/30 rounded-xl border border-red-900/30">
+                                            ❌ <strong>Pembengkakan Anggaran RAB:</strong> Purchase Order bahan baku sering diterbitkan tanpa pengecekan sisa anggaran RAB proyek.
+                                        </li>
+                                        <li className="p-3 bg-red-950/30 rounded-xl border border-red-900/30">
+                                            ❌ <strong>Sewa Alat & Ritase Tidak Valid:</strong> Pengisian trip driver borongan & jam kerja alat berat rawan klaim ganda.
+                                        </li>
+                                        <li className="p-3 bg-red-950/30 rounded-xl border border-red-900/30">
+                                            ❌ <strong>Lambatnya Laporan Laba Rugi:</strong> Konsolidasi laporan kas holding memakan waktu berminggu-minggu secara manual.
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-slate-900 border border-emerald-900/40 rounded-3xl p-6 space-y-4">
+                                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                                        <CheckCircle2 className="w-5 h-5" /> Solusi & Dampak Strategis {appName}
+                                    </div>
+                                    <ul className="space-y-3 text-xs text-slate-300">
+                                        <li className="p-3 bg-emerald-950/30 rounded-xl border border-emerald-900/30">
+                                            ✅ <strong>Penguncian Anggaran Otomatis:</strong> Sistem menolak PO yang melebihi RAB proyek secara otomatis.
+                                        </li>
+                                        <li className="p-3 bg-emerald-950/30 rounded-xl border border-emerald-900/30">
+                                            ✅ <strong>Snapshot Rute & Jam Mesin HM:</strong> Tarif ritase terkunci aman saat input & reminder servis armada terpicu otomatis.
+                                        </li>
+                                        <li className="p-3 bg-emerald-950/30 rounded-xl border border-emerald-900/30">
+                                            ✅ <strong>Konsolidasi 1-Klik:</strong> Laporan Keuangan Laba Rugi per unit bisnis & konsolidasi siap dalam detik.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 4: INTERACTIVE MANUAL BOOK V5 */}
+                    {activeTab === 'manual' && (
+                        <div className="space-y-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <BookOpen className="w-5 h-5 text-indigo-400" /> Manual Book Sistem v5.0
+                                    </h2>
+                                    <p className="text-xs text-slate-400">Dokumentasi panduan operasional lengkap untuk seluruh pengguna</p>
+                                </div>
+
+                                {/* Search Bar */}
+                                <div className="relative w-full md:w-72">
+                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={manualSearch}
+                                        onChange={(e) => setManualSearch(e.target.value)}
+                                        placeholder="Cari topik / materi..."
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                {/* Navigation Tree Sidebar */}
+                                <div className="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-1 max-h-[500px] overflow-y-auto">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-2">Daftar Bab Manual</p>
+                                    {filteredManual.map((m) => (
+                                        <button
+                                            key={m.id}
+                                            onClick={() => setManualSection(m.id)}
+                                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-between ${manualSection === m.id ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                        >
+                                            <span className="truncate">{m.title}</span>
+                                            <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Content Display */}
+                                <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 min-h-[400px]">
+                                    {manualSections.find(s => s.id === manualSection) ? (
+                                        <div className="prose prose-invert prose-indigo max-w-none text-xs sm:text-sm leading-relaxed space-y-4">
+                                            <div
+                                                dangerouslySetInnerHTML={{
+                                                    __html: manualSections.find(s => s.id === manualSection).content
+                                                        .replace(/### (.*)/g, '<h3 class="text-base font-bold text-white mt-4 mb-2">$1</h3>')
+                                                        .replace(/1\. (.*)/g, '<li class="ml-4 list-decimal text-slate-300">$1</li>')
+                                                        .replace(/2\. (.*)/g, '<li class="ml-4 list-decimal text-slate-300">$1</li>')
+                                                        .replace(/3\. (.*)/g, '<li class="ml-4 list-decimal text-slate-300">$1</li>')
+                                                        .replace(/4\. (.*)/g, '<li class="ml-4 list-decimal text-slate-300">$1</li>')
+                                                        .replace(/- (.*)/g, '<li class="ml-4 list-disc text-slate-300">$1</li>')
+                                                        .replace(/\n/g, '<br/>')
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="py-12 text-center text-xs text-slate-400">Materi manual tidak ditemukan.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </main>
+
+                {/* ─── FOOTER ─────────────────────────────────────────────────── */}
+                <footer className="border-t border-slate-900 bg-slate-950 py-10 mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-200">{appName}</span>
+                            <span>— Powered by Laravel {laravelVersion} (PHP v{phpVersion})</span>
+                        </div>
+                        <p>© 2026 {appName}. Hak Cipta Dilindungi Undang-Undang.</p>
                     </div>
-                </div>
+                </footer>
+
             </div>
         </>
     );
