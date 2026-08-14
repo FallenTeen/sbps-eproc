@@ -6,19 +6,19 @@ import {
 } from 'lucide-react';
 
 const ICON_MAP = {
-    po_approval: <ShoppingCart className="w-4 h-4 text-orange-500" />,
-    servis_jatuh_tempo: <Wrench className="w-4 h-4 text-red-500" />,
-    invoice_jatuh_tempo: <FileText className="w-4 h-4 text-purple-500" />,
-    stok_minus: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
-    formulir_belum_isi: <Clock className="w-4 h-4 text-blue-500" />,
+    po_approval: <ShoppingCart className="w-4 h-4 text-black" />,
+    servis_jatuh_tempo: <Wrench className="w-4 h-4 text-black" />,
+    invoice_jatuh_tempo: <FileText className="w-4 h-4 text-black" />,
+    stok_minus: <AlertTriangle className="w-4 h-4 text-black" />,
+    formulir_belum_isi: <Clock className="w-4 h-4 text-black" />,
 };
 
 const COLOR_MAP = {
-    po_approval: 'bg-orange-50 border-orange-200',
-    servis_jatuh_tempo: 'bg-red-50 border-red-200',
-    invoice_jatuh_tempo: 'bg-purple-50 border-purple-200',
-    stok_minus: 'bg-yellow-50 border-yellow-200',
-    formulir_belum_isi: 'bg-blue-50 border-blue-200',
+    po_approval: 'bg-status-success.light border-2 border-status-success.DEFAULT',
+    servis_jatuh_tempo: 'bg-status-progress.light border-2 border-status-progress.DEFAULT',
+    invoice_jatuh_tempo: 'bg-status-success.light border-2 border-status-success.DEFAULT',
+    stok_minus: 'bg-status-progress.light border-2 border-status-progress.DEFAULT',
+    formulir_belum_isi: 'bg-white border-2 border-black',
 };
 
 export default function NotificationBell() {
@@ -44,11 +44,10 @@ export default function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 60000); // refresh every minute
+        const interval = setInterval(fetchNotifications, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // Close on outside click
     useEffect(() => {
         const handler = (e) => {
             if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -88,62 +87,60 @@ export default function NotificationBell() {
         <div className="relative" ref={ref}>
             <button
                 onClick={() => setOpen((v) => !v)}
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className="relative flex items-center justify-center w-9 h-9 border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all shadow-bw-sm"
                 aria-label="Notifikasi"
             >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-4.5 h-4.5" />
                 {unread > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 border-2 border-white bg-status-warning.DEFAULT text-white text-[10px] font-black leading-none">
                         {unread > 9 ? '9+' : unread}
                     </span>
                 )}
             </button>
 
             {open && (
-                <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 border-2 border-black bg-white shadow-bw-lg">
+                    <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-black text-white">
                         <div className="flex items-center gap-2">
-                            <Bell className="w-4 h-4 text-slate-500" />
-                            <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                            <Bell className="w-4 h-4 text-white" />
+                            <span className="font-black text-sm">
                                 Notifikasi
                             </span>
                             {unread > 0 && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-100 text-red-600 rounded-full">
-                                    {unread} baru
+                                <span className="px-2 py-0.5 text-[10px] font-black bg-white text-black border-2 border-white">
+                                    {unread} BARU
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                             {unread > 0 && (
-                                <button
-                                    onClick={markAllRead}
-                                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                                >
-                                    <CheckCheck className="w-3 h-3" /> Tandai semua dibaca
-                                </button>
+                                    <button
+                                        onClick={markAllRead}
+                                        className="flex items-center gap-1 text-[10px] font-bold text-white/80 hover:text-white border border-white/40 px-2 py-0.5"
+                                    >
+                                        <CheckCheck className="w-3 h-3" /> Tandai semua
+                                    </button>
                             )}
-                            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
-                    {/* List */}
-                    <div className="max-h-96 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800">
+                    <div className="max-h-96 overflow-y-auto divide-y divide-surface.border custom-scrollbar">
                         {loading && (
-                            <div className="py-8 text-center text-sm text-slate-400">Memuat...</div>
+                            <div className="py-8 text-center text-sm font-bold text-ink-secondary">Memuat...</div>
                         )}
                         {!loading && notifications.length === 0 && (
-                            <div className="py-8 text-center text-sm text-slate-400">
-                                <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <div className="py-8 text-center text-sm font-bold text-ink-secondary">
+                                <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                 Tidak ada notifikasi
                             </div>
                         )}
                         {!loading && notifications.map((notif) => (
                             <div
                                 key={notif.id}
-                                className={`flex gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition ${!notif.is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                                className={`flex gap-3 px-4 py-3 cursor-pointer transition-all border-l-4 ${!notif.is_read ? 'bg-surface.muted border-l-status-warning.DEFAULT hover:bg-surface.subtle' : 'bg-white border-l-transparent hover:bg-surface.muted'}`}
                                 onClick={() => {
                                     markRead(notif.id);
                                     if (notif.action_url) {
@@ -152,30 +149,29 @@ export default function NotificationBell() {
                                     }
                                 }}
                             >
-                                <div className={`flex-shrink-0 mt-0.5 w-8 h-8 rounded-lg border flex items-center justify-center ${COLOR_MAP[notif.type] || 'bg-slate-50 border-slate-200'}`}>
-                                    {ICON_MAP[notif.type] || <Bell className="w-4 h-4 text-slate-400" />}
+                                <div className={`flex-shrink-0 mt-0.5 w-9 h-9 flex items-center justify-center ${COLOR_MAP[notif.type] || 'bg-white border-2 border-black'}`}>
+                                    {ICON_MAP[notif.type] || <Bell className="w-4 h-4 text-ink.secondary" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className={`text-sm leading-tight ${!notif.is_read ? 'font-semibold text-slate-800 dark:text-slate-100' : 'text-slate-600 dark:text-slate-300'}`}>
+                                    <p className={`text-sm leading-tight ${!notif.is_read ? 'font-black text-ink.DEFAULT' : 'font-bold text-ink.secondary'}`}>
                                         {notif.title}
                                     </p>
-                                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notif.body}</p>
-                                    <p className="text-[10px] text-slate-400 mt-1">{notif.time_ago}</p>
+                                    <p className="text-xs text-ink.secondary mt-0.5 line-clamp-2 font-medium">{notif.body}</p>
+                                    <p className="text-[10px] text-ink.tertiary mt-1 font-bold">{notif.time_ago}</p>
                                 </div>
                                 {!notif.is_read && (
                                     <div className="flex-shrink-0 mt-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-blue-500 block"></span>
+                                        <span className="w-2.5 h-2.5 bg-status-warning.DEFAULT border-2 border-black block"></span>
                                     </div>
                                 )}
                             </div>
                         ))}
                     </div>
 
-                    {/* Footer */}
-                    <div className="border-t border-slate-100 dark:border-slate-800 px-4 py-2">
+                    <div className="border-t-2 border-black px-4 py-2 bg-black">
                         <Link
                             href="/notifications"
-                            className="flex items-center justify-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 py-1"
+                            className="flex items-center justify-center gap-1 text-xs font-black text-white hover:bg-white hover:text-black transition-all px-3 py-2 border-2 border-white"
                             onClick={() => setOpen(false)}
                         >
                             Lihat semua notifikasi <ChevronRight className="w-3 h-3" />

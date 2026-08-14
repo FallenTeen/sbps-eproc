@@ -1,3 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    body {
+        background-color: #FFFFFF;
+        color: #000000;
+    }
+
+    * {
+        border-color: #000000;
+    }
+
+    ::selection {
+        background: #000000;
+        color: #FFFFFF;
+    }
+}
+
+@layer components {
+    .bw-card {
+        @apply bg-white border-2 border-black shadow-bw-sm;
+    }
+
+    .bw-card-hover {
+        @apply bw-card hover:shadow-bw-md transition-shadow;
+    }
+
+    .bw-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-black text-white border-2 border-black font-bold text-sm transition-all hover:bg-white hover:text-black shadow-bw-sm;
+    }
+
+    .bw-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-white text-black border-2 border-black font-bold text-sm transition-all hover:bg-black hover:text-white shadow-bw-sm;
+    }
+
+    .bw-btn-danger {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-status-warning.DEFAULT text-white border-2 border-status-warning.dark font-bold text-sm transition-all hover:bg-status-warning.dark shadow-bw-sm;
+    }
+
+    .bw-input {
+        @apply w-full border-2 border-black bg-white px-3 py-2 text-sm font-medium text-black placeholder:text-ink-secondary focus:outline-none focus:ring-2 focus:ring-black focus:border-black;
+    }
+
+    .bw-label {
+        @apply block text-xs font-black uppercase tracking-wider text-ink.DEFAULT mb-1.5;
+    }
+
+    .bw-badge {
+        @apply inline-flex items-center px-2.5 py-1 text-[11px] font-black border-2;
+    }
+
+    .bw-badge-warning {
+        @apply bw-badge bg-status-warning.light text-status-warning.dark border-status-warning.DEFAULT;
+    }
+
+    .bw-badge-progress {
+        @apply bw-badge bg-status-progress.light text-status-progress.dark border-status-progress.DEFAULT;
+    }
+
+    .bw-badge-success {
+        @apply bw-badge bg-status-success.light text-status-success.dark border-status-success.DEFAULT;
+    }
+
+    .bw-table {
+        @apply w-full border-collapse;
+    }
+
+    .bw-table thead th {
+        @apply bg-black text-white text-xs font-black uppercase tracking-wider px-4 py-3 text-left border-2 border-black;
+    }
+
+    .bw-table tbody td {
+        @apply px-4 py-3 text-sm text-ink.DEFAULT border-b-2 border-surface.border bg-white;
+    }
+
+    .bw-table tbody tr:hover td {
+        @apply bg-surface.subtle;
+    }
+
+    .bw-status-dot {
+        @apply inline-block w-3 h-3 rounded-full border-2 border-black;
+    }
+}
+
+@layer utilities {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #000000;
+        border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #525252;
+    }
+
+    .text-shadow-hard {
+        text-shadow: 1px 1px 0 #000000;
+    }
+
+    .outline-hard {
+        outline: 2px solid #000000;
+        outline-offset: 2px;
+    }
+}

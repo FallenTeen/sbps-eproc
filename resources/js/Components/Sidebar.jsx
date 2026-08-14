@@ -20,9 +20,6 @@ import {
     Package,
 } from 'lucide-react';
 
-/**
- * Safe wrapper for Ziggy route helper to prevent runtime crashes when a route name is missing or mismatched.
- */
 function safeRoute(name, params = {}, fallback = '/dashboard') {
     try {
         if (typeof route === 'function' && route().has(name)) {
@@ -34,10 +31,6 @@ function safeRoute(name, params = {}, fallback = '/dashboard') {
     return fallback;
 }
 
-/**
- * Dynamic menu builder based on user active role.
- * Uses safeRoute helper to avoid top-level Ziggy crashes.
- */
 function getMenuConfig(currentRole) {
     const menus = {
         Owner: [
@@ -340,11 +333,7 @@ function getMenuConfig(currentRole) {
 export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClose }) {
     const roles = user?.roles?.map((r) => r.name) || [user?.role || 'Owner'];
     const currentRole = activeRole || roles[0] || 'Owner';
-
-    // Get dynamic menu list safely inside the render cycle
     const menuList = getMenuConfig(currentRole);
-
-    // Submenu collapse state
     const [openSubmenu, setOpenSubmenu] = useState({});
 
     const toggleSubmenu = (title) => {
@@ -369,36 +358,32 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
 
     return (
         <>
-            {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm md:hidden"
+                    className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
                     onClick={onClose}
                 />
             )}
 
-            {/* Sidebar Container */}
             <aside
-                className={`fixed top-0 left-0 z-50 h-screen w-64 transform bg-slate-900 text-slate-100 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+                className={`fixed top-0 left-0 z-50 h-screen w-64 transform bg-white text-ink.DEFAULT transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
                     isOpen ? 'translate-x-0' : '-translate-x-full'
-                } flex flex-col shadow-xl`}
+                } flex flex-col border-r-2 border-black shadow-bw-lg`}
             >
-                {/* Header: Brand & Unit Bisnis */}
-                <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
+                <div className="flex h-16 items-center justify-between border-b-2 border-black bg-black px-4">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-md">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold text-sm border-2 border-white">
                             S
                         </div>
                         <div>
-                            <span className="text-base font-bold tracking-tight text-white">SBPS System</span>
-                            <span className="block text-xs text-slate-400">Multi-Unit Bisnis v5</span>
+                            <span className="text-base font-black tracking-tight text-white">SBPS System</span>
+                            <span className="block text-[10px] font-semibold text-white/70">Multi-Unit Bisnis v5</span>
                         </div>
                     </Link>
                 </div>
 
-                {/* Role Switcher Section */}
-                <div className="border-b border-slate-800 bg-slate-950/60 p-3">
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                <div className="border-b-2 border-black bg-surface-muted p-3">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-ink-secondary mb-1.5">
                         Role Aktif
                     </label>
                     {roles.length > 1 ? (
@@ -406,7 +391,7 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
                             <select
                                 value={currentRole}
                                 onChange={(e) => onRoleSwitch && onRoleSwitch(e.target.value)}
-                                className="w-full rounded-md border border-slate-700 bg-slate-800 py-1.5 pl-2.5 pr-8 text-xs font-medium text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full rounded-none border-2 border-black bg-white py-2 pl-3 pr-10 text-xs font-bold text-ink.DEFAULT focus:border-black focus:outline-none focus:ring-2 focus:ring-black appearance-none cursor-pointer"
                             >
                                 {roles.map((role) => (
                                     <option key={role} value={role}>
@@ -414,16 +399,16 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
                                     </option>
                                 ))}
                             </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" />
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-800/80 px-2.5 py-1.5">
-                            <span className="text-xs font-semibold text-indigo-300">{currentRole}</span>
-                            <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
+                        <div className="flex items-center justify-between border-2 border-black bg-white px-3 py-2">
+                            <span className="text-xs font-black text-ink.DEFAULT">{currentRole}</span>
+                            <ShieldCheck className="h-4 w-4 text-ink.DEFAULT" />
                         </div>
                     )}
                 </div>
 
-                {/* Navigation Menu Links */}
                 <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
                     {menuList.map((item, idx) => {
                         const Icon = item.icon || Building2;
@@ -432,17 +417,17 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
                         const active = !hasSub ? isRouteActive(item.routeName) : item.items.some((sub) => isRouteActive(sub.routeName));
 
                         return (
-                            <div key={idx} className="space-y-0.5">
+                            <div key={idx} className="space-y-1">
                                 {!hasSub ? (
                                     <Link
                                         href={item.href}
-                                        className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-medium transition-all ${
+                                        className={`group flex items-center gap-3 px-3 py-2.5 text-xs font-bold transition-all border-2 ${
                                             active
-                                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                                                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                                ? 'bg-black text-white border-black shadow-bw'
+                                                : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
                                         }`}
                                     >
-                                        <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                                        <Icon className={`h-4.5 w-4.5 shrink-0 ${active ? 'text-white' : 'text-ink.DEFAULT group-hover:text-black'}`} />
                                         <span>{item.title}</span>
                                     </Link>
                                 ) : (
@@ -450,36 +435,35 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
                                         <button
                                             type="button"
                                             onClick={() => toggleSubmenu(item.title)}
-                                            className={`group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium transition-all ${
+                                            className={`group flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold transition-all border-2 ${
                                                 active
-                                                    ? 'bg-slate-800 text-indigo-300 font-semibold'
-                                                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                                                    ? 'bg-white text-ink.DEFAULT border-black shadow-bw-sm font-black'
+                                                    : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                                                <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
                                                 <span>{item.title}</span>
                                             </div>
                                             {isSubOpen ? (
-                                                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                                                <ChevronDown className="h-4 w-4 text-ink.DEFAULT" />
                                             ) : (
-                                                <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
+                                                <ChevronRight className="h-4 w-4 text-ink.DEFAULT" />
                                             )}
                                         </button>
 
-                                        {/* Submenu Level 2 */}
                                         {isSubOpen && (
-                                            <div className="mt-1 ml-4 border-l border-slate-800 pl-3 space-y-1">
+                                            <div className="mt-1 ml-4 border-l-2 border-black pl-3 space-y-1">
                                                 {item.items.map((sub, sIdx) => {
                                                     const subActive = isRouteActive(sub.routeName);
                                                     return (
                                                         <Link
                                                             key={sIdx}
                                                             href={sub.href}
-                                                            className={`block rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                                                            className={`block px-2.5 py-2 text-[11px] font-bold transition-all border-2 -ml-[1px] ${
                                                                 subActive
-                                                                    ? 'bg-indigo-600/20 text-indigo-300 font-semibold border-l-2 border-indigo-500'
-                                                                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                                                                    ? 'bg-black text-white border-black'
+                                                                    : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
                                                             }`}
                                                         >
                                                             {sub.title}
@@ -495,15 +479,14 @@ export default function Sidebar({ user, activeRole, onRoleSwitch, isOpen, onClos
                     })}
                 </nav>
 
-                {/* Footer User Info */}
-                <div className="border-t border-slate-800 bg-slate-950 p-3">
+                <div className="border-t-2 border-black bg-black p-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 font-bold text-xs text-indigo-400">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-none bg-white text-black font-black text-sm border-2 border-white">
                             {user?.name?.substring(0, 2).toUpperCase() || 'US'}
                         </div>
-                        <div className="truncate text-xs">
-                            <div className="font-semibold text-slate-200 truncate">{user?.name}</div>
-                            <div className="text-[10px] text-slate-400 truncate">{user?.email}</div>
+                        <div className="truncate text-xs flex-1 min-w-0">
+                            <div className="font-black text-white truncate">{user?.name}</div>
+                            <div className="text-[10px] text-white/70 truncate">{user?.email}</div>
                         </div>
                     </div>
                 </div>
