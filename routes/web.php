@@ -53,6 +53,8 @@ use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
 use App\Http\Controllers\DashboardController;
 // Notifications
 use App\Http\Controllers\NotificationController;
+// Role Switcher
+use App\Http\Controllers\RoleSwitchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +84,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
 
+    // Role Switcher
+    Route::post('/switch-role', [RoleSwitchController::class, 'switch'])->name('switch-role');
 
     // ============================================================
     // CORE MODULE - Proyek, Titik, RAB, Unit Bisnis
@@ -130,6 +134,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Pembayaran (internal)
         Route::resource('pembayaran', PembayaranController::class)->only(['index', 'show']);
+        Route::get('pembayaran/{pembayaran}/print', [PembayaranController::class, 'print'])->name('pembayaran.print');
     });
 
     // ============================================================
@@ -152,13 +157,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('serviceable/{type}/{id}/service-history', [ServiceHistoryController::class, 'index'])->name('service-history.index');
 
         // Checklist Harian
-        Route::resource('checklist-harian', ChecklistHarianController::class)->only(['store', 'update']);
-        Route::get('checklistable/{type}/{id}/checklists', [ChecklistHarianController::class, 'index'])->name('checklist-harian.index');
+        // NOTE: rute yang khusus (by-date, bulk, checklistable/*) didaftarkan
+        // SEBELUM Route::resource, supaya tidak "ketabrak" oleh wildcard
+        // {checklist_harian} milik resource route.
+        Route::get('checklist-harian', [ChecklistHarianController::class, 'index'])->name('checklist-harian.index');
+        Route::get('checklist-harian/by-date/{date}', [ChecklistHarianController::class, 'byDate'])->name('checklist-harian.by-date');
         Route::post('checklist-harian/bulk', [ChecklistHarianController::class, 'bulkStore'])->name('checklist-harian.bulk');
+        Route::get('checklistable/{type}/{id}/checklist/create', [ChecklistHarianController::class, 'create'])->name('checklist-harian.create');
+        Route::get('checklistable/{type}/{id}/checklists', [ChecklistHarianController::class, 'byCheckable'])->name('checklist-harian.by-checkable');
+        Route::resource('checklist-harian', ChecklistHarianController::class)->only(['store', 'show', 'update']);
 
         // BBM
-        Route::resource('bbm', BbmLogController::class)->only(['store', 'update', 'destroy']);
-        Route::get('serviceable/{type}/{id}/bbm', [BbmLogController::class, 'index'])->name('bbm.index');
+        // NOTE: sama seperti checklist-harian, rute custom didaftarkan
+        // SEBELUM Route::resource supaya tidak ketabrak wildcard {bbm}.
+        Route::get('bbm', [BbmLogController::class, 'index'])->name('bbm.index');
+        Route::get('bbm/anomaly', [BbmLogController::class, 'anomaly'])->name('bbm.anomaly');
+        Route::get('serviceable/{type}/{id}/bbm/create', [BbmLogController::class, 'create'])->name('bbm.create');
+        Route::get('serviceable/{type}/{id}/bbm', [BbmLogController::class, 'byServiceable'])->name('bbm.by-serviceable');
+        Route::resource('bbm', BbmLogController::class)->only(['store', 'show', 'update', 'destroy']);
 
         // Downtime
         Route::resource('downtime', DowntimeLogController::class)->only(['store', 'update', 'destroy']);

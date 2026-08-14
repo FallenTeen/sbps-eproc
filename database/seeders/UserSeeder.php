@@ -24,6 +24,7 @@ class UserSeeder extends Seeder
                 'role' => 'Owner',
                 'unit_bisnis_id' => null,
                 'divisi' => 'Manajemen',
+                'is_active' => true,
             ],
             [
                 'email' => 'adminkeug@example.com',
@@ -33,6 +34,7 @@ class UserSeeder extends Seeder
                 'role' => 'Admin Keuangan',
                 'unit_bisnis_id' => null,
                 'divisi' => 'Finance',
+                'is_active' => true,
             ],
             [
                 'email'         => 'ketua.finance@example.com',
@@ -42,6 +44,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Ketua Divisi Keuangan',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Finance',
+                'is_active' => true,
             ],
             [
                 'email'         => 'ketua.armada@example.com',
@@ -51,6 +54,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Ketua Divisi Armada',
                 'unit_bisnis_id' => $gcs ? $gcs->id : null,
                 'divisi'        => 'Armada',
+                'is_active' => true,
             ],
             [
                 'email'         => 'ketua.kontraktor@example.com',
@@ -60,6 +64,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Ketua Divisi Kontraktor',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Kontraktor',
+                'is_active' => true,
             ],
             [
                 'email'         => 'ketua.cbp@example.com',
@@ -69,6 +74,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Ketua Divisi Produksi CBP',
                 'unit_bisnis_id' => $cbp ? $cbp->id : null,
                 'divisi'        => 'Produksi',
+                'is_active' => true,
             ],
             [
                 'email'         => 'ketua.amp@example.com',
@@ -78,6 +84,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Ketua Divisi Produksi AMP',
                 'unit_bisnis_id' => $amp ? $amp->id : null,
                 'divisi'        => 'Produksi',
+                'is_active' => true,
             ],
             [
                 'email'         => 'procurement@example.com',
@@ -87,6 +94,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Koordinator Procurement',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Procurement',
+                'is_active' => true,
             ],
             [
                 'email'         => 'gcs@example.com',
@@ -96,6 +104,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Koordinator GCS',
                 'unit_bisnis_id' => $gcs ? $gcs->id : null,
                 'divisi'        => 'Armada',
+                'is_active' => true,
             ],
             [
                 'email'         => 'cbp@example.com',
@@ -105,6 +114,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Koordinator CBP',
                 'unit_bisnis_id' => $cbp ? $cbp->id : null,
                 'divisi'        => 'Produksi',
+                'is_active' => true,
             ],
             [
                 'email'         => 'amp@example.com',
@@ -114,6 +124,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Koordinator AMP',
                 'unit_bisnis_id' => $amp ? $amp->id : null,
                 'divisi'        => 'Produksi',
+                'is_active' => true,
             ],
             [
                 'email'         => 'sdm@example.com',
@@ -123,6 +134,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Koordinator SDM',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'HR',
+                'is_active' => true,
             ],
             [
                 'email'         => 'mandor@example.com',
@@ -132,6 +144,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Mandor Proyek',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Lapangan',
+                'is_active' => true,
             ],
             [
                 'email'         => 'mandor.titik@example.com',
@@ -141,6 +154,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Mandor Titik',
                 'unit_bisnis_id' => $gcs ? $gcs->id : null,
                 'divisi'        => 'Lapangan',
+                'is_active' => true,
             ],
             [
                 'email'         => 'driver.standby@example.com',
@@ -150,6 +164,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Driver Standby',
                 'unit_bisnis_id' => $gcs ? $gcs->id : null,
                 'divisi'        => 'Armada',
+                'is_active' => true,
             ],
             [
                 'email'         => 'driver.kondisional@example.com',
@@ -159,6 +174,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Driver Kondisional',
                 'unit_bisnis_id' => $gcs ? $gcs->id : null,
                 'divisi'        => 'Armada',
+                'is_active' => true,
             ],
             [
                 'email'         => 'sdm.lapangan@example.com',
@@ -168,6 +184,7 @@ class UserSeeder extends Seeder
                 'role'          => 'SDM Lapangan Kondisional',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Lapangan',
+                'is_active' => true,
             ],
             [
                 'email'         => 'kontraktor@example.com',
@@ -177,6 +194,7 @@ class UserSeeder extends Seeder
                 'role'          => 'Kontraktor',
                 'unit_bisnis_id' => null,
                 'divisi'        => 'Eksternal',
+                'is_active' => true,
             ],
         ];
 

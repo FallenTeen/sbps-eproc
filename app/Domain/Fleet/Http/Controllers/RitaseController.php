@@ -14,18 +14,23 @@ use Carbon\Carbon;
 
 class RitaseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Ritase::class);
+
         $query = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek']);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('armada', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->whereHas('driver', fn ($d) => $d->where('nama', 'like', "%{$search}%"))
-                  ->orWhereHas('armada', fn ($a) => $a->where('nama_unit', 'like', "%{$search}%")->orWhere('nomor_polisi', 'like', "%{$search}%"));
+                  ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
             });
         }
 
@@ -39,14 +44,28 @@ class RitaseController extends Controller
 
         $ritase = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
 
-        // Calculate statistics for dashboard header
         $today = Carbon::today();
-        $totalTripToday = Ritase::whereDate('tanggal', $today)->sum('jumlah_rit');
-        $totalUpahBulan = Ritase::whereMonth('tanggal', now()->month)->whereYear('tanggal', now()->year)
-            ->get()->sum(fn ($r) => $r->total_upah_rit);
-        $armadaBeroperasi = Ritase::whereDate('tanggal', $today)->distinct('armada_id')->count('armada_id');
+        $baseStatsQuery = Ritase::query();
+        if ($request->user()->unit_bisnis_id) {
+            $baseStatsQuery->whereHas('armada', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
 
-        $armadaList = Armada::select('id', 'nama_unit', 'nomor_polisi')->orderBy('nama_unit')->get();
+        $statsTodayQuery = (clone $baseStatsQuery)->whereDate('tanggal', $today);
+        $statsMonthQuery = (clone $baseStatsQuery)
+            ->whereMonth('tanggal', now()->month)
+            ->whereYear('tanggal', now()->year);
+
+        $totalTripToday = (clone $statsTodayQuery)->sum('jumlah_rit');
+        $totalUpahBulan = (clone $statsMonthQuery)->get()->sum(fn ($r) => $r->total_upah_rit);
+        $armadaBeroperasi = (clone $statsTodayQuery)->distinct('armada_id')->count('armada_id');
+
+        $armadaListQuery = Armada::query();
+        if ($request->user()->unit_bisnis_id) {
+            $armadaListQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+        }
+        $armadaList = $armadaListQuery->select('id', 'kode_unit', 'plat_nomor')->orderBy('kode_unit')->get();
 
         return Inertia::render('Fleet/Ritase/Index', [
             'ritase' => $ritase,
@@ -57,19 +76,30 @@ class RitaseController extends Controller
                 'total_volume_today' => 0,
                 'total_upah_bulan' => $totalUpahBulan,
                 'armada_beroperasi' => $armadaBeroperasi,
-            ]
+            ],
+            'can' => [
+                'create' => $request->user()->can('create', Ritase::class),
+            ],
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
-        $armadaList = Armada::select('id', 'nama_unit', 'nomor_polisi', 'jenis')->orderBy('nama_unit')->get();
-        $ruteList = RuteTarif::select('id', 'nama_rute', 'tarif_per_trip', 'lokasi_muat', 'lokasi_bongkar')->get();
-        $driverList = Karyawan::select('id', 'nama as nama_lengkap')->where('status', 'aktif')->get();
-        $proyekList = Proyek::select('id', 'nama_proyek')->get();
+        $this->authorize('create', Ritase::class);
+
+        $user = $request->user();
+        $armadaQuery = Armada::query();
+        if ($user->unit_bisnis_id) {
+            $armadaQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $armadaList = $armadaQuery->select('id', 'kode_unit', 'plat_nomor', 'jenis')->orderBy('kode_unit')->get();
+        $ruteList = RuteTarif::select('id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit')->get();
+        $driverList = Karyawan::select('id', 'nama')->where('status', 'aktif')->get();
+        $proyekQuery = Proyek::query();
+        if ($user->unit_bisnis_id) {
+            $proyekQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $proyekList = $proyekQuery->select('id', 'nama')->get();
 
         return Inertia::render('Fleet/Ritase/Create', [
             'armadaList' => $armadaList,
@@ -79,11 +109,10 @@ class RitaseController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        $this->authorize('create', Ritase::class);
+
         $validated = $request->validate([
             'armada_id'     => 'required|exists:armadas,id',
             'karyawan_id'   => 'required|exists:karyawans,id',
@@ -103,7 +132,7 @@ class RitaseController extends Controller
             'proyek_id'              => $validated['proyek_id'] ?? null,
             'tanggal'                => $validated['tanggal'],
             'jumlah_rit'             => $validated['jumlah_trip'],
-            'tarif_per_rit_snapshot' => $rute->tarif_per_trip,
+            'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
             'status'                 => 'disetujui',
             'catatan'                => $validated['catatan'] ?? null,
         ]);
@@ -111,9 +140,10 @@ class RitaseController extends Controller
         return redirect()->route('fleet.ritase.index')->with('success', 'Ritase harian berhasil dicatat.');
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $ritase = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek', 'biayaLain'])->findOrFail($id);
+        $this->authorize('view', $ritase);
         return response()->json($ritase);
     }
 }

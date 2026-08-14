@@ -21,6 +21,8 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Invoice::class);
+
         $status = $request->input('status');
         $unitBisnisId = $request->input('unit_bisnis_id');
 
@@ -65,6 +67,8 @@ class InvoiceController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('create', Invoice::class);
+
         return Inertia::render('Finance/Invoice/Create', [
             'unitBisnisList' => UnitBisnis::all(['id', 'nama', 'kode']),
             'proyekList' => Proyek::all(['id', 'nama', 'unit_bisnis_id']),
@@ -73,6 +77,8 @@ class InvoiceController extends Controller
 
     public function unbilledItems(Request $request)
     {
+        $this->authorize('viewAny', Invoice::class);
+
         $unitBisnisId = $request->input('unit_bisnis_id');
         $proyekId = $request->input('proyek_id');
         $sumber = $request->input('sumber_tagihan'); // produksi, ritase, sewa_alat
@@ -144,6 +150,8 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Invoice::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'proyek_id' => 'nullable|exists:proyeks,id',
@@ -177,6 +185,8 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
+        $this->authorize('view', $invoice);
+
         $invoice->load(['unitBisnis', 'proyek', 'items', 'pembayaranKlien.akunKasBank']);
 
         $total = (float)$invoice->items->sum('subtotal');
@@ -224,6 +234,8 @@ class InvoiceController extends Controller
 
     public function send(Invoice $invoice)
     {
+        $this->authorize('send', $invoice);
+
         $invoice->update(['status' => 'terkirim']);
         return redirect()->back()->with('success', 'Invoice berhasil diubah statusnya menjadi Terkirim.');
     }

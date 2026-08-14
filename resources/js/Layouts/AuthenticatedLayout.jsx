@@ -8,16 +8,13 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const { auth } = usePage().props;
+    const user = auth?.user;
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [activeRole, setActiveRole] = useState(null);
 
     return (
         <div className="flex min-h-screen bg-white">
             <Sidebar
-                user={user}
-                activeRole={activeRole}
-                onRoleSwitch={(newRole) => setActiveRole(newRole)}
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
             />

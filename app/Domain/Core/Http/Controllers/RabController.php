@@ -16,14 +16,26 @@ class RabController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Rab::class);
+
         $query = Rab::with(['proyek', 'titik']);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('proyek', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
 
         if ($request->has('proyek_id')) {
             $query->where('proyek_id', $request->proyek_id);
         }
 
         $rabs = $query->paginate(15)->withQueryString();
-        $proyeks = Proyek::where('status', 'aktif')->get();
+        $proyeksQuery = Proyek::where('status', 'aktif');
+        if ($request->user()->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+        }
+        $proyeks = $proyeksQuery->get();
 
         return Inertia::render('Core/Rab/Index', [
             'rabs' => $rabs,
@@ -34,7 +46,13 @@ class RabController extends Controller
 
     public function create(Request $request)
     {
-        $proyeks = Proyek::where('status', 'aktif')->get();
+        $this->authorize('create', Rab::class);
+
+        $proyeksQuery = Proyek::where('status', 'aktif');
+        if ($request->user()->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+        }
+        $proyeks = $proyeksQuery->get();
         $selectedProyek = $request->proyek_id ?? null;
         return Inertia::render('Core/Rab/Create', [
             'proyeks' => $proyeks,
@@ -44,6 +62,8 @@ class RabController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Rab::class);
+
         $validated = $request->validate([
             'proyek_id' => 'required|exists:proyeks,id',
             'titik_id' => 'nullable|exists:titiks,id',
@@ -61,6 +81,8 @@ class RabController extends Controller
 
     public function show(Rab $rab)
     {
+        $this->authorize('view', $rab);
+
         $realisasi = (new GetRABRealisasiAction())->execute($rab);
         $perbandingan = (new CompareRABRealisasiAction())->execute($rab);
 
@@ -73,7 +95,13 @@ class RabController extends Controller
 
     public function edit(Rab $rab)
     {
-        $proyeks = Proyek::where('status', 'aktif')->get();
+        $this->authorize('update', $rab);
+
+        $proyeksQuery = Proyek::where('status', 'aktif');
+        if (auth()->user()->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', auth()->user()->unit_bisnis_id);
+        }
+        $proyeks = $proyeksQuery->get();
         return Inertia::render('Core/Rab/Edit', [
             'rab' => $rab,
             'proyeks' => $proyeks,
@@ -82,6 +110,8 @@ class RabController extends Controller
 
     public function update(Request $request, Rab $rab)
     {
+        $this->authorize('update', $rab);
+
         $validated = $request->validate([
             'rencana' => 'required|numeric|min:0',
             'catatan' => 'nullable|string',
@@ -95,6 +125,8 @@ class RabController extends Controller
 
     public function destroy(Rab $rab)
     {
+        $this->authorize('delete', $rab);
+
         $rab->delete();
         return redirect()->route('core.rab.index')
             ->with('success', 'RAB dihapus.');

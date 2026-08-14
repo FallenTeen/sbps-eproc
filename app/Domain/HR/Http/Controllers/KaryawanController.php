@@ -14,6 +14,8 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Karyawan::class);
+
         $query = Karyawan::with(['user', 'assignments' => function($q) {
             $q->where('status', 'aktif')->with('titik');
         }]);
@@ -33,6 +35,17 @@ class KaryawanController extends Controller
 
         $karyawans = $query->orderBy('nama')->paginate(15)->withQueryString();
 
+        $user = $request->user();
+        $canManageHr = $user && ($user->hasRole(['Owner', 'Koordinator SDM']) || $user->hasPermissionTo('manage hr'));
+
+        // Sembunyikan field gaji untuk role yang tidak berhak
+        if (!$canManageHr) {
+            $karyawans->getCollection()->transform(function ($karyawan) {
+                $karyawan->makeHidden(['rate_gaji_pokok', 'rate_harian', 'npwp', 'no_bpjs_kesehatan', 'no_bpjs_ketenagakerjaan']);
+                return $karyawan;
+            });
+        }
+
         return Inertia::render('HR/Karyawan/Index', [
             'karyawans' => $karyawans,
             'filters' => $request->only(['tipe', 'status', 'search'])
@@ -41,11 +54,15 @@ class KaryawanController extends Controller
 
     public function create()
     {
+        $this->authorize('create', Karyawan::class);
+
         return Inertia::render('HR/Karyawan/Create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Karyawan::class);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'tipe' => ['required', Rule::in(['tetap', 'harian', 'borongan_rit'])],
@@ -67,9 +84,19 @@ class KaryawanController extends Controller
 
     public function show(Karyawan $karyawan)
     {
+        $this->authorize('view', $karyawan);
+
         $karyawan->load(['user', 'assignments' => function ($q) {
             $q->with('titik')->orderBy('tanggal_mulai', 'desc');
         }]);
+
+        $user = auth()->user();
+        $isSelf = $user && (string)$karyawan->user_id === (string)$user->id;
+        $canManageHr = $user && ($user->hasRole(['Owner', 'Koordinator SDM']) || $user->hasPermissionTo('manage hr'));
+
+        if (!$canManageHr && !$isSelf) {
+            $karyawan->makeHidden(['rate_gaji_pokok', 'rate_harian', 'npwp', 'no_bpjs_kesehatan', 'no_bpjs_ketenagakerjaan']);
+        }
 
         return Inertia::render('HR/Karyawan/Show', [
             'karyawan' => $karyawan,
@@ -79,6 +106,8 @@ class KaryawanController extends Controller
 
     public function edit(Karyawan $karyawan)
     {
+        $this->authorize('update', $karyawan);
+
         return Inertia::render('HR/Karyawan/Edit', [
             'karyawan' => $karyawan
         ]);
@@ -86,6 +115,8 @@ class KaryawanController extends Controller
 
     public function update(Request $request, Karyawan $karyawan)
     {
+        $this->authorize('update', $karyawan);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'tipe' => ['required', Rule::in(['tetap', 'harian', 'borongan_rit'])],
@@ -107,6 +138,8 @@ class KaryawanController extends Controller
 
     public function destroy(Karyawan $karyawan)
     {
+        $this->authorize('delete', $karyawan);
+
         $karyawan->delete();
 
         return redirect()->route('hr.karyawan.index')
@@ -115,6 +148,8 @@ class KaryawanController extends Controller
 
     public function assignTitik(Request $request, Karyawan $karyawan)
     {
+        $this->authorize('assignTitik', $karyawan);
+
         $request->validate([
             'titik_id' => 'required|exists:titiks,id',
             'tanggal_mulai' => 'required|date',
@@ -138,13 +173,18 @@ class KaryawanController extends Controller
 
     public function removeTitik(Request $request, Karyawan $karyawan)
     {
+        $this->authorize('removeTitik', $karyawan);
+
         $request->validate([
-            'assignment_id' => 'required|exists:karyawan_titik_assignments,id'
+            'assignment_id' => 'required|exists:karyawan_titik_assignments,id',
+            'tanggal_selesai' => 'required|date',
         ]);
 
-        $assignment = $karyawan->assignments()->findOrFail($request->assignment_id);
-        $assignment->delete();
-        
-        return back()->with('success', 'Penugasan berhasil dihapus.');
+        $karyawan->assignments()->where('id', $request->assignment_id)->update([
+            'status' => 'selesai',
+            'tanggal_selesai' => $request->tanggal_selesai,
+        ]);
+
+        return back()->with('success', 'Penugasan Titik berhasil diakhiri.');
     }
 }

@@ -14,6 +14,8 @@ class QcSampleController extends Controller
 {
     public function store(Request $request)
     {
+        $this->authorize('create', QCSample::class);
+
         $validated = $request->validate([
             'production_session_id' => 'required|exists:production_sessions,id',
             'jenis_uji' => 'required|in:slump_test,uji_tekan',
@@ -29,6 +31,8 @@ class QcSampleController extends Controller
 
     public function update(Request $request, QCSample $qc)
     {
+        $this->authorize('update', $qc);
+
         $validated = $request->validate([
             'jenis_uji' => 'required|in:slump_test,uji_tekan',
             'nilai_slump' => 'nullable|numeric|min:0',
@@ -43,6 +47,8 @@ class QcSampleController extends Controller
 
     public function destroy(QCSample $qc)
     {
+        $this->authorize('delete', $qc);
+
         $qc->delete();
 
         return back()->with('success', 'Sample QC dihapus.');
@@ -50,6 +56,8 @@ class QcSampleController extends Controller
 
     public function pending()
     {
+        $this->authorize('viewAny', QCSample::class);
+
         $samples = QCSample::with('session.produk')
             ->menunggu()
             ->orderBy('created_at', 'desc')
@@ -62,6 +70,8 @@ class QcSampleController extends Controller
 
     public function recordResult(Request $request, QCSample $qc)
     {
+        $this->authorize('recordResult', $qc);
+
         $validated = $request->validate([
             'hasil_uji_tekan' => 'required|numeric|min:0',
             'target_mpa' => 'nullable|numeric|min:0',

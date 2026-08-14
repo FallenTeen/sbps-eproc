@@ -19,12 +19,19 @@ use Illuminate\Http\Request;
 
 class ArmadaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Armada::class);
+
         $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan']);
+
+        if (!$request->user()->hasRole('Owner')) {
+            $gcs = \App\Domain\Core\Models\UnitBisnis::where('kode', 'GCS')->first();
+            $unitId = $request->user()->unit_bisnis_id ?? $gcs?->id;
+            if ($unitId) {
+                $query->where('unit_bisnis_id', $unitId);
+            }
+        }
 
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
@@ -49,13 +56,21 @@ class ArmadaController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $unitBisnis = \App\Domain\Core\Models\UnitBisnis::aktif()->get();
-        $titiks = Titik::aktif()->get();
+        $this->authorize('create', Armada::class);
+
+        $user = auth()->user();
+        $unitBisnisQuery = \App\Domain\Core\Models\UnitBisnis::aktif();
+        if ($user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+        $unitBisnis = $unitBisnisQuery->get();
+        $titiksQuery = Titik::aktif();
+        if ($user->unit_bisnis_id) {
+            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+        }
+        $titiks = $titiksQuery->get();
         $drivers = Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get();
         return Inertia::render('Fleet/Armada/Create', [
             'unitBisnis' => $unitBisnis,
@@ -64,11 +79,10 @@ class ArmadaController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        $this->authorize('create', Armada::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'plat_nomor' => 'required|unique:armadas',
@@ -84,11 +98,10 @@ class ArmadaController extends Controller
         return redirect()->route('fleet.armada.index')->with('success', 'Armada berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Armada $armada)
     {
+        $this->authorize('view', $armada);
+
         $armada->load([
             'unitBisnis',
             'titik',
@@ -101,24 +114,56 @@ class ArmadaController extends Controller
             'driverAssignments' => fn($q) => $q->with('karyawan')->latest('tanggal_mulai'),
         ]);
 
+        $user = auth()->user();
+        $proyeksQuery = \App\Domain\Core\Models\Proyek::aktif();
+        if ($user->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $titiksQuery = Titik::aktif();
+        if ($user->unit_bisnis_id) {
+            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+        }
+
+        $canRecordRitase = $user->can('recordRitase', $armada);
+        $canRecordSewa = $user->can('recordSewa', $armada);
+        $canUpdate = $user->can('update', $armada);
+
         return Inertia::render('Fleet/Armada/Show', [
             'armada' => $armada,
             'options' => [
                 'drivers' => Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get(['id', 'nama', 'jabatan']),
-                'proyeks' => \App\Domain\Core\Models\Proyek::aktif()->get(['id', 'nama', 'kode_proyek']),
+                'proyeks' => $proyeksQuery->get(['id', 'nama', 'kode_proyek']),
                 'ruteTarifs' => \App\Domain\Fleet\Models\RuteTarif::aktif()->get(['id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit']),
-                'titiks' => Titik::aktif()->get(['id', 'nama']),
+                'titiks' => $titiksQuery->get(['id', 'nama']),
+            ],
+            'can' => [
+                'recordRitase' => $canRecordRitase,
+                'recordSewa' => $canRecordSewa,
+                'update' => $canUpdate,
+                'recordService' => $canUpdate,
+                'recordChecklist' => $canUpdate,
+                'recordBbm' => $canUpdate,
+                'startDowntime' => $canUpdate,
+                'assignDriver' => $canUpdate,
             ],
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Armada $armada)
     {
-        $unitBisnis = \App\Domain\Core\Models\UnitBisnis::aktif()->get();
-        $titiks = Titik::aktif()->get();
+        $this->authorize('update', $armada);
+
+        $user = auth()->user();
+        $unitBisnisQuery = \App\Domain\Core\Models\UnitBisnis::aktif();
+        if ($user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+        $unitBisnis = $unitBisnisQuery->get();
+        $titiksQuery = Titik::aktif();
+        if ($user->unit_bisnis_id) {
+            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+        }
+        $titiks = $titiksQuery->get();
         return Inertia::render('Fleet/Armada/Edit', [
             'armada' => $armada,
             'unitBisnis' => $unitBisnis,
@@ -126,11 +171,10 @@ class ArmadaController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Armada $armada)
     {
+        $this->authorize('update', $armada);
+
         $validated = $request->validate([
             'plat_nomor' => 'required|unique:armadas,plat_nomor,' . $armada->id,
             'kode_unit' => 'required|unique:armadas,kode_unit,' . $armada->id,
@@ -146,19 +190,18 @@ class ArmadaController extends Controller
         return redirect()->route('fleet.armada.index')->with('success', 'Armada diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Armada $armada)
     {
+        $this->authorize('delete', $armada);
+
         $armada->delete();
         return redirect()->route('fleet.armada.index')->with('success', 'Armada dihapus.');
     }
 
-    // ===== Action tambahan =====
-
     public function recordRitase(Request $request, Armada $armada)
     {
+        $this->authorize('recordRitase', $armada);
+
         $data = $request->validate([
             'driver_karyawan_id' => 'required|exists:karyawans,id',
             'tanggal' => 'required|date',
@@ -183,6 +226,8 @@ class ArmadaController extends Controller
 
     public function recordSewa(Request $request, Armada $armada)
     {
+        $this->authorize('recordSewa', $armada);
+
         $data = $request->validate([
             'proyek_id' => 'nullable|exists:proyeks,id',
             'penyewa_eksternal' => 'nullable|string',
@@ -201,6 +246,8 @@ class ArmadaController extends Controller
 
     public function recordService(Request $request, Armada $armada)
     {
+        $this->authorize('recordService', $armada);
+
         $data = $request->validate([
             'tanggal' => 'required|date',
             'jenis_servis' => 'nullable|string',
@@ -214,6 +261,8 @@ class ArmadaController extends Controller
 
     public function recordChecklist(Request $request, Armada $armada)
     {
+        $this->authorize('recordChecklist', $armada);
+
         $data = $request->validate([
             'tanggal' => 'required|date',
             'kondisi_baik' => 'required|boolean',
@@ -226,6 +275,8 @@ class ArmadaController extends Controller
 
     public function recordBbm(Request $request, Armada $armada)
     {
+        $this->authorize('recordBbm', $armada);
+
         $data = $request->validate([
             'tanggal' => 'required|date',
             'liter' => 'required|numeric|min:0.01',
@@ -239,6 +290,8 @@ class ArmadaController extends Controller
 
     public function startDowntime(Request $request, Armada $armada)
     {
+        $this->authorize('startDowntime', $armada);
+
         $data = $request->validate([
             'penyebab' => 'nullable|string',
             'kategori' => 'required|in:kerusakan,menunggu_sparepart,lainnya',
@@ -250,6 +303,9 @@ class ArmadaController extends Controller
 
     public function endDowntime(string|int $armadaId, string|int $downtimeId)
     {
+        $armada = Armada::findOrFail($armadaId);
+        $this->authorize('endDowntime', $armada);
+
         $downtime = \App\Domain\Fleet\Models\DowntimeLog::findOrFail($downtimeId);
         (new EndDowntimeAction())->execute($downtime);
         return back()->with('success', 'Downtime selesai.');
@@ -257,6 +313,8 @@ class ArmadaController extends Controller
 
     public function assignDriver(Request $request, Armada $armada)
     {
+        $this->authorize('assignDriver', $armada);
+
         $data = $request->validate([
             'karyawan_id' => 'required|exists:karyawans,id',
             'tipe' => 'required|in:standby,kondisional',

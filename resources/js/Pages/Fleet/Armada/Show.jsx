@@ -98,7 +98,8 @@ function Tabs({ tabs, active, onChange }) {
     );
 }
 
-function RitaseSection({ armada, options }) {
+function RitaseSection({ armada, options, can }) {
+    const canRecord = can ? can.recordRitase : true;
     const { data, setData, post, processing, errors } = useForm({
         driver_karyawan_id: "",
         tanggal: new Date().toISOString().split("T")[0],
@@ -152,11 +153,12 @@ function RitaseSection({ armada, options }) {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-blue-600" /> Catat Ritase
-                </h3>
+        <div className={canRecord ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
+            {canRecord && (
+                <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="font-semibold mb-4 flex items-center gap-2">
+                        <Plus className="w-4 h-4 text-blue-600" /> Catat Ritase
+                    </h3>
                 <form onSubmit={submit} className="space-y-4">
                     <Field label="Driver *" error={errors.driver_karyawan_id}>
                         <select
@@ -374,9 +376,10 @@ function RitaseSection({ armada, options }) {
                     </button>
                 </form>
             </div>
+            )}
 
             {/* Riwayat ritase */}
-            <div className="lg:col-span-2 bg-white rounded-lg shadow p-6 overflow-x-auto">
+            <div className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}>
                 <h3 className="font-semibold mb-4">Riwayat Ritase</h3>
                 {armada.ritases.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
@@ -453,7 +456,8 @@ function RitaseSection({ armada, options }) {
     );
 }
 
-function SewaSection({ armada, options }) {
+function SewaSection({ armada, options, can }) {
+    const canRecord = can ? can.recordSewa : true;
     const { data, setData, post, processing, errors } = useForm({
         proyek_id: "",
         penyewa_eksternal: "",
@@ -474,11 +478,12 @@ function SewaSection({ armada, options }) {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-blue-600" /> Catat Sewa Alat
-                </h3>
+        <div className={canRecord ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
+            {canRecord && (
+                <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="font-semibold mb-4 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-blue-600" /> Catat Sewa Alat
+                    </h3>
                 <form onSubmit={submit} className="space-y-4">
                     <Field label="Proyek">
                         <select
@@ -598,8 +603,9 @@ function SewaSection({ armada, options }) {
                     </button>
                 </form>
             </div>
+            )}
 
-            <div className="lg:col-span-2 bg-white rounded-lg shadow p-6 overflow-x-auto">
+            <div className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}>
                 <h3 className="font-semibold mb-4">Riwayat Sewa Alat</h3>
                 {armada.sewa_alat_jams.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
@@ -1368,7 +1374,7 @@ function DriverSection({ armada, options }) {
     );
 }
 
-export default function Show({ armada, options }) {
+export default function Show({ armada, options, can }) {
     const [tab, setTab] = useState("ritase");
 
     const tabs = [
@@ -1472,9 +1478,11 @@ export default function Show({ armada, options }) {
             <Tabs tabs={tabs} active={tab} onChange={setTab} />
 
             {tab === "ritase" && (
-                <RitaseSection armada={armada} options={options} />
+                <RitaseSection armada={armada} options={options} can={can} />
             )}
-            {tab === "sewa" && <SewaSection armada={armada} options={options} />}
+            {tab === "sewa" && (
+                <SewaSection armada={armada} options={options} can={can} />
+            )}
             {tab === "service" && (
                 <ServiceSection armada={armada} options={options} />
             )}

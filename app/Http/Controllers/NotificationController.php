@@ -26,13 +26,13 @@ class NotificationController extends Controller
 
             foreach ($pending as $po) {
                 $notifications[] = [
-                    'id'         => 'po_' . $po->id,
-                    'type'       => 'po_approval',
-                    'title'      => 'PO Menunggu Approval',
-                    'body'       => "PO #{$po->nomor_po} – " . \App\Domain\Procurement\Models\Supplier::find($po->supplier_id)?->nama . ' (Rp ' . number_format($po->total_amount, 0, ',', '.') . ')',
+                    'id' => 'po_' . $po->id,
+                    'type' => 'po_approval',
+                    'title' => 'PO Menunggu Approval',
+                    'body' => "PO #{$po->nomor_po} – " . \App\Domain\Procurement\Models\Supplier::find($po->supplier_id)?->nama . ' (Rp ' . number_format($po->total_amount, 0, ',', '.') . ')',
                     'action_url' => "/procurement/po/{$po->id}",
-                    'is_read'    => false,
-                    'time_ago'   => Carbon::parse($po->created_at)->diffForHumans(),
+                    'is_read' => false,
+                    'time_ago' => Carbon::parse($po->created_at)->diffForHumans(),
                 ];
             }
         }
@@ -42,18 +42,44 @@ class NotificationController extends Controller
             $servisDue = \App\Domain\Fleet\Models\Armada::where('status', 'aktif')
                 ->whereNotNull('tanggal_servis_terakhir')
                 ->get()
-                ->filter(fn ($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->isPast())
+                ->filter(fn($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->isPast())
                 ->take(5);
 
             foreach ($servisDue as $armada) {
                 $notifications[] = [
-                    'id'         => 'servis_' . $armada->id,
-                    'type'       => 'servis_jatuh_tempo',
-                    'title'      => 'Armada Perlu Diservis',
-                    'body'       => "{$armada->nama_unit} ({$armada->nomor_polisi}) — servis terakhir: " . Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
+                    'id' => 'servis_' . $armada->id,
+                    'type' => 'servis_jatuh_tempo',
+                    'title' => 'Armada Perlu Diservis',
+                    'body' => "{$armada->nama_unit} ({$armada->nomor_polisi}) — servis terakhir: " . Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
                     'action_url' => "/fleet/armada/{$armada->id}",
-                    'is_read'    => false,
-                    'time_ago'   => 'sekarang',
+                    'is_read' => false,
+                    'time_ago' => 'sekarang',
+                ];
+            }
+        }
+
+        // ─── 2b. Checklist Harian Kondisi Tidak Baik ──────────────────────────
+        if ($user->hasAnyPermission(['manage fleet', 'manage production', 'view fleet', 'view production'])) {
+            $kondisiBuruk = \App\Domain\Fleet\Models\ArmadaChecklistHarian::with('checkable')
+                ->where('kondisi_baik', false)
+                ->whereDate('tanggal', '>=', now()->subDay())
+                ->orderByDesc('tanggal')
+                ->take(5)
+                ->get();
+
+            foreach ($kondisiBuruk as $checklist) {
+                $namaCheckable = $checklist->checkable->plat_nomor
+                    ?? $checklist->checkable->nama
+                    ?? '-';
+
+                $notifications[] = [
+                    'id' => 'checklist_' . $checklist->id,
+                    'type' => 'checklist_kondisi_buruk',
+                    'title' => 'Checklist: Kondisi Tidak Baik',
+                    'body' => "{$namaCheckable} — {$checklist->item_bermasalah}",
+                    'action_url' => "/fleet/checklist-harian/{$checklist->id}",
+                    'is_read' => false,
+                    'time_ago' => Carbon::parse($checklist->tanggal)->diffForHumans(),
                 ];
             }
         }
@@ -71,13 +97,13 @@ class NotificationController extends Controller
                 $due = Carbon::parse($inv->tanggal_jatuh_tempo);
                 $label = $due->isPast() ? 'LEWAT JATUH TEMPO' : ('Jatuh tempo ' . $due->diffForHumans());
                 $notifications[] = [
-                    'id'         => 'inv_' . $inv->id,
-                    'type'       => 'invoice_jatuh_tempo',
-                    'title'      => 'Invoice ' . $label,
-                    'body'       => "Invoice #{$inv->nomor_invoice} — Rp " . number_format($inv->total_tagihan, 0, ',', '.'),
+                    'id' => 'inv_' . $inv->id,
+                    'type' => 'invoice_jatuh_tempo',
+                    'title' => 'Invoice ' . $label,
+                    'body' => "Invoice #{$inv->nomor_invoice} — Rp " . number_format($inv->total_tagihan, 0, ',', '.'),
                     'action_url' => "/finance/invoice/{$inv->id}",
-                    'is_read'    => false,
-                    'time_ago'   => $due->diffForHumans(),
+                    'is_read' => false,
+                    'time_ago' => $due->diffForHumans(),
                 ];
             }
         }
@@ -87,7 +113,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'notifications' => $sorted,
-            'unread_count'  => count(array_filter($sorted, fn($n) => !$n['is_read'])),
+            'unread_count' => count(array_filter($sorted, fn($n) => !$n['is_read'])),
         ]);
     }
 

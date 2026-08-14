@@ -23,7 +23,15 @@ class PurchaseOrderController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', PurchaseOrder::class);
+
         $query = PurchaseOrder::with(['supplier', 'proyek', 'items.bahanBaku']);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('proyek', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
 
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
@@ -44,7 +52,14 @@ class PurchaseOrderController extends Controller
 
     public function create()
     {
-        $proyeks = Proyek::where('status', 'aktif')->get();
+        $this->authorize('create', PurchaseOrder::class);
+
+        $user = auth()->user();
+        $proyeksQuery = Proyek::where('status', 'aktif');
+        if ($user->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $proyeks = $proyeksQuery->get();
         $suppliers = Supplier::where('aktif', true)->get();
         $bahanBakus = BahanBaku::where('aktif', true)->get();
         return Inertia::render('Procurement/PurchaseOrders/Create', [
@@ -56,6 +71,8 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', PurchaseOrder::class);
+
         $request->validate([
             'proyek_id' => 'required|exists:proyeks,id',
             'titik_id' => 'nullable|exists:titiks,id',
@@ -98,6 +115,8 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('view', $purchaseOrder);
+
         $po = $purchaseOrder->load([
             'supplier',
             'proyek',
@@ -107,27 +126,45 @@ class PurchaseOrderController extends Controller
             'pembayarans'
         ]);
 
-        // Cek apakah user bisa approve
-        $canApprove = false;
         $user = Auth::user();
-        if ($user->hasRole('Admin Keuangan') || $user->hasRole('Owner')) {
-            $canApprove = true;
-        }
+        $canApprove = $user->can('approve', $purchaseOrder);
+        $canReject = $user->can('reject', $purchaseOrder);
+        $canReceive = $user->can('receive', $purchaseOrder);
+        $canPay = $user->can('pay', $purchaseOrder);
+        $canUpdate = $user->can('update', $purchaseOrder);
+        $canDelete = $user->can('delete', $purchaseOrder);
 
         return Inertia::render('Procurement/PurchaseOrders/Show', [
             'po' => $po,
             'canApprove' => $canApprove,
+            'canReject' => $canReject,
+            'canReceive' => $canReceive,
+            'canPay' => $canPay,
+            'can' => [
+                'approve' => $canApprove,
+                'reject' => $canReject,
+                'receive' => $canReceive,
+                'pay' => $canPay,
+                'update' => $canUpdate,
+                'delete' => $canDelete,
+            ],
         ]);
     }
 
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        // Hanya bisa edit jika status draft
+        $this->authorize('update', $purchaseOrder);
+
         if ($purchaseOrder->status !== 'draft') {
             return back()->with('error', 'PO sudah diajukan, tidak bisa diedit.');
         }
 
-        $proyeks = Proyek::where('status', 'aktif')->get();
+        $user = auth()->user();
+        $proyeksQuery = Proyek::where('status', 'aktif');
+        if ($user->unit_bisnis_id) {
+            $proyeksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $proyeks = $proyeksQuery->get();
         $suppliers = Supplier::where('aktif', true)->get();
         $bahanBakus = BahanBaku::where('aktif', true)->get();
 
@@ -141,6 +178,8 @@ class PurchaseOrderController extends Controller
 
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('update', $purchaseOrder);
+
         if ($purchaseOrder->status !== 'draft') {
             return back()->with('error', 'PO sudah diajukan, tidak bisa diupdate.');
         }
@@ -168,7 +207,6 @@ class PurchaseOrderController extends Controller
                 'catatan' => $request->catatan,
             ]);
 
-            // Hapus item lama, buat baru
             $purchaseOrder->items()->delete();
             foreach ($request->items as $item) {
                 $purchaseOrder->items()->create([
@@ -186,6 +224,8 @@ class PurchaseOrderController extends Controller
 
     public function destroy(PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('delete', $purchaseOrder);
+
         if ($purchaseOrder->status !== 'draft') {
             return back()->with('error', 'PO sudah diajukan, tidak bisa dihapus.');
         }
@@ -194,10 +234,10 @@ class PurchaseOrderController extends Controller
             ->with('success', 'PO dihapus.');
     }
 
-    // ===== ACTIONS =====
-
     public function submit(PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('update', $purchaseOrder);
+
         try {
             $po = (new SubmitPurchaseOrderAction())->execute($purchaseOrder);
             return back()->with('success', 'PO berhasil diajukan.');
@@ -208,6 +248,8 @@ class PurchaseOrderController extends Controller
 
     public function approve(PurchaseOrder $purchaseOrder, Request $request)
     {
+        $this->authorize('approve', $purchaseOrder);
+
         $request->validate(['catatan' => 'nullable|string']);
         try {
             $po = (new ApprovePurchaseOrderAction())->execute($purchaseOrder, $request->catatan);
@@ -219,6 +261,8 @@ class PurchaseOrderController extends Controller
 
     public function reject(PurchaseOrder $purchaseOrder, Request $request)
     {
+        $this->authorize('reject', $purchaseOrder);
+
         $request->validate(['catatan' => 'nullable|string']);
         try {
             $po = (new RejectPurchaseOrderAction())->execute($purchaseOrder, $request->catatan);
@@ -230,6 +274,8 @@ class PurchaseOrderController extends Controller
 
     public function receive(PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('receive', $purchaseOrder);
+
         try {
             $purchaseOrder->status->transitionTo(\App\Domain\Procurement\States\Diterima::class);
             (new RecordStockMutationAction())->execute($purchaseOrder);
@@ -241,9 +287,13 @@ class PurchaseOrderController extends Controller
 
     public function paymentForm(PurchaseOrder $purchaseOrder)
     {
-        $akunKas = AkunKasBank::where('unit_bisnis_id', $purchaseOrder->proyek->unit_bisnis_id)
-            ->where('aktif', true)
-            ->get();
+        $this->authorize('pay', $purchaseOrder);
+
+        $akunKasQuery = AkunKasBank::where('aktif', true);
+        if ($purchaseOrder->proyek?->unit_bisnis_id) {
+            $akunKasQuery->where('unit_bisnis_id', $purchaseOrder->proyek->unit_bisnis_id);
+        }
+        $akunKas = $akunKasQuery->get();
 
         return Inertia::render('Procurement/PurchaseOrders/Payment', [
             'po' => $purchaseOrder->load('pembayarans'),
@@ -254,6 +304,8 @@ class PurchaseOrderController extends Controller
 
     public function storePayment(Request $request, PurchaseOrder $purchaseOrder)
     {
+        $this->authorize('pay', $purchaseOrder);
+
         $sisa = $purchaseOrder->total - $purchaseOrder->pembayarans->sum('jumlah');
 
         $request->validate([

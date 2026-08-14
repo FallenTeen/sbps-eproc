@@ -21,19 +21,22 @@ class ProyekController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Proyek::class);
+
         $query = Proyek::with(['unitBisnis', 'titik', 'rab']);
 
-        // Filter by unit bisnis
+        if ($request->user()->unit_bisnis_id) {
+            $query->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+        }
+
         if ($request->has('unit_bisnis_id') && $request->unit_bisnis_id) {
             $query->where('unit_bisnis_id', $request->unit_bisnis_id);
         }
 
-        // Filter by status
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
 
-        // Search by kode or nama
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -45,8 +48,11 @@ class ProyekController extends Controller
 
         $proyeks = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        // Ambil daftar unit bisnis untuk filter
-        $unitBisnis = UnitBisnis::where('aktif', true)->get();
+        $unitBisnisQuery = UnitBisnis::where('aktif', true);
+        if ($request->user()->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $request->user()->unit_bisnis_id);
+        }
+        $unitBisnis = $unitBisnisQuery->get();
 
         return Inertia::render('Core/Proyek/Index', [
             'proyeks' => $proyeks,
@@ -60,7 +66,13 @@ class ProyekController extends Controller
      */
     public function create()
     {
-        $unitBisnis = UnitBisnis::where('aktif', true)->get();
+        $this->authorize('create', Proyek::class);
+
+        $unitBisnisQuery = UnitBisnis::where('aktif', true);
+        if (auth()->user()->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', auth()->user()->unit_bisnis_id);
+        }
+        $unitBisnis = $unitBisnisQuery->get();
         return Inertia::render('Core/Proyek/Create', [
             'unitBisnis' => $unitBisnis,
         ]);
@@ -71,6 +83,8 @@ class ProyekController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Proyek::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'kode_proyek' => 'required|string|max:50|unique:proyeks',
@@ -98,6 +112,8 @@ class ProyekController extends Controller
      */
     public function show(Proyek $proyek)
     {
+        $this->authorize('view', $proyek);
+
         $proyek->load([
             'unitBisnis',
             'titik',
@@ -136,6 +152,8 @@ class ProyekController extends Controller
      */
     public function edit(Proyek $proyek)
     {
+        $this->authorize('update', $proyek);
+
         $unitBisnis = UnitBisnis::where('aktif', true)->get();
         return Inertia::render('Core/Proyek/Edit', [
             'proyek' => $proyek,
@@ -148,6 +166,8 @@ class ProyekController extends Controller
      */
     public function update(Request $request, Proyek $proyek)
     {
+        $this->authorize('update', $proyek);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'kode_proyek' => 'required|string|max:50|unique:proyeks,kode_proyek,' . $proyek->id,
@@ -173,7 +193,8 @@ class ProyekController extends Controller
      */
     public function destroy(Proyek $proyek)
     {
-        // Cek apakah proyek memiliki relasi yang tidak bisa dihapus
+        $this->authorize('delete', $proyek);
+
         if ($proyek->purchaseOrders()->exists()) {
             return back()->with('error', 'Proyek memiliki Purchase Order, tidak bisa dihapus.');
         }

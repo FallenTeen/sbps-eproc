@@ -11,6 +11,8 @@ class SupplierController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Supplier::class);
+
         $query = Supplier::query();
         if ($request->has('search')) {
             $query->where('nama', 'like', '%' . $request->search . '%')
@@ -25,11 +27,15 @@ class SupplierController extends Controller
 
     public function create()
     {
+        $this->authorize('create', Supplier::class);
+
         return Inertia::render('Procurement/Suppliers/Create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Supplier::class);
+
         $validated = $request->validate([
             'kode' => 'required|unique:suppliers',
             'nama' => 'required|string|max:255',
@@ -45,11 +51,15 @@ class SupplierController extends Controller
 
     public function edit(Supplier $supplier)
     {
+        $this->authorize('update', $supplier);
+
         return Inertia::render('Procurement/Suppliers/Edit', ['supplier' => $supplier]);
     }
 
     public function update(Request $request, Supplier $supplier)
     {
+        $this->authorize('update', $supplier);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'kontak' => 'nullable|string|max:255',
@@ -64,6 +74,8 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier)
     {
+        $this->authorize('delete', $supplier);
+
         if ($supplier->purchaseOrders()->exists()) {
             return back()->with('error', 'Supplier sudah memiliki PO, tidak bisa dihapus.');
         }

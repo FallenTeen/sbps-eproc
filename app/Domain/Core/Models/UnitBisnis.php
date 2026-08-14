@@ -2,6 +2,9 @@
 
 namespace App\Domain\Core\Models;
 
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Production\Models\MesinProduksi;
+use App\Domain\Finance\Models\AkunKasBank;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +26,23 @@ class UnitBisnis extends Model
     public function proyeks()
     {
         return $this->hasMany(Proyek::class);
+    }
+
+    // Ditambahkan: relasi yang diperlukan untuk statistik & cek relasi
+    // sebelum hapus di UnitBisnisController.
+    public function armadas()
+    {
+        return $this->hasMany(Armada::class);
+    }
+
+    public function mesinProduksis()
+    {
+        return $this->hasMany(MesinProduksi::class);
+    }
+
+    public function akunKasBanks()
+    {
+        return $this->hasMany(AkunKasBank::class);
     }
 
     public function scopeAktif($query)

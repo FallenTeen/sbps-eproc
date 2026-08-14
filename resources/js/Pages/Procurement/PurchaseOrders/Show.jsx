@@ -3,7 +3,14 @@ import { Link, router, usePage } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import { ArrowLeft, Check, X, Truck, DollarSign } from "lucide-react";
 
-export default function Show({ po, canApprove }) {
+export default function Show({
+    po,
+    canApprove,
+    canReject,
+    canReceive,
+    canPay,
+    can,
+}) {
     const { auth } = usePage().props;
 
     const handleAction = (action) => {
@@ -28,10 +35,17 @@ export default function Show({ po, canApprove }) {
     };
 
     const isApprovalStatus = [
+        "diajukan",
         "menunggu_approval_finance",
         "menunggu_approval_owner",
     ].includes(po.status);
-    const canApproveAction = isApprovalStatus && canApprove;
+    const canApproveAction = isApprovalStatus && (can?.approve ?? canApprove);
+    const canRejectAction = isApprovalStatus && (can?.reject ?? canReject ?? canApprove);
+    const canReceiveAction = po.status === "disetujui" && (can?.receive ?? canReceive);
+    const canPayAction =
+        ["diterima", "dibayar_sebagian"].includes(po.status) &&
+        (can?.pay ?? canPay);
+    const canEditAction = po.status === "draft" && (can?.update ?? true);
 
     return (
         <Layout>
@@ -157,7 +171,7 @@ export default function Show({ po, canApprove }) {
                     <h3 className="font-semibold mb-4">Aksi</h3>
 
                     <div className="space-y-2">
-                        {po.status === "draft" && (
+                        {canEditAction && (
                             <>
                                 <button
                                     onClick={() => handleAction("submit")}
@@ -178,25 +192,26 @@ export default function Show({ po, canApprove }) {
                         )}
 
                         {canApproveAction && (
-                            <>
-                                <button
-                                    onClick={() => handleAction("approve")}
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
-                                >
-                                    <Check className="w-4 h-4" />
-                                    Setujui
-                                </button>
-                                <button
-                                    onClick={() => handleAction("reject")}
-                                    className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
-                                >
-                                    <X className="w-4 h-4" />
-                                    Tolak
-                                </button>
-                            </>
+                            <button
+                                onClick={() => handleAction("approve")}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
+                            >
+                                <Check className="w-4 h-4" />
+                                Setujui
+                            </button>
                         )}
 
-                        {po.status === "disetujui" && (
+                        {canRejectAction && (
+                            <button
+                                onClick={() => handleAction("reject")}
+                                className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
+                            >
+                                <X className="w-4 h-4" />
+                                Tolak
+                            </button>
+                        )}
+
+                        {canReceiveAction && (
                             <button
                                 onClick={() => handleAction("receive")}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
@@ -206,9 +221,7 @@ export default function Show({ po, canApprove }) {
                             </button>
                         )}
 
-                        {["diterima", "dibayar_sebagian"].includes(
-                            po.status,
-                        ) && (
+                        {canPayAction && (
                             <Link
                                 href={route(
                                     "procurement.purchase-orders.payment",

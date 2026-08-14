@@ -17,9 +17,16 @@ class ProdukController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Produk::class);
+
+        $user = $request->user();
         $query = Produk::with(['unitBisnis', 'hargaJual' => function ($q) {
             $q->orderBy('berlaku_dari', 'desc');
         }]);
+
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $query->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
 
         if ($request->has('unit_bisnis_id') && $request->unit_bisnis_id) {
             $query->where('unit_bisnis_id', $request->unit_bisnis_id);
@@ -32,23 +39,38 @@ class ProdukController extends Controller
 
         $produks = $query->orderBy('nama')->paginate(15)->withQueryString();
 
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Products/Index', [
             'produks' => $produks,
-            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'unitBisnis' => $unitBisnisQuery->get(),
             'filters' => $request->only(['unit_bisnis_id', 'search']),
         ]);
     }
 
     public function create()
     {
+        $this->authorize('create', Produk::class);
+
+        $user = auth()->user();
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Products/Create', [
-            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'unitBisnis' => $unitBisnisQuery->get(),
             'mixDesigns' => MixDesignTemplate::orderBy('mutu_beton')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Produk::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'nama' => 'required|string|max:255|unique:produks,nama',
@@ -90,6 +112,8 @@ class ProdukController extends Controller
 
     public function show(Produk $produk)
     {
+        $this->authorize('view', $produk);
+
         $produk->load([
             'unitBisnis',
             'hargaJual' => fn ($q) => $q->orderBy('berlaku_dari', 'desc'),
@@ -103,14 +127,24 @@ class ProdukController extends Controller
 
     public function edit(Produk $produk)
     {
+        $this->authorize('update', $produk);
+
+        $user = auth()->user();
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Products/Edit', [
             'produk' => $produk,
-            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'unitBisnis' => $unitBisnisQuery->get(),
         ]);
     }
 
     public function update(Request $request, Produk $produk)
     {
+        $this->authorize('update', $produk);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'nama' => 'required|string|max:255|unique:produks,nama,' . $produk->id,
@@ -127,6 +161,8 @@ class ProdukController extends Controller
 
     public function destroy(Produk $produk)
     {
+        $this->authorize('delete', $produk);
+
         if ($produk->productionSessions()->exists()) {
             return back()->with('error', 'Produk sudah dipakai di sesi produksi, tidak bisa dihapus.');
         }
@@ -140,6 +176,8 @@ class ProdukController extends Controller
 
     public function setHarga(Request $request, Produk $produk)
     {
+        $this->authorize('setHarga', $produk);
+
         $request->validate([
             'harga' => 'required|numeric|min:0',
             'berlaku_dari' => 'required|date',

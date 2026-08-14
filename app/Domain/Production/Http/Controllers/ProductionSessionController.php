@@ -21,7 +21,17 @@ class ProductionSessionController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', ProductionSession::class);
+
         $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik']);
+
+        $user = $request->user();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $query->where(function ($q) use ($user) {
+                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+            });
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -54,19 +64,33 @@ class ProductionSessionController extends Controller
             return $session;
         });
 
+        $produksQuery = Produk::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $produksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Sessions/Index', [
             'sessions' => $sessions,
-            'produks'  => Produk::aktif()->get(),
+            'produks'  => $produksQuery->get(),
             'filters'  => $request->only('status', 'produk_id', 'tanggal', 'search'),
         ]);
     }
 
-    public function active()
+    public function active(Request $request)
     {
-        $sessions = ProductionSession::with(['mesin', 'produk', 'operator', 'titik'])
-            ->berjalan()
-            ->orderBy('mulai', 'desc')
-            ->get();
+        $this->authorize('viewAny', ProductionSession::class);
+
+        $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik'])->berjalan();
+
+        $user = $request->user();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $query->where(function ($q) use ($user) {
+                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+            });
+        }
+
+        $sessions = $query->orderBy('mulai', 'desc')->get();
 
         return Inertia::render('Production/Sessions/Active', [
             'sessions' => $sessions,
@@ -75,12 +99,22 @@ class ProductionSessionController extends Controller
 
     public function reportHarian(Request $request)
     {
+        $this->authorize('viewAny', ProductionSession::class);
+
         $tanggal = $request->input('tanggal', now()->toDateString());
 
-        $sessions = ProductionSession::with(['mesin', 'produk', 'operator', 'titik', 'items.bahanBaku'])
-            ->whereDate('mulai', $tanggal)
-            ->orderBy('mulai')
-            ->get();
+        $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik', 'items.bahanBaku'])
+            ->whereDate('mulai', $tanggal);
+
+        $user = $request->user();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $query->where(function ($q) use ($user) {
+                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+            });
+        }
+
+        $sessions = $query->orderBy('mulai')->get();
 
         $aggregate = [
             'total_output' => $sessions->sum('hasil_output'),
@@ -107,8 +141,19 @@ class ProductionSessionController extends Controller
 
     public function create()
     {
-        $mesins = MesinProduksi::with('produkDefault')->where('status', 'aktif')->get();
-        $produks = Produk::where('aktif', true)->get();
+        $this->authorize('create', ProductionSession::class);
+
+        $user = auth()->user();
+        $mesinsQuery = MesinProduksi::with('produkDefault')->where('status', 'aktif');
+        $produksQuery = Produk::where('aktif', true);
+
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $mesinsQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+            $produksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+
+        $mesins = $mesinsQuery->get();
+        $produks = $produksQuery->get();
         $operator = Karyawan::where('status', 'aktif')->whereIn('tipe', ['tetap', 'harian'])->get();
         $titiks = Titik::where('status', 'aktif')->get();
 
@@ -122,6 +167,8 @@ class ProductionSessionController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', ProductionSession::class);
+
         $validated = $request->validate([
             'mesin_id' => 'required|exists:mesin_produksis,id',
             'titik_id' => 'required|exists:titiks,id',
@@ -138,6 +185,8 @@ class ProductionSessionController extends Controller
 
     public function show(ProductionSession $session)
     {
+        $this->authorize('view', $session);
+
         $session = $session->load([
             'mesin',
             'produk',
@@ -163,11 +212,20 @@ class ProductionSessionController extends Controller
             'margin' => $margin,
             'resep' => $resep,
             'bahanBakus' => \App\Domain\Procurement\Models\BahanBaku::aktif()->bahanBaku()->get(),
+            'can' => [
+                'update' => auth()->user()?->can('update', $session) ?? false,
+                'delete' => auth()->user()?->can('delete', $session) ?? false,
+                'start' => auth()->user()?->can('startSession', $session) ?? false,
+                'end' => auth()->user()?->can('endSession', $session) ?? false,
+                'recordQC' => auth()->user()?->can('recordQC', $session) ?? false,
+            ],
         ]);
     }
 
     public function start(Request $request, ProductionSession $session)
     {
+        $this->authorize('startSession', $session);
+
         if ($session->status !== 'dibatalkan' && $session->status !== 'selesai') {
             return back()->with('error', 'Sesi sedang berjalan.');
         }
@@ -184,6 +242,8 @@ class ProductionSessionController extends Controller
 
     public function edit(ProductionSession $session)
     {
+        $this->authorize('update', $session);
+
         $session = $session->load(['mesin', 'produk', 'operator', 'titik']);
 
         return Inertia::render('Production/Sessions/Edit', [
@@ -197,6 +257,8 @@ class ProductionSessionController extends Controller
 
     public function update(Request $request, ProductionSession $session)
     {
+        $this->authorize('update', $session);
+
         $validated = $request->validate([
             'mesin_id' => 'required|exists:mesin_produksis,id',
             'titik_id' => 'required|exists:titiks,id',
@@ -213,6 +275,8 @@ class ProductionSessionController extends Controller
 
     public function end(Request $request, ProductionSession $session)
     {
+        $this->authorize('endSession', $session);
+
         $validated = $request->validate([
             'hasil_output' => 'required|numeric|min:0.01',
             'items' => 'nullable|array',
@@ -229,6 +293,8 @@ class ProductionSessionController extends Controller
 
     public function cancel(ProductionSession $session)
     {
+        $this->authorize('delete', $session);
+
         if ($session->status === 'selesai') {
             return back()->with('error', 'Sesi sudah selesai, tidak bisa dibatalkan.');
         }
@@ -240,6 +306,8 @@ class ProductionSessionController extends Controller
 
     public function destroy(ProductionSession $session)
     {
+        $this->authorize('delete', $session);
+
         if ($session->status === 'berjalan') {
             return back()->with('error', 'Sesi sedang berjalan, tidak bisa dihapus.');
         }

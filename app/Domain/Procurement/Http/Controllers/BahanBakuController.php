@@ -15,6 +15,8 @@ class BahanBakuController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', BahanBaku::class);
+
         $query = BahanBaku::with([
             'hargaBeli' => function ($q) {
                 $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', now());
@@ -36,12 +38,16 @@ class BahanBakuController extends Controller
 
     public function create()
     {
+        $this->authorize('create', BahanBaku::class);
+
         $suppliers = Supplier::where('aktif', true)->get();
         return Inertia::render('Procurement/BahanBaku/Create', ['suppliers' => $suppliers]);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', BahanBaku::class);
+
         $validated = $request->validate([
             'kode' => 'required|unique:bahan_bakus',
             'nama' => 'required|string|max:255',
@@ -69,12 +75,16 @@ class BahanBakuController extends Controller
 
     public function show(BahanBaku $bahanBaku)
     {
+        $this->authorize('view', $bahanBaku);
+
         $bahanBaku->load(['hargaBeli.supplier']);
         return Inertia::render('Procurement/BahanBaku/Show', ['bahanBaku' => $bahanBaku]);
     }
 
     public function edit(BahanBaku $bahanBaku)
     {
+        $this->authorize('update', $bahanBaku);
+
         $suppliers = Supplier::where('aktif', true)->get();
         return Inertia::render('Procurement/BahanBaku/Edit', [
             'bahanBaku' => $bahanBaku,
@@ -84,6 +94,8 @@ class BahanBakuController extends Controller
 
     public function update(Request $request, BahanBaku $bahanBaku)
     {
+        $this->authorize('update', $bahanBaku);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'kategori' => 'required|in:bahan_baku,sparepart',
@@ -100,7 +112,8 @@ class BahanBakuController extends Controller
 
     public function destroy(BahanBaku $bahanBaku)
     {
-        // Cek apakah sudah digunakan di PO
+        $this->authorize('delete', $bahanBaku);
+
         if ($bahanBaku->purchaseOrderItems()->exists()) {
             return back()->with('error', 'Bahan baku sudah digunakan di PO, tidak bisa dihapus.');
         }
@@ -109,9 +122,10 @@ class BahanBakuController extends Controller
             ->with('success', 'Bahan baku dihapus.');
     }
 
-    // Tambah harga baru
     public function setHarga(Request $request, BahanBaku $bahanBaku)
     {
+        $this->authorize('setHarga', $bahanBaku);
+
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'harga' => 'required|numeric|min:0',

@@ -14,6 +14,16 @@ class DivisiRoleSeeder extends Seeder
 
         // 1. Permissions khusus divisi & approval
         $divisiPermissions = [
+            'manage procurement',
+            'approve procurement',
+            'receive procurement',
+            'pay procurement',
+            'manage bahan baku',
+            'manage supplier',
+            'manage fleet',
+            'view fleet',
+            'record ritase',
+            'record sewa',
             'manage procurement division',
             'approve procurement division',
             'approve procurement threshold',
@@ -40,11 +50,25 @@ class DivisiRoleSeeder extends Seeder
                 'approve procurement threshold',
                 'manage rab',
                 'manage finance',
+                'pay procurement',
+            ],
+            'Ketua Divisi Keuangan' => [
+                'manage finance division',
+                'approve expense division',
+                'approve payroll division',
+                'approve procurement division',
+                'approve procurement threshold',
+                'manage rab',
+                'manage finance',
+                'pay procurement',
             ],
             'Ketua Divisi Armada' => [
                 'manage fleet division',
                 'approve procurement division',
                 'manage fleet',
+                'view fleet',
+                'record ritase',
+                'record sewa',
             ],
             'Ketua Divisi Kontraktor' => [
                 'manage proyek',

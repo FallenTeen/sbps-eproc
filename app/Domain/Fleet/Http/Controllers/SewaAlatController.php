@@ -12,18 +12,23 @@ use Carbon\Carbon;
 
 class SewaAlatController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', SewaAlatJam::class);
+
         $query = SewaAlatJam::with(['armada', 'proyek']);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('armada', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('penyewa_eksternal', 'like', "%{$search}%")
-                  ->orWhereHas('armada', fn ($a) => $a->where('nama_unit', 'like', "%{$search}%")->orWhere('nomor_polisi', 'like', "%{$search}%"));
+                  ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
             });
         }
 
@@ -37,13 +42,26 @@ class SewaAlatController extends Controller
 
         $sewaList = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
 
-        $totalAktif = SewaAlatJam::where('status', 'disetujui')->count();
-        $hmBulan = SewaAlatJam::whereMonth('tanggal', now()->month)->whereYear('tanggal', now()->year)->sum('jumlah_jam');
-        $pendapatanBulan = SewaAlatJam::whereMonth('tanggal', now()->month)->whereYear('tanggal', now()->year)
-            ->get()->sum(fn ($s) => $s->jumlah_jam * $s->harga_per_jam_snapshot);
-        $alatTersewa = SewaAlatJam::whereNull('hm_akhir')->distinct('armada_id')->count('armada_id');
+        $baseStatsQuery = SewaAlatJam::query();
+        if ($request->user()->unit_bisnis_id) {
+            $baseStatsQuery->whereHas('armada', function ($q) use ($request) {
+                $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+            });
+        }
+        $statsMonthQuery = (clone $baseStatsQuery)
+            ->whereMonth('tanggal', now()->month)
+            ->whereYear('tanggal', now()->year);
 
-        $armadaList = Armada::select('id', 'nama_unit', 'nomor_polisi')->orderBy('nama_unit')->get();
+        $totalAktif = (clone $baseStatsQuery)->where('status', 'disetujui')->count();
+        $hmBulan = (clone $statsMonthQuery)->sum('jumlah_jam');
+        $pendapatanBulan = (clone $statsMonthQuery)->get()->sum(fn ($s) => $s->jumlah_jam * $s->harga_per_jam_snapshot);
+        $alatTersewa = (clone $baseStatsQuery)->whereNull('hm_akhir')->distinct('armada_id')->count('armada_id');
+
+        $armadaListQuery = Armada::query();
+        if ($request->user()->unit_bisnis_id) {
+            $armadaListQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
+        }
+        $armadaList = $armadaListQuery->select('id', 'kode_unit', 'plat_nomor')->orderBy('kode_unit')->get();
 
         return Inertia::render('Fleet/SewaAlat/Index', [
             'sewaList' => $sewaList,
@@ -54,17 +72,28 @@ class SewaAlatController extends Controller
                 'hm_bulan' => $hmBulan,
                 'pendapatan_bulan' => $pendapatanBulan,
                 'alat_tersewa' => $alatTersewa,
-            ]
+            ],
+            'can' => [
+                'create' => $request->user()->can('create', SewaAlatJam::class),
+            ],
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
-        $armadaList = Armada::select('id', 'nama_unit', 'nomor_polisi', 'jenis')->orderBy('nama_unit')->get();
-        $proyekList = Proyek::select('id', 'nama_proyek')->get();
+        $this->authorize('create', SewaAlatJam::class);
+
+        $user = $request->user();
+        $armadaQuery = Armada::query();
+        if ($user->unit_bisnis_id) {
+            $armadaQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $armadaList = $armadaQuery->select('id', 'kode_unit', 'plat_nomor', 'jenis')->orderBy('kode_unit')->get();
+        $proyekQuery = Proyek::query();
+        if ($user->unit_bisnis_id) {
+            $proyekQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+        $proyekList = $proyekQuery->select('id', 'nama')->get();
 
         return Inertia::render('Fleet/SewaAlat/Create', [
             'armadaList' => $armadaList,
@@ -72,11 +101,10 @@ class SewaAlatController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        $this->authorize('create', SewaAlatJam::class);
+
         $validated = $request->validate([
             'armada_id'        => 'required|exists:armadas,id',
             'proyek_id'        => 'nullable|exists:proyeks,id',
@@ -110,9 +138,10 @@ class SewaAlatController extends Controller
         return redirect()->route('fleet.sewa-alat.index')->with('success', 'Pencatatan sewa alat berat berhasil disimpan.');
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $sewa = SewaAlatJam::with(['armada', 'proyek'])->findOrFail($id);
+        $this->authorize('view', $sewa);
         return response()->json($sewa);
     }
 }

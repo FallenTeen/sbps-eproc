@@ -28,7 +28,7 @@ function StatCard({ label, value, sub, color = 'blue' }) {
     );
 }
 
-export default function RitaseIndex({ auth, ritase, filters = {}, armadaList = [], stats = {} }) {
+export default function RitaseIndex({ auth, ritase, filters = {}, armadaList = [], stats = {}, can = {} }) {
     const { flash } = usePage().props;
     const [showFlash, setShowFlash] = useState(!!flash?.success);
 
@@ -55,12 +55,14 @@ export default function RitaseIndex({ auth, ritase, filters = {}, armadaList = [
                         <h2 className="text-xl font-bold text-slate-800">Ritase Harian</h2>
                         <p className="text-sm text-slate-500 mt-0.5">Rekap perjalanan dan upah borongan armada</p>
                     </div>
-                    <Link
-                        href={route('fleet.ritase.create')}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" /> Catat Ritase
-                    </Link>
+                    {(can?.create ?? true) && (
+                        <Link
+                            href={route('fleet.ritase.create')}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" /> Catat Ritase
+                        </Link>
+                    )}
                 </div>
             }
         >

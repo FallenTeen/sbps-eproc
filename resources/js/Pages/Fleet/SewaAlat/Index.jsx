@@ -25,7 +25,7 @@ function StatCard({ label, value, sub, color = 'blue' }) {
     );
 }
 
-export default function SewaAlatIndex({ auth, sewaList, filters = {}, armadaList = [], stats = {} }) {
+export default function SewaAlatIndex({ auth, sewaList, filters = {}, armadaList = [], stats = {}, can = {} }) {
     const { flash } = usePage().props;
     const [showFlash, setShowFlash] = useState(!!flash?.success);
     const [search, setSearch] = useState(filters.search || '');
@@ -51,12 +51,14 @@ export default function SewaAlatIndex({ auth, sewaList, filters = {}, armadaList
                         <h2 className="text-xl font-bold text-slate-800">Sewa Alat Berat</h2>
                         <p className="text-sm text-slate-500 mt-0.5">Rekap sewa alat berbasis Jam Mesin (HM)</p>
                     </div>
-                    <Link
-                        href={route('fleet.sewa-alat.create')}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" /> Catat Sewa
-                    </Link>
+                    {(can?.create ?? true) && (
+                        <Link
+                            href={route('fleet.sewa-alat.create')}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" /> Catat Sewa
+                        </Link>
+                    )}
                 </div>
             }
         >

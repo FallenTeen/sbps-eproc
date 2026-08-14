@@ -13,9 +13,14 @@ class AkunKasBankController extends Controller
 {
     public function index(Request $request)
     {
-        // default to first unit bisnis if none selected
+        $this->authorize('viewAny', AkunKasBank::class);
+
+        $user = $request->user();
         $unitBisnisId = $request->input('unit_bisnis_id');
-        if (!$unitBisnisId) {
+
+        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+            $unitBisnisId = $user->unit_bisnis_id;
+        } elseif (!$unitBisnisId) {
             $unitBisnis = UnitBisnis::first();
             $unitBisnisId = $unitBisnis ? $unitBisnis->id : null;
         }
@@ -36,22 +41,37 @@ class AkunKasBankController extends Controller
                 return $akun;
             });
 
+        $unitBisnisList = UnitBisnis::all(['id', 'nama']);
+        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+            $unitBisnisList = UnitBisnis::where('id', $user->unit_bisnis_id)->get(['id', 'nama']);
+        }
+
         return Inertia::render('Finance/AkunKas/Index', [
             'akunKas' => $akunKas,
             'unit_bisnis_id' => $unitBisnisId,
-            'unitBisnisList' => UnitBisnis::all(['id', 'nama']),
+            'unitBisnisList' => $unitBisnisList,
         ]);
     }
 
     public function create()
     {
+        $this->authorize('create', AkunKasBank::class);
+
+        $user = auth()->user();
+        $unitBisnisList = UnitBisnis::all(['id', 'nama']);
+        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+            $unitBisnisList = UnitBisnis::where('id', $user->unit_bisnis_id)->get(['id', 'nama']);
+        }
+
         return Inertia::render('Finance/AkunKas/Create', [
-            'unitBisnisList' => UnitBisnis::all(['id', 'nama']),
+            'unitBisnisList' => $unitBisnisList,
         ]);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', AkunKasBank::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'nama' => 'required|string|max:255',
@@ -70,6 +90,8 @@ class AkunKasBankController extends Controller
 
     public function edit(AkunKasBank $akun_ka)
     {
+        $this->authorize('update', $akun_ka);
+
         return Inertia::render('Finance/AkunKas/Edit', [
             'akunKas' => $akun_ka,
             'unitBisnisList' => UnitBisnis::all(['id', 'nama']),
@@ -78,6 +100,8 @@ class AkunKasBankController extends Controller
 
     public function update(Request $request, AkunKasBank $akun_ka)
     {
+        $this->authorize('update', $akun_ka);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'jenis_kas' => 'required|in:kas_kecil,kas_besar,kas_operasional,bank',
@@ -91,6 +115,8 @@ class AkunKasBankController extends Controller
 
     public function mutasi(Request $request, AkunKasBank $akunKasBank)
     {
+        $this->authorize('view', $akunKasBank);
+
         $bulan = $request->input('bulan', date('m'));
         $tahun = $request->input('tahun', date('Y'));
 
@@ -130,6 +156,8 @@ class AkunKasBankController extends Controller
 
     public function transfer(Request $request)
     {
+        $this->authorize('create', AkunKasBank::class);
+
         $validated = $request->validate([
             'dari_akun_kas_bank_id' => 'required|exists:akun_kas_banks,id',
             'ke_akun_kas_bank_id' => 'required|exists:akun_kas_banks,id|different:dari_akun_kas_bank_id',

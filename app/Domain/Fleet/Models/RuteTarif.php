@@ -10,7 +10,7 @@ class RuteTarif extends Model
 {
     use HasUuids;
 
-    protected $table = 'rute_tarifs';
+    protected $table = 'rute_tarif';
     protected $fillable = [
         'unit_bisnis_id',
         'lokasi_asal',
@@ -19,8 +19,9 @@ class RuteTarif extends Model
         'tarif_per_rit',
         'indeks_liter_solar_per_km',
         'berlaku_dari',
-        'berlaku_sampai'
+        'berlaku_sampai',
     ];
+
     protected $casts = [
         'jarak_km' => 'float',
         'tarif_per_rit' => 'float',

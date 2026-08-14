@@ -15,6 +15,8 @@ class PayrollController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', GajiPeriode::class);
+
         $periodes = GajiPeriode::select('periode_bulan', 'periode_tahun', 'status')
             ->selectRaw('count(id) as jumlah_karyawan')
             ->groupBy('periode_bulan', 'periode_tahun', 'status')
@@ -40,6 +42,8 @@ class PayrollController extends Controller
 
     public function generate(Request $request)
     {
+        $this->authorize('create', GajiPeriode::class);
+
         $request->validate([
             'bulan' => 'required|integer|min:1|max:12',
             'tahun' => 'required|integer|min:2000'
@@ -52,6 +56,8 @@ class PayrollController extends Controller
 
     public function show($bulan, $tahun)
     {
+        $this->authorize('viewAny', GajiPeriode::class);
+
         $gajis = GajiPeriode::with(['karyawan', 'komponen'])
             ->where('periode_bulan', $bulan)
             ->where('periode_tahun', $tahun)
@@ -81,6 +87,8 @@ class PayrollController extends Controller
 
     public function review(GajiPeriode $periode)
     {
+        $this->authorize('view', $periode);
+
         $periode->load(['karyawan', 'komponen']);
         $netto = (new CalculateNetSalaryAction())->execute($periode);
 
@@ -92,6 +100,8 @@ class PayrollController extends Controller
 
     public function addKomponen(Request $request, GajiPeriode $periode)
     {
+        $this->authorize('update', $periode);
+
         $request->validate([
             'jenis' => 'required|string|in:tunjangan,potongan',
             'jumlah' => 'required|numeric|min:0',
@@ -105,12 +115,19 @@ class PayrollController extends Controller
 
     public function deleteKomponen(KomponenGaji $komponen)
     {
+        $periode = $komponen->gajiPeriode;
+        if ($periode) {
+            $this->authorize('update', $periode);
+        }
+
         $komponen->delete();
         return back()->with('success', 'Komponen gaji berhasil dihapus.');
     }
 
     public function pay(Request $request, $bulan, $tahun)
     {
+        $this->authorize('create', GajiPeriode::class);
+
         GajiPeriode::where('periode_bulan', $bulan)
             ->where('periode_tahun', $tahun)
             ->update([

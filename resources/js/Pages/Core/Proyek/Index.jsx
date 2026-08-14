@@ -1,12 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import { Plus, Search, Filter, Edit, Eye, Trash2 } from 'lucide-react';
 
 export default function Index({ proyeks, unitBisnis, filters }) {
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [unitFilter, setUnitFilter] = useState(filters.unit_bisnis_id || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
+
+    const permissions = auth?.permissions || [];
+    const roles = auth?.roles || [];
+    const userUnitId = auth?.user?.unit_bisnis_id || null;
+
+    const hasRole = (roleNames) => {
+        if (!Array.isArray(roleNames)) roleNames = [roleNames];
+        return roles.some(r => roleNames.includes(r));
+    };
+
+    const hasPermission = (permNames) => {
+        if (!Array.isArray(permNames)) permNames = [permNames];
+        return permissions.some(p => permNames.includes(p));
+    };
+
+    const can = useMemo(() => ({
+        createProyek: () => {
+            if (hasRole('Owner')) return true;
+            if (hasPermission('manage proyek')) return true;
+            if (hasRole([
+                'Koordinator Procurement',
+                'Koordinator GCS',
+                'Koordinator CBP',
+                'Koordinator AMP',
+                'Koordinator SDM',
+            ])) return true;
+            return false;
+        },
+        updateProyek: (proyek) => {
+            if (hasRole('Owner')) return true;
+            if (!hasPermission('manage proyek') && !hasRole([
+                'Koordinator Procurement',
+                'Koordinator GCS',
+                'Koordinator CBP',
+                'Koordinator AMP',
+                'Koordinator SDM',
+            ])) return false;
+            if (userUnitId && proyek?.unit_bisnis_id && userUnitId !== proyek.unit_bisnis_id) {
+                return false;
+            }
+            return true;
+        },
+        deleteProyek: () => {
+            return hasRole('Owner');
+        },
+    }), [permissions, roles, userUnitId]);
 
     const handleSearch = () => {
         router.get(route('core.proyek.index'), {
@@ -43,13 +90,15 @@ export default function Index({ proyeks, unitBisnis, filters }) {
         <Layout>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Manajemen Proyek</h1>
-                <Link
-                    href={route('core.proyek.create')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-                >
-                    <Plus className="w-4 h-4" />
-                    Proyek Baru
-                </Link>
+                {can.createProyek() && (
+                    <Link
+                        href={route('core.proyek.create')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Proyek Baru
+                    </Link>
+                )}
             </div>
 
             {/* Filters */}
@@ -169,22 +218,26 @@ export default function Index({ proyeks, unitBisnis, filters }) {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Link>
-                                        <Link
-                                            href={route('core.proyek.edit', proyek.id)}
-                                            className="text-yellow-600 hover:text-yellow-900 inline-block"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Link>
-                                        <button
-                                            onClick={() => {
-                                                if (window.confirm('Yakin hapus proyek ini?')) {
-                                                    router.delete(route('core.proyek.destroy', proyek.id));
-                                                }
-                                            }}
-                                            className="text-red-600 hover:text-red-900 inline-block"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {can.updateProyek(proyek) && (
+                                            <Link
+                                                href={route('core.proyek.edit', proyek.id)}
+                                                className="text-yellow-600 hover:text-yellow-900 inline-block"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Link>
+                                        )}
+                                        {can.deleteProyek() && (
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Yakin hapus proyek ini?')) {
+                                                        router.delete(route('core.proyek.destroy', proyek.id));
+                                                    }
+                                                }}
+                                                className="text-red-600 hover:text-red-900 inline-block"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))

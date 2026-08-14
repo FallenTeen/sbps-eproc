@@ -22,26 +22,60 @@ class RolePermissionSeeder extends Seeder
         // DB::table('roles')->truncate();
 
         $permissions = [
-            // Core
+            // Core & Proyek
+            'manage proyek',
+            'view proyek',
+            'manage rab',
+            'view rab',
+            'manage role',
+            'view owner dashboard',
+
+            // Procurement
             'manage procurement',
+            'view procurement',
             'approve procurement',
+            'receive procurement',
+            'pay procurement',
+            'manage bahan baku',
+            'view bahan baku',
+            'manage supplier',
+            'view supplier',
             'approve procurement fleet',   // approve PO armada max 25jt
             'approve procurement produksi', // approve PO bahan baku max 20jt
             'approve procurement kontrak',  // approve PO kontrak max 30jt
             'approve procurement keuangan', // approve PO keuangan max 50jt
+
+            // Fleet
             'manage fleet',
+            'view fleet',
+            'record ritase',
+            'record sewa',
+
+            // Production
             'manage production',
+            'manage production cbp',
+            'manage production amp',
+            'view production',
+            'start session',
+            'end session',
+            'manage qc',
+
+            // HR & Payroll
             'manage hr',
+            'view hr',
+            'manage payroll',
+            'view payroll',
+
+            // Finance
             'manage finance',
-            'view owner dashboard',
-            'manage rab',
-            'manage proyek',
-            'manage role',
+            'view finance',
+            'manage kas',
+            'manage invoice',
+            'view invoice',
+
             // Lapangan
             'manage presensi',
             'manage formulir lapangan',
-            'view proyek',
-            'view rab',
         ];
 
         foreach ($permissions as $permission) {
@@ -51,49 +85,89 @@ class RolePermissionSeeder extends Seeder
         $roles = [
             // ─── Super Admin ───────────────────────────────────────────
             'Owner' => [
-                'manage procurement', 'approve procurement',
-                'approve procurement fleet', 'approve procurement produksi',
-                'approve procurement kontrak', 'approve procurement keuangan',
-                'manage fleet', 'manage production', 'manage hr',
-                'manage finance', 'view owner dashboard',
-                'manage rab', 'manage proyek', 'manage role',
+                'manage proyek', 'view proyek', 'manage rab', 'view rab', 'manage role', 'view owner dashboard',
+                'manage procurement', 'view procurement', 'approve procurement', 'receive procurement', 'pay procurement',
+                'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+                'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
+                'manage fleet', 'view fleet', 'record ritase', 'record sewa',
+                'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
+                'manage hr', 'view hr', 'manage payroll', 'view payroll',
+                'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
                 'manage presensi', 'manage formulir lapangan',
+            ],
+
+            // ─── Admin & Koordinator ───────────────────────────────────
+            'Admin Keuangan' => [
+                'view owner dashboard',
+                'approve procurement', 'pay procurement', 'approve procurement keuangan', 'view procurement',
+                'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+                'manage rab', 'view rab', 'view proyek', 'view fleet',
+                'view production',
+                'manage payroll', 'view payroll',
+            ],
+            'Koordinator Procurement' => [
+                'manage procurement', 'view procurement', 'receive procurement',
+                'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
                 'view proyek', 'view rab',
             ],
-            // ─── Admin ─────────────────────────────────────────────────
-            'Admin Keuangan' => [
-                'approve procurement', 'approve procurement keuangan',
-                'manage finance', 'manage rab', 'view proyek', 'view rab',
+            'Koordinator GCS' => [
+                'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             ],
-            'Koordinator Procurement' => ['manage procurement', 'view proyek', 'view rab'],
-            'Koordinator GCS'         => ['manage fleet', 'view proyek'],
-            'Koordinator CBP'         => ['manage production', 'view proyek', 'manage rab'],
-            'Koordinator AMP'         => ['manage production', 'view proyek', 'manage rab'],
-            'Koordinator SDM'         => ['manage hr', 'manage presensi', 'view proyek'],
-            'Mandor Proyek'           => ['manage proyek', 'manage rab', 'view proyek', 'view rab'],
-            'Kontraktor'              => ['view proyek'],
+            'Koordinator CBP' => [
+                'manage production', 'manage production cbp', 'view production',
+                'start session', 'end session', 'manage qc',
+                'view proyek', 'manage rab', 'view rab',
+            ],
+            'Koordinator AMP' => [
+                'manage production', 'manage production amp', 'view production',
+                'start session', 'end session',
+                'view proyek', 'manage rab', 'view rab',
+            ],
+            'Koordinator SDM' => [
+                'manage hr', 'view hr', 'manage payroll', 'view payroll', 'manage presensi', 'view proyek',
+            ],
+            'Mandor Proyek' => [
+                'manage proyek', 'view proyek', 'manage rab', 'view rab',
+                'view production', 'start session', 'end session', 'manage qc',
+                'manage presensi', 'manage formulir lapangan',
+            ],
+            'Kontraktor' => [
+                'view proyek',
+            ],
 
             // ─── Ketua Divisi ───────────────────────────────────────────
             'Ketua Divisi Keuangan' => [
-                'manage finance', 'manage rab', 'view proyek', 'view rab',
-                'approve procurement keuangan', // sampai 50jt
+                'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+                'manage rab', 'view rab', 'view proyek',
+                'approve procurement keuangan', 'pay procurement',
+            ],
+            'Ketua Divisi Finance' => [
+                'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+                'manage rab', 'view rab', 'view proyek',
+                'approve procurement keuangan', 'pay procurement',
             ],
             'Ketua Divisi Armada' => [
-                'manage fleet', 'view proyek',
-                'approve procurement fleet', // sampai 25jt
+                'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+                'approve procurement fleet',
             ],
             'Ketua Divisi Produksi CBP' => [
-                'manage production', 'manage rab', 'view proyek', 'view rab',
-                'approve procurement produksi', // sampai 20jt
+                'manage production', 'manage production cbp', 'view production',
+                'start session', 'end session', 'manage qc',
+                'manage rab', 'view rab', 'view proyek',
+                'approve procurement produksi',
             ],
             'Ketua Divisi Produksi AMP' => [
-                'manage production', 'manage rab', 'view proyek', 'view rab',
-                'approve procurement produksi', // sampai 20jt
+                'manage production', 'manage production amp', 'view production',
+                'start session', 'end session',
+                'manage rab', 'view rab', 'view proyek',
+                'approve procurement produksi',
             ],
             'Ketua Divisi Kontraktor' => [
-                'manage proyek', 'manage rab', 'manage hr', 'manage presensi',
-                'view proyek', 'view rab', 'manage finance',
-                'approve procurement kontrak', // sampai 30jt
+                'manage proyek', 'view proyek', 'manage rab', 'view rab',
+                'manage hr', 'view hr', 'view payroll',
+                'manage invoice', 'view invoice',
+                'manage finance', 'manage presensi',
+                'approve procurement kontrak',
             ],
 
             // ─── Role Lapangan ──────────────────────────────────────────

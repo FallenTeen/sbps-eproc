@@ -16,7 +16,16 @@ class MesinProduksiController extends Controller
 {
     public function index(Request $request)
     {
-        $mesin = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault', 'serviceHistories' => fn($q) => $q->latest('tanggal')])
+        $this->authorize('viewAny', MesinProduksi::class);
+
+        $user = $request->user();
+        $query = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault', 'serviceHistories' => fn($q) => $q->latest('tanggal')]);
+
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $query->where('unit_bisnis_id', $user->unit_bisnis_id);
+        }
+
+        $mesin = $query
             ->when($request->search, function ($query, $search) {
                 $query->where(function($q) use ($search) {
                     $q->where('nama', 'like', "%{$search}%")
@@ -36,18 +45,31 @@ class MesinProduksiController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Mesin/Index', [
             'mesin' => $mesin,
             'filters' => $request->only(['search', 'status', 'jenis', 'unit_bisnis_id']),
-            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'unitBisnis' => $unitBisnisQuery->get(),
             'jenisOptions' => MesinProduksi::select('jenis')->distinct()->pluck('jenis')
         ]);
     }
 
     public function create()
     {
+        $this->authorize('create', MesinProduksi::class);
+
+        $user = auth()->user();
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+
         return Inertia::render('Production/Mesin/Create', [
-            'unitBisnis' => UnitBisnis::aktif()->get(),
+            'unitBisnis' => $unitBisnisQuery->get(),
             'titiks' => Titik::aktif()->get(),
             'produks' => Produk::all()
         ]);
@@ -55,6 +77,8 @@ class MesinProduksiController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', MesinProduksi::class);
+
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
             'titik_id' => 'nullable|exists:titiks,id',
@@ -83,6 +107,8 @@ class MesinProduksiController extends Controller
             'downtimes' => fn($q) => $q->latest('mulai')->take(10)
         ])->findOrFail($id);
 
+        $this->authorize('view', $mesin);
+
         return Inertia::render('Production/Mesin/Show', [
             'mesin' => $mesin
         ]);
@@ -91,6 +117,7 @@ class MesinProduksiController extends Controller
     public function edit($id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('update', $mesin);
         
         return Inertia::render('Production/Mesin/Edit', [
             'mesin' => $mesin,
@@ -103,6 +130,7 @@ class MesinProduksiController extends Controller
     public function update(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('update', $mesin);
 
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
@@ -123,6 +151,7 @@ class MesinProduksiController extends Controller
     public function destroy($id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('delete', $mesin);
         $mesin->delete();
 
         return redirect()->route('production.mesin.index')->with('success', 'Mesin produksi berhasil dihapus.');
@@ -131,6 +160,7 @@ class MesinProduksiController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('update', $mesin);
         
         $validated = $request->validate([
             'status' => 'required|in:aktif,rusak,maintenance,nonaktif'
@@ -146,6 +176,7 @@ class MesinProduksiController extends Controller
     public function recordService(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('recordService', $mesin);
 
         $validated = $request->validate([
             'tanggal' => 'required|date',
@@ -168,6 +199,7 @@ class MesinProduksiController extends Controller
     public function recordChecklist(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('recordChecklist', $mesin);
 
         $validated = $request->validate([
             'tanggal' => 'required|date',
@@ -184,6 +216,7 @@ class MesinProduksiController extends Controller
     public function recordBbm(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('recordBbm', $mesin);
 
         $validated = $request->validate([
             'tanggal' => 'required|date',
@@ -203,6 +236,7 @@ class MesinProduksiController extends Controller
     public function startDowntime(Request $request, $id)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('startDowntime', $mesin);
 
         $validated = $request->validate([
             'mulai' => 'required|date',
@@ -222,6 +256,7 @@ class MesinProduksiController extends Controller
     public function endDowntime(Request $request, $id, $downtimeId)
     {
         $mesin = MesinProduksi::findOrFail($id);
+        $this->authorize('endDowntime', $mesin);
         $downtime = $mesin->downtimes()->findOrFail($downtimeId);
 
         $validated = $request->validate([
