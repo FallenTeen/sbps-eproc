@@ -5,6 +5,7 @@ namespace App\Domain\Fleet\Http\Controllers;
 use App\Domain\Fleet\Actions\RecordBBMAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\BbmLog;
+use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\States\Diterima;
@@ -79,17 +80,31 @@ class BbmLogController extends Controller
     }
 
     /**
-     * Show form pencatatan BBM untuk armada/mesin tertentu.
+     * Show form pencatatan BBM. Tipe & unit bersifat opsional
+     * (dipilih via dropdown), hanya dipakai untuk preselect saat
+     * diakses dari halaman armada/mesin tertentu.
      */
-    public function create(string $serviceableType, string $serviceableId)
+    public function create(Request $request)
     {
-        $serviceable = $this->resolveServiceable($serviceableType, $serviceableId);
+        $serviceableType = $request->query('type');
+        $serviceableId = $request->query('id');
 
-        $this->authorize('recordBbm', $serviceable);
+        if ($serviceableType && $serviceableId) {
+            $serviceable = $this->resolveServiceable($serviceableType, $serviceableId);
+            $this->authorize('recordBbm', $serviceable);
+        }
 
         return Inertia::render('Fleet/BBM/Create', [
-            'serviceable' => $serviceable,
+            'serviceableTypes' => [
+                ['value' => 'armada', 'label' => 'Armada'],
+                ['value' => 'mesin_produksi', 'label' => 'Mesin Produksi'],
+            ],
+            'serviceables' => [
+                'armada' => Armada::query()->orderBy('kode_unit')->get(['id', 'kode_unit', 'plat_nomor']),
+                'mesin_produksi' => MesinProduksi::query()->orderBy('nama')->get(['id', 'nama']),
+            ],
             'serviceableType' => $serviceableType,
+            'serviceableId' => $serviceableId,
         ]);
     }
 
@@ -226,25 +241,17 @@ class BbmLogController extends Controller
     }
 
     /**
-     * Daftar anomali konsumsi BBM (liter/jam operasional > rata-rata + 20%).
+     * Daftar anomali konsumsi BBM.
      *
-     * CATATAN PENTING - INI BUKAN IMPLEMENTASI PERSIS SPESIFIKASI AWAL:
-     * Spesifikasi menyebut 2 pendekatan berbeda: (a) membandingkan konsumsi
-     * aktual terhadap estimasi dari `indeks_liter_solar_per_km` pada model
-     * Rute, dan (b) menandai anomali di kolom "catatan" saat store().
-     * Kedua hal itu TIDAK BISA diimplementasikan dengan schema yang saya
-     * lihat sejauh ini:
-     *   - Tidak ada model/tabel Rute dengan indeks_liter_solar_per_km yang
-     *     dikirim ke saya.
-     *   - Tabel bbm_logs tidak punya kolom catatan/is_anomaly untuk
-     *     menyimpan flag anomali.
-     * Karena itu saya implementasikan pendekatan (b) versi kedua dari
-     * spesifikasi ("liter_per_jam_operasional > rata-rata + 20%"), dihitung
-     * ON-THE-FLY di endpoint ini (bukan disimpan saat store()), dari selisih
-     * `jam_operasional_saat_isi` antar pengisian berurutan per serviceable.
-     * Kalau memang ada model Rute yang belum saya lihat, atau kolom
-     * catatan/is_anomaly perlu ditambahkan via migration baru, beri tahu
-     * saya supaya saya sesuaikan.
+     * Pendekatan (sesuai arahan): prioritas dulu ESTIMASI BERBASIS RUTE untuk
+     * armada (pakai Ritase + RuteTarif::indeks_liter_solar_per_km), baru
+     * FALLBACK ke rata-rata historis (liter/jam operasional) kalau:
+     *   - serviceable-nya MesinProduksi (tidak ada konsep "rit"/rute), atau
+     *   - armada tidak punya data Ritase yang cocok di periode antar-isi.
+     *
+     * Catatan: hasil TIDAK disimpan ke DB (dihitung on-the-fly saat endpoint
+     * ini dipanggil), karena tabel bbm_logs tidak punya kolom untuk flag
+     * anomali permanen.
      */
     public function anomaly(Request $request)
     {
@@ -263,53 +270,141 @@ class BbmLogController extends Controller
         }
 
         $logs = $query->get()
-            ->groupBy(fn($log) => $log->serviceable_type . ':' . $log->serviceable_id);
+            ->groupBy(fn ($log) => $log->serviceable_type . ':' . $log->serviceable_id);
 
         $anomalies = collect();
 
         foreach ($logs as $group) {
             $sorted = $group->sortBy('tanggal')->values();
-            $rates = [];
 
-            for ($i = 1; $i < $sorted->count(); $i++) {
-                $prev = $sorted[$i - 1];
-                $curr = $sorted[$i];
-
-                if ($curr->jam_operasional_saat_isi === null || $prev->jam_operasional_saat_isi === null) {
-                    continue;
-                }
-
-                $deltaJam = $curr->jam_operasional_saat_isi - $prev->jam_operasional_saat_isi;
-                if ($deltaJam <= 0) {
-                    continue;
-                }
-
-                $rates[$curr->id] = $curr->liter / $deltaJam;
-            }
-
-            // Butuh minimal 2 data untuk rata-rata yang bermakna.
-            if (count($rates) < 2) {
-                continue;
-            }
-
-            $average = array_sum($rates) / count($rates);
-            $threshold = $average * (1 + self::ANOMALY_THRESHOLD_PERCENT / 100);
-
-            foreach ($rates as $bbmLogId => $rate) {
-                if ($rate > $threshold) {
-                    $anomalies->push([
-                        'bbm_log' => $sorted->firstWhere('id', $bbmLogId),
-                        'liter_per_jam' => round($rate, 2),
-                        'rata_rata_normal' => round($average, 2),
-                        'threshold' => round($threshold, 2),
-                    ]);
-                }
+            if ($sorted->first()->serviceable_type === Armada::class) {
+                $anomalies = $anomalies->merge($this->detectAnomaliArmadaBerbasisRute($sorted));
+            } else {
+                $anomalies = $anomalies->merge($this->detectAnomaliRataRataHistoris($sorted));
             }
         }
 
         return Inertia::render('Fleet/BBM/Anomaly', [
             'anomalies' => $anomalies->values(),
         ]);
+    }
+
+    /**
+     * Deteksi anomali armada dengan membandingkan liter aktual terhadap
+     * estimasi kebutuhan BBM dari jarak tempuh (Ritase x RuteTarif) di
+     * antara dua tanggal pengisian berurutan.
+     *
+     * @param \Illuminate\Support\Collection<int, BbmLog> $sortedLogs BBM log 1 armada, terurut tanggal ASC.
+     */
+    protected function detectAnomaliArmadaBerbasisRute($sortedLogs): \Illuminate\Support\Collection
+    {
+        $result = collect();
+        $armadaId = $sortedLogs->first()->serviceable_id;
+        $sisaUntukFallback = collect();
+
+        for ($i = 1; $i < $sortedLogs->count(); $i++) {
+            $prev = $sortedLogs[$i - 1];
+            $curr = $sortedLogs[$i];
+
+            $ritasesPeriode = Ritase::where('armada_id', $armadaId)
+                ->whereBetween('tanggal', [$prev->tanggal, $curr->tanggal])
+                ->with('ruteTarif')
+                ->get()
+                ->filter(fn ($ritase) => $ritase->ruteTarif && $ritase->ruteTarif->indeks_liter_solar_per_km !== null);
+
+            if ($ritasesPeriode->isEmpty()) {
+                // Tidak ada data rute yang bisa dipakai di periode ini,
+                // simpan pasangan ini untuk dicoba lewat fallback rata-rata.
+                $sisaUntukFallback->push($curr);
+                continue;
+            }
+
+            $totalJarakKm = $ritasesPeriode->sum(
+                fn ($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km
+            );
+
+            $estimasiLiter = $ritasesPeriode->sum(
+                fn ($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km * $ritase->ruteTarif->indeks_liter_solar_per_km
+            );
+
+            if ($estimasiLiter <= 0) {
+                $sisaUntukFallback->push($curr);
+                continue;
+            }
+
+            $threshold = $estimasiLiter * (1 + self::ANOMALY_THRESHOLD_PERCENT / 100);
+
+            if ($curr->liter > $threshold) {
+                $result->push([
+                    'bbm_log' => $curr,
+                    'metode' => 'estimasi_rute',
+                    'liter_aktual' => $curr->liter,
+                    'estimasi_liter' => round($estimasiLiter, 2),
+                    'threshold' => round($threshold, 2),
+                    'total_jarak_km' => round($totalJarakKm, 2),
+                ]);
+            }
+        }
+
+        // Untuk pengisian yang tidak punya data rute yang cocok, coba
+        // fallback ke pendekatan rata-rata historis (liter/jam operasional).
+        if ($sisaUntukFallback->isNotEmpty()) {
+            $logsUntukFallback = collect([$sortedLogs->first()])->merge($sisaUntukFallback)->unique('id')->sortBy('tanggal')->values();
+            $result = $result->merge($this->detectAnomaliRataRataHistoris($logsUntukFallback, 'estimasi_rute_tidak_tersedia_fallback_rata_rata'));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fallback: deteksi anomali dari rata-rata historis liter/jam operasional
+     * (dipakai untuk MesinProduksi, dan untuk armada yang tidak punya data
+     * Ritase yang cocok di periode terkait).
+     *
+     * @param \Illuminate\Support\Collection<int, BbmLog> $sortedLogs
+     */
+    protected function detectAnomaliRataRataHistoris($sortedLogs, string $metode = 'rata_rata_historis'): \Illuminate\Support\Collection
+    {
+        $result = collect();
+        $rates = [];
+
+        for ($i = 1; $i < $sortedLogs->count(); $i++) {
+            $prev = $sortedLogs[$i - 1];
+            $curr = $sortedLogs[$i];
+
+            if ($curr->jam_operasional_saat_isi === null || $prev->jam_operasional_saat_isi === null) {
+                continue;
+            }
+
+            $deltaJam = $curr->jam_operasional_saat_isi - $prev->jam_operasional_saat_isi;
+            if ($deltaJam <= 0) {
+                continue;
+            }
+
+            $rates[$curr->id] = $curr->liter / $deltaJam;
+        }
+
+        // Butuh minimal 2 data untuk rata-rata yang bermakna.
+        if (count($rates) < 2) {
+            return $result;
+        }
+
+        $average = array_sum($rates) / count($rates);
+        $threshold = $average * (1 + self::ANOMALY_THRESHOLD_PERCENT / 100);
+
+        foreach ($rates as $bbmLogId => $rate) {
+            if ($rate > $threshold) {
+                $result->push([
+                    'bbm_log' => $sortedLogs->firstWhere('id', $bbmLogId),
+                    'metode' => $metode,
+                    'liter_per_jam' => round($rate, 2),
+                    'rata_rata_normal' => round($average, 2),
+                    'threshold' => round($threshold, 2),
+                ]);
+            }
+        }
+
+        return $result;
     }
 
     /**
