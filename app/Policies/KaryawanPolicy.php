@@ -65,4 +65,9 @@ class KaryawanPolicy
     {
         return $this->create($user);
     }
+
+    public function updateStatus(User $user, Karyawan $karyawan): bool
+    {
+        return $this->update($user, $karyawan);
+    }
 }

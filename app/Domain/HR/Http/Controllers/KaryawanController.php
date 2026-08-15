@@ -146,6 +146,19 @@ class KaryawanController extends Controller
             ->with('success', 'Data karyawan berhasil dihapus.');
     }
 
+    public function updateStatus(Request $request, Karyawan $karyawan)
+    {
+        $this->authorize('updateStatus', $karyawan);
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['aktif', 'nonaktif'])],
+        ]);
+
+        $karyawan->update(['status' => $validated['status']]);
+
+        return back()->with('success', 'Status karyawan diperbarui.');
+    }
+
     public function assignTitik(Request $request, Karyawan $karyawan)
     {
         $this->authorize('assignTitik', $karyawan);

@@ -38,7 +38,8 @@ class GajiPeriodePolicy
                     'Koordinator SDM',
                     'Admin Keuangan',
                 ])
-            || $user->hasPermissionTo('manage payroll');
+            || $user->hasPermissionTo('manage payroll')
+            || $user->hasPermissionTo('manage hr');
     }
 
     public function generate(User $user): bool

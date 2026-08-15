@@ -24,6 +24,8 @@ class HRModuleTest extends TestCase
         parent::setUp();
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'manage hr']);
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'manage payroll']);
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'view payroll']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('manage hr');
         $this->actingAs($this->user);
