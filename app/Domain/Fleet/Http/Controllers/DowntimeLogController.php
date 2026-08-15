@@ -82,6 +82,12 @@ class DowntimeLogController extends Controller
 
         $this->authorize('create', [DowntimeLog::class, $model]);
 
+        if ($model->downtimes()->whereNull('selesai')->exists()) {
+            return back()->withErrors([
+                'downtime' => 'Masih ada downtime aktif untuk unit ini.',
+            ]);
+        }
+
         $downtime = (new StartDowntimeAction())->execute($model, $request->all());
 
         return back()->with('success', 'Downtime dimulai.');

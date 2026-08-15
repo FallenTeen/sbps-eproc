@@ -9,12 +9,21 @@ use App\Domain\Finance\Models\Invoice;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Proyek extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, LogsActivity;
 
     protected $table = 'proyeks';
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['nama', 'status', 'client', 'lokasi'])
+            ->logOnlyDirty();
+    }
     protected $fillable = [
         'unit_bisnis_id',
         'kode_proyek',

@@ -3,11 +3,12 @@
 namespace App\Domain\Fleet\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DowntimeLog extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'downtime_logs';
     protected $fillable = [
@@ -28,6 +29,11 @@ class DowntimeLog extends Model
     public function serviceable()
     {
         return $this->morphTo();
+    }
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Domain\Fleet\Models\DowntimeLogFactory::new();
     }
 
     // Scope
