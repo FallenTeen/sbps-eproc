@@ -19,11 +19,16 @@ class Presensi extends Model
         'check_in',
         'check_in_lat',
         'check_in_lng',
+        'check_in_photo',
+        'check_in_photo_metadata',
         'check_out',
         'check_out_lat',
         'check_out_lng',
+        'check_out_photo',
+        'check_out_photo_metadata',
         'status_validasi',
-        'catatan_override'
+        'catatan_override',
+        'device_id'
     ];
     protected $casts = [
         'check_in' => 'datetime',
@@ -32,6 +37,8 @@ class Presensi extends Model
         'check_in_lng' => 'float',
         'check_out_lat' => 'float',
         'check_out_lng' => 'float',
+        'check_in_photo_metadata' => 'array',
+        'check_out_photo_metadata' => 'array',
     ];
 
     // Relasi
@@ -48,6 +55,11 @@ class Presensi extends Model
     public function formulir()
     {
         return $this->hasOne(FormulirLapangan::class);
+    }
+
+    public function trackingLocations()
+    {
+        return $this->hasMany(MobileTrackingLocation::class);
     }
 
     // Scope dengan type hint
