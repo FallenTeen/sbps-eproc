@@ -241,7 +241,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                             </div>
 
                             <div className="pt-4 border-t">
-                                <Link href="/laporan-keuangan/rab-realisasi">
+                                <Link href={route('finance.laporan-keuangan.rab-realisasi')}>
                                     <button className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-2">
                                         Lihat Laporan RAB vs Realisasi Lengkap <ArrowRight className="w-4 h-4" />
                                     </button>
@@ -260,7 +260,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                                 </h3>
                                 <p className="text-xs text-gray-500">Visualisasi historis dinamika operasional</p>
                             </div>
-                            <Link href="/laporan-keuangan/laba-rugi" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                            <Link href={route('finance.laporan-keuangan.laba-rugi')} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
                                 Laporan Laba Rugi <ArrowRight className="w-3.5 h-3.5 inline" />
                             </Link>
                         </div>

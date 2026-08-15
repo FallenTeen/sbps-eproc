@@ -9,7 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export default function RabRealisasi({ auth, items = [], unitBisnisList = [], proyekList = [], summary = {}, filters = {} }) {
 
     const handleFilterChange = (key, value) => {
-        router.get(route('laporan-keuangan.rab-realisasi'), {
+        router.get(route('finance.laporan-keuangan.rab-realisasi'), {
             ...filters,
             [key]: value
         }, { preserveState: true });
@@ -21,7 +21,7 @@ export default function RabRealisasi({ auth, items = [], unitBisnisList = [], pr
             unit_bisnis_id: filters.unit_bisnis_id || '',
             proyek_id: filters.proyek_id || '',
         });
-        window.location.href = route('laporan-keuangan.export-excel') + '?' + params.toString();
+        window.location.href = route('finance.laporan-keuangan.export-excel') + '?' + params.toString();
     };
 
     // Prepare chart data (limit top 10 items for readability if long)
@@ -36,7 +36,7 @@ export default function RabRealisasi({ auth, items = [], unitBisnisList = [], pr
             user={auth.user}
             header={
                 <div className="flex items-center gap-4">
-                    <Link href={route('laporan-keuangan.index')} className="text-gray-500 hover:text-gray-700">
+                    <Link href={route('finance.laporan-keuangan.index')} className="text-gray-500 hover:text-gray-700">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">

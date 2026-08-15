@@ -15,7 +15,7 @@ export default function Create({ checkableType, checkableId, checkable }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('fleet.checklist.store'));
+        post(route('fleet.checklist-harian.store'));
     };
 
     return (

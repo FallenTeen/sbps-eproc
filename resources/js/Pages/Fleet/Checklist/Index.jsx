@@ -8,7 +8,7 @@ export default function Index({ checklists, filters }) {
     const [tanggal, setTanggal] = useState(filters.tanggal || new Date().toISOString().split('T')[0]);
 
     const handleSearch = () => {
-        router.get(route('fleet.checklist.index'), { search, tanggal });
+        router.get(route('fleet.checklist-harian.index'), { search, tanggal });
     };
 
     const getStatusBadge = (kondisi) => {
@@ -29,7 +29,7 @@ export default function Index({ checklists, filters }) {
                         className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
-                        onClick={() => router.get(route('fleet.checklist.index'), { tanggal })}
+                        onClick={() => router.get(route('fleet.checklist-harian.index'), { tanggal })}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-1"
                     >
                         <Calendar className="w-4 h-4" />
@@ -99,7 +99,7 @@ export default function Index({ checklists, filters }) {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <Link
-                                            href={route('fleet.checklist.show', item.id)}
+                                            href={route('fleet.checklist-harian.show', item.id)}
                                             className="text-blue-600 hover:text-blue-900 inline-block"
                                         >
                                             <Eye className="w-4 h-4" />

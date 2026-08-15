@@ -8,7 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export default function LabaRugi({ auth, reportUnits = [], unitBisnisList = [], summary = {}, filters = {} }) {
 
     const handleFilterChange = (key, value) => {
-        router.get(route('laporan-keuangan.laba-rugi'), {
+        router.get(route('finance.laporan-keuangan.laba-rugi'), {
             ...filters,
             [key]: value
         }, { preserveState: true });
@@ -21,7 +21,7 @@ export default function LabaRugi({ auth, reportUnits = [], unitBisnisList = [], 
             bulan: filters.bulan || '',
             tahun: filters.tahun || '',
         });
-        window.location.href = route('laporan-keuangan.export-excel') + '?' + params.toString();
+        window.location.href = route('finance.laporan-keuangan.export-excel') + '?' + params.toString();
     };
 
     const months = [
@@ -60,7 +60,7 @@ export default function LabaRugi({ auth, reportUnits = [], unitBisnisList = [], 
             user={auth.user}
             header={
                 <div className="flex items-center gap-4">
-                    <Link href={route('laporan-keuangan.index')} className="text-gray-500 hover:text-gray-700">
+                    <Link href={route('finance.laporan-keuangan.index')} className="text-gray-500 hover:text-gray-700">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">

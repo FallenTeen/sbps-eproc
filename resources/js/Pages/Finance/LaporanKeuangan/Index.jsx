@@ -7,7 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 export default function Index({ auth, unitBisnisList = [], filters = {} }) {
 
     const handleFilterChange = (key, value) => {
-        router.get(route('laporan-keuangan.index'), {
+        router.get(route('finance.laporan-keuangan.index'), {
             ...filters,
             [key]: value
         }, { preserveState: true });
@@ -102,7 +102,7 @@ export default function Index({ auth, unitBisnisList = [], filters = {} }) {
                             </div>
 
                             <div className="pt-6 mt-6 border-t flex justify-end">
-                                <Link href={route('laporan-keuangan.rab-realisasi', { unit_bisnis_id: filters.unit_bisnis_id })}>
+                                <Link href={route('finance.laporan-keuangan.rab-realisasi', { unit_bisnis_id: filters.unit_bisnis_id })}>
                                     <PrimaryButton className="flex items-center gap-2">
                                         Buka Laporan <ArrowRight className="w-4 h-4" />
                                     </PrimaryButton>
@@ -125,7 +125,7 @@ export default function Index({ auth, unitBisnisList = [], filters = {} }) {
                             </div>
 
                             <div className="pt-6 mt-6 border-t flex justify-end">
-                                <Link href={route('laporan-keuangan.laba-rugi', { unit_bisnis_id: filters.unit_bisnis_id, bulan: filters.bulan, tahun: filters.tahun })}>
+                                <Link href={route('finance.laporan-keuangan.laba-rugi', { unit_bisnis_id: filters.unit_bisnis_id, bulan: filters.bulan, tahun: filters.tahun })}>
                                     <PrimaryButton className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
                                         Buka Laporan <ArrowRight className="w-4 h-4" />
                                     </PrimaryButton>
