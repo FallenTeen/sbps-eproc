@@ -7,29 +7,32 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, HasUuids;
+    use HasFactory, Notifiable, HasRoles, HasUuids, HasApiTokens;
 
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'nama_lengkap',
         'jabatan',
         'unit_bisnis_id',
         'divisi',
         'is_active',
+        'device_token',
+        'last_tracking_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
-        'is_active' => 'boolean',
     ];
 
     protected function casts(): array
@@ -37,6 +40,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_tracking_at' => 'datetime',
         ];
     }
 
