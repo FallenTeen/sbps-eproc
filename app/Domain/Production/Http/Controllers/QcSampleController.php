@@ -12,6 +12,43 @@ use Illuminate\Http\Request;
 
 class QcSampleController extends Controller
 {
+    public function index(Request $request)
+    {
+        $this->authorize('viewAny', QCSample::class);
+
+        $query = QCSample::with('session.produk');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('session.produk', fn ($q) => $q->where('nama', 'like', "%{$search}%"));
+        }
+
+        $samples = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+
+        return Inertia::render('Production/QC/Index', [
+            'samples' => $samples,
+            'filters' => $request->only(['status', 'search']),
+        ]);
+    }
+
+    public function create()
+    {
+        $this->authorize('create', QCSample::class);
+
+        $sessions = ProductionSession::with('produk')
+            ->whereIn('status', ['berjalan', 'selesai'])
+            ->orderByDesc('mulai')
+            ->get(['id', 'kode_sesi', 'produk_id', 'status']);
+
+        return Inertia::render('Production/QC/Create', [
+            'sessions' => $sessions,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create', QCSample::class);
