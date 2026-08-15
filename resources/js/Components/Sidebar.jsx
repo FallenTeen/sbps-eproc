@@ -13,6 +13,7 @@ import {
     ChevronRight,
     Building2,
     ShieldCheck,
+    MapPin,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -45,8 +46,8 @@ function getAllMenus() {
             permission: ['manage proyek', 'view proyek'],
             items: [
                 { title: 'Daftar Proyek', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
-                { title: 'Titik Lokasi', href: safeRoute('core.titik.index', {}, '/core/titik'), routeName: 'core.titik.*', permission: ['manage proyek', 'view proyek'] },
-                { title: 'RAB', href: safeRoute('core.rab.index', {}, '/core/rab'), routeName: 'core.rab.*', permission: ['manage proyek', 'view proyek'] },
+                { title: 'Titik Lokasi', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
+                { title: 'RAB', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
             ],
         },
         {
@@ -67,6 +68,10 @@ function getAllMenus() {
                 { title: 'Armada (GCS)', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
             ],
         },
@@ -79,7 +84,7 @@ function getAllMenus() {
                 { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*', permission: ['manage production cbp', 'manage production amp', 'view production', 'start session'] },
                 { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Pengiriman Molen', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
-                { title: 'QC Samples', href: safeRoute('production.qc-samples.index', {}, '/production/qc-samples'), routeName: 'production.qc-samples.*', permission: ['manage qc', 'manage production cbp', 'view production'] },
+                { title: 'QC Samples', href: safeRoute('production.qc.index', {}, '/production/qc'), routeName: 'production.qc.*', permission: ['manage qc', 'manage production cbp', 'view production'] },
             ],
         },
         {
@@ -93,12 +98,22 @@ function getAllMenus() {
             ],
         },
         {
+            title: 'Presensi & Lapangan',
+            icon: MapPin,
+            permission: ['manage hr', 'manage presensi', 'manage formulir lapangan'],
+            items: [
+                { title: 'Presensi', href: safeRoute('attendance.presensi.index', {}, '/attendance/presensi'), routeName: 'attendance.presensi.*', permission: ['manage hr', 'manage presensi', 'view hr'] },
+                { title: 'Formulir Lapangan', href: safeRoute('attendance.formulir.index', {}, '/attendance/formulir'), routeName: 'attendance.formulir.*', permission: ['manage hr', 'manage formulir lapangan', 'view hr'] },
+            ],
+        },
+        {
             title: 'Keuangan & Invoice',
             icon: Wallet,
             permission: ['manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice'],
             items: [
                 { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*', permission: ['manage kas', 'manage finance', 'view finance'] },
                 { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: 'finance.invoice.*', permission: ['manage invoice', 'view invoice', 'manage finance'] },
+                { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: 'finance.invoice.*', permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
             ],
         },
@@ -148,6 +163,29 @@ export default function Sidebar({ isOpen, onClose }) {
 
     const allMenus = getAllMenus();
     const menuList = filterMenuByPermissions(allMenus, userPermissions);
+
+    const isOwner = roles.includes('Owner');
+    const isAdminKeuangan = roles.includes('Admin Keuangan');
+
+    const roleExtraMenus = [];
+    if (isOwner) {
+        roleExtraMenus.push({
+            title: 'Audit Log',
+            icon: ShieldCheck,
+            href: safeRoute('audit.logs', {}, '/audit/logs'),
+            routeName: 'audit.*',
+        });
+    }
+    if (isOwner || isAdminKeuangan) {
+        roleExtraMenus.push({
+            title: 'Manajemen User',
+            icon: Users,
+            href: safeRoute('users.index', {}, '/users'),
+            routeName: 'users.*',
+        });
+    }
+
+    const finalMenuList = [...menuList, ...roleExtraMenus];
 
     const [openSubmenu, setOpenSubmenu] = useState({});
     const [switching, setSwitching] = useState(false);
@@ -240,7 +278,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 </div>
 
                 <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
-                    {menuList.map((item, idx) => {
+                    {finalMenuList.map((item, idx) => {
                         const Icon = item.icon || Building2;
                         const hasSub = item.items && item.items.length > 0;
                         const isSubOpen = openSubmenu[item.title] ?? item.items?.some((sub) => isRouteActive(sub.routeName));

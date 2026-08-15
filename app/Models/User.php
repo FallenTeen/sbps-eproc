@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
@@ -22,11 +23,13 @@ class User extends Authenticatable
         'jabatan',
         'unit_bisnis_id',
         'divisi',
+        'is_active',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'is_active' => 'boolean',
     ];
 
     protected function casts(): array
@@ -40,6 +43,11 @@ class User extends Authenticatable
     public function unitBisnis()
     {
         return $this->belongsTo(UnitBisnis::class);
+    }
+
+    public function karyawan()
+    {
+        return $this->hasOne(Karyawan::class, 'user_id');
     }
 
     public function isOwner(): bool
@@ -56,6 +64,7 @@ class User extends Authenticatable
     {
         return $this->hasAnyRole([
             'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
             'Ketua Divisi Armada',
             'Ketua Divisi Kontraktor',
             'Ketua Divisi Produksi CBP',

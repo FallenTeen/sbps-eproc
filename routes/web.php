@@ -41,6 +41,10 @@ use App\Domain\HR\Http\Controllers\KaryawanController;
 use App\Domain\HR\Http\Controllers\CutiController;
 use App\Domain\HR\Http\Controllers\PayrollController;
 
+// Attendance Controllers
+use App\Domain\Attendance\Http\Controllers\PresensiController;
+use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
+
 // Finance Controllers
 use App\Domain\Finance\Http\Controllers\AkunKasBankController;
 use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
@@ -92,7 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     Route::prefix('core')->name('core.')->group(function () {
         // Unit Bisnis (hanya untuk admin/owner)
-        Route::resource('unit-bisnis', UnitBisnisController::class)->except(['show']);
+        Route::resource('unit-bisnis', UnitBisnisController::class)->except(['show'])->parameters(['unit-bisnis' => 'unitBisnis']);
         Route::get('unit-bisnis/{unitBisnis}', [UnitBisnisController::class, 'show'])->name('unit-bisnis.show');
 
         // Proyek
@@ -113,7 +117,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // PROCUREMENT MODULE
     // ============================================================
-    Route::prefix('procurement')->name('procurement.')->middleware(['permission:manage procurement'])->group(function () {
+    Route::prefix('procurement')->name('procurement.')->middleware(['permission:manage procurement|approve procurement|pay procurement|view procurement'])->group(function () {
         // Bahan Baku
         Route::resource('bahan-baku', BahanBakuController::class);
         Route::post('bahan-baku/{bahanBaku}/harga', [BahanBakuController::class, 'setHarga'])->name('bahan-baku.set-harga');
@@ -140,7 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // FLEET MODULE (Armada & Alat Berat) - khusus GCS
     // ============================================================
-    Route::prefix('fleet')->name('fleet.')->middleware(['permission:manage fleet'])->group(function () {
+    Route::prefix('fleet')->name('fleet.')->middleware(['permission:manage fleet|view fleet'])->group(function () {
         // Armada
         Route::resource('armada', ArmadaController::class);
         Route::post('armada/{armada}/assign-driver', [ArmadaController::class, 'assignDriver'])->name('armada.assign-driver');
@@ -172,11 +176,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // SEBELUM Route::resource supaya tidak ketabrak wildcard {bbm}.
         Route::get('bbm', [BbmLogController::class, 'index'])->name('bbm.index');
         Route::get('bbm/anomaly', [BbmLogController::class, 'anomaly'])->name('bbm.anomaly');
-        Route::get('serviceable/{type}/{id}/bbm/create', [BbmLogController::class, 'create'])->name('bbm.create');
+        Route::get('bbm/create', [BbmLogController::class, 'create'])->name('bbm.create');
         Route::get('serviceable/{type}/{id}/bbm', [BbmLogController::class, 'byServiceable'])->name('bbm.by-serviceable');
         Route::resource('bbm', BbmLogController::class)->only(['store', 'show', 'update', 'destroy']);
 
         // Downtime
+        Route::get('downtime/active', [DowntimeLogController::class, 'active'])->name('downtime.active');
+        Route::get('downtime/create', [DowntimeLogController::class, 'create'])->name('downtime.create');
         Route::resource('downtime', DowntimeLogController::class)->only(['store', 'update', 'destroy']);
         Route::post('downtime/{downtime}/end', [DowntimeLogController::class, 'end'])->name('downtime.end');
         Route::get('serviceable/{type}/{id}/downtime', [DowntimeLogController::class, 'index'])->name('downtime.index');
@@ -252,6 +258,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('qc', QcSampleController::class)->only(['store', 'update', 'destroy']);
         Route::post('qc/{qc}/record-result', [QcSampleController::class, 'recordResult'])->name('qc.record-result');
         Route::get('qc/pending', [QcSampleController::class, 'pending'])->name('qc.pending');
+        Route::get('qc', [QcSampleController::class, 'index'])->name('qc.index');
+        Route::get('qc/create', [QcSampleController::class, 'create'])->name('qc.create');
 
         // Pengiriman
         Route::get('pengiriman/today', [PengirimanController::class, 'today'])->name('pengiriman.today');
@@ -275,6 +283,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('cuti')->name('cuti.')->group(function () {
             Route::get('/', [CutiController::class, 'index'])->name('index');
             Route::post('/', [CutiController::class, 'store'])->name('store');
+            Route::get('/{cuti}/edit', [CutiController::class, 'edit'])->name('edit');
+            Route::put('/{cuti}', [CutiController::class, 'update'])->name('update');
+            Route::delete('/{cuti}', [CutiController::class, 'destroy'])->name('destroy');
             Route::post('/{cuti}/approve', [CutiController::class, 'approve'])->name('approve');
             Route::post('/{cuti}/reject', [CutiController::class, 'reject'])->name('reject');
         });
@@ -288,6 +299,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/review/{periode}', [PayrollController::class, 'review'])->name('review');
             Route::post('/{periode}/komponen', [PayrollController::class, 'addKomponen'])->name('add-komponen');
             Route::delete('/komponen/{komponen}', [PayrollController::class, 'deleteKomponen'])->name('delete-komponen');
+        });
+    });
+
+    // ============================================================
+    // ATTENDANCE MODULE (Presensi & Formulir Lapangan)
+    // ============================================================
+    Route::prefix('attendance')->name('attendance.')->middleware(['permission:manage hr|manage presensi|manage formulir lapangan'])->group(function () {
+        // Presensi
+        Route::prefix('presensi')->name('presensi.')->group(function () {
+            Route::get('/', [PresensiController::class, 'index'])->name('index');
+            Route::get('/create', [PresensiController::class, 'create'])->name('create');
+            Route::post('/', [PresensiController::class, 'store'])->name('store');
+            Route::get('/{presensi}', [PresensiController::class, 'show'])->name('show');
+            Route::post('/{presensi}/check-out', [PresensiController::class, 'checkOut'])->name('check-out');
+            Route::post('/{presensi}/review', [PresensiController::class, 'review'])->name('review');
+        });
+
+        // Formulir Lapangan
+        Route::prefix('formulir')->name('formulir.')->group(function () {
+            Route::get('/', [FormulirLapanganController::class, 'index'])->name('index');
+            Route::get('/create', [FormulirLapanganController::class, 'create'])->name('create');
+            Route::post('/', [FormulirLapanganController::class, 'store'])->name('store');
+            Route::get('/{formulir}', [FormulirLapanganController::class, 'show'])->name('show');
         });
     });
 
@@ -362,8 +396,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     Route::prefix('audit')->name('audit.')->middleware(['role:Owner'])->group(function () {
         Route::get('/logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('logs');
-        Route::get('/logs/{log}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('logs.show');
         Route::get('/logs/export', [\App\Http\Controllers\AuditLogController::class, 'export'])->name('logs.export');
+        Route::get('/logs/{log}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('logs.show');
     });
 
     // ============================================================

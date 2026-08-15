@@ -76,6 +76,10 @@ class RolePermissionSeeder extends Seeder
             // Lapangan
             'manage presensi',
             'manage formulir lapangan',
+
+            // Portal Kontraktor
+            'view kontraktor',
+            'manage kontraktor',
         ];
 
         foreach ($permissions as $permission) {
@@ -132,7 +136,7 @@ class RolePermissionSeeder extends Seeder
                 'manage presensi', 'manage formulir lapangan',
             ],
             'Kontraktor' => [
-                'view proyek',
+                'view proyek', 'view kontraktor',
             ],
 
             // ─── Ketua Divisi ───────────────────────────────────────────

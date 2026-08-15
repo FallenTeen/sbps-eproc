@@ -280,10 +280,32 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $permissions = [];
+        $activeRole = null;
+
+        if ($user) {
+            $activeRole = $user->active_role ?? session('active_role', $user->getRoleNames()->first());
+
+            // Owner gets all permissions for all their roles
+            if ($activeRole === 'Owner' || $user->hasRole('Owner')) {
+                $permissions = $user->getAllPermissions()->pluck('name')->toArray();
+            } else {
+                // Get permissions only for the active role
+                $roleModel = $activeRole
+                    ? app(\Spatie\Permission\Contracts\Role::class)::findByName($activeRole, 'web')
+                    : null;
+                $permissions = $roleModel ? $roleModel->permissions->pluck('name')->toArray() : [];
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'roles' => $user ? $user->getRoleNames()->toArray() : [],
+                'active_role' => $activeRole,
+                'permissions' => $permissions,
             ],
             'breadcrumbs' => $this->generateBreadcrumbs($request),
         ];
