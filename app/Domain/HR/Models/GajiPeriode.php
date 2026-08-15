@@ -17,6 +17,7 @@ class GajiPeriode extends Model
         'periode_bulan',
         'periode_tahun',
         'jumlah_hadir',
+        'total_gaji',
         'status',
         'tanggal_dibayar',
         'akun_kas_bank_id'
@@ -25,6 +26,7 @@ class GajiPeriode extends Model
         'periode_bulan' => 'integer',
         'periode_tahun' => 'integer',
         'jumlah_hadir' => 'integer',
+        'total_gaji' => 'decimal:2',
         'tanggal_dibayar' => 'date',
     ];
 

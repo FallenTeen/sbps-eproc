@@ -60,20 +60,28 @@ class GetRABRealisasiAction
 
     private function realisasiSDM($proyekId, $titikId, $kategori): float
     {
-        // Dari gaji_periode untuk karyawan yang ditugaskan di titik ini
-        // Kita perlu relasi karyawan_titik_assignment
-        return GajiPeriode::whereHas('karyawan', function ($q) use ($titikId, $kategori) {
-            $q->whereHas('assignments', function ($q2) use ($titikId) {
-                $q2->where('titik_id', $titikId);
-            })->where('tipe', $kategori === 'sdm_tetap' ? 'tetap' : 'kondisional');
-        })->sum('total_gaji'); // total_gaji dihitung on-the-fly? Sebaiknya kita hitung dari komponen, tapi untuk realisasi kita bisa menggunakan field total_gaji jika disimpan.
-        // Namun manual melarang menyimpan total_gaji, jadi kita hitung dari komponen_gaji.
-        // Untuk sederhana, kita asumsikan ada field total di gaji_periode? Manual bilang tidak disimpan, tapi untuk RAB realisasi kita perlu angka.
-        // Kita akan hitung on-the-fly dari komponen_gaji.
-        // Buat helper di model GajiPeriode untuk menghitung total.
-        // Saya buat di sini sebagai placeholder.
-        // Sebaiknya panggil method calculateTotal() di model.
-        return 0; // placeholder
+        // Dari gaji_periode untuk karyawan yang ditugaskan di titik proyek ini.
+        // RAB level titik: filter assignment di titik tersebut.
+        // RAB level proyek (titik_id null): filter assignment di semua titik milik proyek.
+        $tipe = $kategori === 'sdm_tetap' ? 'tetap' : 'kondisional';
+
+        $query = GajiPeriode::whereHas('karyawan', function ($q) use ($proyekId, $titikId, $tipe) {
+            $q->where('tipe', $tipe);
+
+            if ($titikId !== null) {
+                $q->whereHas('assignments', function ($q2) use ($titikId) {
+                    $q2->where('titik_id', $titikId);
+                });
+            } else {
+                $q->whereHas('assignments', function ($q2) use ($proyekId) {
+                    $q2->whereHas('titik', function ($q3) use ($proyekId) {
+                        $q3->where('proyek_id', $proyekId);
+                    });
+                });
+            }
+        })->sum('total_gaji');
+
+        return (float) $query;
     }
 
     private function realisasiLainnya($proyekId, $titikId): float
