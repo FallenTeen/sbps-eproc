@@ -45,7 +45,7 @@ class SupplierController extends Controller
             'aktif' => 'boolean',
         ]);
         Supplier::create($validated);
-        return redirect()->route('procurement.suppliers.index')
+        return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier berhasil ditambahkan.');
     }
 
@@ -68,7 +68,7 @@ class SupplierController extends Controller
             'aktif' => 'boolean',
         ]);
         $supplier->update($validated);
-        return redirect()->route('procurement.suppliers.index')
+        return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier diperbarui.');
     }
 
@@ -80,7 +80,7 @@ class SupplierController extends Controller
             return back()->with('error', 'Supplier sudah memiliki PO, tidak bisa dihapus.');
         }
         $supplier->delete();
-        return redirect()->route('procurement.suppliers.index')
+        return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier dihapus.');
     }
 }

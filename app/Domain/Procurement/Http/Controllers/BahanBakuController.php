@@ -78,12 +78,35 @@ class BahanBakuController extends Controller
         $this->authorize('view', $bahanBaku);
 
         $bahanBaku->load(['hargaBeli.supplier']);
-        return Inertia::render('Procurement/BahanBaku/Show', ['bahanBaku' => $bahanBaku]);
+
+        $stokPerTitik = $bahanBaku->stokMutasis()
+            ->with('titik')
+            ->get()
+            ->groupBy('titik_id')
+            ->map(function ($mutasis, $titikId) {
+                return [
+                    'titik_id' => $titikId,
+                    'titik' => $mutasis->first()->titik?->nama ?? '-',
+                    'stok' => $mutasis->sum(fn($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
+                ];
+            })
+            ->values();
+
+        $bahanBaku->setAttribute('stok_per_titik', $stokPerTitik);
+
+        $suppliers = Supplier::where('aktif', true)->get();
+
+        return Inertia::render('Procurement/BahanBaku/Show', [
+            'bahanBaku' => $bahanBaku,
+            'suppliers' => $suppliers,
+        ]);
     }
 
     public function edit(BahanBaku $bahanBaku)
     {
         $this->authorize('update', $bahanBaku);
+
+        $bahanBaku->load(['hargaBeli.supplier']);
 
         $suppliers = Supplier::where('aktif', true)->get();
         return Inertia::render('Procurement/BahanBaku/Edit', [
@@ -120,6 +143,35 @@ class BahanBakuController extends Controller
         $bahanBaku->delete();
         return redirect()->route('procurement.bahan-baku.index')
             ->with('success', 'Bahan baku dihapus.');
+    }
+
+    public function stok(BahanBaku $bahanBaku)
+    {
+        $this->authorize('view', $bahanBaku);
+
+        $perTitik = $bahanBaku->stokMutasis()
+            ->get()
+            ->groupBy('titik_id')
+            ->map(function ($mutasis, $titikId) {
+                return [
+                    'titik_id' => $titikId,
+                    'titik' => $mutasis->first()->titik?->nama ?? '-',
+                    'stok' => $mutasis->sum(fn($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
+                ];
+            })
+            ->values();
+
+        $mutasis = $bahanBaku->stokMutasis()
+            ->with('titik')
+            ->orderBy('tanggal', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('Procurement/BahanBaku/Stok', [
+            'bahanBaku' => $bahanBaku,
+            'perTitik' => $perTitik,
+            'mutasis' => $mutasis,
+        ]);
     }
 
     public function setHarga(Request $request, BahanBaku $bahanBaku)
