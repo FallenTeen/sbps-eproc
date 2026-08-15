@@ -30,6 +30,9 @@ class CheckActiveRole
 
             $user->active_role = $activeRole;
 
+            // Jangan biarkan atribut non-kolom ini ikut tersimpan saat model di-update.
+            $user->syncOriginalAttribute('active_role');
+
             if ($role && !$user->hasRole($role)) {
                 return response()->json([
                     'status' => 'error',

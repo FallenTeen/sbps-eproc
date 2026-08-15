@@ -34,12 +34,17 @@ class UploadController extends Controller
         $files = [];
 
         foreach ($request->file('files') as $file) {
+            // Baca metadata SEBELUM addMedia() (medialibrary menghapus file asli).
+            $nama = $file->getClientOriginalName();
+            $mime = $file->getMimeType();
+            $size = $file->getSize();
+
             $dokumen = Dokumen::create([
                 'subject_type' => $validated['subject_type'] ?? null,
                 'subject_id' => $validated['subject_id'] ?? null,
-                'nama' => $file->getClientOriginalName(),
+                'nama' => $nama,
                 'kategori' => $validated['kategori'] ?? $fileType,
-                'tipe' => $file->getMimeType(),
+                'tipe' => $mime,
                 'catatan' => $validated['catatan'] ?? null,
                 'uploaded_by' => $request->user()->id,
             ]);
@@ -49,10 +54,10 @@ class UploadController extends Controller
 
             $files[] = [
                 'id' => $dokumen->id,
-                'nama' => $file->getClientOriginalName(),
+                'nama' => $nama,
                 'file_type' => $fileType,
-                'mime' => $file->getMimeType(),
-                'size' => $file->getSize(),
+                'mime' => $mime,
+                'size' => $size,
                 'url' => $dokumen->getFirstMediaUrl('file'),
             ];
         }

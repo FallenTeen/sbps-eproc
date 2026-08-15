@@ -30,6 +30,9 @@ class SetActiveRole
 
             // Attach the active role to the user object for use in Policies and Middleware
             $user->active_role = $activeRole;
+
+            // Jangan biarkan atribut non-kolom ini ikut tersimpan saat model di-update.
+            $user->syncOriginalAttribute('active_role');
         }
 
         return $next($request);
