@@ -15,8 +15,52 @@ use Carbon\Carbon;
 
 class PembayaranKlienController extends Controller
 {
+    public function index(Request $request, Invoice $invoice)
+    {
+        $this->authorize('viewAny', PembayaranKlien::class);
+
+        $invoice->load(['unitBisnis', 'proyek', 'items', 'pembayaranKlien.akunKasBank']);
+
+        $total = (float) $invoice->items->sum('subtotal');
+        $totalBayar = (float) $invoice->pembayaranKlien->sum('jumlah');
+        $sisa = max(0, $total - $totalBayar);
+
+        $akunKasList = AkunKasBank::where('aktif', true)
+            ->when($invoice->unit_bisnis_id, fn ($q) => $q->where('unit_bisnis_id', $invoice->unit_bisnis_id))
+            ->get(['id', 'nama', 'jenis_kas']);
+
+        return Inertia::render('Finance/PembayaranKlien/Index', [
+            'invoice' => [
+                'id' => $invoice->id,
+                'kode_invoice' => $invoice->kode_invoice,
+                'unit_bisnis' => $invoice->unitBisnis ? $invoice->unitBisnis->nama : '-',
+                'proyek' => $invoice->proyek ? $invoice->proyek->nama : '-',
+                'status' => $invoice->status,
+                'tanggal_terbit' => $invoice->tanggal_terbit ? $invoice->tanggal_terbit->format('Y-m-d') : null,
+                'tanggal_jatuh_tempo' => $invoice->tanggal_jatuh_tempo ? $invoice->tanggal_jatuh_tempo->format('Y-m-d') : null,
+                'pembayarans' => $invoice->pembayaranKlien->map(fn ($p) => [
+                    'id' => $p->id,
+                    'tanggal' => $p->tanggal ? $p->tanggal->format('Y-m-d') : null,
+                    'jumlah' => (float) $p->jumlah,
+                    'metode' => $p->metode,
+                    'akun_kas' => $p->akunKasBank ? $p->akunKasBank->nama : '-',
+                    'dokumen_bukti' => $p->dokumen_bukti,
+                    'catatan' => $p->catatan,
+                ]),
+                'summary' => [
+                    'total' => $total,
+                    'total_bayar' => $totalBayar,
+                    'sisa' => $sisa,
+                ],
+            ],
+            'akunKasList' => $akunKasList,
+        ]);
+    }
+
     public function store(Request $request, ?Invoice $invoice = null)
     {
+        $this->authorize('create', PembayaranKlien::class);
+
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'tanggal' => 'required|date',
@@ -35,6 +79,8 @@ class PembayaranKlienController extends Controller
 
     public function outstanding(Request $request)
     {
+        $this->authorize('viewAny', Invoice::class);
+
         $unitBisnisId = $request->input('unit_bisnis_id');
         $proyekId = $request->input('proyek_id');
 
