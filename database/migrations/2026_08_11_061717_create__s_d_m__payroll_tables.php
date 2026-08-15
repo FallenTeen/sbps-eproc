@@ -59,13 +59,14 @@ return new class extends Migration {
             $table->foreign('disetujui_oleh')->references('id')->on('users');
         });
 
-        // gaji_periode (tanpa kolom total_gaji)
+        // gaji_periode
         Schema::create('gaji_periodes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('karyawan_id');
             $table->integer('periode_bulan');
             $table->integer('periode_tahun');
             $table->integer('jumlah_hadir')->default(0);
+            $table->decimal('total_gaji', 15, 2)->default(0); // netto yang dihitung on-the-fly saat generate/disimpan
             $table->enum('status', ['draft', 'dibayar'])->default('draft');
             $table->date('tanggal_dibayar')->nullable();
             $table->uuid('akun_kas_bank_id')->nullable();
