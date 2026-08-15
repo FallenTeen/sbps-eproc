@@ -43,12 +43,9 @@ function getAllMenus() {
         {
             title: 'Proyek & RAB',
             icon: FolderKanban,
+            href: safeRoute('core.proyek.index', {}, '/core/proyek'),
+            routeName: 'core.proyek.*',
             permission: ['manage proyek', 'view proyek'],
-            items: [
-                { title: 'Daftar Proyek', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
-                { title: 'Titik Lokasi', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
-                { title: 'RAB', href: safeRoute('core.proyek.index', {}, '/core/proyek'), routeName: 'core.proyek.*', permission: ['manage proyek', 'view proyek'] },
-            ],
         },
         {
             title: 'Procurement',
@@ -61,7 +58,7 @@ function getAllMenus() {
             ],
         },
         {
-            title: 'Manajemen Fleet',
+            title: 'Manajemen Armada',
             icon: Truck,
             permission: ['manage fleet', 'view fleet'],
             items: [
@@ -83,7 +80,7 @@ function getAllMenus() {
                 { title: 'Dashboard Produksi', href: safeRoute('production.dashboard', {}, '/production/dashboard'), routeName: 'production.dashboard', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*', permission: ['manage production cbp', 'manage production amp', 'view production', 'start session'] },
                 { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
-                { title: 'Pengiriman Molen', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
+                { title: 'Pengiriman Armada Transportasi', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'QC Samples', href: safeRoute('production.qc.index', {}, '/production/qc'), routeName: 'production.qc.*', permission: ['manage qc', 'manage production cbp', 'view production'] },
             ],
         },
@@ -112,8 +109,8 @@ function getAllMenus() {
             permission: ['manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice'],
             items: [
                 { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*', permission: ['manage kas', 'manage finance', 'view finance'] },
-                { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: 'finance.invoice.*', permission: ['manage invoice', 'view invoice', 'manage finance'] },
-                { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: 'finance.invoice.*', permission: ['manage invoice', 'view invoice', 'manage finance'] },
+                { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: ['finance.invoice.*', '!finance.invoice.outstanding', '!finance.invoice.aging'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
+                { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: ['finance.invoice.outstanding', 'finance.invoice.aging', 'finance.pembayaran-klien.*'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
             ],
         },
@@ -194,15 +191,30 @@ export default function Sidebar({ isOpen, onClose }) {
         setOpenSubmenu((prev) => ({ ...prev, [title]: !prev[title] }));
     };
 
+    const matchesPattern = (current, pattern) => {
+        if (pattern.endsWith('.*')) {
+            return current.startsWith(pattern.replace('.*', ''));
+        }
+        return current === pattern;
+    };
+
     const isRouteActive = (pattern) => {
         if (!pattern) return false;
+        const patterns = Array.isArray(pattern) ? pattern : [pattern];
         try {
             if (typeof route === 'function') {
-                if (pattern.endsWith('.*')) {
-                    const prefix = pattern.replace('.*', '');
-                    return route().current() ? route().current().startsWith(prefix) : false;
+                const current = route().current();
+                if (!current) return false;
+
+                let active = false;
+                for (const p of patterns) {
+                    if (p.startsWith('!')) {
+                        if (matchesPattern(current, p.slice(1))) return false;
+                    } else if (matchesPattern(current, p)) {
+                        active = true;
+                    }
                 }
-                return route().current(pattern);
+                return active;
             }
         } catch (e) {
             return false;
@@ -233,23 +245,22 @@ export default function Sidebar({ isOpen, onClose }) {
             )}
 
             <aside
-                className={`fixed top-0 left-0 z-50 h-screen w-64 transform bg-white text-ink.DEFAULT transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
-                    isOpen ? 'translate-x-0' : '-translate-x-full'
-                } flex flex-col border-r-2 border-black shadow-bw-lg`}
+                className={`fixed top-0 left-0 z-50 h-screen w-64 transform bg-white text-ink.DEFAULT transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                    } flex flex-col shadow-bw-lg`}
             >
-                <div className="flex h-16 items-center justify-between border-b-2 border-black bg-black px-4">
+                <div className="flex h-16 items-center justify-between bg-white px-4">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold text-sm border-2 border-white">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold text-sm border-2 border-white shadow-md">
                             S
                         </div>
                         <div>
-                            <span className="text-base font-black tracking-tight text-white">SBPS System</span>
-                            <span className="block text-[10px] font-semibold text-white/70">Multi-Unit Bisnis v5</span>
+                            <span className="text-base font-black tracking-tight text-black">SBPS System</span>
+                            <span className="block text-[10px] font-semibold text-blaxk/70">Multi-Unit Bisnis v5</span>
                         </div>
                     </Link>
                 </div>
 
-                <div className="border-b-2 border-black bg-surface-muted p-3">
+                <div className="border-b-2 border-black bg-white p-3">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-ink-secondary mb-1.5">
                         Role Aktif
                     </label>
@@ -259,7 +270,7 @@ export default function Sidebar({ isOpen, onClose }) {
                                 value={activeRole}
                                 onChange={(e) => handleRoleSwitch(e.target.value)}
                                 disabled={switching}
-                                className="w-full rounded-none border-2 border-black bg-white py-2 pl-3 pr-10 text-xs font-bold text-ink.DEFAULT focus:border-black focus:outline-none focus:ring-2 focus:ring-black appearance-none cursor-pointer disabled:opacity-60"
+                                className="w-full rounded-none bg-white py-2 pl-3 pr-10 text-xs font-bold text-ink.DEFAULT focus:border-black focus:outline-none focus:ring-2 focus:ring-black appearance-none cursor-pointer disabled:opacity-60"
                             >
                                 {roles.map((role) => (
                                     <option key={role} value={role}>
@@ -270,7 +281,7 @@ export default function Sidebar({ isOpen, onClose }) {
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" />
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between border-2 border-black bg-white px-3 py-2">
+                        <div className="flex items-center justify-between bg-white px-3 py-2">
                             <span className="text-xs font-black text-ink.DEFAULT">{activeRole}</span>
                             <ShieldCheck className="h-4 w-4 text-ink.DEFAULT" />
                         </div>
@@ -291,11 +302,10 @@ export default function Sidebar({ isOpen, onClose }) {
                                 {!hasSub ? (
                                     <Link
                                         href={item.href}
-                                        className={`group flex items-center gap-3 px-3 py-2.5 text-xs font-bold transition-all border-2 ${
-                                            active
-                                                ? 'bg-black text-white border-black shadow-bw'
-                                                : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
-                                        }`}
+                                        className={`group flex items-center gap-3 px-3 py-2.5 text-xs font-bold transition-all border-2 ${active
+                                            ? 'bg-black text-white border-black shadow-bw'
+                                            : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
+                                            }`}
                                     >
                                         <Icon className={`h-4.5 w-4.5 shrink-0 ${active ? 'text-white' : 'text-ink.DEFAULT group-hover:text-black'}`} />
                                         <span>{item.title}</span>
@@ -305,11 +315,10 @@ export default function Sidebar({ isOpen, onClose }) {
                                         <button
                                             type="button"
                                             onClick={() => toggleSubmenu(item.title)}
-                                            className={`group flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold transition-all border-2 ${
-                                                active
-                                                    ? 'bg-white text-ink.DEFAULT border-black shadow-bw-sm font-black'
-                                                    : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
-                                            }`}
+                                            className={`group flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold transition-all border-2 ${active
+                                                ? 'bg-white text-ink.DEFAULT border-black shadow-bw-sm font-black'
+                                                : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
+                                                }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
@@ -330,11 +339,10 @@ export default function Sidebar({ isOpen, onClose }) {
                                                         <Link
                                                             key={sIdx}
                                                             href={sub.href}
-                                                            className={`block px-2.5 py-2 text-[11px] font-bold transition-all border-2 -ml-[1px] ${
-                                                                subActive
-                                                                    ? 'bg-black text-white border-black'
-                                                                    : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
-                                                            }`}
+                                                            className={`block px-2.5 py-2 text-[11px] font-bold transition-all border-2 -ml-[1px] ${subActive
+                                                                ? 'bg-black text-white border-black'
+                                                                : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
+                                                                }`}
                                                         >
                                                             {sub.title}
                                                         </Link>
@@ -349,14 +357,14 @@ export default function Sidebar({ isOpen, onClose }) {
                     })}
                 </nav>
 
-                <div className="border-t-2 border-black bg-black p-3">
+                <div className="p-3">
                     <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-none bg-white text-black font-black text-sm border-2 border-white">
                             {user?.name?.substring(0, 2).toUpperCase() || 'US'}
                         </div>
                         <div className="truncate text-xs flex-1 min-w-0">
-                            <div className="font-black text-white truncate">{user?.name}</div>
-                            <div className="text-[10px] text-white/70 truncate">{user?.email}</div>
+                            <div className="font-black text-black truncate">{user?.name}</div>
+                            <div className="text-[10px] text-black/70 truncate">{user?.email}</div>
                         </div>
                     </div>
                 </div>

@@ -87,7 +87,7 @@ export default function NotificationBell() {
         <div className="relative" ref={ref}>
             <button
                 onClick={() => setOpen((v) => !v)}
-                className="relative flex items-center justify-center w-9 h-9 border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all shadow-bw-sm"
+                className="relative flex items-center justify-center w-9 h-9 rounded-md bg-white text-black hover:bg-black hover:text-white transition-all shadow-bw-sm"
                 aria-label="Notifikasi"
             >
                 <Bell className="w-4.5 h-4.5" />
@@ -114,12 +114,12 @@ export default function NotificationBell() {
                         </div>
                         <div className="flex items-center gap-2">
                             {unread > 0 && (
-                                    <button
-                                        onClick={markAllRead}
-                                        className="flex items-center gap-1 text-[10px] font-bold text-white/80 hover:text-white border border-white/40 px-2 py-0.5"
-                                    >
-                                        <CheckCheck className="w-3 h-3" /> Tandai semua
-                                    </button>
+                                <button
+                                    onClick={markAllRead}
+                                    className="flex items-center gap-1 text-[10px] font-bold text-white/80 hover:text-white border border-white/40 px-2 py-0.5"
+                                >
+                                    <CheckCheck className="w-3 h-3" /> Tandai semua
+                                </button>
                             )}
                             <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
                                 <X className="w-4 h-4" />
