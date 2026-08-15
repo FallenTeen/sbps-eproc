@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
@@ -28,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'divisi.access' => \App\Http\Middleware\CheckDivisiAccess::class,
             'user.active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'mobile.auth' => \App\Http\Controllers\Api\Middleware\EnsureMobileToken::class,
+            'active.role' => \App\Http\Controllers\Api\Middleware\CheckActiveRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
