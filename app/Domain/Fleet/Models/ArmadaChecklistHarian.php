@@ -4,11 +4,12 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ArmadaChecklistHarian extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'armada_checklist_harians';
     protected $fillable = [
@@ -23,6 +24,11 @@ class ArmadaChecklistHarian extends Model
         'tanggal' => 'date',
         'kondisi_baik' => 'boolean',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Domain\Fleet\Models\ArmadaChecklistHarianFactory::new();
+    }
 
     // Relasi polymorphic
     public function checkable()

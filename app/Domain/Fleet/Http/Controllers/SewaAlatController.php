@@ -144,4 +144,97 @@ class SewaAlatController extends Controller
         $this->authorize('view', $sewa);
         return response()->json($sewa);
     }
+
+    /**
+     * Setujui pencatatan sewa alat.
+     */
+    public function approve(Request $request, SewaAlatJam $sewaAlat)
+    {
+        $this->authorize('update', $sewaAlat);
+
+        $sewaAlat->update(['status' => 'disetujui']);
+
+        return back()->with('success', 'Sewa alat disetujui.');
+    }
+
+    /**
+     * Simpan beberapa pencatatan sewa alat sekaligus (bulk).
+     */
+    public function bulkStore(Request $request)
+    {
+        $this->authorize('create', SewaAlatJam::class);
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.armada_id' => 'required|exists:armadas,id',
+            'items.*.proyek_id' => 'nullable|exists:proyeks,id',
+            'items.*.nama_pelanggan' => 'required|string|max:255',
+            'items.*.tanggal_mulai' => 'required|date',
+            'items.*.hm_awal' => 'required|numeric|min:0',
+            'items.*.hm_akhir' => 'nullable|numeric|gte:hm_awal',
+            'items.*.tarif_per_jam' => 'required|numeric|min:0',
+            'items.*.catatan' => 'nullable|string',
+        ]);
+
+        $saved = 0;
+        foreach ($validated['items'] as $item) {
+            $jumlahJam = null;
+            if (!empty($item['hm_akhir']) && !empty($item['hm_awal'])) {
+                $jumlahJam = max(0, floatval($item['hm_akhir']) - floatval($item['hm_awal']));
+            }
+
+            SewaAlatJam::create([
+                'armada_id' => $item['armada_id'],
+                'proyek_id' => $item['proyek_id'] ?? null,
+                'penyewa_eksternal' => $item['nama_pelanggan'],
+                'tanggal' => $item['tanggal_mulai'],
+                'hm_awal' => $item['hm_awal'],
+                'hm_akhir' => $item['hm_akhir'] ?? null,
+                'jumlah_jam' => $jumlahJam,
+                'harga_per_jam_snapshot' => $item['tarif_per_jam'],
+                'status' => 'disetujui',
+                'catatan' => $item['catatan'] ?? null,
+            ]);
+            $saved++;
+        }
+
+        return back()->with('success', "{$saved} pencatatan sewa alat berhasil disimpan.");
+    }
+
+    /**
+     * Laporan sewa alat mingguan.
+     */
+    public function reportMingguan(Request $request)
+    {
+        $this->authorize('viewAny', SewaAlatJam::class);
+
+        $start = Carbon::parse($request->input('mulai', Carbon::now()->startOfWeek()->toDateString()));
+        $end = Carbon::parse($request->input('selesai', Carbon::now()->endOfWeek()->toDateString()));
+
+        $query = SewaAlatJam::with(['armada', 'proyek'])
+            ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()]);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('armada', fn ($q) => $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id));
+        }
+
+        $rows = $query->get();
+
+        $perHari = $rows->groupBy(fn ($s) => Carbon::parse($s->tanggal)->toDateString())
+            ->map(function ($group, $day) {
+                return [
+                    'tanggal' => $day,
+                    'total_jam' => $group->sum('jumlah_jam'),
+                    'pendapatan' => $group->sum(fn ($s) => $s->jumlah_jam * $s->harga_per_jam_snapshot),
+                ];
+            })->values();
+
+        return Inertia::render('Fleet/SewaAlat/ReportMingguan', [
+            'mulai' => $start->toDateString(),
+            'selesai' => $end->toDateString(),
+            'perHari' => $perHari,
+            'total_jam' => $rows->sum('jumlah_jam'),
+            'pendapatan' => $rows->sum(fn ($s) => $s->jumlah_jam * $s->harga_per_jam_snapshot),
+        ]);
+    }
 }

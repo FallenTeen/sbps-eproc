@@ -146,4 +146,126 @@ class RitaseController extends Controller
         $this->authorize('view', $ritase);
         return response()->json($ritase);
     }
+
+    /**
+     * Setujui ritase (mis. oleh koordinator sebelum ditagihkan).
+     */
+    public function approve(Request $request, Ritase $ritase)
+    {
+        $this->authorize('update', $ritase);
+
+        $ritase->update(['status' => 'disetujui']);
+
+        return back()->with('success', 'Ritase disetujui.');
+    }
+
+    /**
+     * Simpan beberapa ritase sekaligus (bulk).
+     */
+    public function bulkStore(Request $request)
+    {
+        $this->authorize('create', Ritase::class);
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.armada_id' => 'required|exists:armadas,id',
+            'items.*.karyawan_id' => 'required|exists:karyawans,id',
+            'items.*.rute_tarif_id' => 'required|exists:rute_tarif,id',
+            'items.*.proyek_id' => 'nullable|exists:proyeks,id',
+            'items.*.tanggal' => 'required|date',
+            'items.*.jumlah_trip' => 'required|integer|min:1',
+            'items.*.catatan' => 'nullable|string',
+        ]);
+
+        $saved = 0;
+        foreach ($validated['items'] as $item) {
+            $rute = RuteTarif::findOrFail($item['rute_tarif_id']);
+            Ritase::create([
+                'armada_id' => $item['armada_id'],
+                'driver_karyawan_id' => $item['karyawan_id'],
+                'rute_tarif_id' => $item['rute_tarif_id'],
+                'proyek_id' => $item['proyek_id'] ?? null,
+                'tanggal' => $item['tanggal'],
+                'jumlah_rit' => $item['jumlah_trip'],
+                'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
+                'status' => 'disetujui',
+                'catatan' => $item['catatan'] ?? null,
+            ]);
+            $saved++;
+        }
+
+        return back()->with('success', "{$saved} ritase berhasil disimpan.");
+    }
+
+    /**
+     * Laporan ritase harian (rekap per armada).
+     */
+    public function reportHarian(Request $request)
+    {
+        $this->authorize('viewAny', Ritase::class);
+
+        $tanggal = $request->input('tanggal', Carbon::today()->toDateString());
+
+        $query = Ritase::with(['armada', 'driver', 'ruteTarif'])
+            ->whereDate('tanggal', $tanggal);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('armada', fn ($q) => $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id));
+        }
+
+        $rows = $query->get();
+        $rekap = $rows->groupBy('armada_id')->map(function ($group) {
+            $armada = $group->first()->armada;
+            return [
+                'armada_id' => $armada?->id,
+                'kode_unit' => $armada?->kode_unit,
+                'plat_nomor' => $armada?->plat_nomor,
+                'total_rit' => $group->sum('jumlah_rit'),
+                'total_upah' => $group->sum(fn ($r) => $r->total_upah_rit),
+            ];
+        })->values();
+
+        return Inertia::render('Fleet/Ritase/ReportHarian', [
+            'tanggal' => $tanggal,
+            'rekap' => $rekap,
+            'detail' => $rows,
+        ]);
+    }
+
+    /**
+     * Laporan ritase mingguan (rekap per minggu).
+     */
+    public function reportMingguan(Request $request)
+    {
+        $this->authorize('viewAny', Ritase::class);
+
+        $start = Carbon::parse($request->input('mulai', Carbon::now()->startOfWeek()->toDateString()));
+        $end = Carbon::parse($request->input('selesai', Carbon::now()->endOfWeek()->toDateString()));
+
+        $query = Ritase::with(['armada', 'driver', 'ruteTarif'])
+            ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()]);
+
+        if ($request->user()->unit_bisnis_id) {
+            $query->whereHas('armada', fn ($q) => $q->where('unit_bisnis_id', $request->user()->unit_bisnis_id));
+        }
+
+        $rows = $query->get();
+
+        $perHari = $rows->groupBy(fn ($r) => Carbon::parse($r->tanggal)->toDateString())
+            ->map(function ($group, $day) {
+                return [
+                    'tanggal' => $day,
+                    'total_rit' => $group->sum('jumlah_rit'),
+                    'total_upah' => $group->sum(fn ($r) => $r->total_upah_rit),
+                ];
+            })->values();
+
+        return Inertia::render('Fleet/Ritase/ReportMingguan', [
+            'mulai' => $start->toDateString(),
+            'selesai' => $end->toDateString(),
+            'perHari' => $perHari,
+            'total_rit' => $rows->sum('jumlah_rit'),
+            'total_upah' => $rows->sum(fn ($r) => $r->total_upah_rit),
+        ]);
+    }
 }

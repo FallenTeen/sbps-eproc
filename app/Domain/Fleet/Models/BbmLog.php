@@ -5,11 +5,12 @@ namespace App\Domain\Fleet\Models;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BbmLog extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'bbm_logs';
     protected $fillable = [
@@ -28,6 +29,11 @@ class BbmLog extends Model
         'biaya' => 'float',
         'jam_operasional_saat_isi' => 'float',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Domain\Fleet\Models\BbmLogFactory::new();
+    }
 
     // Relasi polymorphic
     public function serviceable()

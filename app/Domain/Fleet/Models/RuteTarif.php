@@ -4,13 +4,14 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Core\Models\UnitBisnis;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RuteTarif extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
-    protected $table = 'rute_tarif';
+    protected $table = 'rute_tarifs';
     protected $fillable = [
         'unit_bisnis_id',
         'lokasi_asal',
@@ -21,6 +22,11 @@ class RuteTarif extends Model
         'berlaku_dari',
         'berlaku_sampai',
     ];
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Domain\Fleet\Models\RuteTarifFactory::new();
+    }
 
     protected $casts = [
         'jarak_km' => 'float',

@@ -7,11 +7,12 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Finance\Models\InvoiceItem;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ritase extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'ritases';
     protected $fillable = [
