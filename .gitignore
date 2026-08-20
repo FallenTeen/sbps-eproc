@@ -28,8 +28,12 @@ manual-book-development-multi-unit-bisnis-v5.md
 docs/api-mobile.md
 
 # Deployment scripts (contain server-specific info)
-deploy.sh
+deploy-staging.sh
+deploy-production.sh
 backup.sh
 CICD-SETUP.md
 deploy-production.sh
 deploy-staging.sh
+
+# Staging symlink inside production public
+public/staging.sbpscorp.com
