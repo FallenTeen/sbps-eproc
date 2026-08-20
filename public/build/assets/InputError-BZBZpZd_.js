@@ -1,0 +1,1 @@
+import{t as e}from"./app-D3w2qcHO.js";var t=e();function n({message:e,className:n=``,...r}){return e?(0,t.jsx)(`p`,{...r,className:`text-xs font-bold text-status-warning.DEFAULT mt-1.5 `+n,children:e}):null}export{n as t};
