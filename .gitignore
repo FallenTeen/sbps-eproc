@@ -31,3 +31,5 @@ docs/api-mobile.md
 deploy.sh
 backup.sh
 CICD-SETUP.md
+deploy-production.sh
+deploy-staging.sh
