@@ -32,3 +32,6 @@ deploy-staging.sh
 deploy-production.sh
 backup.sh
 CICD-SETUP.md
+
+# Staging symlink inside production public
+public/staging.sbpscorp.com
