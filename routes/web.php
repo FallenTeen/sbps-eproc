@@ -408,16 +408,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ============================================================
-    // NOTIFICATION CENTER (semua user)
-    // ============================================================
-    Route::prefix('notifications')->name('notifications.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
-        Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
-        Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
-        Route::delete('/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
-    });
-
-    // ============================================================
     // USER MANAGEMENT (Owner & Admin saja)
     // ============================================================
     Route::prefix('users')->name('users.')->middleware(['role:Owner|Admin Keuangan'])->group(function () {

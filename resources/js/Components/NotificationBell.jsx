@@ -9,6 +9,7 @@ const ICON_MAP = {
     po_approval: <ShoppingCart className="w-4 h-4 text-black" />,
     servis_jatuh_tempo: <Wrench className="w-4 h-4 text-black" />,
     invoice_jatuh_tempo: <FileText className="w-4 h-4 text-black" />,
+    checklist_kondisi_buruk: <AlertTriangle className="w-4 h-4 text-black" />,
     stok_minus: <AlertTriangle className="w-4 h-4 text-black" />,
     formulir_belum_isi: <Clock className="w-4 h-4 text-black" />,
 };
@@ -17,6 +18,7 @@ const COLOR_MAP = {
     po_approval: 'bg-status-success.light border-2 border-status-success.DEFAULT',
     servis_jatuh_tempo: 'bg-status-progress.light border-2 border-status-progress.DEFAULT',
     invoice_jatuh_tempo: 'bg-status-success.light border-2 border-status-success.DEFAULT',
+    checklist_kondisi_buruk: 'bg-status-warning.light border-2 border-status-warning.DEFAULT',
     stok_minus: 'bg-status-progress.light border-2 border-status-progress.DEFAULT',
     formulir_belum_isi: 'bg-white border-2 border-black',
 };
@@ -92,7 +94,7 @@ export default function NotificationBell() {
             >
                 <Bell className="w-4.5 h-4.5" />
                 {unread > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 border-2 border-white bg-status-warning.DEFAULT text-white text-[10px] font-black leading-none">
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 border-2 border-black rounded-md bg-status-warning.DEFAULT text-black bg-white text-[10px] font-black leading-none">
                         {unread > 9 ? '9+' : unread}
                     </span>
                 )}

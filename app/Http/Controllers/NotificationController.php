@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Carbon\Carbon;
 
 class NotificationController extends Controller
 {
     /**
-     * Return JSON list of notifications for the authenticated user.
-     * Uses a hybrid approach: DB notifications + rule-based generated alerts.
+     * Build the full list of virtual notifications for the authenticated user.
      */
-    public function index(Request $request)
+    private function buildNotifications(): array
     {
         $user = Auth::user();
         $notifications = [];
@@ -108,12 +108,29 @@ class NotificationController extends Controller
             }
         }
 
-        // Sort by most recent and cap at 20
-        $sorted = collect($notifications)->take(20)->values()->all();
+        return $notifications;
+    }
 
-        return response()->json([
+    /**
+     * Show all notifications as an Inertia page.
+     * Also serves JSON for AJAX requests from the notification bell dropdown.
+     */
+    public function index(Request $request)
+    {
+        $notifications = $this->buildNotifications();
+        $sorted = collect($notifications)->sortByDesc('time_ago')->values()->all();
+        $unreadCount = count(array_filter($sorted, fn($n) => !$n['is_read']));
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'notifications' => collect($sorted)->take(20)->values()->all(),
+                'unread_count' => $unreadCount,
+            ]);
+        }
+
+        return Inertia::render('Notifications/Index', [
             'notifications' => $sorted,
-            'unread_count' => count(array_filter($sorted, fn($n) => !$n['is_read'])),
+            'unread_count' => $unreadCount,
         ]);
     }
 
