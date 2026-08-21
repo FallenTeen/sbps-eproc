@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,12 +53,6 @@ class PortalController extends Controller
     public function store(Request $request, string $portal): RedirectResponse
     {
         $config = $this->resolvePortal($portal);
-
-        $loginRequest = app(LoginRequest::class);
-        $loginRequest->setContainer(app());
-        $loginRequest->setRedirectResolver(function ($message = null) {
-            return redirect()->back()->withErrors(['email' => $message]);
-        });
 
         $request->validate([
             'email' => ['required', 'string', 'email'],
