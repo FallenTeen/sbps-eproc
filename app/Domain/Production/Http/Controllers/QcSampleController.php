@@ -7,8 +7,8 @@ use App\Domain\Production\Actions\RecordUjiTekanResultAction;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\QCSample;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class QcSampleController extends Controller
 {
@@ -61,7 +61,7 @@ class QcSampleController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        (new RecordQCSampleAction())->execute($validated);
+        (new RecordQCSampleAction)->execute($validated);
 
         return back()->with('success', 'Sample QC dicatat.');
     }
@@ -115,7 +115,7 @@ class QcSampleController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        (new RecordUjiTekanResultAction())->execute(
+        (new RecordUjiTekanResultAction)->execute(
             $qc,
             $validated['hasil_uji_tekan'],
             $validated['catatan'] ?? null,

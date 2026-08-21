@@ -10,6 +10,7 @@ class QCSample extends Model
     use HasUuids;
 
     protected $table = 'qc_samples';
+
     protected $fillable = [
         'production_session_id',
         'jenis_uji',
@@ -17,8 +18,9 @@ class QCSample extends Model
         'tanggal_uji_tekan_rencana',
         'hasil_uji_tekan',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'nilai_slump' => 'float',
         'tanggal_uji_tekan_rencana' => 'date',

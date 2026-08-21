@@ -4,8 +4,8 @@ namespace App\Domain\Procurement\Http\Controllers;
 
 use App\Domain\Procurement\Models\Supplier;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class SupplierController extends Controller
 {
@@ -15,10 +15,11 @@ class SupplierController extends Controller
 
         $query = Supplier::query();
         if ($request->has('search')) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                ->orWhere('kode', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%'.$request->search.'%')
+                ->orWhere('kode', 'like', '%'.$request->search.'%');
         }
         $suppliers = $query->orderBy('nama')->paginate(10)->withQueryString();
+
         return Inertia::render('Procurement/Suppliers/Index', [
             'suppliers' => $suppliers,
             'filters' => $request->only('search'),
@@ -45,6 +46,7 @@ class SupplierController extends Controller
             'aktif' => 'boolean',
         ]);
         Supplier::create($validated);
+
         return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier berhasil ditambahkan.');
     }
@@ -68,6 +70,7 @@ class SupplierController extends Controller
             'aktif' => 'boolean',
         ]);
         $supplier->update($validated);
+
         return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier diperbarui.');
     }
@@ -80,6 +83,7 @@ class SupplierController extends Controller
             return back()->with('error', 'Supplier sudah memiliki PO, tidak bisa dihapus.');
         }
         $supplier->delete();
+
         return redirect()->route('procurement.supplier.index')
             ->with('success', 'Supplier dihapus.');
     }

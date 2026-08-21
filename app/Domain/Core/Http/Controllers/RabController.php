@@ -2,15 +2,15 @@
 
 namespace App\Domain\Core\Http\Controllers;
 
-use App\Domain\Core\Models\Rab;
-use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Actions\SetRABAction;
-use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Actions\CompareRABRealisasiAction;
+use App\Domain\Core\Actions\GetRABRealisasiAction;
+use App\Domain\Core\Actions\SetRABAction;
+use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\Rab;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class RabController extends Controller
 {
@@ -54,6 +54,7 @@ class RabController extends Controller
         }
         $proyeks = $proyeksQuery->get();
         $selectedProyek = $request->proyek_id ?? null;
+
         return Inertia::render('Core/Rab/Create', [
             'proyeks' => $proyeks,
             'selectedProyek' => $selectedProyek,
@@ -73,7 +74,7 @@ class RabController extends Controller
         ]);
 
         $validated['created_by'] = Auth::id();
-        (new SetRABAction())->execute($validated);
+        (new SetRABAction)->execute($validated);
 
         return redirect()->route('core.rab.index')
             ->with('success', 'RAB berhasil ditambahkan.');
@@ -83,8 +84,8 @@ class RabController extends Controller
     {
         $this->authorize('view', $rab);
 
-        $realisasi = (new GetRABRealisasiAction())->execute($rab);
-        $perbandingan = (new CompareRABRealisasiAction())->execute($rab);
+        $realisasi = (new GetRABRealisasiAction)->execute($rab);
+        $perbandingan = (new CompareRABRealisasiAction)->execute($rab);
 
         return Inertia::render('Core/Rab/Show', [
             'rab' => $rab->load(['proyek', 'titik']),
@@ -102,6 +103,7 @@ class RabController extends Controller
             $proyeksQuery->where('unit_bisnis_id', auth()->user()->unit_bisnis_id);
         }
         $proyeks = $proyeksQuery->get();
+
         return Inertia::render('Core/Rab/Edit', [
             'rab' => $rab,
             'proyeks' => $proyeks,
@@ -128,6 +130,7 @@ class RabController extends Controller
         $this->authorize('delete', $rab);
 
         $rab->delete();
+
         return redirect()->route('core.rab.index')
             ->with('success', 'RAB dihapus.');
     }

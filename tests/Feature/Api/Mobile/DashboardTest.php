@@ -6,6 +6,7 @@ use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -60,6 +61,6 @@ test('titik detail mengembalikan detail titik dengan RAB', function () {
 test('titik detail menolak titik yang tidak ada', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
-        ->getJson('/api/mobile/dashboard/titik/' . (string) \Illuminate\Support\Str::uuid())
+        ->getJson('/api/mobile/dashboard/titik/'.(string) Str::uuid())
         ->assertStatus(404);
 });

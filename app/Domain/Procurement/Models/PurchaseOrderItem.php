@@ -8,16 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrderItem extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'purchase_order_items';
+
     protected $fillable = [
         'purchase_order_id',
         'bahan_baku_id',
         'jumlah',
         'harga_satuan_snapshot',
-        'subtotal'
+        'subtotal',
     ];
+
     protected $casts = [
         'jumlah' => 'float',
         'harga_satuan_snapshot' => 'float',

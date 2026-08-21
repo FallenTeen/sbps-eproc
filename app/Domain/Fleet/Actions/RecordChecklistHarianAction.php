@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Fleet\Actions;
 
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
@@ -14,7 +15,7 @@ class RecordChecklistHarianAction
             'dicatat_oleh_karyawan_id' => $data['dicatat_oleh_karyawan_id'],
         ]);
 
-        if (!$data['kondisi_baik']) {
+        if (! $data['kondisi_baik']) {
             // Kirim notifikasi ke koordinator
             // (bisa pakai Notification Center)
         }

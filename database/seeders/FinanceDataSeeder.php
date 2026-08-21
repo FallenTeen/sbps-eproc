@@ -4,15 +4,15 @@ namespace Database\Seeders;
 
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Fleet\Models\Armada;
-use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Models\InvoiceItem;
 use App\Domain\Finance\Models\MutasiKasBank;
 use App\Domain\Finance\Models\PembayaranKlien;
 use App\Domain\Finance\Models\TransferAntarKas;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
 use Illuminate\Database\Seeder;

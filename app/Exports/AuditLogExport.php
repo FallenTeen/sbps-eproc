@@ -5,10 +5,10 @@ namespace App\Exports;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class AuditLogExport implements FromCollection, WithHeadings, ShouldAutoSize
+class AuditLogExport implements FromCollection, ShouldAutoSize, WithHeadings
 {
     use Exportable;
 

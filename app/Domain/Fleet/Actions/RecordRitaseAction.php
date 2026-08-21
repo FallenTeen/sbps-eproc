@@ -1,9 +1,9 @@
 <?php
+
 namespace App\Domain\Fleet\Actions;
 
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class RecordRitaseAction
@@ -12,7 +12,7 @@ class RecordRitaseAction
     {
         // Cari tarif dari rute jika ada
         $tarif = null;
-        if (!empty($data['rute_tarif_id'])) {
+        if (! empty($data['rute_tarif_id'])) {
             $rute = RuteTarif::find($data['rute_tarif_id']);
             $tarif = $rute->tarif_per_rit;
         } else {
@@ -37,7 +37,7 @@ class RecordRitaseAction
             ]);
 
             // Simpan biaya lain jika ada
-            if (!empty($data['biaya_lain'])) {
+            if (! empty($data['biaya_lain'])) {
                 foreach ($data['biaya_lain'] as $bl) {
                     $ritase->biayaLain()->create([
                         'jenis' => $bl['jenis'],

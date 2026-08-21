@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Production\Models\ProductionSession;
+use App\Models\User;
 
 class ProductionSessionPolicy
 {
@@ -12,19 +12,20 @@ class ProductionSessionPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Ketua Divisi Produksi CBP',
-                    'Ketua Divisi Produksi AMP',
-                    'Mandor Proyek',
-                ])
+            'Admin Keuangan',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Ketua Divisi Produksi CBP',
+            'Ketua Divisi Produksi AMP',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage production')
             || $user->hasPermissionTo('manage production cbp')
             || $user->hasPermissionTo('manage production amp')
@@ -33,22 +34,23 @@ class ProductionSessionPolicy
 
     public function view(User $user, ProductionSession $session): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
         $sessionUnitId = $this->resolveSessionUnitId($session);
+
         return $this->unitBisnisAllowed($user, $sessionUnitId);
     }
 
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Ketua Divisi Produksi CBP',
-                    'Ketua Divisi Produksi AMP',
-                ])
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Ketua Divisi Produksi CBP',
+            'Ketua Divisi Produksi AMP',
+        ])
             || $user->hasPermissionTo('manage production cbp')
             || $user->hasPermissionTo('manage production amp')
             || $user->hasPermissionTo('manage production');
@@ -56,11 +58,12 @@ class ProductionSessionPolicy
 
     public function update(User $user, ProductionSession $session): bool
     {
-        if (!$this->create($user)) {
+        if (! $this->create($user)) {
             return false;
         }
 
         $sessionUnitId = $this->resolveSessionUnitId($session);
+
         return $this->unitBisnisAllowed($user, $sessionUnitId);
     }
 
@@ -74,6 +77,7 @@ class ProductionSessionPolicy
         if ($user->hasRole(['Koordinator CBP', 'Koordinator AMP', 'Ketua Divisi Produksi CBP', 'Ketua Divisi Produksi AMP'])
             || $user->hasPermissionTo('start session')) {
             $sessionUnitId = $this->resolveSessionUnitId($session);
+
             return $this->unitBisnisAllowed($user, $sessionUnitId);
         }
 
@@ -89,6 +93,7 @@ class ProductionSessionPolicy
         if ($user->hasRole(['Koordinator CBP', 'Koordinator AMP', 'Ketua Divisi Produksi CBP', 'Ketua Divisi Produksi AMP', 'Mandor Proyek'])
             || $user->hasPermissionTo('end session')) {
             $sessionUnitId = $this->resolveSessionUnitId($session);
+
             return $this->unitBisnisAllowed($user, $sessionUnitId);
         }
 
@@ -99,13 +104,14 @@ class ProductionSessionPolicy
     {
         // Hanya untuk CBP
         $isCbp = $this->isCbpSession($session);
-        if (!$isCbp) {
+        if (! $isCbp) {
             return false;
         }
 
         if ($user->hasRole(['Koordinator CBP', 'Ketua Divisi Produksi CBP', 'Mandor Proyek'])
             || $user->hasPermissionTo('manage qc')) {
             $sessionUnitId = $this->resolveSessionUnitId($session);
+
             return $this->unitBisnisAllowed($user, $sessionUnitId);
         }
 
@@ -121,6 +127,7 @@ class ProductionSessionPolicy
         if ($session->produk?->unit_bisnis_id) {
             return $session->produk->unit_bisnis_id;
         }
+
         return null;
     }
 
@@ -131,6 +138,7 @@ class ProductionSessionPolicy
         if ($unitKode) {
             return strtoupper($unitKode) === 'CBP';
         }
+
         return true;
     }
 
@@ -139,9 +147,10 @@ class ProductionSessionPolicy
         if ($user->hasRole(['Admin Keuangan', 'Mandor Proyek'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

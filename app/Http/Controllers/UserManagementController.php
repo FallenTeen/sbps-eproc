@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 class UserManagementController extends Controller
 {
@@ -111,7 +109,7 @@ class UserManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|string|exists:roles,name',
             'is_active' => 'sometimes|boolean',
@@ -185,7 +183,7 @@ class UserManagementController extends Controller
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');
         }
 
-        $user->update(['is_active' => !$user->is_active]);
+        $user->update(['is_active' => ! $user->is_active]);
 
         return back()->with('success', 'Status user berhasil diubah.');
     }

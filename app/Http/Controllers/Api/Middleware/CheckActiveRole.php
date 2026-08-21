@@ -24,7 +24,7 @@ class CheckActiveRole
             $roles = $user->getRoleNames();
             $activeRole = $request->header('X-Active-Role');
 
-            if (!$activeRole || !$roles->contains($activeRole)) {
+            if (! $activeRole || ! $roles->contains($activeRole)) {
                 $activeRole = $roles->first();
             }
 
@@ -33,7 +33,7 @@ class CheckActiveRole
             // Jangan biarkan atribut non-kolom ini ikut tersimpan saat model di-update.
             $user->syncOriginalAttribute('active_role');
 
-            if ($role && !$user->hasRole($role)) {
+            if ($role && ! $user->hasRole($role)) {
                 return response()->json([
                     'status' => 'error',
                     'message' => "Akses ditolak. Dibutuhkan role: {$role}.",

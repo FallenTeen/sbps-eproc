@@ -3,27 +3,30 @@
 namespace App\Domain\Production\Models;
 
 use App\Domain\Core\Models\UnitBisnis;
+use Database\Factories\ProdukFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected static function newFactory()
     {
-        return \Database\Factories\ProdukFactory::new();
+        return ProdukFactory::new();
     }
 
     protected $table = 'produks';
+
     protected $fillable = [
         'unit_bisnis_id',
         'nama',
         'kategori',
         'satuan_output',
-        'aktif'
+        'aktif',
     ];
+
     protected $casts = ['aktif' => 'boolean'];
 
     // Relasi

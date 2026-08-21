@@ -2,17 +2,18 @@
 
 namespace App\Domain\Finance\Models;
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\UnitBisnis;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class Invoice extends Model
 {
     use HasUuids;
 
     protected $table = 'invoices';
+
     protected $fillable = [
         'unit_bisnis_id',
         'proyek_id',
@@ -22,8 +23,9 @@ class Invoice extends Model
         'tanggal_jatuh_tempo',
         'status',
         'catatan',
-        'created_by'
+        'created_by',
     ];
+
     protected $casts = [
         'termin_pembayaran_hari' => 'integer',
         'tanggal_terbit' => 'date',

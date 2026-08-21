@@ -2,15 +2,14 @@
 
 namespace App\Domain\Production\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Titik;
+use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\Produk;
-use App\Domain\Fleet\Models\DowntimeLog;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class MesinProduksiController extends Controller
 {
@@ -19,17 +18,17 @@ class MesinProduksiController extends Controller
         $this->authorize('viewAny', MesinProduksi::class);
 
         $user = $request->user();
-        $query = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault', 'serviceHistories' => fn($q) => $q->latest('tanggal')]);
+        $query = MesinProduksi::with(['unitBisnis', 'titik', 'produkDefault', 'serviceHistories' => fn ($q) => $q->latest('tanggal')]);
 
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $query->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
 
         $mesin = $query
             ->when($request->search, function ($query, $search) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('nama', 'like', "%{$search}%")
-                      ->orWhere('jenis', 'like', "%{$search}%");
+                        ->orWhere('jenis', 'like', "%{$search}%");
                 });
             })
             ->when($request->status, function ($query, $status) {
@@ -46,7 +45,7 @@ class MesinProduksiController extends Controller
             ->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
 
@@ -54,7 +53,7 @@ class MesinProduksiController extends Controller
             'mesin' => $mesin,
             'filters' => $request->only(['search', 'status', 'jenis', 'unit_bisnis_id']),
             'unitBisnis' => $unitBisnisQuery->get(),
-            'jenisOptions' => MesinProduksi::select('jenis')->distinct()->pluck('jenis')
+            'jenisOptions' => MesinProduksi::select('jenis')->distinct()->pluck('jenis'),
         ]);
     }
 
@@ -64,14 +63,14 @@ class MesinProduksiController extends Controller
 
         $user = auth()->user();
         $unitBisnisQuery = UnitBisnis::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
 
         return Inertia::render('Production/Mesin/Create', [
             'unitBisnis' => $unitBisnisQuery->get(),
             'titiks' => Titik::aktif()->get(),
-            'produks' => Produk::all()
+            'produks' => Produk::all(),
         ]);
     }
 
@@ -87,7 +86,7 @@ class MesinProduksiController extends Controller
             'jenis' => 'required|in:crusher,mixer_aspal,mixer_beton',
             'kapasitas' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,rusak,maintenance,nonaktif',
-            'biaya_per_jam' => 'nullable|numeric|min:0'
+            'biaya_per_jam' => 'nullable|numeric|min:0',
         ]);
 
         MesinProduksi::create($validated);
@@ -98,19 +97,19 @@ class MesinProduksiController extends Controller
     public function show($id)
     {
         $mesin = MesinProduksi::with([
-            'unitBisnis', 
-            'titik', 
+            'unitBisnis',
+            'titik',
             'produkDefault',
-            'serviceHistories' => fn($q) => $q->latest('tanggal')->take(10),
-            'checklists' => fn($q) => $q->latest('tanggal')->take(10),
-            'bbmLogs' => fn($q) => $q->latest('tanggal')->take(10),
-            'downtimes' => fn($q) => $q->latest('mulai')->take(10)
+            'serviceHistories' => fn ($q) => $q->latest('tanggal')->take(10),
+            'checklists' => fn ($q) => $q->latest('tanggal')->take(10),
+            'bbmLogs' => fn ($q) => $q->latest('tanggal')->take(10),
+            'downtimes' => fn ($q) => $q->latest('mulai')->take(10),
         ])->findOrFail($id);
 
         $this->authorize('view', $mesin);
 
         return Inertia::render('Production/Mesin/Show', [
-            'mesin' => $mesin
+            'mesin' => $mesin,
         ]);
     }
 
@@ -118,12 +117,12 @@ class MesinProduksiController extends Controller
     {
         $mesin = MesinProduksi::findOrFail($id);
         $this->authorize('update', $mesin);
-        
+
         return Inertia::render('Production/Mesin/Edit', [
             'mesin' => $mesin,
             'unitBisnis' => UnitBisnis::aktif()->get(),
             'titiks' => Titik::aktif()->get(),
-            'produks' => Produk::all()
+            'produks' => Produk::all(),
         ]);
     }
 
@@ -140,7 +139,7 @@ class MesinProduksiController extends Controller
             'jenis' => 'required|in:crusher,mixer_aspal,mixer_beton',
             'kapasitas' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,rusak,maintenance,nonaktif',
-            'biaya_per_jam' => 'nullable|numeric|min:0'
+            'biaya_per_jam' => 'nullable|numeric|min:0',
         ]);
 
         $mesin->update($validated);
@@ -161,9 +160,9 @@ class MesinProduksiController extends Controller
     {
         $mesin = MesinProduksi::findOrFail($id);
         $this->authorize('update', $mesin);
-        
+
         $validated = $request->validate([
-            'status' => 'required|in:aktif,rusak,maintenance,nonaktif'
+            'status' => 'required|in:aktif,rusak,maintenance,nonaktif',
         ]);
 
         $mesin->update(['status' => $validated['status']]);
@@ -183,7 +182,7 @@ class MesinProduksiController extends Controller
             'jenis_servis' => 'required|string|max:255',
             'biaya' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
-            'purchase_order_id' => 'nullable|exists:purchase_orders,id'
+            'purchase_order_id' => 'nullable|exists:purchase_orders,id',
         ]);
 
         DB::transaction(function () use ($mesin, $validated) {
@@ -205,7 +204,7 @@ class MesinProduksiController extends Controller
             'tanggal' => 'required|date',
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
-            'dicatat_oleh_karyawan_id' => 'nullable|exists:karyawans,id'
+            'dicatat_oleh_karyawan_id' => 'nullable|exists:karyawans,id',
         ]);
 
         $mesin->checklists()->create($validated);
@@ -223,7 +222,7 @@ class MesinProduksiController extends Controller
             'liter' => 'required|numeric|min:0',
             'biaya' => 'required|numeric|min:0',
             'jam_operasional_saat_isi' => 'nullable|numeric|min:0',
-            'purchase_order_id' => 'nullable|exists:purchase_orders,id'
+            'purchase_order_id' => 'nullable|exists:purchase_orders,id',
         ]);
 
         $validated['dicatat_oleh'] = auth()->id();
@@ -242,7 +241,7 @@ class MesinProduksiController extends Controller
             'mulai' => 'required|date',
             'penyebab' => 'required|string',
             'kategori' => 'required|string',
-            'catatan' => 'nullable|string'
+            'catatan' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($mesin, $validated) {
@@ -260,7 +259,7 @@ class MesinProduksiController extends Controller
         $downtime = $mesin->downtimes()->findOrFail($downtimeId);
 
         $validated = $request->validate([
-            'selesai' => 'required|date|after_or_equal:'.$downtime->mulai
+            'selesai' => 'required|date|after_or_equal:'.$downtime->mulai,
         ]);
 
         DB::transaction(function () use ($mesin, $downtime, $validated) {

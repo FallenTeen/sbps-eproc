@@ -5,6 +5,7 @@ use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -60,7 +61,7 @@ test('batch tanpa check-in ditolak', function () {
 test('hari ini tracking dibatasi owner/admin', function () {
     [$owner, $ownerToken] = createMobileUserWithToken('Owner');
 
-    $targetUser = \App\Models\User::factory()->create();
+    $targetUser = User::factory()->create();
     $targetUser->assignRole('Mandor Titik');
     $targetKaryawan = Karyawan::factory()->create(['user_id' => $targetUser->id]);
 

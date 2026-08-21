@@ -10,6 +10,7 @@ class MixDesignTemplate extends Model
     use HasUuids;
 
     protected $table = 'mix_design_templates';
+
     protected $fillable = ['mutu_beton', 'nama', 'deskripsi'];
 
     // Relasi

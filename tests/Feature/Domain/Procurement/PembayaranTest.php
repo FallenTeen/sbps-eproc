@@ -1,11 +1,12 @@
-﻿<?php
+<?php
 
-use App\Models\User;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Procurement\Models\Pembayaran;
 use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Procurement\Models\Pembayaran;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\States\DibayarSebagian;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,7 +64,7 @@ test('admin keuangan can create pembayaran', function () {
 
     // Cek status PO berubah jadi dibayar_sebagian
     $this->po->refresh();
-    expect($this->po->status)->toBeInstanceOf(\App\Domain\Procurement\States\DibayarSebagian::class);
+    expect($this->po->status)->toBeInstanceOf(DibayarSebagian::class);
 });
 
 test('pembayaran cannot exceed remaining balance', function () {

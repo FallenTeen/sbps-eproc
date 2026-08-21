@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Core\Models\Proyek;
+use App\Models\User;
 
 class ProyekPolicy
 {
@@ -15,6 +15,7 @@ class ProyekPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
@@ -25,15 +26,15 @@ class ProyekPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole([
-                    'Koordinator Procurement',
-                    'Koordinator GCS',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Koordinator SDM',
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                    'Kontraktor',
-                ])
+            'Koordinator Procurement',
+            'Koordinator GCS',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Koordinator SDM',
+            'Mandor Proyek',
+            'Mandor Titik',
+            'Kontraktor',
+        ])
             || $user->hasPermissionTo('manage proyek')
             || $user->hasPermissionTo('view proyek')
             || $user->isKetuaDivisi();
@@ -45,7 +46,7 @@ class ProyekPolicy
      */
     public function view(User $user, Proyek $proyek): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -79,7 +80,7 @@ class ProyekPolicy
      */
     public function update(User $user, Proyek $proyek): bool
     {
-        if (!($user->hasPermissionTo('manage proyek')
+        if (! ($user->hasPermissionTo('manage proyek')
             || $user->hasAnyRole([
                 'Koordinator Procurement',
                 'Koordinator GCS',
@@ -106,9 +107,10 @@ class ProyekPolicy
      */
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

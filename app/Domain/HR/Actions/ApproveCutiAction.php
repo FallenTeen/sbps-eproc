@@ -10,10 +10,7 @@ class ApproveCutiAction
     /**
      * Approve or reject a cuti request.
      *
-     * @param Cuti $cuti
-     * @param string $status  'disetujui' atau 'ditolak'
-     * @param string|null $catatan
-     * @return Cuti
+     * @param  string  $status  'disetujui' atau 'ditolak'
      */
     public function execute(Cuti $cuti, string $status = 'disetujui', ?string $catatan = null): Cuti
     {

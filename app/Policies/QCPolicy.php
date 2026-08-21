@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Production\Models\QCSample;
+use App\Models\User;
 
 class QCPolicy
 {
@@ -12,17 +12,18 @@ class QCPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Koordinator CBP',
-                    'Ketua Divisi Produksi CBP',
-                    'Mandor Proyek',
-                ])
+            'Admin Keuangan',
+            'Koordinator CBP',
+            'Ketua Divisi Produksi CBP',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage qc')
             || $user->hasPermissionTo('manage production cbp')
             || $user->hasPermissionTo('view production');
@@ -36,10 +37,10 @@ class QCPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator CBP',
-                    'Ketua Divisi Produksi CBP',
-                    'Mandor Proyek',
-                ])
+            'Koordinator CBP',
+            'Ketua Divisi Produksi CBP',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage qc')
             || $user->hasPermissionTo('manage production cbp');
     }

@@ -3,15 +3,16 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Hapus data lama (opsional, hati-hati)
         // Jika mau hapus semua, aktifkan baris di bawah:
@@ -175,10 +176,10 @@ class RolePermissionSeeder extends Seeder
             ],
 
             // ─── Role Lapangan ──────────────────────────────────────────
-            'Mandor Titik'              => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
-            'Driver Standby'            => ['view proyek', 'manage formulir lapangan'],
-            'Driver Kondisional'        => ['view proyek', 'manage formulir lapangan'],
-            'SDM Lapangan Kondisional'  => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
+            'Mandor Titik' => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
+            'Driver Standby' => ['view proyek', 'manage formulir lapangan'],
+            'Driver Kondisional' => ['view proyek', 'manage formulir lapangan'],
+            'SDM Lapangan Kondisional' => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
         ];
 
         foreach ($roles as $name => $perms) {

@@ -5,8 +5,8 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ProductionSession;
+use App\Domain\Production\Models\Produk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

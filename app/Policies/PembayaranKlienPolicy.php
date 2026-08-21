@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Finance\Models\PembayaranKlien;
+use App\Models\User;
 
 class PembayaranKlienPolicy
 {
@@ -12,17 +12,18 @@ class PembayaranKlienPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Kontraktor',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Kontraktor',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage invoice')
             || $user->hasPermissionTo('view invoice')
@@ -37,10 +38,10 @@ class PembayaranKlienPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage kas');
     }

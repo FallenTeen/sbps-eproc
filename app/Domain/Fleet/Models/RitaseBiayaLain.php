@@ -10,7 +10,9 @@ class RitaseBiayaLain extends Model
     use HasUuids;
 
     protected $table = 'ritase_biaya_lains';
+
     protected $fillable = ['ritase_id', 'jenis', 'jumlah', 'catatan'];
+
     protected $casts = ['jumlah' => 'float'];
 
     // Relasi

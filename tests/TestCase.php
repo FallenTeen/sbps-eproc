@@ -2,11 +2,12 @@
 
 namespace Tests;
 
+use Database\Seeders\TestRoleSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
     protected $seed = true;
 
-    protected $seeder = \Database\Seeders\TestRoleSeeder::class;
+    protected $seeder = TestRoleSeeder::class;
 }

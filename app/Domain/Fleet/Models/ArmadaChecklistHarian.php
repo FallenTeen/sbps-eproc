@@ -3,23 +3,26 @@
 namespace App\Domain\Fleet\Models;
 
 use App\Domain\HR\Models\Karyawan;
+use Database\Factories\Domain\Fleet\Models\ArmadaChecklistHarianFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ArmadaChecklistHarian extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'armada_checklist_harians';
+
     protected $fillable = [
         'checkable_type',
         'checkable_id',
         'tanggal',
         'kondisi_baik',
         'item_bermasalah',
-        'dicatat_oleh_karyawan_id'
+        'dicatat_oleh_karyawan_id',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'kondisi_baik' => 'boolean',
@@ -27,7 +30,7 @@ class ArmadaChecklistHarian extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\Domain\Fleet\Models\ArmadaChecklistHarianFactory::new();
+        return ArmadaChecklistHarianFactory::new();
     }
 
     // Relasi polymorphic

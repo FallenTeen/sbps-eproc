@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Fleet\Models\ServiceHistory;
+use App\Models\User;
 
 class ServiceHistoryPolicy
 {
@@ -12,57 +12,61 @@ class ServiceHistoryPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator GCS',
-                    'Ketua Divisi Armada',
-                ])
+            'Koordinator GCS',
+            'Ketua Divisi Armada',
+        ])
             || $user->hasPermissionTo('manage fleet')
             || $user->hasPermissionTo('view fleet');
     }
 
     public function view(User $user, ServiceHistory $serviceHistory): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
+
         return $this->unitBisnisAllowed($user, $this->resolveUnitId($serviceHistory));
     }
 
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator GCS',
-                    'Ketua Divisi Armada',
-                ])
+            'Koordinator GCS',
+            'Ketua Divisi Armada',
+        ])
             || $user->hasPermissionTo('manage fleet');
     }
 
     public function update(User $user, ServiceHistory $serviceHistory): bool
     {
-        if (!$this->create($user)) {
+        if (! $this->create($user)) {
             return false;
         }
+
         return $this->unitBisnisAllowed($user, $this->resolveUnitId($serviceHistory));
     }
 
     public function delete(User $user, ServiceHistory $serviceHistory): bool
     {
-        if (!($user->hasRole('Ketua Divisi Armada')
+        if (! ($user->hasRole('Ketua Divisi Armada')
             || $user->hasPermissionTo('manage fleet'))) {
             return false;
         }
+
         return $this->unitBisnisAllowed($user, $this->resolveUnitId($serviceHistory));
     }
 
     protected function resolveUnitId(ServiceHistory $serviceHistory): ?string
     {
         $serviceable = $serviceHistory->serviceable;
-        if (!$serviceable) {
+        if (! $serviceable) {
             return null;
         }
         if (method_exists($serviceable, 'unit_bisnis_id')) {
@@ -71,14 +75,16 @@ class ServiceHistoryPolicy
         if (isset($serviceable->unit_bisnis_id)) {
             return $serviceable->unit_bisnis_id;
         }
+
         return null;
     }
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

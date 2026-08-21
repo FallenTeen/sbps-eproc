@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Domain\HR\Models;
 
-use App\Domain\HR\Models\KomponenGaji;
 use App\Domain\HR\Models\GajiPeriode;
+use App\Domain\HR\Models\KomponenGaji;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class KomponenGajiFactory extends Factory

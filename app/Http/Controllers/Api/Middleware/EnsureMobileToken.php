@@ -18,7 +18,7 @@ class EnsureMobileToken
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthenticated.',
@@ -28,7 +28,7 @@ class EnsureMobileToken
 
         $token = $user->currentAccessToken();
 
-        if ($token && !str_starts_with((string) $token->name, 'mobile')) {
+        if ($token && ! str_starts_with((string) $token->name, 'mobile')) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Token ini tidak diizinkan untuk aplikasi mobile.',
@@ -36,7 +36,7 @@ class EnsureMobileToken
             ], 403);
         }
 
-        if (!$request->header('X-Device-Type') && !$request->header('X-Device-Name')) {
+        if (! $request->header('X-Device-Type') && ! $request->header('X-Device-Name')) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Endpoint mobile hanya bisa diakses dari aplikasi mobile.',

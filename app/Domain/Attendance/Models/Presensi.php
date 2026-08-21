@@ -4,15 +4,16 @@ namespace App\Domain\Attendance\Models;
 
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class Presensi extends Model
 {
     use HasUuids;
 
     protected $table = 'presensis';
+
     protected $fillable = [
         'karyawan_id',
         'titik_id',
@@ -28,8 +29,9 @@ class Presensi extends Model
         'check_out_photo_metadata',
         'status_validasi',
         'catatan_override',
-        'device_id'
+        'device_id',
     ];
+
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',

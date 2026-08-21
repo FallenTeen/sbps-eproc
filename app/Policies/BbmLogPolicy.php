@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Fleet\Models\BbmLog;
+use App\Models\User;
 
 /**
  * CATATAN DESAIN (sama seperti ArmadaChecklistHarianPolicy):
@@ -23,6 +23,7 @@ class BbmLogPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
@@ -46,7 +47,7 @@ class BbmLogPolicy
 
     public function view(User $user, BbmLog $bbmLog): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -69,9 +70,10 @@ class BbmLogPolicy
         if ($user->hasRole(['Admin Keuangan', 'Mandor Proyek'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

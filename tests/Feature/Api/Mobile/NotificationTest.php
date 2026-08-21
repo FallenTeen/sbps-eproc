@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ function insertNotification(string $userId, array $data = [], ?string $readAt = 
     DB::table('notifications')->insert([
         'id' => $id,
         'type' => 'App\Notifications\MobileNotification',
-        'notifiable_type' => \App\Models\User::class,
+        'notifiable_type' => User::class,
         'notifiable_id' => $userId,
         'data' => json_encode(array_merge([
             'title' => 'Judul Notifikasi',

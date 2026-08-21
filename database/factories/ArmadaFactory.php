@@ -30,26 +30,26 @@ class ArmadaFactory extends Factory
 
     public function dumpTruck(): static
     {
-        return $this->state(fn() => ['jenis' => 'dump_truck', 'model_tarif' => 'ritase']);
+        return $this->state(fn () => ['jenis' => 'dump_truck', 'model_tarif' => 'ritase']);
     }
 
     public function alatBerat(): static
     {
-        return $this->state(fn() => ['jenis' => 'alat_berat', 'model_tarif' => 'sewa_jam']);
+        return $this->state(fn () => ['jenis' => 'alat_berat', 'model_tarif' => 'sewa_jam']);
     }
 
     public function truckMolen(): static
     {
-        return $this->state(fn() => ['jenis' => 'truck_molen', 'model_tarif' => 'sewa_jam']);
+        return $this->state(fn () => ['jenis' => 'truck_molen', 'model_tarif' => 'sewa_jam']);
     }
 
     public function servis(): static
     {
-        return $this->state(fn() => ['status' => 'servis']);
+        return $this->state(fn () => ['status' => 'servis']);
     }
 
     public function nonaktif(): static
     {
-        return $this->state(fn() => ['status' => 'nonaktif']);
+        return $this->state(fn () => ['status' => 'nonaktif']);
     }
 }

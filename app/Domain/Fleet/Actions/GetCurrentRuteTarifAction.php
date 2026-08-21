@@ -9,6 +9,7 @@ class GetCurrentRuteTarifAction
     public function execute($asal, $tujuan, $tanggal = null): ?RuteTarif
     {
         $tanggal = $tanggal ?? now();
+
         return RuteTarif::where('lokasi_asal', $asal)
             ->where('lokasi_tujuan', $tujuan)
             ->where('berlaku_dari', '<=', $tanggal)

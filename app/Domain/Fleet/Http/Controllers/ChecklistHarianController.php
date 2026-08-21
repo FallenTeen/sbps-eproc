@@ -5,8 +5,8 @@ namespace App\Domain\Fleet\Http\Controllers;
 use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
-use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\HR\Models\Karyawan;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -91,14 +91,14 @@ class ChecklistHarianController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'checkable_type' => 'required|string|in:' . implode(',', array_keys(self::CHECKABLE_MAP)),
+            'checkable_type' => 'required|string|in:'.implode(',', array_keys(self::CHECKABLE_MAP)),
             'checkable_id' => 'required|string',
             'tanggal' => 'nullable|date|before_or_equal:today',
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
         ]);
 
-        if (!$validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
+        if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
             return back()
                 ->withErrors(['item_bermasalah' => 'Item bermasalah wajib diisi jika kondisi tidak baik.'])
                 ->withInput();
@@ -109,7 +109,7 @@ class ChecklistHarianController extends Controller
         $this->authorize('recordChecklist', $checkable);
 
         $karyawan = $this->resolveKaryawanAktif();
-        if (!$karyawan) {
+        if (! $karyawan) {
             return back()->with('error', 'Akun Anda tidak terhubung ke data karyawan aktif, tidak bisa mencatat checklist.');
         }
 
@@ -164,7 +164,7 @@ class ChecklistHarianController extends Controller
             'item_bermasalah' => 'nullable|string',
         ]);
 
-        if (!$validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
+        if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
             return back()
                 ->withErrors(['item_bermasalah' => 'Item bermasalah wajib diisi jika kondisi tidak baik.'])
                 ->withInput();
@@ -232,14 +232,14 @@ class ChecklistHarianController extends Controller
         $validated = $request->validate([
             'tanggal' => 'nullable|date|before_or_equal:today',
             'items' => 'required|array|min:1',
-            'items.*.checkable_type' => 'required|string|in:' . implode(',', array_keys(self::CHECKABLE_MAP)),
+            'items.*.checkable_type' => 'required|string|in:'.implode(',', array_keys(self::CHECKABLE_MAP)),
             'items.*.checkable_id' => 'required|string',
             'items.*.kondisi_baik' => 'required|boolean',
             'items.*.item_bermasalah' => 'nullable|string',
         ]);
 
         $karyawan = $this->resolveKaryawanAktif();
-        if (!$karyawan) {
+        if (! $karyawan) {
             return back()->with('error', 'Akun Anda tidak terhubung ke data karyawan aktif, tidak bisa mencatat checklist.');
         }
 
@@ -248,15 +248,17 @@ class ChecklistHarianController extends Controller
         $skipped = [];
 
         foreach ($validated['items'] as $item) {
-            if (!$item['kondisi_baik'] && empty($item['item_bermasalah'])) {
+            if (! $item['kondisi_baik'] && empty($item['item_bermasalah'])) {
                 $skipped[] = $item['checkable_id'];
+
                 continue;
             }
 
             $checkable = $this->resolveCheckable($item['checkable_type'], $item['checkable_id']);
 
-            if (!Auth::user()->can('recordChecklist', $checkable)) {
+            if (! Auth::user()->can('recordChecklist', $checkable)) {
                 $skipped[] = $item['checkable_id'];
+
                 continue;
             }
 
@@ -277,8 +279,8 @@ class ChecklistHarianController extends Controller
         }
 
         $message = "{$saved} checklist berhasil disimpan.";
-        if (!empty($skipped)) {
-            $message .= ' ' . count($skipped) . ' item dilewati (tidak lengkap/tidak diizinkan).';
+        if (! empty($skipped)) {
+            $message .= ' '.count($skipped).' item dilewati (tidak lengkap/tidak diizinkan).';
         }
 
         return back()->with('success', $message);
@@ -291,7 +293,7 @@ class ChecklistHarianController extends Controller
     {
         $modelClass = self::CHECKABLE_MAP[$type] ?? null;
 
-        if (!$modelClass) {
+        if (! $modelClass) {
             abort(404, "Tipe checkable '{$type}' tidak dikenal.");
         }
 
@@ -306,7 +308,7 @@ class ChecklistHarianController extends Controller
     {
         $karyawan = Auth::user()->karyawan;
 
-        if (!$karyawan || $karyawan->status !== 'aktif') {
+        if (! $karyawan || $karyawan->status !== 'aktif') {
             return null;
         }
 

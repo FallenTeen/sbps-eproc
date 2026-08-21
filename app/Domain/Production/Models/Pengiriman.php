@@ -12,6 +12,7 @@ class Pengiriman extends Model
     use HasUuids;
 
     protected $table = 'pengirimans';
+
     protected $fillable = [
         'production_session_id',
         'armada_id',
@@ -21,8 +22,9 @@ class Pengiriman extends Model
         'waktu_tiba_tujuan',
         'waktu_selesai_tuang',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'waktu_muat' => 'datetime',
         'waktu_tiba_tujuan' => 'datetime',

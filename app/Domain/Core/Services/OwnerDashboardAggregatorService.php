@@ -2,15 +2,14 @@
 
 namespace App\Domain\Core\Services;
 
-use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\Titik;
-use App\Domain\Core\Models\Rab;
-use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Procurement\Models\Pembayaran;
-use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Fleet\Models\Armada;
-use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Core\Actions\GetRABRealisasiAction;
+use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\Rab;
+use App\Domain\Core\Models\Titik;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Procurement\Models\Pembayaran;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Models\ProductionSession;
 use Carbon\Carbon;
 
 class OwnerDashboardAggregatorService
@@ -29,8 +28,8 @@ class OwnerDashboardAggregatorService
                     'id' => $titik->id,
                     'nama' => $titik->nama,
                     'proyek_nama' => $titik->proyek ? $titik->proyek->nama : '-',
-                    'latitude' => (float)$titik->latitude,
-                    'longitude' => (float)$titik->longitude,
+                    'latitude' => (float) $titik->latitude,
+                    'longitude' => (float) $titik->longitude,
                     'sdm_count' => $titik->karyawanAssignments ? $titik->karyawanAssignments->count() : 0,
                     'armada_count' => $titik->armadas ? $titik->armadas->count() : 0,
                 ];
@@ -38,12 +37,12 @@ class OwnerDashboardAggregatorService
 
         // 2. Ringkasan Hari Ini
         $produksiHariIni = (float) ProductionSession::whereDate('mulai', $today)->sum('hasil_output');
-        
+
         $pengeluaranHariIni = (float) Pembayaran::whereDate('created_at', $today)->sum('jumlah');
 
         $poMenungguApproval = PurchaseOrder::whereIn('status', [
-            'menunggu_approval_finance', 
-            'menunggu_approval_owner'
+            'menunggu_approval_finance',
+            'menunggu_approval_owner',
         ])->count();
 
         // Armada jatuh tempo servis (status servis atau perlu_servis)
@@ -53,12 +52,12 @@ class OwnerDashboardAggregatorService
         $proyekAktif = Proyek::where('status', 'aktif')->with('rab')->get();
         $totalRencanaRab = 0;
         $totalRealisasiRab = 0;
-        $getRabAction = new GetRABRealisasiAction();
+        $getRabAction = new GetRABRealisasiAction;
 
         foreach ($proyekAktif as $proyek) {
             foreach ($proyek->rab as $rabItem) {
-                $totalRencanaRab += (float)$rabItem->rencana;
-                $totalRealisasiRab += (float)$getRabAction->execute($rabItem);
+                $totalRencanaRab += (float) $rabItem->rencana;
+                $totalRealisasiRab += (float) $getRabAction->execute($rabItem);
             }
         }
 
@@ -82,8 +81,8 @@ class OwnerDashboardAggregatorService
 
             $trenBulanan[] = [
                 'bulan' => $label,
-                'produksi' => (float)$prod,
-                'pengeluaran' => (float)$exp,
+                'produksi' => (float) $prod,
+                'pengeluaran' => (float) $exp,
             ];
         }
 

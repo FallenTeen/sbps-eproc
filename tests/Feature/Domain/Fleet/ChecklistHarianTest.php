@@ -1,10 +1,10 @@
-﻿<?php
+<?php
 
-use App\Models\User;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

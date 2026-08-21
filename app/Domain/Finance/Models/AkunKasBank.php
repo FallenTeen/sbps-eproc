@@ -3,24 +3,27 @@
 namespace App\Domain\Finance\Models;
 
 use App\Domain\Core\Models\UnitBisnis;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Database\Factories\AkunKasBankFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class AkunKasBank extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'akun_kas_banks';
+
     protected $fillable = [
         'unit_bisnis_id',
         'nama',
         'jenis_kas',
         'akun_coa_id',
         'saldo_awal',
-        'aktif'
+        'aktif',
     ];
+
     protected $casts = [
         'saldo_awal' => 'float',
         'aktif' => 'boolean',
@@ -28,7 +31,7 @@ class AkunKasBank extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\AkunKasBankFactory::new();
+        return AkunKasBankFactory::new();
     }
 
     // Relasi

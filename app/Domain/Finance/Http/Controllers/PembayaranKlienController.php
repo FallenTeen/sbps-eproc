@@ -2,16 +2,16 @@
 
 namespace App\Domain\Finance\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Finance\Actions\GetPiutangOutstandingAction;
+use App\Domain\Finance\Actions\RecordClientPaymentAction;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Models\PembayaranKlien;
-use App\Domain\Finance\Actions\RecordClientPaymentAction;
-use App\Domain\Finance\Actions\GetPiutangOutstandingAction;
-use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Core\Models\Proyek;
+use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class PembayaranKlienController extends Controller
 {
@@ -72,7 +72,7 @@ class PembayaranKlienController extends Controller
 
         $targetInvoice = $invoice && $invoice->id ? $invoice : Invoice::findOrFail($validated['invoice_id']);
 
-        (new RecordClientPaymentAction())->execute($targetInvoice, $validated);
+        (new RecordClientPaymentAction)->execute($targetInvoice, $validated);
 
         return redirect()->back()->with('success', 'Pembayaran klien berhasil dicatat.');
     }
@@ -84,12 +84,12 @@ class PembayaranKlienController extends Controller
         $unitBisnisId = $request->input('unit_bisnis_id');
         $proyekId = $request->input('proyek_id');
 
-        $totalOutstanding = (new GetPiutangOutstandingAction())->execute($proyekId, $unitBisnisId);
+        $totalOutstanding = (new GetPiutangOutstandingAction)->execute($proyekId, $unitBisnisId);
 
         $query = Invoice::where('status', '!=', 'lunas')
             ->with(['unitBisnis:id,nama', 'proyek:id,nama', 'items', 'pembayaranKlien'])
-            ->when($unitBisnisId, fn($q) => $q->where('unit_bisnis_id', $unitBisnisId))
-            ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
+            ->when($unitBisnisId, fn ($q) => $q->where('unit_bisnis_id', $unitBisnisId))
+            ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
             ->orderBy('tanggal_jatuh_tempo', 'asc');
 
         $today = Carbon::today();
@@ -98,13 +98,13 @@ class PembayaranKlienController extends Controller
         $agingOver60 = 0;
 
         $invoices = $query->get()->map(function ($invoice) use ($today, &$aging0to30, &$aging31to60, &$agingOver60) {
-            $total = (float)$invoice->items->sum('subtotal');
-            $paid = (float)$invoice->pembayaranKlien->sum('jumlah');
+            $total = (float) $invoice->items->sum('subtotal');
+            $paid = (float) $invoice->pembayaranKlien->sum('jumlah');
             $sisa = max(0, $total - $paid);
 
             $dueDate = $invoice->tanggal_jatuh_tempo ? Carbon::parse($invoice->tanggal_jatuh_tempo) : $today;
             // Calculate days overdue (or age of invoice)
-            $ageDays = max(0, (int)$dueDate->diffInDays($today, false));
+            $ageDays = max(0, (int) $dueDate->diffInDays($today, false));
 
             if ($ageDays <= 30) {
                 $agingCategory = '0-30 Hari';
@@ -146,7 +146,7 @@ class PembayaranKlienController extends Controller
             'filters' => [
                 'unit_bisnis_id' => $unitBisnisId ?? '',
                 'proyek_id' => $proyekId ?? '',
-            ]
+            ],
         ]);
     }
 }

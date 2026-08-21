@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Core\Models\Rab;
+use App\Models\User;
 
 class RabPolicy
 {
@@ -12,6 +12,7 @@ class RabPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
@@ -22,12 +23,12 @@ class RabPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole([
-                    'Koordinator Procurement',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Admin Keuangan',
-                    'Mandor Proyek',
-                ])
+            'Koordinator Procurement',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Admin Keuangan',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage rab')
             || $user->hasPermissionTo('view rab')
             || $user->isKetuaDivisi();
@@ -38,7 +39,7 @@ class RabPolicy
      */
     public function view(User $user, Rab $rab): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -65,7 +66,7 @@ class RabPolicy
      */
     public function update(User $user, Rab $rab): bool
     {
-        if (!($user->hasPermissionTo('manage rab')
+        if (! ($user->hasPermissionTo('manage rab')
             || $user->hasAnyRole([
                 'Koordinator Procurement',
                 'Koordinator CBP',
@@ -89,9 +90,10 @@ class RabPolicy
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

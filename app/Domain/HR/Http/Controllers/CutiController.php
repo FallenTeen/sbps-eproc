@@ -2,11 +2,11 @@
 
 namespace App\Domain\HR\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Domain\HR\Actions\ApproveCutiAction;
+use App\Domain\HR\Actions\SubmitCutiAction;
 use App\Domain\HR\Models\Cuti;
 use App\Domain\HR\Models\Karyawan;
-use App\Domain\HR\Actions\SubmitCutiAction;
-use App\Domain\HR\Actions\ApproveCutiAction;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -29,8 +29,8 @@ class CutiController extends Controller
             'cutis' => $cutis,
             'karyawan' => $karyawan,
             'filters' => [
-                'status' => $status
-            ]
+                'status' => $status,
+            ],
         ]);
     }
 
@@ -41,10 +41,10 @@ class CutiController extends Controller
             'tipe' => 'required|string',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'catatan' => 'nullable|string'
+            'catatan' => 'nullable|string',
         ]);
 
-        (new SubmitCutiAction())->execute($request->all());
+        (new SubmitCutiAction)->execute($request->all());
 
         return back()->with('success', 'Pengajuan cuti berhasil dibuat.');
     }
@@ -63,7 +63,7 @@ class CutiController extends Controller
             'tipe' => 'required|string',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'catatan' => 'nullable|string'
+            'catatan' => 'nullable|string',
         ]);
 
         $cuti->update([
@@ -86,13 +86,15 @@ class CutiController extends Controller
 
     public function approve(Request $request, Cuti $cuti)
     {
-        (new ApproveCutiAction())->execute($cuti, 'disetujui', $request->input('catatan'));
+        (new ApproveCutiAction)->execute($cuti, 'disetujui', $request->input('catatan'));
+
         return back()->with('success', 'Cuti berhasil disetujui.');
     }
 
     public function reject(Request $request, Cuti $cuti)
     {
-        (new ApproveCutiAction())->execute($cuti, 'ditolak', $request->input('catatan'));
+        (new ApproveCutiAction)->execute($cuti, 'ditolak', $request->input('catatan'));
+
         return back()->with('success', 'Cuti berhasil ditolak.');
     }
 }

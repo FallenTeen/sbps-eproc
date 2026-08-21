@@ -8,7 +8,7 @@ class CompareRABRealisasiAction
 {
     public function execute(Rab $rab): array
     {
-        $realisasi = (new GetRABRealisasiAction())->execute($rab);
+        $realisasi = (new GetRABRealisasiAction)->execute($rab);
         $selisih = $rab->rencana - $realisasi;
         $persentase = $rab->rencana > 0 ? ($realisasi / $rab->rencana) * 100 : 0;
 

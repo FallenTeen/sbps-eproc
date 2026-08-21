@@ -10,10 +10,10 @@ class CalculateNetSalaryAction
     {
         // Penerimaan: semua komponen yang jenisnya bukan 'potongan'
         $penerimaan = $periode->komponen->where('jenis', '!=', 'potongan')->sum('jumlah');
-        
+
         // Potongan: komponen yang jenisnya 'potongan'
         $potongan = $periode->komponen->where('jenis', 'potongan')->sum('jumlah');
-        
+
         return $penerimaan - $potongan;
     }
 }

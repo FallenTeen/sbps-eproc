@@ -2,10 +2,10 @@
 
 namespace App\Domain\Finance\Http\Controllers;
 
-use App\Domain\Finance\Models\TransferAntarKas;
+use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
-use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
+use App\Domain\Finance\Models\TransferAntarKas;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,7 +89,7 @@ class TransferKasController extends Controller
             return back()->withErrors(['jumlah' => 'Saldo sumber tidak mencukupi.']);
         }
 
-        $transfer = (new RecordTransferAntarKasAction())->execute($request->all(), Auth::id());
+        $transfer = (new RecordTransferAntarKasAction)->execute($request->all(), Auth::id());
 
         return redirect()->route('finance.transfer-kas.index')
             ->with('success', 'Transfer kas berhasil.');

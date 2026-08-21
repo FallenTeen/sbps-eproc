@@ -13,7 +13,7 @@ class CheckDivisiAccess
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
@@ -23,8 +23,8 @@ class CheckDivisiAccess
         }
 
         // Cek pencocokan unit_bisnis_id dari request / route jika ada
-        $requestedUnitId = $request->input('unit_bisnis_id') 
-            ?? $request->route('unit_bisnis') 
+        $requestedUnitId = $request->input('unit_bisnis_id')
+            ?? $request->route('unit_bisnis')
             ?? $request->route('unit_bisnis_id');
 
         if ($requestedUnitId && $user->unit_bisnis_id) {

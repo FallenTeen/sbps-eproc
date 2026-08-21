@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Attendance\Models\Presensi;
+use App\Models\User;
 
 class PresensiPolicy
 {
@@ -12,18 +12,19 @@ class PresensiPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Ketua Divisi Kontraktor',
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                    'Admin Keuangan',
-                ])
+            'Koordinator SDM',
+            'Ketua Divisi Kontraktor',
+            'Mandor Proyek',
+            'Mandor Titik',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage presensi')
             || $user->hasPermissionTo('view hr')
             || $user->hasPermissionTo('manage hr');
@@ -43,11 +44,11 @@ class PresensiPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                    'Ketua Divisi Kontraktor',
-                    'SDM Lapangan Kondisional',
-                ])
+            'Mandor Proyek',
+            'Mandor Titik',
+            'Ketua Divisi Kontraktor',
+            'SDM Lapangan Kondisional',
+        ])
             || $user->hasPermissionTo('manage presensi')
             || $user->hasPermissionTo('manage hr');
     }
@@ -66,9 +67,9 @@ class PresensiPolicy
     public function review(User $user, Presensi $presensi): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Mandor Proyek',
-                ])
+            'Koordinator SDM',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage presensi')
             || $user->hasPermissionTo('manage hr');
     }

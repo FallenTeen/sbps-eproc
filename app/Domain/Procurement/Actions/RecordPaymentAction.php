@@ -2,11 +2,11 @@
 
 namespace App\Domain\Procurement\Actions;
 
+use App\Domain\Finance\Models\MutasiKasBank;
 use App\Domain\Procurement\Models\Pembayaran;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\States\DibayarSebagian;
 use App\Domain\Procurement\States\Lunas;
-use App\Domain\Finance\Models\MutasiKasBank;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

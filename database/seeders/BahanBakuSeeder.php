@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Domain\Procurement\Models\BahanBaku;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class BahanBakuSeeder extends Seeder
 {
@@ -13,7 +14,7 @@ class BahanBakuSeeder extends Seeder
 
         BahanBaku::insert([
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'BB-001',
                 'nama' => 'Semen',
                 'kategori' => 'bahan_baku',
@@ -24,7 +25,7 @@ class BahanBakuSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'BB-002',
                 'nama' => 'Pasir',
                 'kategori' => 'bahan_baku',
@@ -35,7 +36,7 @@ class BahanBakuSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'BB-003',
                 'nama' => 'Split 1/2',
                 'kategori' => 'bahan_baku',
@@ -46,7 +47,7 @@ class BahanBakuSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'BB-004',
                 'nama' => 'Air',
                 'kategori' => 'bahan_baku',
@@ -57,7 +58,7 @@ class BahanBakuSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'SP-001',
                 'nama' => 'Oli Mesin',
                 'kategori' => 'sparepart',
@@ -68,7 +69,7 @@ class BahanBakuSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'SP-002',
                 'nama' => 'Filter Udara',
                 'kategori' => 'sparepart',

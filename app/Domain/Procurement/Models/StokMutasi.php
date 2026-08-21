@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class StokMutasi extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'stok_mutasis';
+
     protected $fillable = [
         'bahan_baku_id',
         'titik_id',
@@ -21,8 +22,9 @@ class StokMutasi extends Model
         'referensi_id',
         'catatan',
         'tanggal',
-        'created_by'
+        'created_by',
     ];
+
     protected $casts = [
         'jumlah' => 'float',
         'tanggal' => 'date',

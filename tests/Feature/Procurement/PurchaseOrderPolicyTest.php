@@ -1,15 +1,15 @@
 <?php
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(TestCase::class, DatabaseTransactions::class);
 
@@ -18,6 +18,7 @@ function createRoleUser(string $roleName, ?string $unitBisnisId = null): User
     Role::findOrCreate($roleName);
     $user = User::factory()->create(['unit_bisnis_id' => $unitBisnisId]);
     $user->assignRole($roleName);
+
     return $user;
 }
 

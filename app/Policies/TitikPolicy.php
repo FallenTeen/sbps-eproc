@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Core\Models\Titik;
+use App\Models\User;
 
 class TitikPolicy
 {
@@ -12,6 +12,7 @@ class TitikPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
@@ -24,14 +25,14 @@ class TitikPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole([
-                    'Koordinator Procurement',
-                    'Koordinator GCS',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Koordinator SDM',
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                ])
+            'Koordinator Procurement',
+            'Koordinator GCS',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Koordinator SDM',
+            'Mandor Proyek',
+            'Mandor Titik',
+        ])
             || $user->hasPermissionTo('manage titik')
             || $user->hasPermissionTo('view titik')
             || $user->hasPermissionTo('manage proyek')
@@ -45,7 +46,7 @@ class TitikPolicy
      */
     public function view(User $user, Titik $titik): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -74,7 +75,7 @@ class TitikPolicy
      */
     public function update(User $user, Titik $titik): bool
     {
-        if (!($user->hasPermissionTo('manage titik')
+        if (! ($user->hasPermissionTo('manage titik')
             || $user->hasPermissionTo('manage proyek')
             || $user->hasAnyRole([
                 'Koordinator Procurement',
@@ -99,9 +100,10 @@ class TitikPolicy
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

@@ -11,7 +11,9 @@ class MixDesignTemplateItem extends Model
     use HasUuids;
 
     protected $table = 'mix_design_template_items';
+
     protected $fillable = ['mix_design_template_id', 'bahan_baku_id', 'jumlah_per_m3'];
+
     protected $casts = ['jumlah_per_m3' => 'float'];
 
     // Relasi

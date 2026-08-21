@@ -72,7 +72,7 @@ class UploadController extends Controller
     {
         $dokumen = Dokumen::findOrFail($id);
 
-        if ($dokumen->uploaded_by !== $request->user()->id && !$request->user()->isOwner()) {
+        if ($dokumen->uploaded_by !== $request->user()->id && ! $request->user()->isOwner()) {
             return $this->error('Anda tidak berhak menghapus file ini.', 403);
         }
 

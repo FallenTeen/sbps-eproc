@@ -2,17 +2,14 @@
 
 namespace App\Domain\Core\Http\Controllers;
 
+use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\Rab;
-use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ProyekController extends Controller
 {
@@ -73,6 +70,7 @@ class ProyekController extends Controller
             $unitBisnisQuery->where('id', auth()->user()->unit_bisnis_id);
         }
         $unitBisnis = $unitBisnisQuery->get();
+
         return Inertia::render('Core/Proyek/Create', [
             'unitBisnis' => $unitBisnis,
         ]);
@@ -128,7 +126,7 @@ class ProyekController extends Controller
         foreach ($proyek->rab as $rab) {
             $rabRealisasi[] = [
                 'rab' => $rab,
-                'realisasi' => app(\App\Domain\Core\Actions\GetRABRealisasiAction::class)->execute($rab),
+                'realisasi' => app(GetRABRealisasiAction::class)->execute($rab),
             ];
         }
 
@@ -155,6 +153,7 @@ class ProyekController extends Controller
         $this->authorize('update', $proyek);
 
         $unitBisnis = UnitBisnis::where('aktif', true)->get();
+
         return Inertia::render('Core/Proyek/Edit', [
             'proyek' => $proyek,
             'unitBisnis' => $unitBisnis,
@@ -170,7 +169,7 @@ class ProyekController extends Controller
 
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
-            'kode_proyek' => 'required|string|max:50|unique:proyeks,kode_proyek,' . $proyek->id,
+            'kode_proyek' => 'required|string|max:50|unique:proyeks,kode_proyek,'.$proyek->id,
             'nama' => 'required|string|max:255',
             'tipe_proyek' => 'required|in:internal,kontrak_klien',
             'client' => 'nullable|string|max:255|required_if:tipe_proyek,kontrak_klien',

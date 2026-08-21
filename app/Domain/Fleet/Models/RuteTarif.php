@@ -3,15 +3,17 @@
 namespace App\Domain\Fleet\Models;
 
 use App\Domain\Core\Models\UnitBisnis;
+use Database\Factories\Domain\Fleet\Models\RuteTarifFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RuteTarif extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'rute_tarifs';
+
     protected $fillable = [
         'unit_bisnis_id',
         'lokasi_asal',
@@ -25,7 +27,7 @@ class RuteTarif extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\Domain\Fleet\Models\RuteTarifFactory::new();
+        return RuteTarifFactory::new();
     }
 
     protected $casts = [
@@ -51,6 +53,7 @@ class RuteTarif extends Model
     public function scopeAktif($query, $tanggal = null)
     {
         $tanggal = $tanggal ?? now();
+
         return $query->where('berlaku_dari', '<=', $tanggal)
             ->where(function ($q) use ($tanggal) {
                 $q->whereNull('berlaku_sampai')

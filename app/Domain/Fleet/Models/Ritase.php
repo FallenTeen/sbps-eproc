@@ -4,17 +4,18 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
-use App\Domain\HR\Models\Karyawan;
 use App\Domain\Finance\Models\InvoiceItem;
+use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ritase extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'ritases';
+
     protected $fillable = [
         'armada_id',
         'driver_karyawan_id',
@@ -28,8 +29,9 @@ class Ritase extends Model
         'titik_id',
         'customer',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'jumlah_rit' => 'integer',

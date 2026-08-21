@@ -10,6 +10,7 @@ class PembayaranKlien extends Model
     use HasUuids;
 
     protected $table = 'pembayaran_kliens';
+
     protected $fillable = [
         'invoice_id',
         'tanggal',
@@ -18,8 +19,9 @@ class PembayaranKlien extends Model
         'akun_kas_bank_id',
         'dicatat_oleh',
         'dokumen_bukti',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'jumlah' => 'float',

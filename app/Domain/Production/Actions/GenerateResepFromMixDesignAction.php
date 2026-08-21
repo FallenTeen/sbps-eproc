@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Production\Actions;
 
 use App\Domain\Production\Models\MixDesignTemplate;

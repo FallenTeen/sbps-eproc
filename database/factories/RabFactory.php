@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\Proyek;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Domain\Core\Models\Rab;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 class RabFactory extends Factory
@@ -27,14 +27,14 @@ class RabFactory extends Factory
 
     public function bahanBaku(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'kategori' => 'bahan_baku',
         ]);
     }
 
     public function sparepart(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'kategori' => 'sparepart',
         ]);
     }

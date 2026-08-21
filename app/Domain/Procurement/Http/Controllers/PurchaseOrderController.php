@@ -2,22 +2,22 @@
 
 namespace App\Domain\Procurement\Http\Controllers;
 
-use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Procurement\Models\Supplier;
-use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\Titik;
-use App\Domain\Procurement\Actions\SubmitPurchaseOrderAction;
+use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Procurement\Actions\ApprovePurchaseOrderAction;
-use App\Domain\Procurement\Actions\RejectPurchaseOrderAction;
 use App\Domain\Procurement\Actions\RecordPaymentAction;
 use App\Domain\Procurement\Actions\RecordStockMutationAction;
-use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Procurement\Actions\RejectPurchaseOrderAction;
+use App\Domain\Procurement\Actions\SubmitPurchaseOrderAction;
+use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\Supplier;
+use App\Domain\Procurement\States\Diterima;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
@@ -38,8 +38,8 @@ class PurchaseOrderController extends Controller
         }
 
         if ($request->has('search')) {
-            $query->where('kode_po', 'like', '%' . $request->search . '%')
-                ->orWhereHas('supplier', fn($q) => $q->where('nama', 'like', '%' . $request->search . '%'));
+            $query->where('kode_po', 'like', '%'.$request->search.'%')
+                ->orWhereHas('supplier', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'));
         }
 
         $pos = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
@@ -62,6 +62,7 @@ class PurchaseOrderController extends Controller
         $proyeks = $proyeksQuery->get();
         $suppliers = Supplier::where('aktif', true)->get();
         $bahanBakus = BahanBaku::where('aktif', true)->get();
+
         return Inertia::render('Procurement/PurchaseOrders/Create', [
             'proyeks' => $proyeks,
             'suppliers' => $suppliers,
@@ -88,7 +89,7 @@ class PurchaseOrderController extends Controller
 
         DB::transaction(function () use ($request) {
             $po = PurchaseOrder::create([
-                'kode_po' => 'PO-' . date('Ymd') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT),
+                'kode_po' => 'PO-'.date('Ymd').'-'.str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT),
                 'proyek_id' => $request->proyek_id,
                 'titik_id' => $request->titik_id,
                 'supplier_id' => $request->supplier_id,
@@ -123,7 +124,7 @@ class PurchaseOrderController extends Controller
             'titik',
             'items.bahanBaku',
             'approvals.approver',
-            'pembayarans'
+            'pembayarans',
         ]);
 
         $user = Auth::user();
@@ -230,6 +231,7 @@ class PurchaseOrderController extends Controller
             return back()->with('error', 'PO sudah diajukan, tidak bisa dihapus.');
         }
         $purchaseOrder->delete();
+
         return redirect()->route('procurement.purchase-orders.index')
             ->with('success', 'PO dihapus.');
     }
@@ -239,7 +241,8 @@ class PurchaseOrderController extends Controller
         $this->authorize('update', $purchaseOrder);
 
         try {
-            $po = (new SubmitPurchaseOrderAction())->execute($purchaseOrder);
+            $po = (new SubmitPurchaseOrderAction)->execute($purchaseOrder);
+
             return back()->with('success', 'PO berhasil diajukan.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -252,7 +255,8 @@ class PurchaseOrderController extends Controller
 
         $request->validate(['catatan' => 'nullable|string']);
         try {
-            $po = (new ApprovePurchaseOrderAction())->execute($purchaseOrder, $request->catatan);
+            $po = (new ApprovePurchaseOrderAction)->execute($purchaseOrder, $request->catatan);
+
             return back()->with('success', 'PO disetujui.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -265,7 +269,8 @@ class PurchaseOrderController extends Controller
 
         $request->validate(['catatan' => 'nullable|string']);
         try {
-            $po = (new RejectPurchaseOrderAction())->execute($purchaseOrder, $request->catatan);
+            $po = (new RejectPurchaseOrderAction)->execute($purchaseOrder, $request->catatan);
+
             return back()->with('success', 'PO ditolak.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -277,8 +282,9 @@ class PurchaseOrderController extends Controller
         $this->authorize('receive', $purchaseOrder);
 
         try {
-            $purchaseOrder->status->transitionTo(\App\Domain\Procurement\States\Diterima::class);
-            (new RecordStockMutationAction())->execute($purchaseOrder);
+            $purchaseOrder->status->transitionTo(Diterima::class);
+            (new RecordStockMutationAction)->execute($purchaseOrder);
+
             return back()->with('success', 'PO diterima dan stok bertambah.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -309,7 +315,7 @@ class PurchaseOrderController extends Controller
         $sisa = $purchaseOrder->total - $purchaseOrder->pembayarans->sum('jumlah');
 
         $request->validate([
-            'jumlah' => 'required|numeric|min:0.01|max:' . $sisa,
+            'jumlah' => 'required|numeric|min:0.01|max:'.$sisa,
             'tanggal' => 'required|date',
             'metode' => 'required|in:tunai,transfer,cek,lainnya',
             'akun_kas_bank_id' => 'required|exists:akun_kas_banks,id',
@@ -317,7 +323,8 @@ class PurchaseOrderController extends Controller
         ]);
 
         try {
-            (new RecordPaymentAction())->execute($purchaseOrder, $request->all());
+            (new RecordPaymentAction)->execute($purchaseOrder, $request->all());
+
             return redirect()->route('procurement.purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Pembayaran dicatat.');
         } catch (\Exception $e) {

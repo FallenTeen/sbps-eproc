@@ -2,15 +2,15 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
-use App\Domain\Core\Models\Proyek;
+use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class RitaseController extends Controller
 {
@@ -30,7 +30,7 @@ class RitaseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->whereHas('driver', fn ($d) => $d->where('nama', 'like', "%{$search}%"))
-                  ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
+                    ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
             });
         }
 
@@ -103,7 +103,7 @@ class RitaseController extends Controller
 
         return Inertia::render('Fleet/Ritase/Create', [
             'armadaList' => $armadaList,
-            'ruteList'   => $ruteList,
+            'ruteList' => $ruteList,
             'driverList' => $driverList,
             'proyekList' => $proyekList,
         ]);
@@ -114,27 +114,27 @@ class RitaseController extends Controller
         $this->authorize('create', Ritase::class);
 
         $validated = $request->validate([
-            'armada_id'     => 'required|exists:armadas,id',
-            'karyawan_id'   => 'required|exists:karyawans,id',
+            'armada_id' => 'required|exists:armadas,id',
+            'karyawan_id' => 'required|exists:karyawans,id',
             'rute_tarif_id' => 'required|exists:rute_tarifs,id',
-            'proyek_id'     => 'nullable|exists:proyeks,id',
-            'tanggal'       => 'required|date',
-            'jumlah_trip'   => 'required|integer|min:1',
-            'catatan'       => 'nullable|string',
+            'proyek_id' => 'nullable|exists:proyeks,id',
+            'tanggal' => 'required|date',
+            'jumlah_trip' => 'required|integer|min:1',
+            'catatan' => 'nullable|string',
         ]);
 
         $rute = RuteTarif::findOrFail($validated['rute_tarif_id']);
 
         Ritase::create([
-            'armada_id'              => $validated['armada_id'],
-            'driver_karyawan_id'     => $validated['karyawan_id'],
-            'rute_tarif_id'          => $validated['rute_tarif_id'],
-            'proyek_id'              => $validated['proyek_id'] ?? null,
-            'tanggal'                => $validated['tanggal'],
-            'jumlah_rit'             => $validated['jumlah_trip'],
+            'armada_id' => $validated['armada_id'],
+            'driver_karyawan_id' => $validated['karyawan_id'],
+            'rute_tarif_id' => $validated['rute_tarif_id'],
+            'proyek_id' => $validated['proyek_id'] ?? null,
+            'tanggal' => $validated['tanggal'],
+            'jumlah_rit' => $validated['jumlah_trip'],
             'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
-            'status'                 => 'disetujui',
-            'catatan'                => $validated['catatan'] ?? null,
+            'status' => 'disetujui',
+            'catatan' => $validated['catatan'] ?? null,
         ]);
 
         return redirect()->route('fleet.ritase.index')->with('success', 'Ritase harian berhasil dicatat.');
@@ -144,6 +144,7 @@ class RitaseController extends Controller
     {
         $ritase = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek', 'biayaLain'])->findOrFail($id);
         $this->authorize('view', $ritase);
+
         return response()->json($ritase);
     }
 
@@ -216,6 +217,7 @@ class RitaseController extends Controller
         $rows = $query->get();
         $rekap = $rows->groupBy('armada_id')->map(function ($group) {
             $armada = $group->first()->armada;
+
             return [
                 'armada_id' => $armada?->id,
                 'kode_unit' => $armada?->kode_unit,

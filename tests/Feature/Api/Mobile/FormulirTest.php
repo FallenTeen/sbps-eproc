@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Attendance\Models\FormulirLapangan;
+use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
@@ -47,7 +48,7 @@ test('formulir store berhasil setelah check-in', function () {
         ->postJson('/api/mobile/formulir/store', formulirPayload());
 
     $response->assertStatus(201)
-        ->assertJsonPath('data.id', fn ($id) => !is_null($id));
+        ->assertJsonPath('data.id', fn ($id) => ! is_null($id));
 
     $this->assertDatabaseHas('formulir_lapangans', [
         'aktivitas_dilakukan' => 'Pengecoran jalan raya',
@@ -103,7 +104,7 @@ test('formulir hari ini mengembalikan data setelah diisi', function () {
 });
 
 test('riwayat formulir terpaginate', function () {
-    $presensi = \App\Domain\Attendance\Models\Presensi::create([
+    $presensi = Presensi::create([
         'karyawan_id' => $this->karyawan->id,
         'titik_id' => $this->titik->id,
         'check_in' => now(),

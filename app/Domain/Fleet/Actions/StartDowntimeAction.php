@@ -9,9 +9,7 @@ class StartDowntimeAction
     /**
      * Mulai downtime tak terjadwal
      *
-     * @param mixed $serviceable  Armada atau MesinProduksi
-     * @param array $data
-     * @return DowntimeLog
+     * @param  mixed  $serviceable  Armada atau MesinProduksi
      */
     public function execute($serviceable, array $data): DowntimeLog
     {

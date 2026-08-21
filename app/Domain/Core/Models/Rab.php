@@ -2,30 +2,33 @@
 
 namespace App\Domain\Core\Models;
 
+use Database\Factories\RabFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Rab extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'rabs';
+
     protected $fillable = [
         'proyek_id',
         'titik_id',
         'kategori',
         'rencana',
         'catatan',
-        'created_by'
+        'created_by',
     ];
+
     protected $casts = [
         'rencana' => 'float',
     ];
 
     protected static function newFactory()
     {
-        return \Database\Factories\RabFactory::new();
+        return RabFactory::new();
     }
 
     // Relasi

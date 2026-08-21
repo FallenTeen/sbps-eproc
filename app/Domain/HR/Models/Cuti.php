@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cuti extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'cutis';
+
     protected $fillable = [
         'karyawan_id',
         'tipe',
@@ -19,8 +20,9 @@ class Cuti extends Model
         'tanggal_selesai',
         'status',
         'disetujui_oleh',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',

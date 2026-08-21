@@ -2,18 +2,19 @@
 
 namespace App\Domain\Fleet\Models;
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Titik;
-use App\Domain\HR\Models\Karyawan;
+use App\Domain\Core\Models\UnitBisnis;
+use Database\Factories\ArmadaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Armada extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'armadas';
+
     protected $fillable = [
         'unit_bisnis_id',
         'plat_nomor',
@@ -25,8 +26,9 @@ class Armada extends Model
         'status',
         'titik_id',
         'tanggal_mulai_pakai',
-        'tanggal_servis_terakhir'
+        'tanggal_servis_terakhir',
     ];
+
     protected $casts = [
         'tahun' => 'integer',
         'tanggal_mulai_pakai' => 'date',
@@ -35,7 +37,7 @@ class Armada extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\ArmadaFactory::new();
+        return ArmadaFactory::new();
     }
 
     // Relasi

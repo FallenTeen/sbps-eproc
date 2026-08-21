@@ -31,7 +31,7 @@ class ProduksiController extends Controller
 
         $mesin = MesinProduksi::findOrFail($validated['mesin_id']);
 
-        $session = (new StartProductionSessionAction())->execute([
+        $session = (new StartProductionSessionAction)->execute([
             'mesin_id' => $mesin->id,
             'titik_id' => $validated['titik_id'] ?? $mesin->titik_id,
             'produk_id' => $validated['produk_id'],
@@ -67,7 +67,7 @@ class ProduksiController extends Controller
             'items.*.jumlah_terpakai' => 'required_with:items|numeric|min:0',
         ]);
 
-        $session = (new EndProductionSessionAction())->execute($session, [
+        $session = (new EndProductionSessionAction)->execute($session, [
             'hasil_output' => $validated['hasil_output'],
             'catatan' => $validated['catatan'] ?? null,
             'items' => $validated['items'] ?? [],
@@ -109,11 +109,11 @@ class ProduksiController extends Controller
             ->where('operator_karyawan_id', $karyawan->id)
             ->latest('mulai');
 
-        if (!empty($validated['tanggal'])) {
+        if (! empty($validated['tanggal'])) {
             $query->whereDate('mulai', $validated['tanggal']);
         }
 
-        if (!empty($validated['mesin_id'])) {
+        if (! empty($validated['mesin_id'])) {
             $query->where('mesin_id', $validated['mesin_id']);
         }
 
@@ -165,7 +165,7 @@ class ProduksiController extends Controller
     {
         $karyawan = $request->user()->karyawan;
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             throw ValidationException::withMessages([
                 'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
             ]);

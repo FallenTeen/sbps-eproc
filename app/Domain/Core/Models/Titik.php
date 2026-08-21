@@ -2,27 +2,30 @@
 
 namespace App\Domain\Core\Models;
 
-use App\Domain\Procurement\Models\StokMutasi;
 use App\Domain\Fleet\Models\Armada;
-use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
+use App\Domain\Procurement\Models\StokMutasi;
+use App\Domain\Production\Models\MesinProduksi;
+use Database\Factories\TitikFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Titik extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'titiks';
+
     protected $fillable = [
         'proyek_id',
         'nama',
         'latitude',
         'longitude',
         'radius_presensi_meter',
-        'status'
+        'status',
     ];
+
     protected $casts = [
         'latitude' => 'float',
         'longitude' => 'float',
@@ -31,7 +34,7 @@ class Titik extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\TitikFactory::new();
+        return TitikFactory::new();
     }
 
     // Relasi

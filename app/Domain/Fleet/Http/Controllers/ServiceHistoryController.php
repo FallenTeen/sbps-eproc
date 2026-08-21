@@ -2,11 +2,11 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
+use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ServiceHistory;
-use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
-use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,7 +30,7 @@ class ServiceHistoryController extends Controller
     {
         $modelClass = self::SERVICEABLE_MAP[$type] ?? null;
 
-        if (!$modelClass) {
+        if (! $modelClass) {
             abort(404, "Tipe serviceable '{$type}' tidak dikenal.");
         }
 
@@ -94,7 +94,7 @@ class ServiceHistoryController extends Controller
         $this->authorize('create', ServiceHistory::class);
 
         $validated = $request->validate([
-            'serviceable_type' => 'required|string|in:' . implode(',', array_keys(self::SERVICEABLE_MAP)),
+            'serviceable_type' => 'required|string|in:'.implode(',', array_keys(self::SERVICEABLE_MAP)),
             'serviceable_id' => 'required|string',
             'tanggal' => 'required|date',
             'jenis_servis' => 'nullable|string|max:255',
@@ -105,7 +105,7 @@ class ServiceHistoryController extends Controller
 
         $serviceable = $this->resolveServiceable($validated['serviceable_type'], $validated['serviceable_id']);
 
-        (new RecordServiceHistoryAction())->execute($serviceable, $validated);
+        (new RecordServiceHistoryAction)->execute($serviceable, $validated);
 
         return redirect()->route('fleet.service-history.index', [
             'type' => $validated['serviceable_type'],

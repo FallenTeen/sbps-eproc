@@ -96,6 +96,6 @@ class PembayaranController extends Controller
             'pembayaran' => $pembayaran,
         ]);
 
-        return $pdf->stream('bukti-pembayaran-' . $pembayaran->purchaseOrder->kode_po . '.pdf');
+        return $pdf->stream('bukti-pembayaran-'.$pembayaran->purchaseOrder->kode_po.'.pdf');
     }
 }

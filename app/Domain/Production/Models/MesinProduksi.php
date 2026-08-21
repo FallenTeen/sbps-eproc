@@ -2,12 +2,12 @@
 
 namespace App\Domain\Production\Models;
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Titik;
-use App\Domain\Fleet\Models\ServiceHistory;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
+use App\Domain\Fleet\Models\ServiceHistory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +16,7 @@ class MesinProduksi extends Model
     use HasUuids;
 
     protected $table = 'mesin_produksis';
+
     protected $fillable = [
         'unit_bisnis_id',
         'nama',
@@ -24,8 +25,9 @@ class MesinProduksi extends Model
         'status',
         'titik_id',
         'produk_id',
-        'biaya_per_jam'
+        'biaya_per_jam',
     ];
+
     protected $casts = [
         'biaya_per_jam' => 'float',
     ];

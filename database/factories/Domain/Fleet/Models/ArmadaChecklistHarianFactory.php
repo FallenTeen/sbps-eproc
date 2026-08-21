@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Domain\Fleet\Models;
 
+use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,8 +16,8 @@ class ArmadaChecklistHarianFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'checkable_type' => \App\Domain\Fleet\Models\Armada::class,
-            'checkable_id' => \App\Domain\Fleet\Models\Armada::factory(),
+            'checkable_type' => Armada::class,
+            'checkable_id' => Armada::factory(),
             'tanggal' => now()->toDateString(),
             'kondisi_baik' => true,
             'item_bermasalah' => null,

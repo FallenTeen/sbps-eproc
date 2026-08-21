@@ -3,8 +3,8 @@
 namespace App\Domain\Production\Models;
 
 use App\Domain\Core\Models\Titik;
-use App\Domain\HR\Models\Karyawan;
 use App\Domain\Finance\Models\InvoiceItem;
+use App\Domain\HR\Models\Karyawan;
 use App\Domain\Procurement\Models\StokMutasi;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +14,7 @@ class ProductionSession extends Model
     use HasUuids;
 
     protected $table = 'production_sessions';
+
     protected $fillable = [
         'mesin_id',
         'titik_id',
@@ -23,8 +24,9 @@ class ProductionSession extends Model
         'selesai',
         'hasil_output',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'mulai' => 'datetime',
         'selesai' => 'datetime',

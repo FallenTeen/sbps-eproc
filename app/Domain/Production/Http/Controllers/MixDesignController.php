@@ -8,8 +8,8 @@ use App\Domain\Production\Models\MixDesignTemplate;
 use App\Domain\Production\Models\MixDesignTemplateItem;
 use App\Domain\Production\Models\Produk;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class MixDesignController extends Controller
 {
@@ -80,7 +80,7 @@ class MixDesignController extends Controller
     public function update(Request $request, MixDesignTemplate $mixDesign)
     {
         $validated = $request->validate([
-            'mutu_beton' => 'required|string|max:50|unique:mix_design_templates,mutu_beton,' . $mixDesign->id,
+            'mutu_beton' => 'required|string|max:50|unique:mix_design_templates,mutu_beton,'.$mixDesign->id,
             'nama' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
             'items' => 'nullable|array',
@@ -125,7 +125,7 @@ class MixDesignController extends Controller
 
     public function generateResep(MixDesignTemplate $mixDesign, Produk $produk)
     {
-        (new GenerateResepFromMixDesignAction())->execute($produk, $mixDesign->mutu_beton);
+        (new GenerateResepFromMixDesignAction)->execute($produk, $mixDesign->mutu_beton);
 
         return redirect()->route('production.resep.index', $produk)
             ->with('success', 'Resep berhasil digenerate dari mix design.');

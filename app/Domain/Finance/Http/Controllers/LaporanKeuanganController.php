@@ -2,13 +2,13 @@
 
 namespace App\Domain\Finance\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Core\Actions\CompareRABRealisasiAction;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Rab;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Services\ConsolidateFinanceReportService;
-use App\Domain\Core\Actions\CompareRABRealisasiAction;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -25,8 +25,8 @@ class LaporanKeuanganController extends Controller
             'unitBisnisList' => UnitBisnis::all(['id', 'nama']),
             'filters' => [
                 'unit_bisnis_id' => $unitBisnisId ?? '',
-                'bulan' => (string)$bulan,
-                'tahun' => (string)$tahun,
+                'bulan' => (string) $bulan,
+                'tahun' => (string) $tahun,
             ],
         ]);
     }
@@ -37,16 +37,16 @@ class LaporanKeuanganController extends Controller
         $proyekId = $request->input('proyek_id');
 
         $proyeks = Proyek::query()
-            ->when($unitBisnisId, fn($q) => $q->where('unit_bisnis_id', $unitBisnisId))
+            ->when($unitBisnisId, fn ($q) => $q->where('unit_bisnis_id', $unitBisnisId))
             ->get(['id', 'nama', 'unit_bisnis_id']);
 
         $rabQuery = Rab::query()
             ->with(['proyek:id,nama', 'titik:id,nama'])
-            ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
-            ->when($unitBisnisId, fn($q) => $q->whereHas('proyek', fn($p) => $p->where('unit_bisnis_id', $unitBisnisId)));
+            ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
+            ->when($unitBisnisId, fn ($q) => $q->whereHas('proyek', fn ($p) => $p->where('unit_bisnis_id', $unitBisnisId)));
 
         $rabs = $rabQuery->get();
-        $compareAction = new CompareRABRealisasiAction();
+        $compareAction = new CompareRABRealisasiAction;
 
         $totalRencana = 0;
         $totalRealisasi = 0;
@@ -61,7 +61,7 @@ class LaporanKeuanganController extends Controller
                 'proyek' => $rab->proyek ? $rab->proyek->nama : '-',
                 'titik' => $rab->titik ? $rab->titik->nama : '-',
                 'kategori' => $rab->kategori,
-                'deskripsi' => $rab->deskripsi ?? 'RAB ' . ucfirst($rab->kategori),
+                'deskripsi' => $rab->deskripsi ?? 'RAB '.ucfirst($rab->kategori),
                 'rencana' => $comparison['rencana'],
                 'realisasi' => $comparison['realisasi'],
                 'selisih' => $comparison['selisih'],
@@ -85,21 +85,21 @@ class LaporanKeuanganController extends Controller
             'filters' => [
                 'unit_bisnis_id' => $unitBisnisId ?? '',
                 'proyek_id' => $proyekId ?? '',
-            ]
+            ],
         ]);
     }
 
     public function labaRugi(Request $request)
     {
         $unitBisnisId = $request->input('unit_bisnis_id');
-        $bulan = (int)$request->input('bulan', date('m'));
-        $tahun = (int)$request->input('tahun', date('Y'));
+        $bulan = (int) $request->input('bulan', date('m'));
+        $tahun = (int) $request->input('tahun', date('Y'));
 
         $unitBisnisQuery = UnitBisnis::query()
-            ->when($unitBisnisId, fn($q) => $q->where('id', $unitBisnisId));
+            ->when($unitBisnisId, fn ($q) => $q->where('id', $unitBisnisId));
 
         $unitBisnisList = $unitBisnisQuery->get();
-        $consolidateService = new ConsolidateFinanceReportService();
+        $consolidateService = new ConsolidateFinanceReportService;
 
         $reportUnits = [];
         $grandPendapatan = 0;
@@ -113,7 +113,7 @@ class LaporanKeuanganController extends Controller
                 ->with('items')
                 ->get();
 
-            $pendapatan = $invoices->sum(fn($inv) => $inv->items->sum('subtotal'));
+            $pendapatan = $invoices->sum(fn ($inv) => $inv->items->sum('subtotal'));
 
             // Calculate costs consolidated across projects of this unit
             $proyeks = Proyek::where('unit_bisnis_id', $ub->id)->get();
@@ -162,15 +162,15 @@ class LaporanKeuanganController extends Controller
             'filters' => [
                 'unit_bisnis_id' => $unitBisnisId ?? '',
                 'bulan' => sprintf('%02d', $bulan),
-                'tahun' => (string)$tahun,
-            ]
+                'tahun' => (string) $tahun,
+            ],
         ]);
     }
 
     public function exportExcel(Request $request)
     {
         $type = $request->input('type', 'rab_realisasi');
-        $filename = "laporan_{$type}_" . date('Ymd_His') . ".csv";
+        $filename = "laporan_{$type}_".date('Ymd_His').'.csv';
 
         $response = new StreamedResponse(function () use ($type, $request) {
             $handle = fopen('php://output', 'w');
@@ -182,12 +182,12 @@ class LaporanKeuanganController extends Controller
 
                 $unitBisnisId = $request->input('unit_bisnis_id');
                 $proyekId = $request->input('proyek_id');
-                $compareAction = new CompareRABRealisasiAction();
+                $compareAction = new CompareRABRealisasiAction;
 
                 $rabs = Rab::query()
                     ->with(['proyek', 'titik'])
-                    ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
-                    ->when($unitBisnisId, fn($q) => $q->whereHas('proyek', fn($p) => $p->where('unit_bisnis_id', $unitBisnisId)))
+                    ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
+                    ->when($unitBisnisId, fn ($q) => $q->whereHas('proyek', fn ($p) => $p->where('unit_bisnis_id', $unitBisnisId)))
                     ->get();
 
                 foreach ($rabs as $rab) {
@@ -200,21 +200,21 @@ class LaporanKeuanganController extends Controller
                         $comp['rencana'],
                         $comp['realisasi'],
                         $comp['selisih'],
-                        $comp['persentase'] . '%',
+                        $comp['persentase'].'%',
                     ]);
                 }
             } else {
                 fputcsv($handle, ['Unit Bisnis', 'Pendapatan (Rp)', 'Beban Material/PO (Rp)', 'Beban Ritase (Rp)', 'Beban Produksi (Rp)', 'Beban Gaji (Rp)', 'Total Beban (Rp)', 'Laba Bersih (Rp)']);
 
                 $unitBisnisId = $request->input('unit_bisnis_id');
-                $bulan = (int)$request->input('bulan', date('m'));
-                $tahun = (int)$request->input('tahun', date('Y'));
+                $bulan = (int) $request->input('bulan', date('m'));
+                $tahun = (int) $request->input('tahun', date('Y'));
 
                 $unitBisnisList = UnitBisnis::query()
-                    ->when($unitBisnisId, fn($q) => $q->where('id', $unitBisnisId))
+                    ->when($unitBisnisId, fn ($q) => $q->where('id', $unitBisnisId))
                     ->get();
 
-                $consolidateService = new ConsolidateFinanceReportService();
+                $consolidateService = new ConsolidateFinanceReportService;
 
                 foreach ($unitBisnisList as $ub) {
                     $invoices = Invoice::where('unit_bisnis_id', $ub->id)
@@ -223,10 +223,13 @@ class LaporanKeuanganController extends Controller
                         ->with('items')
                         ->get();
 
-                    $pendapatan = $invoices->sum(fn($inv) => $inv->items->sum('subtotal'));
+                    $pendapatan = $invoices->sum(fn ($inv) => $inv->items->sum('subtotal'));
                     $proyeks = Proyek::where('unit_bisnis_id', $ub->id)->get();
 
-                    $bebanPO = 0; $bebanRitase = 0; $bebanProduksi = 0; $bebanGaji = 0;
+                    $bebanPO = 0;
+                    $bebanRitase = 0;
+                    $bebanProduksi = 0;
+                    $bebanGaji = 0;
                     foreach ($proyeks as $proyek) {
                         $c = $consolidateService->generate($proyek, $bulan, $tahun);
                         $bebanPO += $c['po'];

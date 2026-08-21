@@ -12,6 +12,7 @@ class SewaAlatJam extends Model
     use HasUuids;
 
     protected $table = 'sewa_alat_jams';
+
     protected $fillable = [
         'armada_id',
         'proyek_id',
@@ -23,8 +24,9 @@ class SewaAlatJam extends Model
         'hm_akhir',
         'jumlah_jam',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'harga_per_jam_snapshot' => 'float',

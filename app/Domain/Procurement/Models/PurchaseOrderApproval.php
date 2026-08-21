@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrderApproval extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'purchase_order_approvals';
+
     protected $fillable = ['purchase_order_id', 'approved_by', 'status', 'catatan'];
 
     // Relasi

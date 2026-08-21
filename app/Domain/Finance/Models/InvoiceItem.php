@@ -10,6 +10,7 @@ class InvoiceItem extends Model
     use HasUuids;
 
     protected $table = 'invoice_items';
+
     protected $fillable = [
         'invoice_id',
         'deskripsi',
@@ -17,8 +18,9 @@ class InvoiceItem extends Model
         'referensi_id',
         'jumlah',
         'harga_satuan',
-        'subtotal'
+        'subtotal',
     ];
+
     protected $casts = [
         'jumlah' => 'float',
         'harga_satuan' => 'float',

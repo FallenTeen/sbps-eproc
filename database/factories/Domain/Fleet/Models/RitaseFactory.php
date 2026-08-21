@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Domain\Fleet\Models;
 
+use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
@@ -16,7 +17,7 @@ class RitaseFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'armada_id' => \App\Domain\Fleet\Models\Armada::factory(),
+            'armada_id' => Armada::factory(),
             'driver_karyawan_id' => Karyawan::factory(),
             'tanggal' => now()->toDateString(),
             'rute_tarif_id' => RuteTarif::factory(),

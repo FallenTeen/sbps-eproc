@@ -2,18 +2,18 @@
 
 namespace App\Domain\Finance\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Finance\Models\Invoice;
-use App\Domain\Finance\Models\AkunKasBank;
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Fleet\Models\SewaAlatJam;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Actions\GenerateInvoiceFromProductionAction;
 use App\Domain\Finance\Actions\GenerateInvoiceFromRitaseAction;
 use App\Domain\Finance\Actions\GenerateInvoiceFromSewaAlatAction;
+use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Finance\Models\Invoice;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Production\Actions\CalculateProductionRevenueAction;
+use App\Domain\Production\Models\ProductionSession;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -88,55 +88,55 @@ class InvoiceController extends Controller
         if ($sumber === 'produksi') {
             $query = ProductionSession::where('status', 'selesai')
                 ->whereDoesntHave('invoiceItems')
-                ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
+                ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
                 ->with(['produk']);
 
             $sessions = $query->get();
-            $calcAction = new CalculateProductionRevenueAction();
+            $calcAction = new CalculateProductionRevenueAction;
 
             foreach ($sessions as $session) {
                 $revenue = $calcAction->execute($session);
                 $items[] = [
                     'id' => $session->id,
-                    'deskripsi' => "Produksi {$session->produk->nama} - " . date('d/m/Y', strtotime($session->tanggal)),
-                    'jumlah' => (float)$session->hasil_output,
-                    'harga_satuan' => $session->hasil_output > 0 ? (float)($revenue / $session->hasil_output) : 0,
-                    'subtotal' => (float)$revenue,
+                    'deskripsi' => "Produksi {$session->produk->nama} - ".date('d/m/Y', strtotime($session->tanggal)),
+                    'jumlah' => (float) $session->hasil_output,
+                    'harga_satuan' => $session->hasil_output > 0 ? (float) ($revenue / $session->hasil_output) : 0,
+                    'subtotal' => (float) $revenue,
                 ];
             }
         } elseif ($sumber === 'ritase') {
             $query = Ritase::where('status', 'disetujui')
                 ->whereNull('invoice_id')
-                ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
-                ->when($unitBisnisId, fn($q) => $q->whereHas('armada', fn($a) => $a->where('unit_bisnis_id', $unitBisnisId)))
+                ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
+                ->when($unitBisnisId, fn ($q) => $q->whereHas('armada', fn ($a) => $a->where('unit_bisnis_id', $unitBisnisId)))
                 ->with(['armada', 'biayaLain']);
 
             $ritases = $query->get();
             foreach ($ritases as $ritase) {
-                $subtotal = (float)($ritase->total_upah_rit + $ritase->biayaLain->sum('jumlah'));
+                $subtotal = (float) ($ritase->total_upah_rit + $ritase->biayaLain->sum('jumlah'));
                 $items[] = [
                     'id' => $ritase->id,
-                    'deskripsi' => "Ritase {$ritase->kategori} - " . ($ritase->armada ? $ritase->armada->plat_nomor : '') . " ({$ritase->jumlah_rit} rit)",
-                    'jumlah' => (float)$ritase->jumlah_rit,
-                    'harga_satuan' => (float)$ritase->tarif_per_rit_snapshot,
+                    'deskripsi' => "Ritase {$ritase->kategori} - ".($ritase->armada ? $ritase->armada->plat_nomor : '')." ({$ritase->jumlah_rit} rit)",
+                    'jumlah' => (float) $ritase->jumlah_rit,
+                    'harga_satuan' => (float) $ritase->tarif_per_rit_snapshot,
                     'subtotal' => $subtotal,
                 ];
             }
         } elseif ($sumber === 'sewa_alat') {
             $query = SewaAlatJam::where('status', 'disetujui')
                 ->whereNull('invoice_id')
-                ->when($proyekId, fn($q) => $q->where('proyek_id', $proyekId))
-                ->when($unitBisnisId, fn($q) => $q->whereHas('armada', fn($a) => $a->where('unit_bisnis_id', $unitBisnisId)))
+                ->when($proyekId, fn ($q) => $q->where('proyek_id', $proyekId))
+                ->when($unitBisnisId, fn ($q) => $q->whereHas('armada', fn ($a) => $a->where('unit_bisnis_id', $unitBisnisId)))
                 ->with(['armada']);
 
             $sewas = $query->get();
             foreach ($sewas as $sewa) {
-                $subtotal = (float)($sewa->jumlah_jam * $sewa->harga_per_jam_snapshot);
+                $subtotal = (float) ($sewa->jumlah_jam * $sewa->harga_per_jam_snapshot);
                 $items[] = [
                     'id' => $sewa->id,
-                    'deskripsi' => "Sewa " . ($sewa->armada ? $sewa->armada->nama : 'Alat') . " - " . date('d/m/Y', strtotime($sewa->tanggal)) . " ({$sewa->jumlah_jam} jam)",
-                    'jumlah' => (float)$sewa->jumlah_jam,
-                    'harga_satuan' => (float)$sewa->harga_per_jam_snapshot,
+                    'deskripsi' => 'Sewa '.($sewa->armada ? $sewa->armada->nama : 'Alat').' - '.date('d/m/Y', strtotime($sewa->tanggal))." ({$sewa->jumlah_jam} jam)",
+                    'jumlah' => (float) $sewa->jumlah_jam,
+                    'harga_satuan' => (float) $sewa->harga_per_jam_snapshot,
                     'subtotal' => $subtotal,
                 ];
             }
@@ -162,16 +162,16 @@ class InvoiceController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $proyekId = $validated['proyek_id'] ? (int)$validated['proyek_id'] : null;
-        $unitBisnisId = (int)$validated['unit_bisnis_id'];
+        $proyekId = $validated['proyek_id'] ? (int) $validated['proyek_id'] : null;
+        $unitBisnisId = (int) $validated['unit_bisnis_id'];
         $itemIds = $validated['item_ids'];
 
         if ($validated['sumber_tagihan'] === 'produksi') {
-            $invoice = (new GenerateInvoiceFromProductionAction())->execute($proyekId, $itemIds);
+            $invoice = (new GenerateInvoiceFromProductionAction)->execute($proyekId, $itemIds);
         } elseif ($validated['sumber_tagihan'] === 'ritase') {
-            $invoice = (new GenerateInvoiceFromRitaseAction())->execute($proyekId, null, $itemIds, $unitBisnisId);
+            $invoice = (new GenerateInvoiceFromRitaseAction)->execute($proyekId, null, $itemIds, $unitBisnisId);
         } else {
-            $invoice = (new GenerateInvoiceFromSewaAlatAction())->execute($proyekId, null, $itemIds, $unitBisnisId);
+            $invoice = (new GenerateInvoiceFromSewaAlatAction)->execute($proyekId, null, $itemIds, $unitBisnisId);
         }
 
         // Update due date and notes if customized
@@ -189,8 +189,8 @@ class InvoiceController extends Controller
 
         $invoice->load(['unitBisnis', 'proyek', 'items', 'pembayaranKlien.akunKasBank']);
 
-        $total = (float)$invoice->items->sum('subtotal');
-        $totalBayar = (float)$invoice->pembayaranKlien->sum('jumlah');
+        $total = (float) $invoice->items->sum('subtotal');
+        $totalBayar = (float) $invoice->pembayaranKlien->sum('jumlah');
         $sisa = max(0, $total - $totalBayar);
 
         $akunKasList = AkunKasBank::where('aktif', true)
@@ -215,7 +215,7 @@ class InvoiceController extends Controller
                     return [
                         'id' => $p->id,
                         'tanggal' => $p->tanggal ? $p->tanggal->format('Y-m-d') : null,
-                        'jumlah' => (float)$p->jumlah,
+                        'jumlah' => (float) $p->jumlah,
                         'metode' => $p->metode,
                         'akun_kas' => $p->akunKasBank ? $p->akunKasBank->nama : '-',
                         'dokumen_bukti' => $p->dokumen_bukti,
@@ -237,6 +237,7 @@ class InvoiceController extends Controller
         $this->authorize('send', $invoice);
 
         $invoice->update(['status' => 'terkirim']);
+
         return redirect()->back()->with('success', 'Invoice berhasil diubah statusnya menjadi Terkirim.');
     }
 

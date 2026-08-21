@@ -2,6 +2,7 @@
 
 namespace App\Domain\Finance\Actions;
 
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use Illuminate\Support\Facades\Auth;
@@ -12,11 +13,10 @@ class GenerateInvoiceFromSewaAlatAction
     /**
      * Generate invoice dari sewa alat yang sudah disetujui dan belum ditagih.
      *
-     * @param int $proyekId ID proyek (optional)
-     * @param string|null $penyewaEksternal Nama penyewa eksternal (jika tidak terkait proyek)
-     * @param array|null $sewaIds Array ID sewa spesifik
-     * @param int|null $unitBisnisId Untuk memastikan unit bisnis sesuai
-     * @return Invoice
+     * @param  int  $proyekId  ID proyek (optional)
+     * @param  string|null  $penyewaEksternal  Nama penyewa eksternal (jika tidak terkait proyek)
+     * @param  array|null  $sewaIds  Array ID sewa spesifik
+     * @param  int|null  $unitBisnisId  Untuk memastikan unit bisnis sesuai
      */
     public function execute(
         ?int $proyekId = null,
@@ -93,7 +93,7 @@ class GenerateInvoiceFromSewaAlatAction
      */
     private function generateInvoiceCode(int $unitBisnisId): string
     {
-        $unitKode = \App\Domain\Core\Models\UnitBisnis::find($unitBisnisId)->kode;
+        $unitKode = UnitBisnis::find($unitBisnisId)->kode;
         $year = date('Y');
         $lastInvoice = Invoice::where('unit_bisnis_id', $unitBisnisId)
             ->whereYear('created_at', $year)

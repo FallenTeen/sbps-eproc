@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Models\User;
 
 class PurchaseOrderPolicy
 {
@@ -12,15 +12,16 @@ class PurchaseOrderPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Koordinator Procurement',
-                ])
+            'Admin Keuangan',
+            'Koordinator Procurement',
+        ])
             || $user->hasPermissionTo('manage procurement')
             || $user->hasPermissionTo('view procurement')
             || $user->isKetuaDivisi();
@@ -32,7 +33,7 @@ class PurchaseOrderPolicy
             return true;
         }
 
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -42,20 +43,21 @@ class PurchaseOrderPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator Procurement',
-                ])
+            'Koordinator Procurement',
+        ])
             || $user->hasPermissionTo('manage procurement')
             || $this->isKetuaDivisiWithScope($user);
     }
 
     public function update(User $user, PurchaseOrder $po): bool
     {
-        if (!$this->create($user)) {
+        if (! $this->create($user)) {
             return false;
         }
         if ($po->created_by === $user->id) {
             return true;
         }
+
         return $this->unitBisnisAllowed($user, $po->proyek?->unit_bisnis_id);
     }
 
@@ -67,6 +69,7 @@ class PurchaseOrderPolicy
         if ($this->isKetuaDivisiWithScope($user)) {
             return $this->unitBisnisAllowed($user, $po->proyek?->unit_bisnis_id);
         }
+
         return false;
     }
 
@@ -87,9 +90,10 @@ class PurchaseOrderPolicy
             if ($total > 25000000) {
                 return false;
             }
-            if (!$this->unitBisnisAllowed($user, $poUnitId)) {
+            if (! $this->unitBisnisAllowed($user, $poUnitId)) {
                 return false;
             }
+
             return $this->poHasSparepartArmada($po);
         }
 
@@ -97,9 +101,10 @@ class PurchaseOrderPolicy
             if ($total > 20000000) {
                 return false;
             }
-            if (!$this->unitBisnisAllowed($user, $poUnitId)) {
+            if (! $this->unitBisnisAllowed($user, $poUnitId)) {
                 return false;
             }
+
             return $this->poHasBahanBakuProduksi($po);
         }
 
@@ -107,9 +112,10 @@ class PurchaseOrderPolicy
             if ($total > 30000000) {
                 return false;
             }
-            if (!$this->unitBisnisAllowed($user, $poUnitId)) {
+            if (! $this->unitBisnisAllowed($user, $poUnitId)) {
                 return false;
             }
+
             return $this->poIsKontrakKlien($po);
         }
 
@@ -128,19 +134,21 @@ class PurchaseOrderPolicy
             || $user->hasPermissionTo('manage procurement')) {
             return $this->unitBisnisAllowed($user, $po->proyek?->unit_bisnis_id);
         }
+
         return false;
     }
 
     public function pay(User $user, PurchaseOrder $po): bool
     {
         if ($user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('pay procurement')) {
             return $this->unitBisnisAllowed($user, $po->proyek?->unit_bisnis_id);
         }
+
         return false;
     }
 
@@ -152,6 +160,7 @@ class PurchaseOrderPolicy
     protected function poHasSparepartArmada(PurchaseOrder $po): bool
     {
         $po->loadMissing('items.bahanBaku');
+
         return $po->items->isNotEmpty() && $po->items->every(function ($item) {
             return $item->bahanBaku && $item->bahanBaku->kategori === 'sparepart';
         });
@@ -160,6 +169,7 @@ class PurchaseOrderPolicy
     protected function poHasBahanBakuProduksi(PurchaseOrder $po): bool
     {
         $po->loadMissing('items.bahanBaku');
+
         return $po->items->isNotEmpty() && $po->items->every(function ($item) {
             return $item->bahanBaku && $item->bahanBaku->kategori === 'bahan_baku';
         });
@@ -168,20 +178,23 @@ class PurchaseOrderPolicy
     protected function poIsKontrakKlien(PurchaseOrder $po): bool
     {
         $po->loadMissing('proyek');
+
         return $po->proyek && $po->proyek->tipe_proyek === 'kontrak_klien';
     }
 
     protected function poUnitMatchesUser(User $user, PurchaseOrder $po): bool
     {
         $poUnitId = $po->proyek?->unit_bisnis_id;
+
         return $this->unitBisnisAllowed($user, $poUnitId);
     }
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

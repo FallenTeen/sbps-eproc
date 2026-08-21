@@ -2,10 +2,11 @@
 
 namespace App\Domain\Core\Models;
 
-use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Finance\Models\Invoice;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Models\ProductionSession;
+use Database\Factories\ProyekFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Spatie\Activitylog\Support\LogOptions;
 
 class Proyek extends Model
 {
-    use HasUuids, HasFactory, LogsActivity;
+    use HasFactory, HasUuids, LogsActivity;
 
     protected $table = 'proyeks';
 
@@ -24,6 +25,7 @@ class Proyek extends Model
             ->logOnly(['nama', 'status', 'client', 'lokasi'])
             ->logOnlyDirty();
     }
+
     protected $fillable = [
         'unit_bisnis_id',
         'kode_proyek',
@@ -36,8 +38,9 @@ class Proyek extends Model
         'tanggal_selesai_aktual',
         'status',
         'catatan',
-        'created_by'
+        'created_by',
     ];
+
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai_rencana' => 'date',
@@ -46,7 +49,7 @@ class Proyek extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\ProyekFactory::new();
+        return ProyekFactory::new();
     }
 
     // Relasi

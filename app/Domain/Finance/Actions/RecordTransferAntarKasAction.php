@@ -2,7 +2,6 @@
 
 namespace App\Domain\Finance\Actions;
 
-use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\TransferAntarKas;
 use Illuminate\Support\Facades\DB;
 

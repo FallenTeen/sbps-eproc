@@ -15,7 +15,7 @@ class CalculateProductionRevenueAction
             ->where('berlaku_dari', '<=', $through)
             ->where(function ($q) use ($through) {
                 $q->whereNull('berlaku_sampai')
-                  ->orWhere('berlaku_sampai', '>=', $through);
+                    ->orWhere('berlaku_sampai', '>=', $through);
             })
             ->orderBy('berlaku_dari', 'desc')
             ->first();

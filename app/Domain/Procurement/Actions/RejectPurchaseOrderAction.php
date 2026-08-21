@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class RejectPurchaseOrderAction
 {
-    public function execute(PurchaseOrder $po, string $catatan = null): PurchaseOrder
+    public function execute(PurchaseOrder $po, ?string $catatan = null): PurchaseOrder
     {
         DB::transaction(function () use ($po, $catatan) {
             PurchaseOrderApproval::create([

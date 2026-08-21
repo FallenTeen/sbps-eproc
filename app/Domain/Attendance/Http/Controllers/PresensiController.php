@@ -65,7 +65,7 @@ class PresensiController extends Controller
         $titik = Titik::find($validated['titik_id'] ?? null);
 
         if ($titik) {
-            $statusValidasi = (new ValidateLocationCheckInAction())->execute(
+            $statusValidasi = (new ValidateLocationCheckInAction)->execute(
                 $titik,
                 (float) $validated['check_in_lat'],
                 (float) $validated['check_in_lng']

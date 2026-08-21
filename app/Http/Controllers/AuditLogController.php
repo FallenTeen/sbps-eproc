@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AuditLogExport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Activitylog\Models\Activity;
-use Illuminate\Support\Facades\DB;
 
 class AuditLogController extends Controller
 {
@@ -111,6 +111,6 @@ class AuditLogController extends Controller
         $logs = $logs->orderBy('created_at', 'desc')->get();
 
         // Return Excel export
-        return (new \App\Exports\AuditLogExport($logs))->download('audit-log.xlsx');
+        return (new AuditLogExport($logs))->download('audit-log.xlsx');
     }
 }

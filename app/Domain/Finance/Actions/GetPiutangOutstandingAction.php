@@ -9,10 +9,12 @@ class GetPiutangOutstandingAction
     public function execute($proyekId = null, $unitBisnisId = null): float
     {
         $query = Invoice::where('status', '!=', 'lunas');
-        if ($proyekId)
+        if ($proyekId) {
             $query->where('proyek_id', $proyekId);
-        if ($unitBisnisId)
+        }
+        if ($unitBisnisId) {
             $query->where('unit_bisnis_id', $unitBisnisId);
+        }
 
         $totalPiutang = 0;
         foreach ($query->get() as $invoice) {
@@ -20,6 +22,7 @@ class GetPiutangOutstandingAction
             $paid = $invoice->pembayaranKlien->sum('jumlah');
             $totalPiutang += ($total - $paid);
         }
+
         return $totalPiutang;
     }
 }

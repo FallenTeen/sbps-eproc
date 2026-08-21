@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
+use App\Models\User;
 
 /**
  * CATATAN DESAIN:
@@ -20,16 +21,17 @@ class MutasiKasBankPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('view finance')
             || $user->hasPermissionTo('manage kas')
@@ -38,7 +40,7 @@ class MutasiKasBankPolicy
 
     public function view(User $user, MutasiKasBank $mutasi): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -67,15 +69,16 @@ class MutasiKasBankPolicy
         if ($user->hasRole(['Admin Keuangan', 'Ketua Divisi Finance', 'Ketua Divisi Keuangan'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$akunKasBankId) {
+        if (! $user->unit_bisnis_id || ! $akunKasBankId) {
             return true;
         }
 
         // Cari unit_bisnis_id dari akun kas bank
-        $akun = \App\Domain\Finance\Models\AkunKasBank::find($akunKasBankId);
-        if (!$akun) {
+        $akun = AkunKasBank::find($akunKasBankId);
+        if (! $akun) {
             return false;
         }
+
         return $user->unit_bisnis_id === $akun->unit_bisnis_id;
     }
 }

@@ -3,15 +3,15 @@
 namespace App\Domain\Production\Http\Controllers;
 
 use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Production\Models\HargaJual;
 use App\Domain\Production\Models\MixDesignTemplate;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ProdukController extends Controller
 {
@@ -24,7 +24,7 @@ class ProdukController extends Controller
             $q->orderBy('berlaku_dari', 'desc');
         }]);
 
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $query->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
 
@@ -33,14 +33,14 @@ class ProdukController extends Controller
         }
 
         if ($request->has('search') && $request->search) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                ->orWhere('kategori', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%'.$request->search.'%')
+                ->orWhere('kategori', 'like', '%'.$request->search.'%');
         }
 
         $produks = $query->orderBy('nama')->paginate(15)->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
 
@@ -57,7 +57,7 @@ class ProdukController extends Controller
 
         $user = auth()->user();
         $unitBisnisQuery = UnitBisnis::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
 
@@ -131,7 +131,7 @@ class ProdukController extends Controller
 
         $user = auth()->user();
         $unitBisnisQuery = UnitBisnis::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
 
@@ -147,7 +147,7 @@ class ProdukController extends Controller
 
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
-            'nama' => 'required|string|max:255|unique:produks,nama,' . $produk->id,
+            'nama' => 'required|string|max:255|unique:produks,nama,'.$produk->id,
             'kategori' => 'required|string|max:100',
             'satuan_output' => 'required|in:ton,m3',
             'aktif' => 'boolean',
@@ -194,7 +194,7 @@ class ProdukController extends Controller
             // Tutup range harga lama yang belum punya akhir
             HargaJual::where('produk_id', $produk->id)
                 ->whereNull('berlaku_sampai')
-                ->update(['berlaku_sampai' => \Carbon\Carbon::parse($berlakuDari)->subDay()]);
+                ->update(['berlaku_sampai' => Carbon::parse($berlakuDari)->subDay()]);
 
             HargaJual::create([
                 'produk_id' => $produk->id,

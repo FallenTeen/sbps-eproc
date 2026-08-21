@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Core\Models\Proyek;
+use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 class PurchaseOrderFactory extends Factory
@@ -17,7 +17,7 @@ class PurchaseOrderFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'kode_po' => 'PO-' . now()->format('Ymd') . '-' . str_pad($this->faker->unique()->numberBetween(1, 999), 4, '0', STR_PAD_LEFT),
+            'kode_po' => 'PO-'.now()->format('Ymd').'-'.str_pad($this->faker->unique()->numberBetween(1, 999), 4, '0', STR_PAD_LEFT),
             'proyek_id' => Proyek::factory(),
             'titik_id' => null,
             'supplier_id' => Supplier::factory(),
@@ -32,26 +32,26 @@ class PurchaseOrderFactory extends Factory
 
     public function draft(): static
     {
-        return $this->state(fn(array $attributes) => ['status' => 'draft']);
+        return $this->state(fn (array $attributes) => ['status' => 'draft']);
     }
 
     public function diajukan(): static
     {
-        return $this->state(fn(array $attributes) => ['status' => 'diajukan']);
+        return $this->state(fn (array $attributes) => ['status' => 'diajukan']);
     }
 
     public function disetujui(): static
     {
-        return $this->state(fn(array $attributes) => ['status' => 'disetujui']);
+        return $this->state(fn (array $attributes) => ['status' => 'disetujui']);
     }
 
     public function diterima(): static
     {
-        return $this->state(fn(array $attributes) => ['status' => 'diterima']);
+        return $this->state(fn (array $attributes) => ['status' => 'diterima']);
     }
 
     public function lunas(): static
     {
-        return $this->state(fn(array $attributes) => ['status' => 'lunas']);
+        return $this->state(fn (array $attributes) => ['status' => 'lunas']);
     }
 }

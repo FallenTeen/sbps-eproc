@@ -2,20 +2,24 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Fleet\Models\Armada;
-use App\Domain\Fleet\Actions\RecordRitaseAction;
-use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
-use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
-use App\Domain\Fleet\Actions\RecordBBMAction;
-use App\Domain\Fleet\Actions\StartDowntimeAction;
-use App\Domain\Fleet\Actions\EndDowntimeAction;
-use App\Domain\Fleet\Actions\AssignDriverToArmadaAction;
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
+use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Fleet\Actions\AssignDriverToArmadaAction;
+use App\Domain\Fleet\Actions\EndDowntimeAction;
+use App\Domain\Fleet\Actions\RecordBBMAction;
+use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordRitaseAction;
+use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
+use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
+use App\Domain\Fleet\Actions\StartDowntimeAction;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\DowntimeLog;
+use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
-use Inertia\Inertia;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ArmadaController extends Controller
 {
@@ -25,8 +29,8 @@ class ArmadaController extends Controller
 
         $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan']);
 
-        if (!$request->user()->hasRole('Owner')) {
-            $gcs = \App\Domain\Core\Models\UnitBisnis::where('kode', 'GCS')->first();
+        if (! $request->user()->hasRole('Owner')) {
+            $gcs = UnitBisnis::where('kode', 'GCS')->first();
             $unitId = $request->user()->unit_bisnis_id ?? $gcs?->id;
             if ($unitId) {
                 $query->where('unit_bisnis_id', $unitId);
@@ -43,8 +47,8 @@ class ArmadaController extends Controller
 
         if ($request->has('search') && $request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('kode_unit', 'like', '%' . $request->search . '%')
-                  ->orWhere('plat_nomor', 'like', '%' . $request->search . '%');
+                $q->where('kode_unit', 'like', '%'.$request->search.'%')
+                    ->orWhere('plat_nomor', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -61,7 +65,7 @@ class ArmadaController extends Controller
         $this->authorize('create', Armada::class);
 
         $user = auth()->user();
-        $unitBisnisQuery = \App\Domain\Core\Models\UnitBisnis::aktif();
+        $unitBisnisQuery = UnitBisnis::aktif();
         if ($user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
@@ -72,6 +76,7 @@ class ArmadaController extends Controller
         }
         $titiks = $titiksQuery->get();
         $drivers = Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get();
+
         return Inertia::render('Fleet/Armada/Create', [
             'unitBisnis' => $unitBisnis,
             'titiks' => $titiks,
@@ -95,6 +100,7 @@ class ArmadaController extends Controller
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
         Armada::create($validated);
+
         return redirect()->route('fleet.armada.index')->with('success', 'Armada berhasil ditambahkan.');
     }
 
@@ -106,16 +112,16 @@ class ArmadaController extends Controller
             'unitBisnis',
             'titik',
             'serviceHistories',
-            'checklists' => fn($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
-            'bbmLogs' => fn($q) => $q->latest('tanggal')->limit(30),
-            'downtimes' => fn($q) => $q->latest('mulai')->limit(10),
-            'ritases' => fn($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
-            'sewaAlatJams' => fn($q) => $q->with('proyek')->latest('tanggal')->limit(50),
-            'driverAssignments' => fn($q) => $q->with('karyawan')->latest('tanggal_mulai'),
+            'checklists' => fn ($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
+            'bbmLogs' => fn ($q) => $q->latest('tanggal')->limit(30),
+            'downtimes' => fn ($q) => $q->latest('mulai')->limit(10),
+            'ritases' => fn ($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
+            'sewaAlatJams' => fn ($q) => $q->with('proyek')->latest('tanggal')->limit(50),
+            'driverAssignments' => fn ($q) => $q->with('karyawan')->latest('tanggal_mulai'),
         ]);
 
         $user = auth()->user();
-        $proyeksQuery = \App\Domain\Core\Models\Proyek::aktif();
+        $proyeksQuery = Proyek::aktif();
         if ($user->unit_bisnis_id) {
             $proyeksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
@@ -133,7 +139,7 @@ class ArmadaController extends Controller
             'options' => [
                 'drivers' => Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get(['id', 'nama', 'jabatan']),
                 'proyeks' => $proyeksQuery->get(['id', 'nama', 'kode_proyek']),
-                'ruteTarifs' => \App\Domain\Fleet\Models\RuteTarif::aktif()->get(['id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit']),
+                'ruteTarifs' => RuteTarif::aktif()->get(['id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit']),
                 'titiks' => $titiksQuery->get(['id', 'nama']),
             ],
             'can' => [
@@ -154,7 +160,7 @@ class ArmadaController extends Controller
         $this->authorize('update', $armada);
 
         $user = auth()->user();
-        $unitBisnisQuery = \App\Domain\Core\Models\UnitBisnis::aktif();
+        $unitBisnisQuery = UnitBisnis::aktif();
         if ($user->unit_bisnis_id) {
             $unitBisnisQuery->where('id', $user->unit_bisnis_id);
         }
@@ -164,6 +170,7 @@ class ArmadaController extends Controller
             $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
         }
         $titiks = $titiksQuery->get();
+
         return Inertia::render('Fleet/Armada/Edit', [
             'armada' => $armada,
             'unitBisnis' => $unitBisnis,
@@ -176,8 +183,8 @@ class ArmadaController extends Controller
         $this->authorize('update', $armada);
 
         $validated = $request->validate([
-            'plat_nomor' => 'required|unique:armadas,plat_nomor,' . $armada->id,
-            'kode_unit' => 'required|unique:armadas,kode_unit,' . $armada->id,
+            'plat_nomor' => 'required|unique:armadas,plat_nomor,'.$armada->id,
+            'kode_unit' => 'required|unique:armadas,kode_unit,'.$armada->id,
             'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
@@ -187,6 +194,7 @@ class ArmadaController extends Controller
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
         $armada->update($validated);
+
         return redirect()->route('fleet.armada.index')->with('success', 'Armada diperbarui.');
     }
 
@@ -195,6 +203,7 @@ class ArmadaController extends Controller
         $this->authorize('delete', $armada);
 
         $armada->delete();
+
         return redirect()->route('fleet.armada.index')->with('success', 'Armada dihapus.');
     }
 
@@ -220,7 +229,8 @@ class ArmadaController extends Controller
             'biaya_lain.*.catatan' => 'nullable|string',
         ]);
         $data['armada_id'] = $armada->id;
-        $ritase = (new RecordRitaseAction())->execute($data);
+        $ritase = (new RecordRitaseAction)->execute($data);
+
         return back()->with('success', "Ritase dicatat: {$ritase->jumlah_rit} rit");
     }
 
@@ -240,7 +250,8 @@ class ArmadaController extends Controller
             'catatan' => 'nullable|string',
         ]);
         $data['armada_id'] = $armada->id;
-        $sewa = (new RecordSewaAlatJamAction())->execute($data);
+        $sewa = (new RecordSewaAlatJamAction)->execute($data);
+
         return back()->with('success', "Sewa alat dicatat: {$sewa->jumlah_jam} jam");
     }
 
@@ -255,7 +266,8 @@ class ArmadaController extends Controller
             'notes' => 'nullable|string',
             'purchase_order_id' => 'nullable|exists:purchase_orders,id',
         ]);
-        $service = (new RecordServiceHistoryAction())->execute($armada, $data);
+        $service = (new RecordServiceHistoryAction)->execute($armada, $data);
+
         return back()->with('success', 'Servis dicatat.');
     }
 
@@ -269,7 +281,8 @@ class ArmadaController extends Controller
             'item_bermasalah' => 'nullable|string',
             'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
         ]);
-        (new RecordChecklistHarianAction())->execute($armada, $data);
+        (new RecordChecklistHarianAction)->execute($armada, $data);
+
         return back()->with('success', 'Checklist harian dicatat.');
     }
 
@@ -284,7 +297,8 @@ class ArmadaController extends Controller
             'jam_operasional_saat_isi' => 'nullable|numeric|min:0',
             'purchase_order_id' => 'nullable|exists:purchase_orders,id',
         ]);
-        (new RecordBBMAction())->execute($armada, $data);
+        (new RecordBBMAction)->execute($armada, $data);
+
         return back()->with('success', 'BBM dicatat.');
     }
 
@@ -297,7 +311,8 @@ class ArmadaController extends Controller
             'kategori' => 'required|in:kerusakan,menunggu_sparepart,lainnya',
             'catatan' => 'nullable|string',
         ]);
-        (new StartDowntimeAction())->execute($armada, $data);
+        (new StartDowntimeAction)->execute($armada, $data);
+
         return back()->with('success', 'Downtime dimulai.');
     }
 
@@ -306,8 +321,9 @@ class ArmadaController extends Controller
         $armada = Armada::findOrFail($armadaId);
         $this->authorize('endDowntime', $armada);
 
-        $downtime = \App\Domain\Fleet\Models\DowntimeLog::findOrFail($downtimeId);
-        (new EndDowntimeAction())->execute($downtime);
+        $downtime = DowntimeLog::findOrFail($downtimeId);
+        (new EndDowntimeAction)->execute($downtime);
+
         return back()->with('success', 'Downtime selesai.');
     }
 
@@ -321,7 +337,8 @@ class ArmadaController extends Controller
             'tanggal_mulai' => 'required|date',
         ]);
         $data['armada_id'] = $armada->id;
-        (new AssignDriverToArmadaAction())->execute($data);
+        (new AssignDriverToArmadaAction)->execute($data);
+
         return back()->with('success', 'Driver ditugaskan.');
     }
 }

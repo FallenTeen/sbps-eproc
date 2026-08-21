@@ -2,14 +2,12 @@
 
 namespace App\Domain\Procurement\Http\Controllers;
 
+use App\Domain\Procurement\Actions\SetHargaBeliAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Supplier;
-use App\Domain\Procurement\Actions\SetHargaBeliAction;
-use App\Domain\Procurement\Actions\GetCurrentHargaAction;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class BahanBakuController extends Controller
 {
@@ -20,12 +18,12 @@ class BahanBakuController extends Controller
         $query = BahanBaku::with([
             'hargaBeli' => function ($q) {
                 $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', now());
-            }
+            },
         ]);
 
         if ($request->has('search')) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                ->orWhere('kode', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%'.$request->search.'%')
+                ->orWhere('kode', 'like', '%'.$request->search.'%');
         }
 
         $bahanBakus = $query->orderBy('nama')->paginate(10)->withQueryString();
@@ -41,6 +39,7 @@ class BahanBakuController extends Controller
         $this->authorize('create', BahanBaku::class);
 
         $suppliers = Supplier::where('aktif', true)->get();
+
         return Inertia::render('Procurement/BahanBaku/Create', ['suppliers' => $suppliers]);
     }
 
@@ -61,7 +60,7 @@ class BahanBakuController extends Controller
 
         // Jika ada harga awal
         if ($request->filled('harga_awal') && $request->filled('supplier_id')) {
-            (new SetHargaBeliAction())->execute(
+            (new SetHargaBeliAction)->execute(
                 $bahanBaku,
                 $request->supplier_id,
                 $request->harga_awal,
@@ -87,7 +86,7 @@ class BahanBakuController extends Controller
                 return [
                     'titik_id' => $titikId,
                     'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
+                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
                 ];
             })
             ->values();
@@ -109,6 +108,7 @@ class BahanBakuController extends Controller
         $bahanBaku->load(['hargaBeli.supplier']);
 
         $suppliers = Supplier::where('aktif', true)->get();
+
         return Inertia::render('Procurement/BahanBaku/Edit', [
             'bahanBaku' => $bahanBaku,
             'suppliers' => $suppliers,
@@ -141,6 +141,7 @@ class BahanBakuController extends Controller
             return back()->with('error', 'Bahan baku sudah digunakan di PO, tidak bisa dihapus.');
         }
         $bahanBaku->delete();
+
         return redirect()->route('procurement.bahan-baku.index')
             ->with('success', 'Bahan baku dihapus.');
     }
@@ -156,7 +157,7 @@ class BahanBakuController extends Controller
                 return [
                     'titik_id' => $titikId,
                     'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
+                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
                 ];
             })
             ->values();
@@ -184,7 +185,7 @@ class BahanBakuController extends Controller
             'berlaku_dari' => 'required|date',
         ]);
 
-        (new SetHargaBeliAction())->execute(
+        (new SetHargaBeliAction)->execute(
             $bahanBaku,
             $request->supplier_id,
             $request->harga,

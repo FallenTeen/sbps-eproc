@@ -2,20 +2,20 @@
 
 namespace App\Domain\Production\Http\Controllers;
 
-use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Production\Models\Produk;
-use App\Domain\Production\Models\ResepProduksi;
-use App\Domain\Production\Actions\StartProductionSessionAction;
-use App\Domain\Production\Actions\EndProductionSessionAction;
+use App\Domain\Core\Models\Titik;
+use App\Domain\HR\Models\Karyawan;
+use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Production\Actions\CalculateProductionCostAction;
 use App\Domain\Production\Actions\CalculateProductionRevenueAction;
-use App\Domain\HR\Models\Karyawan;
-use App\Domain\Core\Models\Titik;
+use App\Domain\Production\Actions\EndProductionSessionAction;
+use App\Domain\Production\Actions\StartProductionSessionAction;
+use App\Domain\Production\Models\MesinProduksi;
+use App\Domain\Production\Models\ProductionSession;
+use App\Domain\Production\Models\Produk;
+use App\Domain\Production\Models\ResepProduksi;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class ProductionSessionController extends Controller
 {
@@ -26,10 +26,10 @@ class ProductionSessionController extends Controller
         $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik']);
 
         $user = $request->user();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $query->where(function ($q) use ($user) {
-                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
-                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+                $q->whereHas('mesin', fn ($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                    ->orWhereHas('produk', fn ($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
             });
         }
 
@@ -46,8 +46,8 @@ class ProductionSessionController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->whereHas('mesin', fn($q) => $q->where('nama', 'like', '%' . $request->search . '%'))
-                ->orWhereHas('produk', fn($q) => $q->where('nama', 'like', '%' . $request->search . '%'));
+            $query->whereHas('mesin', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'))
+                ->orWhereHas('produk', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'));
         }
 
         $sessions = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
@@ -55,24 +55,25 @@ class ProductionSessionController extends Controller
         // Append margin untuk tampilan index
         $sessions->getCollection()->transform(function ($session) {
             if ($session->status === 'selesai') {
-                $biaya     = (new CalculateProductionCostAction())->execute($session);
-                $pendapatan = (new CalculateProductionRevenueAction())->execute($session);
+                $biaya = (new CalculateProductionCostAction)->execute($session);
+                $pendapatan = (new CalculateProductionRevenueAction)->execute($session);
                 $session->margin = $pendapatan - $biaya;
             } else {
                 $session->margin = null;
             }
+
             return $session;
         });
 
         $produksQuery = Produk::aktif();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $produksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
 
         return Inertia::render('Production/Sessions/Index', [
             'sessions' => $sessions,
-            'produks'  => $produksQuery->get(),
-            'filters'  => $request->only('status', 'produk_id', 'tanggal', 'search'),
+            'produks' => $produksQuery->get(),
+            'filters' => $request->only('status', 'produk_id', 'tanggal', 'search'),
         ]);
     }
 
@@ -83,10 +84,10 @@ class ProductionSessionController extends Controller
         $query = ProductionSession::with(['mesin', 'produk', 'operator', 'titik'])->berjalan();
 
         $user = $request->user();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $query->where(function ($q) use ($user) {
-                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
-                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+                $q->whereHas('mesin', fn ($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                    ->orWhereHas('produk', fn ($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
             });
         }
 
@@ -107,10 +108,10 @@ class ProductionSessionController extends Controller
             ->whereDate('mulai', $tanggal);
 
         $user = $request->user();
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $query->where(function ($q) use ($user) {
-                $q->whereHas('mesin', fn($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
-                  ->orWhereHas('produk', fn($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
+                $q->whereHas('mesin', fn ($mq) => $mq->where('unit_bisnis_id', $user->unit_bisnis_id))
+                    ->orWhereHas('produk', fn ($pq) => $pq->where('unit_bisnis_id', $user->unit_bisnis_id));
             });
         }
 
@@ -125,10 +126,10 @@ class ProductionSessionController extends Controller
                 'output' => $group->sum('hasil_output'),
             ]),
             'biaya' => $sessions->where('status', 'selesai')->sum(
-                fn ($s) => (new CalculateProductionCostAction())->execute($s)
+                fn ($s) => (new CalculateProductionCostAction)->execute($s)
             ),
             'pendapatan' => $sessions->where('status', 'selesai')->sum(
-                fn ($s) => (new CalculateProductionRevenueAction())->execute($s)
+                fn ($s) => (new CalculateProductionRevenueAction)->execute($s)
             ),
         ];
 
@@ -147,7 +148,7 @@ class ProductionSessionController extends Controller
         $mesinsQuery = MesinProduksi::with('produkDefault')->where('status', 'aktif');
         $produksQuery = Produk::where('aktif', true);
 
-        if ($user && !$user->hasRole('Owner') && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
             $mesinsQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
             $produksQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
@@ -177,7 +178,7 @@ class ProductionSessionController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $session = (new StartProductionSessionAction())->execute($validated);
+        $session = (new StartProductionSessionAction)->execute($validated);
 
         return redirect()->route('production.sessions.show', ['session' => $session->id])
             ->with('success', 'Sesi produksi dimulai.');
@@ -198,9 +199,9 @@ class ProductionSessionController extends Controller
         ]);
 
         $biaya = $session->status === 'selesai'
-            ? (new CalculateProductionCostAction())->execute($session) : null;
+            ? (new CalculateProductionCostAction)->execute($session) : null;
         $pendapatan = $session->status === 'selesai'
-            ? (new CalculateProductionRevenueAction())->execute($session) : null;
+            ? (new CalculateProductionRevenueAction)->execute($session) : null;
         $margin = $biaya !== null && $pendapatan !== null ? $pendapatan - $biaya : null;
 
         $resep = ResepProduksi::where('produk_id', $session->produk_id)->with('bahanBaku')->get();
@@ -211,7 +212,7 @@ class ProductionSessionController extends Controller
             'pendapatan' => $pendapatan,
             'margin' => $margin,
             'resep' => $resep,
-            'bahanBakus' => \App\Domain\Procurement\Models\BahanBaku::aktif()->bahanBaku()->get(),
+            'bahanBakus' => BahanBaku::aktif()->bahanBaku()->get(),
             'can' => [
                 'update' => auth()->user()?->can('update', $session) ?? false,
                 'delete' => auth()->user()?->can('delete', $session) ?? false,
@@ -285,7 +286,7 @@ class ProductionSessionController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $sessionResult = (new EndProductionSessionAction())->execute($session, $validated);
+        $sessionResult = (new EndProductionSessionAction)->execute($session, $validated);
 
         return redirect()->route('production.sessions.show', ['session' => $sessionResult->id])
             ->with('success', 'Sesi produksi selesai.');
@@ -312,6 +313,7 @@ class ProductionSessionController extends Controller
             return back()->with('error', 'Sesi sedang berjalan, tidak bisa dihapus.');
         }
         $session->delete();
+
         return redirect()->route('production.sessions.index')
             ->with('success', 'Sesi produksi dihapus.');
     }

@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Domain\HR\Models;
 
-use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\HR\Models\Karyawan;
+use App\Domain\HR\Models\KaryawanTitikAssignment;
 // use App\Domain\Core\Models\Titik; // If Titik has factory, otherwise manual creation in test
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -8,9 +8,10 @@ use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Models\InvoiceItem;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ProductionSession;
+use App\Domain\Production\Models\Produk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -68,7 +69,7 @@ beforeEach(function () {
         'invoice_id' => $this->invoice->id,
         'deskripsi' => 'Produksi Split',
         'referensi_type' => 'manual',
-        'referensi_id' => (string) \Illuminate\Support\Str::uuid(),
+        'referensi_id' => (string) Str::uuid(),
         'jumlah' => 20,
         'harga_satuan' => 150000,
         'subtotal' => 3000000,
