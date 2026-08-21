@@ -35,5 +35,6 @@ CICD-SETUP.md
 deploy-production.sh
 deploy-staging.sh
 
-# Staging symlink inside production public
+# Symlinks inside production public (managed by deploy scripts)
+public/sistem.sbpscorp.com
 public/staging.sbpscorp.com
