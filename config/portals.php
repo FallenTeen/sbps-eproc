@@ -16,10 +16,10 @@ return [
 
         'admin' => [
             'name' => 'Admin',
-            'description' => 'Manajemen sistem, user, audit log, dan pengaturan global.',
+            'description' => 'Manajemen sistem, user, procurement, audit log, dan pengaturan global.',
             'icon' => 'Shield',
             'color' => 'red',
-            'roles' => ['Owner'],
+            'roles' => ['Owner', 'Koordinator Procurement'],
         ],
 
         'armada' => [
