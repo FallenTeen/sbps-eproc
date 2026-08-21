@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Spatie\Permission\Contracts\Role;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -293,7 +294,7 @@ class HandleInertiaRequests extends Middleware
             } else {
                 // Get permissions only for the active role
                 $roleModel = $activeRole
-                    ? app(\Spatie\Permission\Contracts\Role::class)::findByName($activeRole, 'web')
+                    ? app(Role::class)::findByName($activeRole, 'web')
                     : null;
                 $permissions = $roleModel ? $roleModel->permissions->pluck('name')->toArray() : [];
             }
@@ -306,6 +307,7 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $user ? $user->getRoleNames()->toArray() : [],
                 'active_role' => $activeRole,
                 'permissions' => $permissions,
+                'portal' => session('portal'),
             ],
             'breadcrumbs' => $this->generateBreadcrumbs($request),
         ];

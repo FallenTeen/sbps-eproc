@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
+use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
@@ -31,6 +32,9 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
 
+        // Penugasan User
+        Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
+
         // Presensi
         Route::get('titik-aktif', [PresensiController::class, 'titikAktif'])->name('titik-aktif');
         Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])->name('presensi.check-in');
@@ -53,6 +57,7 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // GPS Tracking
         Route::post('tracking/batch', [TrackingController::class, 'batch'])->name('tracking.batch');
         Route::get('tracking/hari-ini/{userId}', [TrackingController::class, 'hariIni'])->name('tracking.hari-ini');
+        Route::get('tracking/active-users', [TrackingController::class, 'activeUsers'])->name('tracking.active-users');
 
         // Upload File
         Route::post('upload', [UploadController::class, 'upload'])->name('upload');
@@ -61,6 +66,18 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // Monitoring & Dashboard
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])->name('dashboard.overview');
         Route::get('dashboard/titik/{titikId}', [DashboardController::class, 'titik'])->name('dashboard.titik');
+        Route::get('dashboard/chart/produksi', [DashboardController::class, 'chartProduksi'])->name('dashboard.chart-produksi');
+        Route::get('dashboard/chart/keuangan', [DashboardController::class, 'chartKeuangan'])->name('dashboard.chart-keuangan');
+        Route::get('dashboard/armada-status', [DashboardController::class, 'armadaStatus'])->name('dashboard.armada-status');
+        Route::get('dashboard/kehadiran-divisi', [DashboardController::class, 'kehadiranDivisi'])->name('dashboard.kehadiran-divisi');
+        Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
+        Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
+
+        // Quality Control
+        Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
+        Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
+        Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
+        Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

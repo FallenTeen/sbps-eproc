@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\Mobile;
 
+use App\Domain\Core\Models\Titik;
+use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -26,19 +28,19 @@ class AuthController extends Controller
 
         $user = User::where('email', $validated['email'])->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
             return $this->error('Kredensial tidak valid.', 401);
         }
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return $this->error('Akun Anda dinonaktifkan.', 403);
         }
 
-        if (!empty($validated['device_token'])) {
+        if (! empty($validated['device_token'])) {
             $user->forceFill(['device_token' => $validated['device_token']])->save();
         }
 
-        $token = $user->createToken('mobile-' . ($validated['device_name'] ?? 'default'));
+        $token = $user->createToken('mobile-'.($validated['device_name'] ?? 'default'));
 
         return $this->success([
             'token' => $token->plainTextToken,
@@ -75,11 +77,11 @@ class AuthController extends Controller
         $role = $validated['role'] ?? config('mobile.default_register_role', 'SDM Lapangan Kondisional');
         $user->assignRole($role);
 
-        if (!empty($validated['device_token'])) {
+        if (! empty($validated['device_token'])) {
             $user->forceFill(['device_token' => $validated['device_token']])->save();
         }
 
-        $token = $user->createToken('mobile-' . ($validated['device_name'] ?? 'default'));
+        $token = $user->createToken('mobile-'.($validated['device_name'] ?? 'default'));
 
         return $this->success([
             'token' => $token->plainTextToken,
@@ -136,6 +138,52 @@ class AuthController extends Controller
         }
 
         return $this->success($this->userPayload($user->fresh()), 'Profile berhasil diperbarui.');
+    }
+
+    /**
+     * GET /api/mobile/assignments
+     * Daftar titik yang ditugaskan ke user (karyawan terkait).
+     * Filter: ?status=aktif (default) | semua
+     */
+    public function assignments(Request $request)
+    {
+        $user = $request->user();
+        $karyawan = $user->karyawan;
+
+        if (! $karyawan) {
+            return $this->success([
+                'items' => [],
+            ], 'Akun tidak terhubung ke data karyawan.');
+        }
+
+        $validated = $request->validate([
+            'status' => 'nullable|string|in:aktif,selesai,semua',
+        ]);
+
+        $statusFilter = $validated['status'] ?? 'aktif';
+
+        $query = KaryawanTitikAssignment::with('titik.proyek')
+            ->where('karyawan_id', $karyawan->id);
+
+        if ($statusFilter !== 'semua') {
+            $query->where('status', $statusFilter);
+        }
+
+        $assignments = $query->orderByDesc('tanggal_mulai')->get();
+
+        return $this->success([
+            'items' => $assignments->map(fn ($a) => [
+                'id' => $a->id,
+                'titik_id' => $a->titik_id,
+                'titik' => $a->titik?->nama,
+                'proyek' => $a->titik?->proyek?->nama,
+                'latitude' => (float) ($a->titik?->latitude ?? 0),
+                'longitude' => (float) ($a->titik?->longitude ?? 0),
+                'tanggal_mulai' => $a->tanggal_mulai?->toDateString(),
+                'tanggal_selesai' => $a->tanggal_selesai?->toDateString(),
+                'status' => $a->status,
+            ]),
+        ], 'Daftar penugasan.');
     }
 
     private function userPayload(User $user): array

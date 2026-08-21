@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Mobile;
 
 use App\Domain\Attendance\Models\MobileTrackingLocation;
 use App\Domain\Attendance\Models\Presensi;
+use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -23,7 +24,7 @@ class TrackingController extends Controller
     {
         $karyawan = $request->user()->karyawan;
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             throw ValidationException::withMessages([
                 'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
             ]);
@@ -44,11 +45,11 @@ class TrackingController extends Controller
             ->latest('check_in')
             ->first();
 
-        if (!$presensi) {
+        if (! $presensi) {
             return $this->error('Tracking hanya aktif saat check-in.', 422);
         }
 
-        $cutoff = Carbon::parse(now()->toDateString() . ' ' . config('mobile.tracking.auto_cutoff', '18:00'));
+        $cutoff = Carbon::parse(now()->toDateString().' '.config('mobile.tracking.auto_cutoff', '18:00'));
 
         $saved = 0;
 
@@ -86,13 +87,13 @@ class TrackingController extends Controller
     {
         $currentUser = $request->user();
 
-        if (!$currentUser->isOwner() && !$currentUser->isAdmin()) {
+        if (! $currentUser->isOwner() && ! $currentUser->isAdmin()) {
             return $this->error('Anda tidak berhak melihat tracking user lain.', 403);
         }
 
         $target = User::findOrFail($userId);
 
-        if (!$target->karyawan) {
+        if (! $target->karyawan) {
             return $this->error('User tidak memiliki data karyawan.', 422);
         }
 
@@ -112,5 +113,49 @@ class TrackingController extends Controller
             'tanggal' => now()->toDateString(),
             'items' => $locations,
         ], 'Tracking hari ini.');
+    }
+
+    /**
+     * GET /api/mobile/tracking/active-users
+     * User yang sedang aktif (kirim tracking dalam 1 jam terakhir).
+     * Hanya role tertentu (Owner / Admin).
+     */
+    public function activeUsers(Request $request)
+    {
+        $currentUser = $request->user();
+
+        if (! $currentUser->isOwner() && ! $currentUser->isAdmin()) {
+            return $this->error('Anda tidak berhak melihat data ini.', 403);
+        }
+
+        $oneHourAgo = now()->subHour();
+
+        $users = MobileTrackingLocation::selectRaw('
+                karyawan_id,
+                max(recorded_at) as last_seen,
+                count(*) as point_count
+            ')
+            ->where('recorded_at', '>=', $oneHourAgo)
+            ->groupBy('karyawan_id')
+            ->get()
+            ->map(function ($row) {
+                $karyawan = Karyawan::with('user')
+                    ->find($row->karyawan_id);
+
+                return [
+                    'karyawan_id' => $row->karyawan_id,
+                    'nama' => $karyawan?->nama,
+                    'user_id' => $karyawan?->user_id,
+                    'last_seen' => Carbon::parse($row->last_seen)->toIso8601String(),
+                    'point_count' => (int) $row->point_count,
+                ];
+            })
+            ->filter(fn ($u) => $u['nama'] !== null)
+            ->values();
+
+        return $this->success([
+            'total' => $users->count(),
+            'items' => $users,
+        ], 'User aktif.');
     }
 }

@@ -1,64 +1,61 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
-// Core Controllers
-use App\Domain\Core\Http\Controllers\UnitBisnisController;
+use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
+use App\Domain\Attendance\Http\Controllers\PresensiController;
 use App\Domain\Core\Http\Controllers\ProyekController;
-use App\Domain\Core\Http\Controllers\TitikController;
 use App\Domain\Core\Http\Controllers\RabController;
-
+// Core Controllers
+use App\Domain\Core\Http\Controllers\TitikController;
+use App\Domain\Core\Http\Controllers\UnitBisnisController;
+use App\Domain\Finance\Http\Controllers\AkunKasBankController;
+use App\Domain\Finance\Http\Controllers\InvoiceController;
 // Procurement Controllers
-use App\Domain\Procurement\Http\Controllers\BahanBakuController;
-use App\Domain\Procurement\Http\Controllers\SupplierController;
-use App\Domain\Procurement\Http\Controllers\PurchaseOrderController;
-use App\Domain\Procurement\Http\Controllers\PembayaranController;
-
+use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
+use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
+use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
+use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
-use App\Domain\Fleet\Http\Controllers\RitaseController;
-use App\Domain\Fleet\Http\Controllers\SewaAlatController;
-use App\Domain\Fleet\Http\Controllers\RuteTarifController;
-use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
+use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
+use App\Domain\Fleet\Http\Controllers\RitaseController;
+use App\Domain\Fleet\Http\Controllers\RuteTarifController;
 use App\Domain\Fleet\Http\Controllers\ServiceHistoryController;
-
+use App\Domain\Fleet\Http\Controllers\SewaAlatController;
 // Production Controllers
-use App\Domain\Production\Http\Controllers\MesinProduksiController;
-use App\Domain\Production\Http\Controllers\ProdukController;
-use App\Domain\Production\Http\Controllers\ResepProduksiController;
-use App\Domain\Production\Http\Controllers\ProductionSessionController;
-use App\Domain\Production\Http\Controllers\MixDesignController;
-use App\Domain\Production\Http\Controllers\QcSampleController;
-use App\Domain\Production\Http\Controllers\PengirimanController;
-
-// HR Controllers
-use App\Domain\HR\Http\Controllers\KaryawanController;
 use App\Domain\HR\Http\Controllers\CutiController;
+use App\Domain\HR\Http\Controllers\KaryawanController;
 use App\Domain\HR\Http\Controllers\PayrollController;
-
+use App\Domain\Procurement\Http\Controllers\BahanBakuController;
+use App\Domain\Procurement\Http\Controllers\PembayaranController;
+use App\Domain\Procurement\Http\Controllers\PurchaseOrderController;
+use App\Domain\Procurement\Http\Controllers\SupplierController;
+// HR Controllers
+use App\Domain\Production\Http\Controllers\MesinProduksiController;
+use App\Domain\Production\Http\Controllers\MixDesignController;
+use App\Domain\Production\Http\Controllers\PengirimanController;
 // Attendance Controllers
-use App\Domain\Attendance\Http\Controllers\PresensiController;
-use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
-
+use App\Domain\Production\Http\Controllers\ProductionSessionController;
+use App\Domain\Production\Http\Controllers\ProdukController;
 // Finance Controllers
-use App\Domain\Finance\Http\Controllers\AkunKasBankController;
-use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
-use App\Domain\Finance\Http\Controllers\TransferKasController;
-use App\Domain\Finance\Http\Controllers\InvoiceController;
-use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
-use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
-
-// Dashboard & Owner
+use App\Domain\Production\Http\Controllers\QcSampleController;
+use App\Domain\Production\Http\Controllers\ResepProduksiController;
+// Attendance Controllers
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardController;
-// Notifications
+use App\Http\Controllers\KontraktorController;
 use App\Http\Controllers\NotificationController;
-// Role Switcher
+use App\Http\Controllers\PortalController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleSwitchController;
+use App\Http\Controllers\UserManagementController;
+// Dashboard & Owner
+use Illuminate\Foundation\Application;
+// Notifications
+use Illuminate\Support\Facades\Route;
+// Role Switcher
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,11 +66,11 @@ use App\Http\Controllers\RoleSwitchController;
 // Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin'       => Route::has('login'),
-        'canRegister'    => Route::has('register'),
-        'appName'        => config('app.name', 'SBPS Multi-Unit Enterprise'),
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'appName' => config('app.name', 'SBPS Multi-Unit Enterprise'),
         'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
+        'phpVersion' => PHP_VERSION,
     ]);
 });
 
@@ -211,7 +208,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     Route::prefix('production')->name('production.')->middleware(['role:Owner|Koordinator CBP|Koordinator AMP'])->group(function () {
         // Dashboard Produksi
-        Route::get('/dashboard', [\App\Domain\Production\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [App\Domain\Production\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
         // Mesin Produksi
         Route::resource('mesin', MesinProduksiController::class);
@@ -384,20 +381,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // KONTRAKTOR PORTAL (Eksternal)
     // ============================================================
     Route::prefix('kontraktor')->name('kontraktor.')->middleware(['role:Kontraktor'])->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\KontraktorController::class, 'dashboard'])->name('dashboard');
-        Route::get('/proyek/{proyek}', [\App\Http\Controllers\KontraktorController::class, 'proyekDetail'])->name('proyek.detail');
-        Route::get('/proyek/{proyek}/produksi', [\App\Http\Controllers\KontraktorController::class, 'produksi'])->name('produksi');
-        Route::get('/proyek/{proyek}/invoice', [\App\Http\Controllers\KontraktorController::class, 'invoice'])->name('invoice');
-        Route::post('/proyek/{proyek}/komunikasi', [\App\Http\Controllers\KontraktorController::class, 'sendMessage'])->name('komunikasi.send');
+        Route::get('/dashboard', [KontraktorController::class, 'dashboard'])->name('dashboard');
+        Route::get('/proyek/{proyek}', [KontraktorController::class, 'proyekDetail'])->name('proyek.detail');
+        Route::get('/proyek/{proyek}/produksi', [KontraktorController::class, 'produksi'])->name('produksi');
+        Route::get('/proyek/{proyek}/invoice', [KontraktorController::class, 'invoice'])->name('invoice');
+        Route::post('/proyek/{proyek}/komunikasi', [KontraktorController::class, 'sendMessage'])->name('komunikasi.send');
     });
 
     // ============================================================
     // AUDIT LOG (Hanya Owner)
     // ============================================================
     Route::prefix('audit')->name('audit.')->middleware(['role:Owner'])->group(function () {
-        Route::get('/logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('logs');
-        Route::get('/logs/export', [\App\Http\Controllers\AuditLogController::class, 'export'])->name('logs.export');
-        Route::get('/logs/{log}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('logs.show');
+        Route::get('/logs', [AuditLogController::class, 'index'])->name('logs');
+        Route::get('/logs/export', [AuditLogController::class, 'export'])->name('logs.export');
+        Route::get('/logs/{log}', [AuditLogController::class, 'show'])->name('logs.show');
     });
 
     // ============================================================
@@ -411,16 +408,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // USER MANAGEMENT (Owner & Admin saja)
     // ============================================================
     Route::prefix('users')->name('users.')->middleware(['role:Owner|Admin Keuangan'])->group(function () {
-        Route::get('/', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\UserManagementController::class, 'store'])->name('store');
-        Route::get('/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('update');
-        Route::delete('/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/assign-role', [\App\Http\Controllers\UserManagementController::class, 'assignRole'])->name('assign-role');
-        Route::post('/{user}/remove-role', [\App\Http\Controllers\UserManagementController::class, 'removeRole'])->name('remove-role');
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/create', [UserManagementController::class, 'create'])->name('create');
+        Route::post('/', [UserManagementController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('assign-role');
+        Route::post('/{user}/remove-role', [UserManagementController::class, 'removeRole'])->name('remove-role');
     });
 
+});
+
+// ============================================================
+// PORTAL ROUTES (guest)
+// ============================================================
+
+Route::middleware('guest')->group(function () {
+    Route::get('/portal', [PortalController::class, 'index'])->name('portal');
+    Route::get('/login/{portal}', [PortalController::class, 'login'])->name('portal.login');
+    Route::post('/login/{portal}', [PortalController::class, 'store'])->name('portal.login.store');
 });
 
 // Auth routes (disediakan oleh Breeze)
