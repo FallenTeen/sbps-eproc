@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
+use App\Http\Controllers\Api\Mobile\MasterDataController;
 use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
@@ -62,6 +63,11 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('produksi/sesi-aktif', [ProduksiController::class, 'sesiAktif'])->name('produksi.sesi-aktif');
         Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
         Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
+
+        // Master Data (mesin, produk, bahan baku)
+        Route::get('master/mesin', [MasterDataController::class, 'mesin'])->name('master.mesin');
+        Route::get('master/produk', [MasterDataController::class, 'produk'])->name('master.produk');
+        Route::get('master/bahan-baku', [MasterDataController::class, 'bahanBaku'])->name('master.bahan-baku');
 
         // GPS Tracking
         Route::post('tracking/batch', [TrackingController::class, 'batch'])
