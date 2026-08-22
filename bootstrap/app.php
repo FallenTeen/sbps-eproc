@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Middleware\CheckActiveRole;
 use App\Http\Controllers\Api\Middleware\EnsureMobileToken;
 use App\Http\Middleware\CheckDivisiAccess;
+use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetActiveRole;
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'user.active' => EnsureUserIsActive::class,
             'mobile.auth' => EnsureMobileToken::class,
             'active.role' => CheckActiveRole::class,
+            'idempotency' => EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

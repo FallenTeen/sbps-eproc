@@ -133,6 +133,47 @@ test('logout mencabut token', function () {
     expect($user->tokens()->count())->toBe(0);
 });
 
+test('logout-all-devices mencabut semua token mobile tapi menyimpan token web', function () {
+    [$user, $token] = createMobileUserWithToken();
+    $mobileLain = $user->createToken('mobile-tablet')->plainTextToken;
+    $webToken = $user->createToken('web-session')->plainTextToken;
+
+    $response = $this->withToken($token)
+        ->withHeaders(mobileAuthHeaders())
+        ->postJson('/api/mobile/logout-all-devices');
+
+    $response->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.revoked', 2);
+
+    // Semua token mobile habis — termasuk yang dipakai request ini.
+    expect($user->tokens()->where('name', 'like', 'mobile%')->count())->toBe(0);
+
+    // Token web tetap ada dan masih valid untuk endpoint web.
+    expect($user->tokens()->where('name', 'like', 'web%')->count())->toBe(1);
+
+    // Guard sanctum ter-cache antar request dalam satu test; reset agar
+    // pencabutan token benar-benar terasa pada request berikutnya.
+    $this->app->make('auth')->forgetGuards();
+
+    $this->withToken($mobileLain)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson('/api/mobile/user')
+        ->assertStatus(401);
+});
+
+test('logout-all-devices tanpa token lain hanya mencabut satu', function () {
+    [$user, $token] = createMobileUserWithToken();
+
+    $this->withToken($token)
+        ->withHeaders(mobileAuthHeaders())
+        ->postJson('/api/mobile/logout-all-devices')
+        ->assertOk()
+        ->assertJsonPath('data.revoked', 1);
+
+    expect($user->tokens()->count())->toBe(0);
+});
+
 test('update-profile memperbarui data user', function () {
     [$user, $token] = createMobileUserWithToken();
 

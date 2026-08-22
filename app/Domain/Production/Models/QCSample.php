@@ -13,6 +13,7 @@ class QCSample extends Model
 
     protected $fillable = [
         'production_session_id',
+        'client_uuid',
         'jenis_uji',
         'nilai_slump',
         'tanggal_uji_tekan_rencana',

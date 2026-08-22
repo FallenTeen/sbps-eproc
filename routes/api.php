@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Mobile\AppVersionController;
 use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
@@ -23,12 +24,17 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('mobile')->name('mobile.')->group(function () {
 
     // ─── Autentikasi (tanpa token) ──────────────────────────────────────────
-    Route::post('login', [AuthController::class, 'login'])->name('login');
-    Route::post('register', [AuthController::class, 'register'])->name('register');
+    Route::post('login', [AuthController::class, 'login'])
+        ->name('login')->middleware('throttle:mobile-login');
+    Route::post('register', [AuthController::class, 'register'])
+        ->name('register')->middleware('throttle:mobile');
+    Route::get('app-version', [AppVersionController::class, 'index'])
+        ->name('app-version')->middleware('throttle:mobile');
 
     // ─── Autentikasi (token Sanctum + mobile-only) ─────────────────────────
-    Route::middleware(['auth:sanctum', 'mobile.auth', 'active.role'])->group(function () {
+    Route::middleware(['auth:sanctum', 'mobile.auth', 'active.role', 'throttle:mobile'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::post('logout-all-devices', [AuthController::class, 'logoutAllDevices'])->name('logout-all-devices');
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
 
@@ -37,13 +43,16 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
 
         // Presensi
         Route::get('titik-aktif', [PresensiController::class, 'titikAktif'])->name('titik-aktif');
-        Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])->name('presensi.check-in');
-        Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])->name('presensi.check-out');
+        Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])
+            ->name('presensi.check-in')->middleware('idempotency');
+        Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])
+            ->name('presensi.check-out')->middleware('idempotency');
         Route::get('presensi/hari-ini', [PresensiController::class, 'hariIni'])->name('presensi.hari-ini');
         Route::get('presensi/riwayat', [PresensiController::class, 'riwayat'])->name('presensi.riwayat');
 
         // Formulir Lapangan
-        Route::post('formulir/store', [FormulirController::class, 'store'])->name('formulir.store');
+        Route::post('formulir/store', [FormulirController::class, 'store'])
+            ->name('formulir.store')->middleware('idempotency');
         Route::get('formulir/hari-ini', [FormulirController::class, 'hariIni'])->name('formulir.hari-ini');
         Route::get('formulir/riwayat', [FormulirController::class, 'riwayat'])->name('formulir.riwayat');
 
@@ -55,12 +64,14 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
 
         // GPS Tracking
-        Route::post('tracking/batch', [TrackingController::class, 'batch'])->name('tracking.batch');
+        Route::post('tracking/batch', [TrackingController::class, 'batch'])
+            ->name('tracking.batch')->middleware('throttle:mobile-tracking');
         Route::get('tracking/hari-ini/{userId}', [TrackingController::class, 'hariIni'])->name('tracking.hari-ini');
         Route::get('tracking/active-users', [TrackingController::class, 'activeUsers'])->name('tracking.active-users');
 
         // Upload File
-        Route::post('upload', [UploadController::class, 'upload'])->name('upload');
+        Route::post('upload', [UploadController::class, 'upload'])
+            ->name('upload')->middleware('throttle:mobile-upload');
         Route::delete('upload/{id}', [UploadController::class, 'destroy'])->name('upload.destroy');
 
         // Monitoring & Dashboard

@@ -8,6 +8,7 @@ use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\ProductionSession;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -17,49 +18,58 @@ class ProduksiController extends Controller
 
     /**
      * POST /api/mobile/produksi/mulai
+     * Idempotent via client_uuid: retry dengan uuid sama tidak membuat sesi dobel.
      */
     public function mulai(Request $request)
     {
         $karyawan = $this->resolveOperator($request);
 
         $validated = $request->validate([
+            'client_uuid' => 'required|uuid',
             'mesin_id' => 'required|exists:mesin_produksis,id',
             'produk_id' => 'required|exists:produks,id',
             'titik_id' => 'nullable|exists:titiks,id',
             'catatan' => 'nullable|string|max:2000',
         ]);
 
-        $mesin = MesinProduksi::findOrFail($validated['mesin_id']);
+        $existing = ProductionSession::where('client_uuid', $validated['client_uuid'])
+            ->where('operator_karyawan_id', $karyawan->id)
+            ->first();
 
-        $session = (new StartProductionSessionAction)->execute([
-            'mesin_id' => $mesin->id,
-            'titik_id' => $validated['titik_id'] ?? $mesin->titik_id,
-            'produk_id' => $validated['produk_id'],
-            'operator_karyawan_id' => $karyawan->id,
-            'catatan' => $validated['catatan'] ?? null,
-        ]);
+        if ($existing) {
+            return $this->success($this->sessionPayload($existing), 'Sesi produksi sudah ada sebelumnya.');
+        }
+
+        try {
+            $mesin = MesinProduksi::findOrFail($validated['mesin_id']);
+
+            $session = (new StartProductionSessionAction)->execute([
+                'mesin_id' => $mesin->id,
+                'titik_id' => $validated['titik_id'] ?? $mesin->titik_id,
+                'produk_id' => $validated['produk_id'],
+                'operator_karyawan_id' => $karyawan->id,
+                'catatan' => $validated['catatan'] ?? null,
+                'client_uuid' => $validated['client_uuid'],
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Request paralel dengan client_uuid sama menembak bersamaan.
+            $session = ProductionSession::where('client_uuid', $validated['client_uuid'])->firstOrFail();
+        }
 
         return $this->success($this->sessionPayload($session), 'Sesi produksi dimulai.', 201);
     }
 
     /**
      * POST /api/mobile/produksi/selesai/{sessionId}
+     * Idempotent via client_uuid: retry penutupan yang sama mengembalikan
+     * hasil sebelumnya (200), tanpa dobel mutasi stok.
      */
     public function selesai(Request $request, string $sessionId)
     {
         $karyawan = $this->resolveOperator($request);
 
-        $session = ProductionSession::findOrFail($sessionId);
-
-        if ($session->operator_karyawan_id !== $karyawan->id) {
-            return $this->error('Sesi produksi bukan milik Anda.', 403);
-        }
-
-        if ($session->status !== 'berjalan') {
-            return $this->error('Sesi produksi tidak sedang berjalan.', 422);
-        }
-
         $validated = $request->validate([
+            'client_uuid' => 'required|uuid',
             'hasil_output' => 'required|numeric|min:0',
             'catatan' => 'nullable|string|max:2000',
             'items' => 'nullable|array',
@@ -67,10 +77,34 @@ class ProduksiController extends Controller
             'items.*.jumlah_terpakai' => 'required_with:items|numeric|min:0',
         ]);
 
+        $session = ProductionSession::findOrFail($sessionId);
+
+        if ($session->operator_karyawan_id !== $karyawan->id) {
+            return $this->error('Sesi produksi bukan milik Anda.', 403);
+        }
+
+        if ($session->status === 'selesai' && $session->client_uuid === $validated['client_uuid']) {
+            return $this->success($this->sessionPayload($session), 'Penutupan sesi produksi sudah diproses sebelumnya.');
+        }
+
+        $usedElsewhere = ProductionSession::where('client_uuid', $validated['client_uuid'])
+            ->where('operator_karyawan_id', $karyawan->id)
+            ->whereKeyNot($session->getKey())
+            ->first();
+
+        if ($usedElsewhere) {
+            return $this->success($this->sessionPayload($usedElsewhere), 'Penutupan sesi produksi sudah diproses sebelumnya.');
+        }
+
+        if ($session->status !== 'berjalan') {
+            return $this->error('Sesi produksi tidak sedang berjalan.', 422);
+        }
+
         $session = (new EndProductionSessionAction)->execute($session, [
             'hasil_output' => $validated['hasil_output'],
             'catatan' => $validated['catatan'] ?? null,
             'items' => $validated['items'] ?? [],
+            'client_uuid' => $validated['client_uuid'],
         ]);
 
         return $this->success($this->sessionPayload($session), 'Sesi produksi selesai.');

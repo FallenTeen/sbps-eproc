@@ -8,6 +8,7 @@ use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -36,6 +37,7 @@ test('mulai sesi produksi membuat sesi berjalan', function () {
     $response = $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson('/api/mobile/produksi/mulai', [
+            'client_uuid' => (string) Str::uuid(),
             'mesin_id' => $this->mesin->id,
             'produk_id' => $this->produk->id,
             'titik_id' => $this->titik->id,
@@ -55,6 +57,7 @@ test('selesai sesi produksi menutup sesi', function () {
     $mulai = $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson('/api/mobile/produksi/mulai', [
+            'client_uuid' => (string) Str::uuid(),
             'mesin_id' => $this->mesin->id,
             'produk_id' => $this->produk->id,
         ])
@@ -64,6 +67,7 @@ test('selesai sesi produksi menutup sesi', function () {
     $response = $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson("/api/mobile/produksi/selesai/{$mulai['id']}", [
+            'client_uuid' => (string) Str::uuid(),
             'hasil_output' => 12,
         ]);
 
@@ -91,6 +95,7 @@ test('selesai sesi milik operator lain ditolak', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson("/api/mobile/produksi/selesai/{$session->id}", [
+            'client_uuid' => (string) Str::uuid(),
             'hasil_output' => 5,
         ])
         ->assertStatus(403);
@@ -100,6 +105,7 @@ test('sesi aktif hanya menampilkan sesi berjalan milik sendiri', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson('/api/mobile/produksi/mulai', [
+            'client_uuid' => (string) Str::uuid(),
             'mesin_id' => $this->mesin->id,
             'produk_id' => $this->produk->id,
         ]);

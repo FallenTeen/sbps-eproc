@@ -15,6 +15,7 @@ class StartProductionSessionAction
                 'titik_id' => $data['titik_id'],
                 'produk_id' => $data['produk_id'],
                 'operator_karyawan_id' => $data['operator_karyawan_id'],
+                'client_uuid' => $data['client_uuid'] ?? null,
                 'mulai' => now(),
                 'status' => 'berjalan',
                 'catatan' => $data['catatan'] ?? null,

@@ -61,6 +61,7 @@ use App\Policies\TitikPolicy;
 use App\Policies\TransferKasPolicy;
 use App\Policies\UnitBisnisPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
@@ -85,6 +86,47 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', function ($request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate limiter khusus API mobile (terpisah dari limiter web/api)
+        |----------------------------------------------------------------------
+        | Semua batasan mengembalikan envelope JSON standar + header
+        | Retry-After agar client Flutter bisa menunggu dengan benar.
+        */
+        $throttleResponse = fn (Request $request, array $headers) => response()->json([
+            'status' => 'error',
+            'message' => 'Terlalu banyak permintaan, coba lagi sebentar.',
+            'errors' => null,
+        ], 429, $headers);
+
+        // Umum: 60 req/menit per user (atau per IP untuk anonim).
+        RateLimiter::for('mobile', function (Request $request) use ($throttleResponse) {
+            return Limit::perMinute(60)
+                ->by($request->user()?->id ?: 'ip:'.$request->ip())
+                ->response($throttleResponse);
+        });
+
+        // Tracking batch: 20 req/menit per user (anti flood dari client bug).
+        RateLimiter::for('mobile-tracking', function (Request $request) use ($throttleResponse) {
+            return Limit::perMinute(20)
+                ->by($request->user()?->id ?: 'ip:'.$request->ip())
+                ->response($throttleResponse);
+        });
+
+        // Upload file: 30 req/menit per user.
+        RateLimiter::for('mobile-upload', function (Request $request) use ($throttleResponse) {
+            return Limit::perMinute(30)
+                ->by($request->user()?->id ?: 'ip:'.$request->ip())
+                ->response($throttleResponse);
+        });
+
+        // Login: 5 percobaan/menit per kombinasi email + IP.
+        RateLimiter::for('mobile-login', function (Request $request) use ($throttleResponse) {
+            return Limit::perMinute(5)
+                ->by(strtolower((string) $request->input('email')).'|'.$request->ip())
+                ->response($throttleResponse);
         });
 
         // Owner Super-Admin Bypass Rule

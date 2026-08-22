@@ -20,6 +20,7 @@ class ProductionSession extends Model
         'titik_id',
         'produk_id',
         'operator_karyawan_id',
+        'client_uuid',
         'mulai',
         'selesai',
         'hasil_output',

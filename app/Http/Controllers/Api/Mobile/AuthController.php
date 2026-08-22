@@ -101,6 +101,21 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/mobile/logout-all-devices
+     *
+     * Mencabut SEMUA token mobile milik user (termasuk token yang dipakai
+     * saat ini) — untuk kasus HP hilang/dicuri. Token web tidak terpengaruh.
+     */
+    public function logoutAllDevices(Request $request)
+    {
+        $revoked = $request->user()->tokens()
+            ->where('name', 'like', 'mobile%')
+            ->delete();
+
+        return $this->success(['revoked' => $revoked], "{$revoked} sesi mobile berhasil dicabut.");
+    }
+
+    /**
      * GET /api/mobile/user
      */
     public function user(Request $request)

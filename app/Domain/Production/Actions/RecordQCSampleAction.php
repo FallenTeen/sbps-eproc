@@ -11,6 +11,7 @@ class RecordQCSampleAction
     {
         return QCSample::create([
             'production_session_id' => $data['production_session_id'],
+            'client_uuid' => $data['client_uuid'] ?? null,
             'jenis_uji' => $data['jenis_uji'],
             'nilai_slump' => $data['nilai_slump'] ?? null,
             'tanggal_uji_tekan_rencana' => $data['tanggal_uji_tekan_rencana'] ?? Carbon::now()->addDays(28),

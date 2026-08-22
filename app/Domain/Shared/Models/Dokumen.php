@@ -21,6 +21,7 @@ class Dokumen extends Model implements HasMedia
         'tipe',
         'catatan',
         'uploaded_by',
+        'client_uuid',
     ];
 
     public function subject()

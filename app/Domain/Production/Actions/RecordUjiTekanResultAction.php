@@ -6,7 +6,7 @@ use App\Domain\Production\Models\QCSample;
 
 class RecordUjiTekanResultAction
 {
-    public function execute(QCSample $sample, $hasil, $catatan = null, $targetMpa = null): QCSample
+    public function execute(QCSample $sample, $hasil, $catatan = null, $targetMpa = null, ?string $clientUuid = null): QCSample
     {
         $target = $targetMpa === null ? 0 : (float) $targetMpa;
         $status = (float) $hasil >= $target && (float) $hasil > 0 ? 'lolos' : 'tidak_lolos';
@@ -15,6 +15,7 @@ class RecordUjiTekanResultAction
             'hasil_uji_tekan' => (float) $hasil,
             'status' => $status,
             'catatan' => $catatan ?? $sample->catatan,
+            'client_uuid' => $clientUuid ?? $sample->client_uuid,
         ]);
 
         return $sample;

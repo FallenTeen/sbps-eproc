@@ -7,80 +7,18 @@ use App\Domain\Production\Actions\RecordUjiTekanResultAction;
 use App\Domain\Production\Models\QCSample;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 
 class MobileQcController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * POST /api/mobile/qc/slump-test
-     */
-    public function storeSlumpTest(Request $request)
+    private function samplePayload(QCSample $sample): array
     {
-        $validated = $request->validate([
-            'production_session_id' => 'required|string|exists:production_sessions,id',
-            'nilai_slump' => 'required|numeric|min:0',
-            'catatan' => 'nullable|string|max:1000',
-        ]);
+        $sample->loadMissing('session.produk', 'session.mesin');
 
-        $action = new RecordQCSampleAction;
-        $sample = $action->execute([
-            'production_session_id' => $validated['production_session_id'],
-            'jenis_uji' => 'slump_test',
-            'nilai_slump' => $validated['nilai_slump'],
-            'catatan' => $validated['catatan'] ?? null,
-        ]);
-
-        $sample->load('session.produk', 'session.mesin');
-
-        return $this->success([
-            'id' => $sample->id,
-            'jenis_uji' => $sample->jenis_uji,
-            'nilai_slump' => $sample->nilai_slump,
-            'status' => $sample->status,
-            'catatan' => $sample->catatan,
-            'produksi' => [
-                'session_id' => $sample->session->id,
-                'produk' => $sample->session->produk?->nama,
-                'mesin' => $sample->session->mesin?->nama,
-            ],
-        ], 'Slump test berhasil dicatat.', 201);
-    }
-
-    /**
-     * POST /api/mobile/qc/uji-tekan
-     */
-    public function storeUjiTekan(Request $request)
-    {
-        $validated = $request->validate([
-            'production_session_id' => 'required|string|exists:production_sessions,id',
-            'hasil_uji_tekan' => 'required|numeric|min:0',
-            'target_mpa' => 'nullable|numeric|min:0',
-            'catatan' => 'nullable|string|max:1000',
-        ]);
-
-        $sample = QCSample::where('production_session_id', $validated['production_session_id'])
-            ->where('jenis_uji', 'slump_test')
-            ->where('status', 'menunggu_hasil')
-            ->latest()
-            ->first();
-
-        if (! $sample) {
-            return $this->error('Tidak ada sample slump test yang menunggu hasil uji tekan untuk sesi ini.', 422);
-        }
-
-        $action = new RecordUjiTekanResultAction;
-        $sample = $action->execute(
-            $sample,
-            $validated['hasil_uji_tekan'],
-            $validated['catatan'] ?? null,
-            $validated['target_mpa'] ?? null
-        );
-
-        $sample->load('session.produk', 'session.mesin');
-
-        return $this->success([
+        return [
             'id' => $sample->id,
             'jenis_uji' => $sample->jenis_uji,
             'nilai_slump' => $sample->nilai_slump,
@@ -92,7 +30,91 @@ class MobileQcController extends Controller
                 'produk' => $sample->session->produk?->nama,
                 'mesin' => $sample->session->mesin?->nama,
             ],
-        ], 'Hasil uji tekan berhasil dicatat.');
+        ];
+    }
+
+    /**
+     * POST /api/mobile/qc/slump-test
+     * Idempotent via client_uuid: retry dengan uuid sama tidak membuat sample dobel.
+     */
+    public function storeSlumpTest(Request $request)
+    {
+        $validated = $request->validate([
+            'client_uuid' => 'required|uuid',
+            'production_session_id' => 'required|string|exists:production_sessions,id',
+            'nilai_slump' => 'required|numeric|min:0',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $existing = QCSample::where('client_uuid', $validated['client_uuid'])->first();
+
+        if ($existing) {
+            return $this->success($this->samplePayload($existing), 'Slump test sudah dicatat sebelumnya.');
+        }
+
+        try {
+            $action = new RecordQCSampleAction;
+            $sample = $action->execute([
+                'production_session_id' => $validated['production_session_id'],
+                'jenis_uji' => 'slump_test',
+                'nilai_slump' => $validated['nilai_slump'],
+                'catatan' => $validated['catatan'] ?? null,
+                'client_uuid' => $validated['client_uuid'],
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Request paralel dengan client_uuid sama menembak bersamaan.
+            $sample = QCSample::where('client_uuid', $validated['client_uuid'])->firstOrFail();
+        }
+
+        return $this->success($this->samplePayload($sample), 'Slump test berhasil dicatat.', 201);
+    }
+
+    /**
+     * POST /api/mobile/qc/uji-tekan
+     * Idempotent via client_uuid: retry dengan uuid sama mengembalikan hasil
+     * sebelumnya (200), tanpa menimpa status sample.
+     */
+    public function storeUjiTekan(Request $request)
+    {
+        $validated = $request->validate([
+            'client_uuid' => 'required|uuid',
+            'production_session_id' => 'required|string|exists:production_sessions,id',
+            'hasil_uji_tekan' => 'required|numeric|min:0',
+            'target_mpa' => 'nullable|numeric|min:0',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $existing = QCSample::where('client_uuid', $validated['client_uuid'])->first();
+
+        if ($existing) {
+            return $this->success($this->samplePayload($existing), 'Hasil uji tekan sudah dicatat sebelumnya.');
+        }
+
+        $sample = QCSample::where('production_session_id', $validated['production_session_id'])
+            ->where('jenis_uji', 'slump_test')
+            ->where('status', 'menunggu_hasil')
+            ->latest()
+            ->first();
+
+        if (! $sample) {
+            return $this->error('Tidak ada sample slump test yang menunggu hasil uji tekan untuk sesi ini.', 422);
+        }
+
+        try {
+            $action = new RecordUjiTekanResultAction;
+            $sample = $action->execute(
+                $sample,
+                $validated['hasil_uji_tekan'],
+                $validated['catatan'] ?? null,
+                $validated['target_mpa'] ?? null,
+                $validated['client_uuid']
+            );
+        } catch (UniqueConstraintViolationException) {
+            // Request paralel dengan client_uuid sama menembak bersamaan.
+            $sample = QCSample::where('client_uuid', $validated['client_uuid'])->firstOrFail();
+        }
+
+        return $this->success($this->samplePayload($sample), 'Hasil uji tekan berhasil dicatat.');
     }
 
     /**

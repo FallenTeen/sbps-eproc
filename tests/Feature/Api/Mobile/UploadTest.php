@@ -4,6 +4,7 @@ use App\Domain\Shared\Models\Dokumen;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -17,6 +18,7 @@ test('upload menyimpan dokumen beserta media', function () {
     $response = $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->post('/api/mobile/upload', [
+            'client_uuid' => (string) Str::uuid(),
             'files' => [
                 UploadedFile::fake()->image('bukti-1.jpg'),
                 UploadedFile::fake()->image('bukti-2.jpg'),
@@ -46,6 +48,7 @@ test('upload menolak file_type tidak dikenal', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->post('/api/mobile/upload', [
+            'client_uuid' => (string) Str::uuid(),
             'files' => [UploadedFile::fake()->image('x.jpg')],
             'file_type' => 'exe',
         ])
