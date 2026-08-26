@@ -2,13 +2,13 @@
 
 namespace App\Domain\HR\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\HR\Models\Karyawan;
-use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\Core\Models\Titik;
+use App\Domain\HR\Models\Karyawan;
+use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class KaryawanController extends Controller
 {
@@ -16,7 +16,7 @@ class KaryawanController extends Controller
     {
         $this->authorize('viewAny', Karyawan::class);
 
-        $query = Karyawan::with(['user', 'assignments' => function($q) {
+        $query = Karyawan::with(['user', 'assignments' => function ($q) {
             $q->where('status', 'aktif')->with('titik');
         }]);
 
@@ -29,8 +29,8 @@ class KaryawanController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                  ->orWhere('jabatan', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%'.$request->search.'%')
+                ->orWhere('jabatan', 'like', '%'.$request->search.'%');
         }
 
         $karyawans = $query->orderBy('nama')->paginate(15)->withQueryString();
@@ -39,16 +39,17 @@ class KaryawanController extends Controller
         $canManageHr = $user && ($user->hasRole(['Owner', 'Koordinator SDM']) || $user->hasPermissionTo('manage hr'));
 
         // Sembunyikan field gaji untuk role yang tidak berhak
-        if (!$canManageHr) {
+        if (! $canManageHr) {
             $karyawans->getCollection()->transform(function ($karyawan) {
                 $karyawan->makeHidden(['rate_gaji_pokok', 'rate_harian', 'npwp', 'no_bpjs_kesehatan', 'no_bpjs_ketenagakerjaan']);
+
                 return $karyawan;
             });
         }
 
         return Inertia::render('HR/Karyawan/Index', [
             'karyawans' => $karyawans,
-            'filters' => $request->only(['tipe', 'status', 'search'])
+            'filters' => $request->only(['tipe', 'status', 'search']),
         ]);
     }
 
@@ -91,10 +92,10 @@ class KaryawanController extends Controller
         }]);
 
         $user = auth()->user();
-        $isSelf = $user && (string)$karyawan->user_id === (string)$user->id;
+        $isSelf = $user && (string) $karyawan->user_id === (string) $user->id;
         $canManageHr = $user && ($user->hasRole(['Owner', 'Koordinator SDM']) || $user->hasPermissionTo('manage hr'));
 
-        if (!$canManageHr && !$isSelf) {
+        if (! $canManageHr && ! $isSelf) {
             $karyawan->makeHidden(['rate_gaji_pokok', 'rate_harian', 'npwp', 'no_bpjs_kesehatan', 'no_bpjs_ketenagakerjaan']);
         }
 
@@ -109,7 +110,7 @@ class KaryawanController extends Controller
         $this->authorize('update', $karyawan);
 
         return Inertia::render('HR/Karyawan/Edit', [
-            'karyawan' => $karyawan
+            'karyawan' => $karyawan,
         ]);
     }
 
@@ -171,7 +172,7 @@ class KaryawanController extends Controller
         // Tutup assignment lama yang masih aktif
         $karyawan->assignments()->where('status', 'aktif')->update([
             'status' => 'selesai',
-            'tanggal_selesai' => \Carbon\Carbon::parse($request->tanggal_mulai)->subDay()
+            'tanggal_selesai' => Carbon::parse($request->tanggal_mulai)->subDay(),
         ]);
 
         // Buat assignment baru

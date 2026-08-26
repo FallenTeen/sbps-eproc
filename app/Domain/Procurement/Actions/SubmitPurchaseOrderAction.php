@@ -5,7 +5,6 @@ namespace App\Domain\Procurement\Actions;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\States\Diajukan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 class SubmitPurchaseOrderAction
 {
@@ -18,7 +17,7 @@ class SubmitPurchaseOrderAction
             }
 
             // Validasi RAB
-            (new ValidateBudgetAction())->execute($po);
+            (new ValidateBudgetAction)->execute($po);
 
             // Hitung total
             $total = $po->items->sum('subtotal');
@@ -29,7 +28,7 @@ class SubmitPurchaseOrderAction
             $po->status->transitionTo(Diajukan::class);
 
             // Route approval (tier)
-            (new RouteApprovalAction())->execute($po);
+            (new RouteApprovalAction)->execute($po);
         });
 
         return $po->fresh();
@@ -48,7 +47,7 @@ class SubmitPurchaseOrderAction
             $po->save();
 
             $po->status->transitionTo(Diajukan::class);
-            (new RouteApprovalAction())->execute($po);
+            (new RouteApprovalAction)->execute($po);
         });
 
         return $po->fresh();

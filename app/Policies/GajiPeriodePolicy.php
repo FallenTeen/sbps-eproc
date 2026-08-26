@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\HR\Models\GajiPeriode;
+use App\Models\User;
 
 class GajiPeriodePolicy
 {
@@ -12,16 +12,17 @@ class GajiPeriodePolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Admin Keuangan',
-                    'Ketua Divisi Kontraktor',
-                ])
+            'Koordinator SDM',
+            'Admin Keuangan',
+            'Ketua Divisi Kontraktor',
+        ])
             || $user->hasPermissionTo('manage payroll')
             || $user->hasPermissionTo('view payroll')
             || $user->hasPermissionTo('manage hr');
@@ -35,9 +36,9 @@ class GajiPeriodePolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Admin Keuangan',
-                ])
+            'Koordinator SDM',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage payroll')
             || $user->hasPermissionTo('manage hr');
     }

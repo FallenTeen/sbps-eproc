@@ -9,16 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class KaryawanTitikAssignment extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'karyawan_titik_assignments';
+
     protected $fillable = [
         'karyawan_id',
         'titik_id',
         'tanggal_mulai',
         'tanggal_selesai',
-        'status'
+        'status',
     ];
+
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',

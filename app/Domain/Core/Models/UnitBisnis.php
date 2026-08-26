@@ -2,25 +2,28 @@
 
 namespace App\Domain\Core\Models;
 
+use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Finance\Models\AkunKasBank;
+use Database\Factories\UnitBisnisFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class UnitBisnis extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'unit_bisnis';
+
     protected $fillable = ['kode', 'nama', 'deskripsi', 'aktif'];
+
     protected $casts = ['aktif' => 'boolean'];
 
     // Tentukan factory yang digunakan
     protected static function newFactory()
     {
-        return \Database\Factories\UnitBisnisFactory::new();
+        return UnitBisnisFactory::new();
     }
 
     public function proyeks()

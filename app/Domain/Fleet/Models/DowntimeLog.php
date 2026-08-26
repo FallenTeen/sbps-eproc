@@ -2,15 +2,17 @@
 
 namespace App\Domain\Fleet\Models;
 
+use Database\Factories\Domain\Fleet\Models\DowntimeLogFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DowntimeLog extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'downtime_logs';
+
     protected $fillable = [
         'serviceable_type',
         'serviceable_id',
@@ -18,8 +20,9 @@ class DowntimeLog extends Model
         'selesai',
         'penyebab',
         'kategori',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'mulai' => 'datetime',
         'selesai' => 'datetime',
@@ -33,7 +36,7 @@ class DowntimeLog extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\Domain\Fleet\Models\DowntimeLogFactory::new();
+        return DowntimeLogFactory::new();
     }
 
     // Scope

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Attendance\Models\FormulirLapangan;
+use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
@@ -34,7 +35,7 @@ beforeEach(function () {
 
 test('formulir store berhasil setelah check-in', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', [
             'titik_id' => $this->titik->id,
             'latitude' => $this->titik->latitude,
@@ -43,11 +44,11 @@ test('formulir store berhasil setelah check-in', function () {
         ]);
 
     $response = $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/formulir/store', formulirPayload());
 
     $response->assertStatus(201)
-        ->assertJsonPath('data.id', fn ($id) => !is_null($id));
+        ->assertJsonPath('data.id', fn ($id) => ! is_null($id));
 
     $this->assertDatabaseHas('formulir_lapangans', [
         'aktivitas_dilakukan' => 'Pengecoran jalan raya',
@@ -56,14 +57,14 @@ test('formulir store berhasil setelah check-in', function () {
 
 test('formulir store tanpa check-in ditolak', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/formulir/store', formulirPayload())
         ->assertStatus(422);
 });
 
 test('formulir ganda dalam sehari ditolak', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', [
             'titik_id' => $this->titik->id,
             'latitude' => $this->titik->latitude,
@@ -72,18 +73,18 @@ test('formulir ganda dalam sehari ditolak', function () {
         ]);
 
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/formulir/store', formulirPayload());
 
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/formulir/store', formulirPayload(['kondisi_area' => 'Kotor']))
         ->assertStatus(422);
 });
 
 test('formulir hari ini mengembalikan data setelah diisi', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', [
             'titik_id' => $this->titik->id,
             'latitude' => $this->titik->latitude,
@@ -92,7 +93,7 @@ test('formulir hari ini mengembalikan data setelah diisi', function () {
         ]);
 
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/formulir/store', formulirPayload());
 
     $this->withToken($this->token)
@@ -103,7 +104,7 @@ test('formulir hari ini mengembalikan data setelah diisi', function () {
 });
 
 test('riwayat formulir terpaginate', function () {
-    $presensi = \App\Domain\Attendance\Models\Presensi::create([
+    $presensi = Presensi::create([
         'karyawan_id' => $this->karyawan->id,
         'titik_id' => $this->titik->id,
         'check_in' => now(),

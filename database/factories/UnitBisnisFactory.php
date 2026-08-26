@@ -13,6 +13,7 @@ class UnitBisnisFactory extends Factory
     public function definition(): array
     {
         $kodes = ['GCS', 'CBP', 'AMP'];
+
         return [
             'id' => (string) Str::uuid(),
             'kode' => $this->faker->unique()->randomElement($kodes),
@@ -24,7 +25,7 @@ class UnitBisnisFactory extends Factory
 
     public function gcs(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'kode' => 'GCS',
             'nama' => 'General Contractor & Supplier',
         ]);
@@ -32,7 +33,7 @@ class UnitBisnisFactory extends Factory
 
     public function cbp(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'kode' => 'CBP',
             'nama' => 'Concrete Batching Plant',
         ]);
@@ -40,7 +41,7 @@ class UnitBisnisFactory extends Factory
 
     public function amp(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'kode' => 'AMP',
             'nama' => 'Asphalt Mixing Plant',
         ]);

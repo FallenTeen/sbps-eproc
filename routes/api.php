@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\Mobile\AppVersionController;
 use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
+use App\Http\Controllers\Api\Mobile\MasterDataController;
+use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
@@ -22,24 +25,35 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('mobile')->name('mobile.')->group(function () {
 
     // ─── Autentikasi (tanpa token) ──────────────────────────────────────────
-    Route::post('login', [AuthController::class, 'login'])->name('login');
-    Route::post('register', [AuthController::class, 'register'])->name('register');
+    Route::post('login', [AuthController::class, 'login'])
+        ->name('login')->middleware('throttle:mobile-login');
+    Route::post('register', [AuthController::class, 'register'])
+        ->name('register')->middleware('throttle:mobile');
+    Route::get('app-version', [AppVersionController::class, 'index'])
+        ->name('app-version')->middleware('throttle:mobile');
 
     // ─── Autentikasi (token Sanctum + mobile-only) ─────────────────────────
-    Route::middleware(['auth:sanctum', 'mobile.auth', 'active.role'])->group(function () {
+    Route::middleware(['auth:sanctum', 'mobile.auth', 'active.role', 'throttle:mobile'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::post('logout-all-devices', [AuthController::class, 'logoutAllDevices'])->name('logout-all-devices');
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
 
+        // Penugasan User
+        Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
+
         // Presensi
         Route::get('titik-aktif', [PresensiController::class, 'titikAktif'])->name('titik-aktif');
-        Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])->name('presensi.check-in');
-        Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])->name('presensi.check-out');
+        Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])
+            ->name('presensi.check-in')->middleware('idempotency');
+        Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])
+            ->name('presensi.check-out')->middleware('idempotency');
         Route::get('presensi/hari-ini', [PresensiController::class, 'hariIni'])->name('presensi.hari-ini');
         Route::get('presensi/riwayat', [PresensiController::class, 'riwayat'])->name('presensi.riwayat');
 
         // Formulir Lapangan
-        Route::post('formulir/store', [FormulirController::class, 'store'])->name('formulir.store');
+        Route::post('formulir/store', [FormulirController::class, 'store'])
+            ->name('formulir.store')->middleware('idempotency');
         Route::get('formulir/hari-ini', [FormulirController::class, 'hariIni'])->name('formulir.hari-ini');
         Route::get('formulir/riwayat', [FormulirController::class, 'riwayat'])->name('formulir.riwayat');
 
@@ -50,17 +64,37 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
         Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
 
+        // Master Data (mesin, produk, bahan baku)
+        Route::get('master/mesin', [MasterDataController::class, 'mesin'])->name('master.mesin');
+        Route::get('master/produk', [MasterDataController::class, 'produk'])->name('master.produk');
+        Route::get('master/bahan-baku', [MasterDataController::class, 'bahanBaku'])->name('master.bahan-baku');
+
         // GPS Tracking
-        Route::post('tracking/batch', [TrackingController::class, 'batch'])->name('tracking.batch');
+        Route::post('tracking/batch', [TrackingController::class, 'batch'])
+            ->name('tracking.batch')->middleware('throttle:mobile-tracking');
         Route::get('tracking/hari-ini/{userId}', [TrackingController::class, 'hariIni'])->name('tracking.hari-ini');
+        Route::get('tracking/active-users', [TrackingController::class, 'activeUsers'])->name('tracking.active-users');
 
         // Upload File
-        Route::post('upload', [UploadController::class, 'upload'])->name('upload');
+        Route::post('upload', [UploadController::class, 'upload'])
+            ->name('upload')->middleware('throttle:mobile-upload');
         Route::delete('upload/{id}', [UploadController::class, 'destroy'])->name('upload.destroy');
 
         // Monitoring & Dashboard
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])->name('dashboard.overview');
         Route::get('dashboard/titik/{titikId}', [DashboardController::class, 'titik'])->name('dashboard.titik');
+        Route::get('dashboard/chart/produksi', [DashboardController::class, 'chartProduksi'])->name('dashboard.chart-produksi');
+        Route::get('dashboard/chart/keuangan', [DashboardController::class, 'chartKeuangan'])->name('dashboard.chart-keuangan');
+        Route::get('dashboard/armada-status', [DashboardController::class, 'armadaStatus'])->name('dashboard.armada-status');
+        Route::get('dashboard/kehadiran-divisi', [DashboardController::class, 'kehadiranDivisi'])->name('dashboard.kehadiran-divisi');
+        Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
+        Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
+
+        // Quality Control
+        Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
+        Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
+        Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
+        Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

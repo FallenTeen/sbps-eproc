@@ -14,7 +14,7 @@ class SupplierFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'kode' => 'SUP-' . str_pad($this->faker->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
+            'kode' => 'SUP-'.str_pad($this->faker->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
             'nama' => $this->faker->company,
             'kontak' => $this->faker->name,
             'telepon' => $this->faker->phoneNumber,

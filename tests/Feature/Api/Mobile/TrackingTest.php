@@ -5,7 +5,9 @@ use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -31,6 +33,7 @@ test('batch menyimpan lokasi saat check-in aktif', function () {
     $response = $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson('/api/mobile/tracking/batch', [
+            'batch_id' => (string) Str::uuid(),
             'locations' => [
                 ['lat' => -7.1, 'lng' => 110.2, 'timestamp' => now()->subMinutes(5)->toIso8601String()],
                 ['lat' => -7.11, 'lng' => 110.21, 'timestamp' => now()->subMinutes(3)->toIso8601String()],
@@ -50,6 +53,7 @@ test('batch tanpa check-in ditolak', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->postJson('/api/mobile/tracking/batch', [
+            'batch_id' => (string) Str::uuid(),
             'locations' => [
                 ['lat' => -7.1, 'lng' => 110.2, 'timestamp' => now()->toIso8601String()],
             ],
@@ -60,7 +64,7 @@ test('batch tanpa check-in ditolak', function () {
 test('hari ini tracking dibatasi owner/admin', function () {
     [$owner, $ownerToken] = createMobileUserWithToken('Owner');
 
-    $targetUser = \App\Models\User::factory()->create();
+    $targetUser = User::factory()->create();
     $targetUser->assignRole('Mandor Titik');
     $targetKaryawan = Karyawan::factory()->create(['user_id' => $targetUser->id]);
 

@@ -11,14 +11,16 @@ class ArmadaDriver extends Model
     use HasUuids;
 
     protected $table = 'armada_drivers';
+
     protected $fillable = [
         'armada_id',
         'karyawan_id',
         'tipe',
         'tanggal_mulai',
         'tanggal_selesai',
-        'status'
+        'status',
     ];
+
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',

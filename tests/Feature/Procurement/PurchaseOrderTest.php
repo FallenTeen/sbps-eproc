@@ -1,29 +1,28 @@
 <?php
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\Titik;
-use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Procurement\Models\BahanBaku;
-use App\Domain\Procurement\Models\Supplier;
-use App\Domain\Procurement\Actions\SubmitPurchaseOrderAction;
+use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Procurement\Actions\ApprovePurchaseOrderAction;
-use App\Domain\Procurement\Actions\RejectPurchaseOrderAction;
 use App\Domain\Procurement\Actions\RecordPaymentAction;
 use App\Domain\Procurement\Actions\RecordStockMutationAction;
-use App\Domain\Procurement\States\Diajukan;
+use App\Domain\Procurement\Actions\RejectPurchaseOrderAction;
+use App\Domain\Procurement\Actions\SubmitPurchaseOrderAction;
+use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\Supplier;
+use App\Domain\Procurement\States\DibayarSebagian;
 use App\Domain\Procurement\States\Disetujui;
-use App\Domain\Procurement\States\Ditolak;
 use App\Domain\Procurement\States\Diterima;
+use App\Domain\Procurement\States\Ditolak;
 use App\Domain\Procurement\States\Lunas;
 use App\Domain\Procurement\States\MenungguApprovalFinance;
-use App\Domain\Procurement\States\MenungguApprovalOwner;
-use App\Domain\Finance\Models\AkunKasBank;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Support\Facades\Auth;
 
 uses(TestCase::class, DatabaseTransactions::class); // <-- penting!
 
@@ -78,7 +77,7 @@ test('submit po validasi rab berhasil', function () {
     ]);
 
     // Submit PO
-    $action = new SubmitPurchaseOrderAction();
+    $action = new SubmitPurchaseOrderAction;
     $po = $action->execute($po);
 
     // Assert: status berubah menjadi MenungguApprovalFinance
@@ -109,8 +108,8 @@ test('submit po melebihi rab ditolak', function () {
     ]);
 
     // Assert: throw exception
-    expect(fn() => (new SubmitPurchaseOrderAction())->execute($po))
-        ->toThrow(\Exception::class, 'RAB bahan_baku melebihi rencana');
+    expect(fn () => (new SubmitPurchaseOrderAction)->execute($po))
+        ->toThrow(Exception::class, 'RAB bahan_baku melebihi rencana');
 });
 
 // ========== TEST 3: APPROVE PO ==========
@@ -119,7 +118,7 @@ test('approve po berhasil', function () {
         ->for($this->proyek)
         ->create(['status' => 'menunggu_approval_finance']); // set status langsung
 
-    $action = new ApprovePurchaseOrderAction();
+    $action = new ApprovePurchaseOrderAction;
     $po = $action->execute($po);
 
     expect($po->status)->toBeInstanceOf(Disetujui::class);
@@ -135,7 +134,7 @@ test('reject po berhasil', function () {
         ->diajukan()
         ->create();
 
-    $action = new RejectPurchaseOrderAction();
+    $action = new RejectPurchaseOrderAction;
     $po = $action->execute($po);
 
     expect($po->status)->toBeInstanceOf(Ditolak::class);
@@ -162,7 +161,7 @@ test('receive po menambah stok', function () {
 
     // Receive PO
     $po->status->transitionTo(Diterima::class);
-    (new RecordStockMutationAction())->execute($po);
+    (new RecordStockMutationAction)->execute($po);
 
     // Assert: status menjadi Diterima
     expect($po->status)->toBeInstanceOf(Diterima::class);
@@ -192,7 +191,7 @@ test('payment po mengurangi kas', function () {
         'catatan' => 'Pembayaran lunas',
     ];
 
-    $action = new RecordPaymentAction();
+    $action = new RecordPaymentAction;
     $pembayaran = $action->execute($po, $data);
 
     // Assert: status menjadi Lunas
@@ -224,11 +223,11 @@ test('payment sebagian mengubah status menjadi dibayar_sebagian', function () {
         'akun_kas_bank_id' => $this->akunKas->id,
     ];
 
-    $action = new RecordPaymentAction();
+    $action = new RecordPaymentAction;
     $action->execute($po, $data);
 
     // Assert: status menjadi DibayarSebagian
-    expect($po->status)->toBeInstanceOf(\App\Domain\Procurement\States\DibayarSebagian::class);
+    expect($po->status)->toBeInstanceOf(DibayarSebagian::class);
 });
 
 // ========== TEST 8: PO TIDAK BISA SUBMIT KALAU ITEM KOSONG ==========
@@ -238,8 +237,8 @@ test('po tanpa item tidak bisa diajukan', function () {
         ->draft()
         ->create();
 
-    expect(fn() => (new SubmitPurchaseOrderAction())->execute($po))
-        ->toThrow(\Exception::class, 'PO tidak memiliki item');
+    expect(fn () => (new SubmitPurchaseOrderAction)->execute($po))
+        ->toThrow(Exception::class, 'PO tidak memiliki item');
 });
 
 // ========== TEST 9: SPAREPART TIDAK DIVALIDASI RAB ==========
@@ -267,7 +266,7 @@ test('sparepart tidak divalidasi terhadap rab', function () {
     ]);
 
     // Submit PO - sparepart seharusnya tidak divalidasi, sehingga berhasil
-    $action = new SubmitPurchaseOrderAction();
+    $action = new SubmitPurchaseOrderAction;
     $po = $action->execute($po);
 
     expect($po->status)->toBeInstanceOf(MenungguApprovalFinance::class);

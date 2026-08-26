@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             ProductionDataSeeder::class,
             FinanceDataSeeder::class,
             AttendanceDataSeeder::class,
+            AppVersionSeeder::class,
         ]);
     }
 }

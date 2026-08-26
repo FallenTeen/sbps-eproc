@@ -19,6 +19,8 @@ class EndProductionSessionAction
                 'hasil_output' => $data['hasil_output'],
                 'status' => 'selesai',
                 'catatan' => $data['catatan'] ?? null,
+                // Kunci idempotency operasi penutupan (menimpa kunci "mulai").
+                'client_uuid' => $data['client_uuid'] ?? null,
             ]);
 
             // Siapkan baris konsumsi: override manual jika ada, auto-suggest dari resep jika tidak

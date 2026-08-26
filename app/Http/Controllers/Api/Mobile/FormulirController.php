@@ -21,7 +21,7 @@ class FormulirController extends Controller
     {
         $presensi = $this->todayPresensi($request);
 
-        if (!$presensi) {
+        if (! $presensi) {
             return $this->error('Anda belum check-in hari ini.', 422);
         }
 
@@ -41,11 +41,11 @@ class FormulirController extends Controller
         $photos = [];
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $file) {
-                $photos[] = $file->store('formulir/' . now()->format('Y/m/d'), 'public');
+                $photos[] = $file->store('formulir/'.now()->format('Y/m/d'), 'public');
             }
         }
 
-        $formulir = (new SubmitFieldFormAction())->execute([
+        $formulir = (new SubmitFieldFormAction)->execute([
             'presensi_id' => $presensi->id,
             'aktivitas_dilakukan' => $validated['aktivitas_dilakukan'],
             'kondisi_area' => $validated['kondisi_area'] ?? null,
@@ -57,7 +57,7 @@ class FormulirController extends Controller
         return $this->success([
             'id' => $formulir->id,
             'presensi_id' => $formulir->presensi_id,
-            'foto' => array_map(fn ($path) => asset('storage/' . $path), $photos),
+            'foto' => array_map(fn ($path) => asset('storage/'.$path), $photos),
         ], 'Formulir berhasil disimpan.', 201);
     }
 
@@ -68,7 +68,7 @@ class FormulirController extends Controller
     {
         $presensi = $this->todayPresensi($request);
 
-        if (!$presensi || !$presensi->formulir) {
+        if (! $presensi || ! $presensi->formulir) {
             return $this->success(null, 'Belum ada formulir hari ini.');
         }
 
@@ -82,7 +82,7 @@ class FormulirController extends Controller
     {
         $karyawan = $request->user()->karyawan;
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             throw ValidationException::withMessages([
                 'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
             ]);
@@ -108,7 +108,7 @@ class FormulirController extends Controller
     {
         $karyawan = $request->user()->karyawan;
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             throw ValidationException::withMessages([
                 'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
             ]);
@@ -124,7 +124,7 @@ class FormulirController extends Controller
     private function formulirPayload(FormulirLapangan $formulir): array
     {
         $fotos = $formulir->foto
-            ? array_map(fn ($path) => asset('storage/' . $path), explode(',', $formulir->foto))
+            ? array_map(fn ($path) => asset('storage/'.$path), explode(',', $formulir->foto))
             : [];
 
         return [

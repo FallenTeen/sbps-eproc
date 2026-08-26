@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Models\User;
 
 class UnitBisnisPolicy
 {
@@ -15,6 +15,7 @@ class UnitBisnisPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 

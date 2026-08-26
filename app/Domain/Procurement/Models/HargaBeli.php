@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class HargaBeli extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'harga_belis';
+
     protected $fillable = ['bahan_baku_id', 'supplier_id', 'harga', 'berlaku_dari', 'berlaku_sampai'];
+
     protected $casts = [
         'harga' => 'float',
         'berlaku_dari' => 'date',
@@ -33,6 +35,7 @@ class HargaBeli extends Model
     public function scopeAktif($query, $tanggal = null)
     {
         $tanggal = $tanggal ?? now();
+
         return $query->where('berlaku_dari', '<=', $tanggal)
             ->where(function ($q) use ($tanggal) {
                 $q->whereNull('berlaku_sampai')

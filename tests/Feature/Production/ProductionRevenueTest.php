@@ -2,9 +2,13 @@
 
 namespace Tests\Feature\Production;
 
+use App\Domain\Production\Actions\CalculateProductionRevenueAction;
+use App\Models\ProductionSession;
+use App\Models\Produk;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
-uses(\Illuminate\Foundation\Testing\DatabaseTransactions::class);
+uses(DatabaseTransactions::class);
 
 class ProductionRevenueTest extends TestCase
 {
@@ -12,18 +16,18 @@ class ProductionRevenueTest extends TestCase
     public function it_calculates_production_revenue_correctly()
     {
         // Create a production session with output
-        $produk = \App\Models\Produk::factory()->create([
+        $produk = Produk::factory()->create([
             'harga' => 200000, // 200,000 per m3
         ]);
 
-        $session = \App\Models\ProductionSession::create([
+        $session = ProductionSession::create([
             'produk_id' => $produk->id,
             'hasil_output' => 5.0, // 5 m3
             'status' => 'selesai',
         ]);
 
         // Calculate revenue
-        $revenueAction = new \App\Domain\Production\Actions\CalculateProductionRevenueAction();
+        $revenueAction = new CalculateProductionRevenueAction;
         $revenue = $revenueAction->execute($session);
 
         // Expected revenue: output * unit price

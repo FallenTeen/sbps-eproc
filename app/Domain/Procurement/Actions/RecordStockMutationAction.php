@@ -2,8 +2,8 @@
 
 namespace App\Domain\Procurement\Actions;
 
-use App\Domain\Procurement\Models\StokMutasi;
 use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\StokMutasi;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +16,7 @@ class RecordStockMutationAction
             // Sebaiknya PO wajib punya titik_id. Tapi jika nullable, kita handle.
             $titikId = $po->titik_id ?? $po->proyek->titik->first()->id ?? null;
 
-            if (!$titikId) {
+            if (! $titikId) {
                 throw new \Exception('Titik tidak ditemukan untuk stok masuk.');
             }
 

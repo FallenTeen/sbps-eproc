@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Domain\Procurement\Models\Supplier;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class SupplierSeeder extends Seeder
 {
@@ -13,7 +14,7 @@ class SupplierSeeder extends Seeder
 
         Supplier::insert([
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'SUP-001',
                 'nama' => 'PT. Bahan Bangunan Jaya',
                 'kontak' => 'Budi',
@@ -23,7 +24,7 @@ class SupplierSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'SUP-002',
                 'nama' => 'CV. Sparepart Andal',
                 'kontak' => 'Ani',

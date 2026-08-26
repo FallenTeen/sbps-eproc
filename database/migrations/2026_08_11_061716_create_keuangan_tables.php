@@ -4,14 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         // akun_kas_bank (sudah ada di eprocurement, tapi kita tambahkan jika belum)
-// migrasi sudah dibuat sebelumnya, jadi kita skip.
+        // migrasi sudah dibuat sebelumnya, jadi kita skip.
 
         // transfer_antar_kas
         Schema::create('transfer_antar_kas', function (Blueprint $table) {

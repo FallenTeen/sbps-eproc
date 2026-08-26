@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Production\Models\Produk;
+use App\Models\User;
 
 class ProdukPolicy
 {
@@ -12,19 +12,20 @@ class ProdukPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Ketua Divisi Produksi CBP',
-                    'Ketua Divisi Produksi AMP',
-                    'Mandor Proyek',
-                ])
+            'Admin Keuangan',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Ketua Divisi Produksi CBP',
+            'Ketua Divisi Produksi AMP',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage production')
             || $user->hasPermissionTo('manage production cbp')
             || $user->hasPermissionTo('manage production amp')
@@ -33,7 +34,7 @@ class ProdukPolicy
 
     public function view(User $user, Produk $produk): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -43,11 +44,11 @@ class ProdukPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Ketua Divisi Produksi CBP',
-                    'Ketua Divisi Produksi AMP',
-                ])
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Ketua Divisi Produksi CBP',
+            'Ketua Divisi Produksi AMP',
+        ])
             || $user->hasPermissionTo('manage production cbp')
             || $user->hasPermissionTo('manage production amp')
             || $user->hasPermissionTo('manage production');
@@ -55,7 +56,7 @@ class ProdukPolicy
 
     public function update(User $user, Produk $produk): bool
     {
-        if (!$this->create($user)) {
+        if (! $this->create($user)) {
             return false;
         }
 
@@ -77,9 +78,10 @@ class ProdukPolicy
         if ($user->hasRole(['Admin Keuangan', 'Mandor Proyek'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,4 +34,13 @@ function mobileAuthHeaders(array $extra = []): array
         'X-Device-Type' => 'android',
         'X-Device-Name' => 'Pixel Test',
     ], $extra);
+}
+
+/**
+ * Header untuk endpoint wajib Idempotency-Key (check-in/check-out/formulir).
+ * Setiap panggilan menghasilkan key baru.
+ */
+function mobileIdemHeaders(?string $key = null): array
+{
+    return mobileAuthHeaders(['Idempotency-Key' => $key ?? (string) Str::uuid()]);
 }

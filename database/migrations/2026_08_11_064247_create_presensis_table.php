@@ -24,7 +24,7 @@ return new class extends Migration
             $table->enum('status_validasi', ['valid', 'tidak_valid', 'luar_radius'])->default('valid');
             $table->text('catatan_override')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('karyawan_id')->references('id')->on('karyawans')->onDelete('cascade');
             $table->foreign('titik_id')->references('id')->on('titiks')->onDelete('cascade');
         });

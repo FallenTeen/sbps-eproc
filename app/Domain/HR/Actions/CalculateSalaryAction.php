@@ -1,14 +1,16 @@
 <?php
+
 namespace App\Domain\HR\Actions;
 
-use App\Domain\HR\Models\Karyawan;
-use App\Domain\HR\Models\GajiPeriode;
-use App\Domain\HR\Models\KomponenGaji;
-use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Attendance\Models\Presensi;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\HR\Models\GajiPeriode;
+use App\Domain\HR\Models\Karyawan;
 
-class CalculateSalaryAction {
-    public function execute(Karyawan $karyawan, int $bulan, int $tahun): GajiPeriode {
+class CalculateSalaryAction
+{
+    public function execute(Karyawan $karyawan, int $bulan, int $tahun): GajiPeriode
+    {
         $periode = GajiPeriode::firstOrCreate([
             'karyawan_id' => $karyawan->id,
             'periode_bulan' => $bulan,

@@ -3,10 +3,12 @@
 namespace App\Domain\Finance\Services;
 
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Production\Models\ProductionSession;
+use App\Domain\HR\Actions\CalculateNetSalaryAction;
 use App\Domain\HR\Models\GajiPeriode;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Actions\CalculateProductionCostAction;
+use App\Domain\Production\Models\ProductionSession;
 
 class ConsolidateFinanceReportService
 {
@@ -36,7 +38,7 @@ class ConsolidateFinanceReportService
             ->with('items')
             ->get()
             ->sum(function ($session) {
-                return (new \App\Domain\Production\Actions\CalculateProductionCostAction())->execute($session);
+                return (new CalculateProductionCostAction)->execute($session);
             });
 
         // Gaji (untuk SDM)
@@ -48,7 +50,7 @@ class ConsolidateFinanceReportService
             ->where('status', 'dibayar')
             ->get()
             ->sum(function ($gaji) {
-                return (new \App\Domain\HR\Actions\CalculateNetSalaryAction())->execute($gaji);
+                return (new CalculateNetSalaryAction)->execute($gaji);
             });
 
         return [

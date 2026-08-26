@@ -2,14 +2,13 @@
 
 namespace App\Domain\HR\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Domain\HR\Actions\CalculateNetSalaryAction;
 use App\Domain\HR\Models\GajiPeriode;
 use App\Domain\HR\Models\KomponenGaji;
 use App\Domain\HR\Services\GeneratePayrollPeriodService;
-use App\Domain\HR\Actions\CalculateNetSalaryAction;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 
 class PayrollController extends Controller
 {
@@ -23,20 +22,21 @@ class PayrollController extends Controller
             ->orderBy('periode_tahun', 'desc')
             ->orderBy('periode_bulan', 'desc')
             ->get();
-            
-        $calc = new CalculateNetSalaryAction();
+
+        $calc = new CalculateNetSalaryAction;
         $periodes->transform(function ($item) use ($calc) {
             $gajis = GajiPeriode::with('komponen')
                 ->where('periode_bulan', $item->periode_bulan)
                 ->where('periode_tahun', $item->periode_tahun)
                 ->where('status', $item->status)
                 ->get();
-            $item->total_gaji = $gajis->sum(fn($g) => $calc->execute($g));
+            $item->total_gaji = $gajis->sum(fn ($g) => $calc->execute($g));
+
             return $item;
         });
 
         return Inertia::render('HR/Payroll/Index', [
-            'periodes' => $periodes
+            'periodes' => $periodes,
         ]);
     }
 
@@ -46,10 +46,10 @@ class PayrollController extends Controller
 
         $request->validate([
             'bulan' => 'required|integer|min:1|max:12',
-            'tahun' => 'required|integer|min:2000'
+            'tahun' => 'required|integer|min:2000',
         ]);
 
-        (new GeneratePayrollPeriodService())->generate($request->bulan, $request->tahun);
+        (new GeneratePayrollPeriodService)->generate($request->bulan, $request->tahun);
 
         return back()->with('success', "Payroll periode {$request->bulan}/{$request->tahun} berhasil digenerate.");
     }
@@ -67,9 +67,10 @@ class PayrollController extends Controller
             return redirect()->route('hr.payroll.index')->with('error', 'Data periode tidak ditemukan.');
         }
 
-        $calc = new CalculateNetSalaryAction();
-        $gajis->transform(function($g) use ($calc) {
+        $calc = new CalculateNetSalaryAction;
+        $gajis->transform(function ($g) use ($calc) {
             $g->netto = $calc->execute($g);
+
             return $g;
         });
 
@@ -81,7 +82,7 @@ class PayrollController extends Controller
             'tahun' => $tahun,
             'status' => $status,
             'gajis' => $gajis,
-            'total_gaji' => $total_gaji
+            'total_gaji' => $total_gaji,
         ]);
     }
 
@@ -90,11 +91,11 @@ class PayrollController extends Controller
         $this->authorize('view', $periode);
 
         $periode->load(['karyawan', 'komponen']);
-        $netto = (new CalculateNetSalaryAction())->execute($periode);
+        $netto = (new CalculateNetSalaryAction)->execute($periode);
 
         return Inertia::render('HR/Payroll/Review', [
             'periode' => $periode,
-            'netto' => $netto
+            'netto' => $netto,
         ]);
     }
 
@@ -121,6 +122,7 @@ class PayrollController extends Controller
         }
 
         $komponen->delete();
+
         return back()->with('success', 'Komponen gaji berhasil dihapus.');
     }
 
@@ -132,7 +134,7 @@ class PayrollController extends Controller
             ->where('periode_tahun', $tahun)
             ->update([
                 'status' => 'dibayar',
-                'tanggal_dibayar' => now()
+                'tanggal_dibayar' => now(),
             ]);
 
         return back()->with('success', 'Payroll berhasil ditandai sebagai dibayar.');

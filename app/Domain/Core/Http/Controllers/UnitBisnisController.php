@@ -5,7 +5,6 @@ namespace App\Domain\Core\Http\Controllers;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 

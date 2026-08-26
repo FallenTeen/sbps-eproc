@@ -46,7 +46,7 @@ test('titik aktif mengembalikan daftar titik', function () {
 
 test('check-in dalam radius tercatat status valid', function () {
     $response = $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik));
 
     $response->assertStatus(201)
@@ -62,7 +62,7 @@ test('check-in dalam radius tercatat status valid', function () {
 
 test('check-in di luar radius tetap tercatat status luar_radius', function () {
     $response = $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik, 'jauh.jpg', false));
 
     $response->assertStatus(201)
@@ -76,22 +76,22 @@ test('check-in di luar radius tetap tercatat status luar_radius', function () {
 
 test('check-in ganda dalam sehari ditolak', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik));
 
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik))
         ->assertStatus(422);
 });
 
 test('check-out menyelesaikan presensi', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik));
 
     $response = $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-out', [
             'latitude' => $this->titik->latitude,
             'longitude' => $this->titik->longitude,
@@ -107,7 +107,7 @@ test('check-out menyelesaikan presensi', function () {
 
 test('check-out tanpa check-in ditolak', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-out', [
             'latitude' => $this->titik->latitude,
             'longitude' => $this->titik->longitude,
@@ -126,7 +126,7 @@ test('hari ini menunjukkan belum check-in', function () {
 
 test('hari ini menunjukkan presensi setelah check-in', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik));
 
     $this->withToken($this->token)

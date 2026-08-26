@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\KomunikasiLog;
-use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Finance\Models\Invoice;
 use App\Domain\Core\Actions\GetRABRealisasiAction;
+use App\Domain\Core\Models\KomunikasiLog;
+use App\Domain\Core\Models\Proyek;
+use App\Domain\Finance\Models\Invoice;
+use App\Domain\Production\Models\ProductionSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -43,7 +43,7 @@ class KontraktorController extends Controller
             $namaProduk = $s->produk ? $s->produk->nama : 'Produk Lain';
             $satuan = $s->produk ? $s->produk->satuan_output : 'Unit';
 
-            if (!isset($produksiSummary[$namaProduk])) {
+            if (! isset($produksiSummary[$namaProduk])) {
                 $produksiSummary[$namaProduk] = [
                     'nama' => $namaProduk,
                     'satuan' => $satuan,
@@ -51,7 +51,7 @@ class KontraktorController extends Controller
                     'sesi_count' => 0,
                 ];
             }
-            $produksiSummary[$namaProduk]['total_output'] += (float)$s->hasil_output;
+            $produksiSummary[$namaProduk]['total_output'] += (float) $s->hasil_output;
             $produksiSummary[$namaProduk]['sesi_count'] += 1;
         }
 
@@ -59,11 +59,11 @@ class KontraktorController extends Controller
         $rabItems = $proyek->rab;
         $totalRencanaRab = 0;
         $totalRealisasiRab = 0;
-        $getRabAction = new GetRABRealisasiAction();
+        $getRabAction = new GetRABRealisasiAction;
 
         foreach ($rabItems as $rab) {
-            $totalRencanaRab += (float)$rab->rencana;
-            $totalRealisasiRab += (float)$getRabAction->execute($rab);
+            $totalRencanaRab += (float) $rab->rencana;
+            $totalRealisasiRab += (float) $getRabAction->execute($rab);
         }
 
         // 3. Daftar Invoice (Read-only)
@@ -72,8 +72,9 @@ class KontraktorController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($inv) {
-                $total = (float)$inv->items->sum('subtotal');
-                $paid = (float)$inv->pembayaranKlien->sum('jumlah');
+                $total = (float) $inv->items->sum('subtotal');
+                $paid = (float) $inv->pembayaranKlien->sum('jumlah');
+
                 return [
                     'id' => $inv->id,
                     'kode_invoice' => $inv->kode_invoice,

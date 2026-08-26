@@ -28,7 +28,7 @@ class ProdukFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'kategori' => 'BETON_COR',
             'satuan_output' => 'm3',
-            'nama' => 'FC' . $this->faker->randomElement(['10', '15', '20', '25', '30']),
+            'nama' => 'FC'.$this->faker->randomElement(['10', '15', '20', '25', '30']),
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace Database\Factories\Domain\Fleet\Models;
 
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\BbmLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -22,7 +23,7 @@ class BbmLogFactory extends Factory
             'biaya' => $this->faker->numberBetween(100000, 2000000),
             'jam_operasional_saat_isi' => $this->faker->randomFloat(1, 1, 12),
             'purchase_order_id' => null,
-            'dicatat_oleh' => \App\Models\User::factory(),
+            'dicatat_oleh' => User::factory(),
         ];
     }
 }

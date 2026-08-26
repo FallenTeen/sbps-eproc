@@ -4,6 +4,7 @@ namespace Database\Factories\Domain\Finance\Models;
 
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -23,7 +24,7 @@ class MutasiKasBankFactory extends Factory
             'referensi_id' => null,
             'tanggal' => now()->toDateString(),
             'catatan' => null,
-            'created_by' => \App\Models\User::factory(),
+            'created_by' => User::factory(),
         ];
     }
 }

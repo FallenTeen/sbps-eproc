@@ -84,7 +84,7 @@ class FleetDataSeeder extends Seeder
                     'berlaku_sampai' => null,
                 ])
             );
-            $ruteIds[$data['lokasi_asal'] . '|' . $data['lokasi_tujuan']] = $rute->id;
+            $ruteIds[$data['lokasi_asal'].'|'.$data['lokasi_tujuan']] = $rute->id;
         }
 
         $ruteTambangBendungan = $ruteIds['Lokasi Tambang|Lokasi Bendungan'];

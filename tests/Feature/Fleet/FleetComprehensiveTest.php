@@ -1,27 +1,23 @@
 <?php
 
-use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
-use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\CalculateNextServiceDateAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
 use App\Domain\Fleet\Actions\EstimateBBMFromJarakAction;
 use App\Domain\Fleet\Actions\RecordBBMAction;
 use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
-use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
 use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
+use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
 use App\Domain\Fleet\Actions\StartDowntimeAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
-use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
-use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\ServiceInterval;
-use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -36,14 +32,14 @@ beforeEach(function () {
     $this->user->givePermissionTo('manage fleet');
     $this->actingAs($this->user);
 
-    $this->unit   = UnitBisnis::factory()->gcs()->create();
+    $this->unit = UnitBisnis::factory()->gcs()->create();
     $this->proyek = Proyek::factory()->for($this->unit)->internal()->create(['created_by' => $this->user->id]);
-    $this->titik  = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
+    $this->titik = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
     $this->driver = Karyawan::create([
-        'nama'    => 'Driver Test',
-        'tipe'    => 'borongan_rit',
+        'nama' => 'Driver Test',
+        'tipe' => 'borongan_rit',
         'jabatan' => 'Driver',
-        'status'  => 'aktif',
+        'status' => 'aktif',
     ]);
 });
 
@@ -54,23 +50,23 @@ beforeEach(function () {
 describe('Ritase - Pencatatan dan Snapshot Tarif', function () {
     test('record ritase menggunakan snapshot tarif dari rute', function () {
         $armada = Armada::factory()->for($this->unit)->dumpTruck()->create();
-        $rute   = RuteTarif::create([
+        $rute = RuteTarif::create([
             'unit_bisnis_id' => $this->unit->id,
-            'lokasi_asal'    => 'Quarry A',
-            'lokasi_tujuan'  => 'Site B',
-            'jarak_km'       => 20,
-            'tarif_per_rit'  => 100_000,
-            'berlaku_dari'   => '2026-01-01',
+            'lokasi_asal' => 'Quarry A',
+            'lokasi_tujuan' => 'Site B',
+            'jarak_km' => 20,
+            'tarif_per_rit' => 100_000,
+            'berlaku_dari' => '2026-01-01',
         ]);
 
-        $action = new RecordRitaseAction();
+        $action = new RecordRitaseAction;
         $ritase = $action->execute([
-            'armada_id'          => $armada->id,
+            'armada_id' => $armada->id,
             'driver_karyawan_id' => $this->driver->id,
-            'rute_tarif_id'      => $rute->id,
-            'tanggal'            => now()->toDateString(),
-            'jumlah_rit'         => 8,
-            'proyek_id'          => $this->proyek->id,
+            'rute_tarif_id' => $rute->id,
+            'tanggal' => now()->toDateString(),
+            'jumlah_rit' => 8,
+            'proyek_id' => $this->proyek->id,
         ]);
 
         expect($ritase->tarif_per_rit_snapshot)->toEqual(100_000);
@@ -80,22 +76,22 @@ describe('Ritase - Pencatatan dan Snapshot Tarif', function () {
 
     test('tarif snapshot tetap meski tarif master diubah setelah ritase dibuat', function () {
         $armada = Armada::factory()->for($this->unit)->dumpTruck()->create();
-        $rute   = RuteTarif::create([
+        $rute = RuteTarif::create([
             'unit_bisnis_id' => $this->unit->id,
-            'lokasi_asal'    => 'X',
-            'lokasi_tujuan'  => 'Y',
-            'jarak_km'       => 15,
-            'tarif_per_rit'  => 80_000,
-            'berlaku_dari'   => '2026-01-01',
+            'lokasi_asal' => 'X',
+            'lokasi_tujuan' => 'Y',
+            'jarak_km' => 15,
+            'tarif_per_rit' => 80_000,
+            'berlaku_dari' => '2026-01-01',
         ]);
 
-        $action = new RecordRitaseAction();
+        $action = new RecordRitaseAction;
         $ritase = $action->execute([
-            'armada_id'          => $armada->id,
+            'armada_id' => $armada->id,
             'driver_karyawan_id' => $this->driver->id,
-            'rute_tarif_id'      => $rute->id,
-            'tanggal'            => now()->toDateString(),
-            'jumlah_rit'         => 5,
+            'rute_tarif_id' => $rute->id,
+            'tanggal' => now()->toDateString(),
+            'jumlah_rit' => 5,
         ]);
 
         // Ubah tarif master setelah ritase dibuat
@@ -109,15 +105,15 @@ describe('Ritase - Pencatatan dan Snapshot Tarif', function () {
     test('ritase tanpa rute tarif input tarif manual', function () {
         $armada = Armada::factory()->for($this->unit)->dumpTruck()->create();
 
-        $action = new RecordRitaseAction();
+        $action = new RecordRitaseAction;
         $ritase = $action->execute([
-            'armada_id'              => $armada->id,
-            'driver_karyawan_id'     => $this->driver->id,
-            'rute_tarif_id'          => null,
-            'tanggal'                => now()->toDateString(),
-            'jumlah_rit'             => 3,
+            'armada_id' => $armada->id,
+            'driver_karyawan_id' => $this->driver->id,
+            'rute_tarif_id' => null,
+            'tanggal' => now()->toDateString(),
+            'jumlah_rit' => 3,
             'tarif_per_rit_snapshot' => 90_000,
-            'customer'               => 'PT Klien Manual',
+            'customer' => 'PT Klien Manual',
         ]);
 
         expect($ritase->rute_tarif_id)->toBeNull();
@@ -134,14 +130,14 @@ describe('Sewa Alat Jam - HM Based', function () {
     test('record sewa alat jam menghitung jam dari HM awal dan akhir', function () {
         $armada = Armada::factory()->for($this->unit)->alatBerat()->create();
 
-        $action = new RecordSewaAlatJamAction();
-        $sewa   = $action->execute([
-            'armada_id'            => $armada->id,
-            'penyewa_eksternal'    => 'PT Sewa Alat',
+        $action = new RecordSewaAlatJamAction;
+        $sewa = $action->execute([
+            'armada_id' => $armada->id,
+            'penyewa_eksternal' => 'PT Sewa Alat',
             'harga_per_jam_snapshot' => 200_000,
-            'tanggal'              => now()->toDateString(),
-            'hm_awal'              => 500.0,
-            'hm_akhir'             => 507.5,
+            'tanggal' => now()->toDateString(),
+            'hm_awal' => 500.0,
+            'hm_akhir' => 507.5,
         ]);
 
         expect((float) $sewa->jumlah_jam)->toEqual(7.5);
@@ -152,12 +148,12 @@ describe('Sewa Alat Jam - HM Based', function () {
     test('total nilai sewa = jumlah jam x harga per jam snapshot', function () {
         $armada = Armada::factory()->for($this->unit)->alatBerat()->create();
 
-        $action = new RecordSewaAlatJamAction();
-        $sewa   = $action->execute([
-            'armada_id'              => $armada->id,
+        $action = new RecordSewaAlatJamAction;
+        $sewa = $action->execute([
+            'armada_id' => $armada->id,
             'harga_per_jam_snapshot' => 150_000,
-            'tanggal'                => now()->toDateString(),
-            'jumlah_jam'             => 10,
+            'tanggal' => now()->toDateString(),
+            'jumlah_jam' => 10,
         ]);
 
         // 10 jam x 150.000 = 1.500.000
@@ -175,16 +171,16 @@ describe('Service History - Servis dan Reminder', function () {
         $armada = Armada::factory()->for($this->unit)->create();
         ServiceInterval::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'interval_bulan'   => 3,
+            'serviceable_id' => $armada->id,
+            'interval_bulan' => 3,
         ]);
 
-        $action = new RecordServiceHistoryAction();
+        $action = new RecordServiceHistoryAction;
         $action->execute($armada, [
-            'tanggal'      => '2026-08-01',
+            'tanggal' => '2026-08-01',
             'jenis_servis' => 'Ganti Oli + Filter',
-            'biaya'        => 800_000,
-            'notes'        => 'Servis berkala 3 bulanan',
+            'biaya' => 800_000,
+            'notes' => 'Servis berkala 3 bulanan',
         ]);
 
         $armada->refresh();
@@ -197,11 +193,11 @@ describe('Service History - Servis dan Reminder', function () {
         ]);
         $interval = ServiceInterval::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'interval_bulan'   => 3,
+            'serviceable_id' => $armada->id,
+            'interval_bulan' => 3,
         ]);
 
-        $action      = new CalculateNextServiceDateAction();
+        $action = new CalculateNextServiceDateAction;
         $nextService = $action->execute($interval);
 
         // Servis terakhir 1 Juni + 3 bulan = 1 September
@@ -210,16 +206,16 @@ describe('Service History - Servis dan Reminder', function () {
 
     test('unit yang belum pernah servis menggunakan tanggal mulai pakai', function () {
         $armada = Armada::factory()->for($this->unit)->create([
-            'tanggal_mulai_pakai'     => '2026-01-01',
+            'tanggal_mulai_pakai' => '2026-01-01',
             'tanggal_servis_terakhir' => null,
         ]);
         $interval = ServiceInterval::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'interval_bulan'   => 2,
+            'serviceable_id' => $armada->id,
+            'interval_bulan' => 2,
         ]);
 
-        $action      = new CalculateNextServiceDateAction();
+        $action = new CalculateNextServiceDateAction;
         $nextService = $action->execute($interval);
 
         expect($nextService->toDateString())->toBe('2026-03-01');
@@ -234,11 +230,11 @@ describe('Checklist Kondisi Alat Harian', function () {
     test('record checklist kondisi baik tersimpan dengan benar', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action   = new RecordChecklistHarianAction();
+        $action = new RecordChecklistHarianAction;
         $checklist = $action->execute($armada, [
-            'tanggal'                 => now()->toDateString(),
-            'kondisi_baik'            => true,
-            'item_bermasalah'         => null,
+            'tanggal' => now()->toDateString(),
+            'kondisi_baik' => true,
+            'item_bermasalah' => null,
             'dicatat_oleh_karyawan_id' => $this->driver->id,
         ]);
 
@@ -249,11 +245,11 @@ describe('Checklist Kondisi Alat Harian', function () {
     test('record checklist kondisi tidak baik menyimpan item bermasalah', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action   = new RecordChecklistHarianAction();
+        $action = new RecordChecklistHarianAction;
         $checklist = $action->execute($armada, [
-            'tanggal'                 => now()->toDateString(),
-            'kondisi_baik'            => false,
-            'item_bermasalah'         => 'Ban belakang kiri bocor, lampu depan mati',
+            'tanggal' => now()->toDateString(),
+            'kondisi_baik' => false,
+            'item_bermasalah' => 'Ban belakang kiri bocor, lampu depan mati',
             'dicatat_oleh_karyawan_id' => $this->driver->id,
         ]);
 
@@ -265,10 +261,10 @@ describe('Checklist Kondisi Alat Harian', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
         ArmadaChecklistHarian::create([
-            'checkable_type'           => Armada::class,
-            'checkable_id'             => $armada->id,
-            'tanggal'                  => now()->toDateString(),
-            'kondisi_baik'             => true,
+            'checkable_type' => Armada::class,
+            'checkable_id' => $armada->id,
+            'tanggal' => now()->toDateString(),
+            'kondisi_baik' => true,
             'dicatat_oleh_karyawan_id' => $this->driver->id,
         ]);
 
@@ -286,12 +282,12 @@ describe('BBM Log - Pencatatan dan Estimasi', function () {
     test('record bbm menyimpan liter dan biaya', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action = new RecordBBMAction();
-        $log    = $action->execute($armada, [
-            'tanggal'       => now()->toDateString(),
-            'liter'         => 60,
-            'biaya'         => 840_000,
-            'dicatat_oleh'  => $this->user->id,
+        $action = new RecordBBMAction;
+        $log = $action->execute($armada, [
+            'tanggal' => now()->toDateString(),
+            'liter' => 60,
+            'biaya' => 840_000,
+            'dicatat_oleh' => $this->user->id,
         ]);
 
         expect($log->liter)->toEqual(60);
@@ -300,16 +296,16 @@ describe('BBM Log - Pencatatan dan Estimasi', function () {
 
     test('estimasi BBM dari jarak dan indeks solar menghitung dengan benar', function () {
         $rute = RuteTarif::create([
-            'unit_bisnis_id'           => $this->unit->id,
-            'lokasi_asal'              => 'A',
-            'lokasi_tujuan'            => 'B',
-            'jarak_km'                 => 20,
-            'tarif_per_rit'            => 100_000,
+            'unit_bisnis_id' => $this->unit->id,
+            'lokasi_asal' => 'A',
+            'lokasi_tujuan' => 'B',
+            'jarak_km' => 20,
+            'tarif_per_rit' => 100_000,
             'indeks_liter_solar_per_km' => 0.4,
-            'berlaku_dari'             => '2026-01-01',
+            'berlaku_dari' => '2026-01-01',
         ]);
 
-        $action   = new EstimateBBMFromJarakAction();
+        $action = new EstimateBBMFromJarakAction;
         $estimasi = $action->execute($rute, 5); // 5 rit
 
         // 5 rit x 20 km x 0.4 liter/km = 40 liter
@@ -325,11 +321,11 @@ describe('Downtime Log - Mulai dan Selesai Downtime', function () {
     test('start downtime menyimpan baris tanpa selesai', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action   = new StartDowntimeAction();
+        $action = new StartDowntimeAction;
         $downtime = $action->execute($armada, [
-            'penyebab'  => 'Mesin overheat',
-            'kategori'  => 'kerusakan',
-            'catatan'   => 'Butuh pendinginan',
+            'penyebab' => 'Mesin overheat',
+            'kategori' => 'kerusakan',
+            'catatan' => 'Butuh pendinginan',
         ]);
 
         expect($downtime)->not->toBeNull();
@@ -338,16 +334,16 @@ describe('Downtime Log - Mulai dan Selesai Downtime', function () {
     });
 
     test('end downtime mengisi waktu selesai', function () {
-        $armada   = Armada::factory()->for($this->unit)->create();
+        $armada = Armada::factory()->for($this->unit)->create();
         $downtime = DowntimeLog::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'mulai'            => now()->subHours(3),
-            'penyebab'         => 'Ganti ban',
-            'kategori'         => 'kerusakan',
+            'serviceable_id' => $armada->id,
+            'mulai' => now()->subHours(3),
+            'penyebab' => 'Ganti ban',
+            'kategori' => 'kerusakan',
         ]);
 
-        $action = new EndDowntimeAction();
+        $action = new EndDowntimeAction;
         $action->execute($downtime);
 
         expect($downtime->fresh()->selesai)->not->toBeNull();
@@ -358,18 +354,18 @@ describe('Downtime Log - Mulai dan Selesai Downtime', function () {
 
         DowntimeLog::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'mulai'            => now()->subDays(7),
-            'selesai'          => now()->subDays(6),
-            'penyebab'         => 'Ganti oli',
-            'kategori'         => 'kerusakan',
+            'serviceable_id' => $armada->id,
+            'mulai' => now()->subDays(7),
+            'selesai' => now()->subDays(6),
+            'penyebab' => 'Ganti oli',
+            'kategori' => 'kerusakan',
         ]);
         DowntimeLog::create([
             'serviceable_type' => Armada::class,
-            'serviceable_id'   => $armada->id,
-            'mulai'            => now()->subDays(2),
-            'penyebab'         => 'Ban bocor',
-            'kategori'         => 'kerusakan',
+            'serviceable_id' => $armada->id,
+            'mulai' => now()->subDays(2),
+            'penyebab' => 'Ban bocor',
+            'kategori' => 'kerusakan',
         ]);
 
         expect(DowntimeLog::where('serviceable_id', $armada->id)->count())->toBe(2);

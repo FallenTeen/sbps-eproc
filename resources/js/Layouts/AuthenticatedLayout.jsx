@@ -3,14 +3,37 @@ import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Components/Sidebar';
 import NotificationBell from '@/Components/NotificationBell';
 import Breadcrumb from '@/Components/Breadcrumb';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
+
+const portalLabels = {
+    admin: 'Admin',
+    armada: 'Armada',
+    produksi: 'Produksi',
+    keuangan: 'Keuangan',
+    sdm: 'SDM',
+    kontraktor: 'Kontraktor',
+};
+
+const portalColors = {
+    admin: 'bg-red-600 text-white',
+    armada: 'bg-blue-600 text-white',
+    produksi: 'bg-green-600 text-white',
+    keuangan: 'bg-amber-500 text-white',
+    sdm: 'bg-purple-600 text-white',
+    kontraktor: 'bg-teal-600 text-white',
+};
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth } = usePage().props;
     const user = auth?.user;
+    const portal = auth?.portal;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const handleLogout = () => {
+        router.post(route('logout'));
+    };
 
     return (
         <div className="flex h-screen overflow-hidden bg-white">
@@ -36,6 +59,23 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
 
                     <div className="flex items-center gap-3 flex-shrink-0">
+                        {/* Portal Badge */}
+                        {portal && (
+                            <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center rounded-none px-3 py-1 text-[10px] font-black uppercase tracking-widest ${portalColors[portal] || 'bg-black text-white'}`}>
+                                    {portalLabels[portal] || portal}
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-1 rounded-none border-2 border-black px-2 py-1 text-[10px] font-black text-black hover:bg-black hover:text-white transition-all"
+                                    title="Kembali ke Portal"
+                                >
+                                    <LogOut className="h-3 w-3" />
+                                    <span className="hidden sm:inline">Portal</span>
+                                </button>
+                            </div>
+                        )}
+
                         <NotificationBell />
 
                         <Dropdown>

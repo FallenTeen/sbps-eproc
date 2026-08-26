@@ -3,8 +3,8 @@
 namespace App\Domain\Fleet\Http\Controllers;
 
 use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\Fleet\Actions\GetCurrentRuteTarifAction;
+use App\Domain\Fleet\Models\RuteTarif;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,7 +28,7 @@ class RuteTarifController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('lokasi_asal', 'like', "%{$search}%")
-                  ->orWhere('lokasi_tujuan', 'like', "%{$search}%");
+                    ->orWhere('lokasi_tujuan', 'like', "%{$search}%");
             });
         }
 
@@ -190,7 +190,7 @@ class RuteTarifController extends Controller
     {
         $this->authorize('viewAny', RuteTarif::class);
 
-        $rute = (new GetCurrentRuteTarifAction())->execute($asal, $tujuan, $request->query('tanggal'));
+        $rute = (new GetCurrentRuteTarifAction)->execute($asal, $tujuan, $request->query('tanggal'));
 
         return response()->json([
             'found' => (bool) $rute,

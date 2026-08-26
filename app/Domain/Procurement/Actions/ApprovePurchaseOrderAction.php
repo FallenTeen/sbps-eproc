@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class ApprovePurchaseOrderAction
 {
-    public function execute(PurchaseOrder $po, string $catatan = null): PurchaseOrder
+    public function execute(PurchaseOrder $po, ?string $catatan = null): PurchaseOrder
     {
         DB::transaction(function () use ($po, $catatan) {
             // Simpan approval

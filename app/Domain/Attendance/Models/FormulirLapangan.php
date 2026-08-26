@@ -10,13 +10,14 @@ class FormulirLapangan extends Model
     use HasUuids;
 
     protected $table = 'formulir_lapangans';
+
     protected $fillable = [
         'presensi_id',
         'kondisi_area',
         'aktivitas_dilakukan',
         'kendala',
         'foto',
-        'catatan_tambahan'
+        'catatan_tambahan',
     ];
 
     // Relasi

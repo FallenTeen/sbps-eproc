@@ -17,6 +17,7 @@ class RoleSwitchController extends Controller
 
         if ($user && $user->hasRole($role)) {
             session(['active_role' => $role]);
+
             return redirect()->back()->with('success', "Role aktif dialihkan ke {$role}.");
         }
 

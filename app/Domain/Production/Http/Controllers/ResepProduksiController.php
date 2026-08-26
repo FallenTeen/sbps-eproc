@@ -6,8 +6,8 @@ use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ResepProduksiController extends Controller
 {

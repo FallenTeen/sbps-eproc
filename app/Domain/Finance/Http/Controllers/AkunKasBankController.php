@@ -2,10 +2,10 @@
 
 namespace App\Domain\Finance\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Domain\Finance\Models\AkunKasBank;
-use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
+use App\Domain\Finance\Models\AkunKasBank;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,31 +18,32 @@ class AkunKasBankController extends Controller
         $user = $request->user();
         $unitBisnisId = $request->input('unit_bisnis_id');
 
-        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
             $unitBisnisId = $user->unit_bisnis_id;
-        } elseif (!$unitBisnisId) {
+        } elseif (! $unitBisnisId) {
             $unitBisnis = UnitBisnis::first();
             $unitBisnisId = $unitBisnis ? $unitBisnis->id : null;
         }
-        
+
         $akunKas = AkunKasBank::query()
             ->when($unitBisnisId, function ($q, $unitBisnisId) {
                 return $q->where('unit_bisnis_id', $unitBisnisId);
             })
-            ->withSum(['mutasis as total_masuk' => function($q) {
+            ->withSum(['mutasis as total_masuk' => function ($q) {
                 $q->where('tipe', 'masuk');
             }], 'jumlah')
-            ->withSum(['mutasis as total_keluar' => function($q) {
+            ->withSum(['mutasis as total_keluar' => function ($q) {
                 $q->where('tipe', 'keluar');
             }], 'jumlah')
             ->get()
             ->map(function ($akun) {
                 $akun->saldo_saat_ini = $akun->saldo_awal + ($akun->total_masuk ?? 0) - ($akun->total_keluar ?? 0);
+
                 return $akun;
             });
 
         $unitBisnisList = UnitBisnis::all(['id', 'nama']);
-        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
             $unitBisnisList = UnitBisnis::where('id', $user->unit_bisnis_id)->get(['id', 'nama']);
         }
 
@@ -59,7 +60,7 @@ class AkunKasBankController extends Controller
 
         $user = auth()->user();
         $unitBisnisList = UnitBisnis::all(['id', 'nama']);
-        if ($user && !$user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
+        if ($user && ! $user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
             $unitBisnisList = UnitBisnis::where('id', $user->unit_bisnis_id)->get(['id', 'nama']);
         }
 
@@ -80,8 +81,12 @@ class AkunKasBankController extends Controller
             'aktif' => 'boolean',
         ]);
 
-        if (!isset($validated['saldo_awal'])) $validated['saldo_awal'] = 0;
-        if (!isset($validated['aktif'])) $validated['aktif'] = true;
+        if (! isset($validated['saldo_awal'])) {
+            $validated['saldo_awal'] = 0;
+        }
+        if (! isset($validated['aktif'])) {
+            $validated['aktif'] = true;
+        }
 
         AkunKasBank::create($validated);
 
@@ -129,10 +134,10 @@ class AkunKasBankController extends Controller
             ->get();
 
         // Calculate summary for the period
-        $akunKasBank->loadSum(['mutasis as total_masuk_all' => function($q) {
+        $akunKasBank->loadSum(['mutasis as total_masuk_all' => function ($q) {
             $q->where('tipe', 'masuk');
         }], 'jumlah');
-        $akunKasBank->loadSum(['mutasis as total_keluar_all' => function($q) {
+        $akunKasBank->loadSum(['mutasis as total_keluar_all' => function ($q) {
             $q->where('tipe', 'keluar');
         }], 'jumlah');
 
@@ -150,7 +155,7 @@ class AkunKasBankController extends Controller
                 'total_masuk' => $akunKasBank->total_masuk_all ?? 0,
                 'total_keluar' => $akunKasBank->total_keluar_all ?? 0,
                 'saldo_saat_ini' => $saldoSaatIni,
-            ]
+            ],
         ]);
     }
 
@@ -163,10 +168,10 @@ class AkunKasBankController extends Controller
             'ke_akun_kas_bank_id' => 'required|exists:akun_kas_banks,id|different:dari_akun_kas_bank_id',
             'jumlah' => 'required|numeric|min:1',
             'tanggal' => 'required|date',
-            'catatan' => 'nullable|string'
+            'catatan' => 'nullable|string',
         ]);
 
-        (new RecordTransferAntarKasAction())->execute($validated, auth()->id());
+        (new RecordTransferAntarKasAction)->execute($validated, auth()->id());
 
         return redirect()->back()->with('success', 'Transfer berhasil dicatat.');
     }

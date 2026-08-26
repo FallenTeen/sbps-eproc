@@ -5,9 +5,14 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Titik;
+use App\Domain\Finance\Models\Invoice;
+use App\Domain\Finance\Models\MutasiKasBank;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Production\Models\ProductionSession;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -85,7 +90,7 @@ class DashboardController extends Controller
 
         $totalRencana = 0;
         $totalRealisasi = 0;
-        $getRabAction = new GetRABRealisasiAction();
+        $getRabAction = new GetRABRealisasiAction;
 
         foreach ($titik->rab as $rab) {
             $totalRencana += (float) $rab->rencana;
@@ -128,5 +133,177 @@ class DashboardController extends Controller
                 'persentase' => $totalRencana > 0 ? round(($totalRealisasi / $totalRencana) * 100, 1) : 0,
             ],
         ], 'Detail titik.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/chart/produksi
+     * Produksi per minggu dalam bulan tertentu.
+     */
+    public function chartProduksi(Request $request)
+    {
+        $validated = $request->validate([
+            'bulan' => 'nullable|integer|min:1|max:12',
+            'tahun' => 'nullable|integer|min:2020|max:2099',
+        ]);
+
+        $bulan = $validated['bulan'] ?? (int) now()->format('m');
+        $tahun = $validated['tahun'] ?? (int) now()->format('Y');
+
+        $sessions = ProductionSession::where('status', 'selesai')
+            ->whereMonth('mulai', $bulan)
+            ->whereYear('mulai', $tahun)
+            ->get();
+
+        $mingguan = $sessions->groupBy(function ($s) {
+            return Carbon::parse($s->mulai)->startOfWeek()->format('Y-m-d');
+        })->map(fn ($items, $week) => [
+            'minggu' => $week,
+            'total_output' => round($items->sum('hasil_output'), 2),
+            'jumlah_sesi' => $items->count(),
+        ])->values();
+
+        return $this->success([
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'items' => $mingguan,
+        ], 'Chart produksi mingguan.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/chart/keuangan
+     * Pemasukan & pengeluaran per minggu dalam bulan tertentu.
+     */
+    public function chartKeuangan(Request $request)
+    {
+        $validated = $request->validate([
+            'bulan' => 'nullable|integer|min:1|max:12',
+            'tahun' => 'nullable|integer|min:2020|max:2099',
+        ]);
+
+        $bulan = $validated['bulan'] ?? (int) now()->format('m');
+        $tahun = $validated['tahun'] ?? (int) now()->format('Y');
+
+        $mutasi = MutasiKasBank::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->get();
+
+        $mingguan = $mutasi->groupBy(function ($m) {
+            return Carbon::parse($m->tanggal)->startOfWeek()->format('Y-m-d');
+        })->map(fn ($items, $week) => [
+            'minggu' => $week,
+            'masuk' => round($items->where('tipe', 'masuk')->sum('jumlah'), 2),
+            'keluar' => round($items->where('tipe', 'keluar')->sum('jumlah'), 2),
+        ])->values();
+
+        return $this->success([
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'items' => $mingguan,
+        ], 'Chart keuangan mingguan.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/armada-status
+     * Distribusi status armada aktif.
+     */
+    public function armadaStatus()
+    {
+        $statuses = Armada::aktif()
+            ->selectRaw('status, count(*) as jumlah')
+            ->groupBy('status')
+            ->get();
+
+        return $this->success([
+            'total' => Armada::aktif()->count(),
+            'items' => $statuses,
+        ], 'Status armada.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/kehadiran-divisi
+     * Presensi hari ini dikelompokkan berdasarkan divisi karyawan.
+     */
+    public function kehadiranDivisi()
+    {
+        $today = now()->toDateString();
+
+        $presensi = Presensi::with('karyawan')
+            ->whereDate('check_in', $today)
+            ->get();
+
+        $divisi = $presensi->groupBy(fn ($p) => $p->karyawan?->divisi ?? 'Lainnya')
+            ->map(fn ($items, $d) => [
+                'divisi' => $d,
+                'hadir' => $items->count(),
+                'check_out' => $items->whereNotNull('check_out')->count(),
+            ])->values();
+
+        return $this->success([
+            'tanggal' => $today,
+            'total_hadir' => $presensi->count(),
+            'items' => $divisi,
+        ], 'Kehadiran per divisi.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/po-pending
+     * Daftar PO yang masih menunggu approval / belum diterima.
+     */
+    public function poPending()
+    {
+        $pos = PurchaseOrder::with(['supplier', 'titik', 'proyek'])
+            ->whereIn('status', ['draft', 'diajukan', 'menunggu_approval_finance', 'menunggu_approval_owner'])
+            ->orderBy('tanggal_diperlukan')
+            ->limit(20)
+            ->get();
+
+        return $this->success([
+            'total' => $pos->count(),
+            'items' => $pos->map(fn ($po) => [
+                'id' => $po->id,
+                'kode_po' => $po->kode_po,
+                'supplier' => $po->supplier?->nama,
+                'titik' => $po->titik?->nama,
+                'proyek' => $po->proyek?->nama,
+                'total' => (float) $po->total,
+                'status' => $po->status,
+                'tanggal_diperlukan' => $po->tanggal_diperlukan?->toDateString(),
+            ]),
+        ], 'PO pending.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/invoice-belum-dibayar
+     * Invoice yang belum lunas.
+     */
+    public function invoiceBelumDibayar()
+    {
+        $invoices = Invoice::with(['unitBisnis', 'proyek', 'items'])
+            ->belumLunas()
+            ->orderBy('tanggal_jatuh_tempo')
+            ->limit(20)
+            ->get();
+
+        $data = $invoices->map(function ($inv) {
+            $totalTagihan = $inv->items->sum('jumlah_tagihan');
+            $totalDibayar = $inv->pembayaranKlien()->sum('jumlah');
+
+            return [
+                'id' => $inv->id,
+                'kode_invoice' => $inv->kode_invoice,
+                'unit_bisnis' => $inv->unitBisnis?->nama,
+                'proyek' => $inv->proyek?->nama,
+                'total_tagihan' => (float) $totalTagihan,
+                'total_dibayar' => (float) $totalDibayar,
+                'sisa' => (float) ($totalTagihan - $totalDibayar),
+                'status' => $inv->status,
+                'tanggal_jatuh_tempo' => $inv->tanggal_jatuh_tempo?->toDateString(),
+            ];
+        });
+
+        return $this->success([
+            'total' => $data->count(),
+            'items' => $data,
+        ], 'Invoice belum dibayar.');
     }
 }

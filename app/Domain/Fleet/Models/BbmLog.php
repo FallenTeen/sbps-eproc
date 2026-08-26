@@ -4,15 +4,17 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Models\User;
+use Database\Factories\Domain\Fleet\Models\BbmLogFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BbmLog extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'bbm_logs';
+
     protected $fillable = [
         'serviceable_type',
         'serviceable_id',
@@ -21,8 +23,9 @@ class BbmLog extends Model
         'biaya',
         'jam_operasional_saat_isi',
         'purchase_order_id',
-        'dicatat_oleh'
+        'dicatat_oleh',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'liter' => 'float',
@@ -32,7 +35,7 @@ class BbmLog extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\Domain\Fleet\Models\BbmLogFactory::new();
+        return BbmLogFactory::new();
     }
 
     // Relasi polymorphic

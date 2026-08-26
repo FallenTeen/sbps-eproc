@@ -16,14 +16,15 @@ class AuditLogPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                ])
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('view audit log');
     }
 

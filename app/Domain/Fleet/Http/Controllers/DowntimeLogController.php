@@ -2,12 +2,13 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
-use App\Domain\Fleet\Models\DowntimeLog;
-use App\Domain\Fleet\Actions\StartDowntimeAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
+use App\Domain\Fleet\Actions\StartDowntimeAction;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\DowntimeLog;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class DowntimeLogController extends Controller
@@ -23,7 +24,7 @@ class DowntimeLogController extends Controller
     public function index(Request $request, $type, $id)
     {
         $model = $this->resolveServiceable($type, $id);
-        if (!$model) {
+        if (! $model) {
             abort(404, 'Serviceable not found');
         }
 
@@ -54,8 +55,8 @@ class DowntimeLogController extends Controller
                 ['value' => 'mesin_produksi', 'label' => 'Mesin Produksi'],
             ],
             'serviceables' => [
-                'armada' => \App\Domain\Fleet\Models\Armada::query()->orderBy('kode_unit')->get(['id', 'kode_unit', 'plat_nomor']),
-                'mesin_produksi' => \App\Domain\Production\Models\MesinProduksi::query()->orderBy('nama')->get(['id', 'nama']),
+                'armada' => Armada::query()->orderBy('kode_unit')->get(['id', 'kode_unit', 'plat_nomor']),
+                'mesin_produksi' => MesinProduksi::query()->orderBy('nama')->get(['id', 'nama']),
             ],
             'serviceableType' => $serviceableType,
             'serviceableId' => $serviceableId,
@@ -76,7 +77,7 @@ class DowntimeLogController extends Controller
         ]);
 
         $model = $this->resolveServiceable($request->serviceable_type, $request->serviceable_id);
-        if (!$model) {
+        if (! $model) {
             abort(404, 'Serviceable not found');
         }
 
@@ -88,7 +89,7 @@ class DowntimeLogController extends Controller
             ]);
         }
 
-        $downtime = (new StartDowntimeAction())->execute($model, $request->all());
+        $downtime = (new StartDowntimeAction)->execute($model, $request->all());
 
         return back()->with('success', 'Downtime dimulai.');
     }
@@ -118,7 +119,7 @@ class DowntimeLogController extends Controller
     {
         $this->authorize('update', $downtime);
 
-        (new EndDowntimeAction())->execute($downtime);
+        (new EndDowntimeAction)->execute($downtime);
 
         return back()->with('success', 'Downtime selesai.');
     }
@@ -158,13 +159,13 @@ class DowntimeLogController extends Controller
     private function resolveServiceable($type, $id)
     {
         $map = [
-            'armada' => \App\Domain\Fleet\Models\Armada::class,
-            'mesin' => \App\Domain\Production\Models\MesinProduksi::class,
-            'mesin_produksi' => \App\Domain\Production\Models\MesinProduksi::class,
-            'mesin-produksi' => \App\Domain\Production\Models\MesinProduksi::class,
+            'armada' => Armada::class,
+            'mesin' => MesinProduksi::class,
+            'mesin_produksi' => MesinProduksi::class,
+            'mesin-produksi' => MesinProduksi::class,
         ];
 
-        if (!isset($map[$type])) {
+        if (! isset($map[$type])) {
             return null;
         }
 

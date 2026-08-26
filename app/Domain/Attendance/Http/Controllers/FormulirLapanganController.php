@@ -57,7 +57,7 @@ class FormulirLapanganController extends Controller
             'catatan_tambahan' => 'nullable|string',
         ]);
 
-        (new SubmitFieldFormAction())->execute($validated);
+        (new SubmitFieldFormAction)->execute($validated);
 
         return redirect()->route('attendance.formulir.index')
             ->with('success', 'Formulir lapangan berhasil dikirim.');

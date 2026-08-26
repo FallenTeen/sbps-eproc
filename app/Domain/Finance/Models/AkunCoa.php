@@ -10,7 +10,9 @@ class AkunCoa extends Model
     use HasUuids;
 
     protected $table = 'akun_coas';
+
     protected $fillable = ['kode', 'nama', 'parent_id', 'posisi_normal', 'aktif'];
+
     protected $casts = ['aktif' => 'boolean'];
 
     // Relasi (self-referencing)

@@ -5,6 +5,7 @@ namespace Database\Factories\Domain\Procurement\Models;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Procurement\Models\Pembayaran;
 use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -21,7 +22,7 @@ class PembayaranFactory extends Factory
             'tanggal' => now()->toDateString(),
             'metode' => 'transfer',
             'akun_kas_bank_id' => AkunKasBank::factory(),
-            'dicatat_oleh' => \App\Models\User::factory(),
+            'dicatat_oleh' => User::factory(),
             'catatan' => null,
         ];
     }

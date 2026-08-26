@@ -6,6 +6,7 @@ use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Procurement\States\PurchaseOrderState;
+use Database\Factories\PurchaseOrderFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,9 +14,10 @@ use Spatie\ModelStates\HasStates;
 
 class PurchaseOrder extends Model
 {
-    use HasUuids, HasStates, HasFactory;
+    use HasFactory, HasStates, HasUuids;
 
     protected $table = 'purchase_orders';
+
     protected $fillable = [
         'kode_po',
         'proyek_id',
@@ -26,8 +28,9 @@ class PurchaseOrder extends Model
         'tanggal_diperlukan',
         'total',
         'status',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'tanggal_pesan' => 'date',
         'tanggal_diperlukan' => 'date',
@@ -37,8 +40,9 @@ class PurchaseOrder extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\PurchaseOrderFactory::new();
+        return PurchaseOrderFactory::new();
     }
+
     protected function registerStates(): void
     {
         $this->addState('status', PurchaseOrderState::class)

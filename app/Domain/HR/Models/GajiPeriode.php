@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class GajiPeriode extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'gaji_periodes';
+
     protected $fillable = [
         'karyawan_id',
         'periode_bulan',
@@ -20,8 +21,9 @@ class GajiPeriode extends Model
         'total_gaji',
         'status',
         'tanggal_dibayar',
-        'akun_kas_bank_id'
+        'akun_kas_bank_id',
     ];
+
     protected $casts = [
         'periode_bulan' => 'integer',
         'periode_tahun' => 'integer',

@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Finance\Models\Invoice;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class NotificationController extends Controller
 {
@@ -19,17 +24,17 @@ class NotificationController extends Controller
 
         // ─── 1. PO Waiting Approval ────────────────────────────────────────────
         if ($user->hasPermissionTo('approve procurement')) {
-            $pending = \App\Domain\Procurement\Models\PurchaseOrder::where('status', 'submitted')
+            $pending = PurchaseOrder::where('status', 'submitted')
                 ->orderByDesc('created_at')
                 ->take(5)
                 ->get();
 
             foreach ($pending as $po) {
                 $notifications[] = [
-                    'id' => 'po_' . $po->id,
+                    'id' => 'po_'.$po->id,
                     'type' => 'po_approval',
                     'title' => 'PO Menunggu Approval',
-                    'body' => "PO #{$po->nomor_po} – " . \App\Domain\Procurement\Models\Supplier::find($po->supplier_id)?->nama . ' (Rp ' . number_format($po->total_amount, 0, ',', '.') . ')',
+                    'body' => "PO #{$po->nomor_po} – ".Supplier::find($po->supplier_id)?->nama.' (Rp '.number_format($po->total_amount, 0, ',', '.').')',
                     'action_url' => "/procurement/po/{$po->id}",
                     'is_read' => false,
                     'time_ago' => Carbon::parse($po->created_at)->diffForHumans(),
@@ -39,18 +44,18 @@ class NotificationController extends Controller
 
         // ─── 2. Servis Armada Jatuh Tempo ─────────────────────────────────────
         if ($user->hasAnyPermission(['manage fleet', 'manage formulir lapangan'])) {
-            $servisDue = \App\Domain\Fleet\Models\Armada::where('status', 'aktif')
+            $servisDue = Armada::where('status', 'aktif')
                 ->whereNotNull('tanggal_servis_terakhir')
                 ->get()
-                ->filter(fn($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->isPast())
+                ->filter(fn ($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->isPast())
                 ->take(5);
 
             foreach ($servisDue as $armada) {
                 $notifications[] = [
-                    'id' => 'servis_' . $armada->id,
+                    'id' => 'servis_'.$armada->id,
                     'type' => 'servis_jatuh_tempo',
                     'title' => 'Armada Perlu Diservis',
-                    'body' => "{$armada->nama_unit} ({$armada->nomor_polisi}) — servis terakhir: " . Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
+                    'body' => "{$armada->nama_unit} ({$armada->nomor_polisi}) — servis terakhir: ".Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
                     'action_url' => "/fleet/armada/{$armada->id}",
                     'is_read' => false,
                     'time_ago' => 'sekarang',
@@ -60,7 +65,7 @@ class NotificationController extends Controller
 
         // ─── 2b. Checklist Harian Kondisi Tidak Baik ──────────────────────────
         if ($user->hasAnyPermission(['manage fleet', 'manage production', 'view fleet', 'view production'])) {
-            $kondisiBuruk = \App\Domain\Fleet\Models\ArmadaChecklistHarian::with('checkable')
+            $kondisiBuruk = ArmadaChecklistHarian::with('checkable')
                 ->where('kondisi_baik', false)
                 ->whereDate('tanggal', '>=', now()->subDay())
                 ->orderByDesc('tanggal')
@@ -73,7 +78,7 @@ class NotificationController extends Controller
                     ?? '-';
 
                 $notifications[] = [
-                    'id' => 'checklist_' . $checklist->id,
+                    'id' => 'checklist_'.$checklist->id,
                     'type' => 'checklist_kondisi_buruk',
                     'title' => 'Checklist: Kondisi Tidak Baik',
                     'body' => "{$namaCheckable} — {$checklist->item_bermasalah}",
@@ -86,7 +91,7 @@ class NotificationController extends Controller
 
         // ─── 3. Invoice Jatuh Tempo ───────────────────────────────────────────
         if ($user->hasAnyPermission(['manage finance', 'view owner dashboard'])) {
-            $invoiceDue = \App\Domain\Finance\Models\Invoice::where('status', 'terkirim')
+            $invoiceDue = Invoice::where('status', 'terkirim')
                 ->whereNotNull('tanggal_jatuh_tempo')
                 ->where('tanggal_jatuh_tempo', '<=', now()->addDays(7))
                 ->orderBy('tanggal_jatuh_tempo')
@@ -95,12 +100,12 @@ class NotificationController extends Controller
 
             foreach ($invoiceDue as $inv) {
                 $due = Carbon::parse($inv->tanggal_jatuh_tempo);
-                $label = $due->isPast() ? 'LEWAT JATUH TEMPO' : ('Jatuh tempo ' . $due->diffForHumans());
+                $label = $due->isPast() ? 'LEWAT JATUH TEMPO' : ('Jatuh tempo '.$due->diffForHumans());
                 $notifications[] = [
-                    'id' => 'inv_' . $inv->id,
+                    'id' => 'inv_'.$inv->id,
                     'type' => 'invoice_jatuh_tempo',
-                    'title' => 'Invoice ' . $label,
-                    'body' => "Invoice #{$inv->nomor_invoice} — Rp " . number_format($inv->total_tagihan, 0, ',', '.'),
+                    'title' => 'Invoice '.$label,
+                    'body' => "Invoice #{$inv->nomor_invoice} — Rp ".number_format($inv->total_tagihan, 0, ',', '.'),
                     'action_url' => "/finance/invoice/{$inv->id}",
                     'is_read' => false,
                     'time_ago' => $due->diffForHumans(),
@@ -119,7 +124,7 @@ class NotificationController extends Controller
     {
         $notifications = $this->buildNotifications();
         $sorted = collect($notifications)->sortByDesc('time_ago')->values()->all();
-        $unreadCount = count(array_filter($sorted, fn($n) => !$n['is_read']));
+        $unreadCount = count(array_filter($sorted, fn ($n) => ! $n['is_read']));
 
         if ($request->wantsJson()) {
             return response()->json([

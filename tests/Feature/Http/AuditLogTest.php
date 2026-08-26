@@ -1,8 +1,9 @@
-﻿<?php
+<?php
 
-use App\Models\User;
 use App\Domain\Core\Models\Proyek;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -33,7 +34,7 @@ test('owner can view audit log detail', function () {
     $proyek = Proyek::factory()->create();
     $proyek->update(['nama' => 'Updated']);
 
-    $log = \Spatie\Activitylog\Models\Activity::where('event', 'updated')->first();
+    $log = Activity::where('event', 'updated')->first();
 
     $this->actingAs($this->owner)
         ->get(route('audit.logs.show', $log->id))

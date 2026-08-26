@@ -8,9 +8,6 @@ class RecordSewaAlatJamAction
 {
     /**
      * Catat sewa alat per jam (HM-based)
-     *
-     * @param array $data
-     * @return SewaAlatJam
      */
     public function execute(array $data): SewaAlatJam
     {
@@ -18,7 +15,7 @@ class RecordSewaAlatJamAction
         $jam = $data['jumlah_jam'] ?? 0;
 
         // Jika ada HM awal dan akhir, hitung otomatis
-        if (!empty($data['hm_awal']) && !empty($data['hm_akhir'])) {
+        if (! empty($data['hm_awal']) && ! empty($data['hm_akhir'])) {
             $jam = $data['hm_akhir'] - $data['hm_awal'];
         }
 

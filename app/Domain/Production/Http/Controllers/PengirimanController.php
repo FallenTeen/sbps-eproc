@@ -9,8 +9,8 @@ use App\Domain\Production\Actions\ScheduleDeliveryAction;
 use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PengirimanController extends Controller
 {
@@ -71,7 +71,7 @@ class PengirimanController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $pengiriman = (new ScheduleDeliveryAction())->execute($validated);
+        $pengiriman = (new ScheduleDeliveryAction)->execute($validated);
 
         return redirect()->route('production.pengiriman.show', $pengiriman)
             ->with('success', 'Pengiriman dijadwalkan.');
@@ -105,7 +105,7 @@ class PengirimanController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        (new CompleteDeliveryAction())->execute($pengiriman, $data);
+        (new CompleteDeliveryAction)->execute($pengiriman, $data);
 
         return back()->with('success', 'Pengiriman selesai.');
     }

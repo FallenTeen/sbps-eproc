@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Finance\Models\TransferAntarKas;
+use App\Models\User;
 
 /**
  * Transfer Antar Kas dibuat MANUAL oleh Admin Keuangan / Ketua Divisi Finance.
@@ -16,16 +16,17 @@ class TransferKasPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('view finance')
             || $user->hasPermissionTo('manage kas')
@@ -34,7 +35,7 @@ class TransferKasPolicy
 
     public function view(User $user, TransferAntarKas $transfer): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -49,10 +50,10 @@ class TransferKasPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage kas');
     }
@@ -75,9 +76,10 @@ class TransferKasPolicy
         if ($user->hasRole(['Admin Keuangan', 'Ketua Divisi Finance', 'Ketua Divisi Keuangan'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

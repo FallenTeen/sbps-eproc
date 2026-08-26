@@ -16,14 +16,15 @@ class UserManagementPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                ])
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage user');
     }
 
@@ -44,9 +45,10 @@ class UserManagementPolicy
 
     public function delete(User $user, User $targetUser): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
+
         // Tidak boleh menghapus diri sendiri
         return (string) $user->id !== (string) $targetUser->id;
     }

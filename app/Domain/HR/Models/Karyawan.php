@@ -4,6 +4,7 @@ namespace App\Domain\HR\Models;
 
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,9 +13,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Karyawan extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'karyawans';
+
     protected $fillable = [
         'user_id',
         'nama',
@@ -26,8 +28,9 @@ class Karyawan extends Model
         'no_bpjs_kesehatan',
         'no_bpjs_ketenagakerjaan',
         'status_ptkp',
-        'status'
+        'status',
     ];
+
     protected $casts = [
         'rate_gaji_pokok' => 'float',
         'rate_harian' => 'float',
@@ -72,7 +75,7 @@ class Karyawan extends Model
 
     public function pengirimans()
     {
-        return $this->hasMany(\App\Domain\Production\Models\Pengiriman::class, 'driver_karyawan_id');
+        return $this->hasMany(Pengiriman::class, 'driver_karyawan_id');
     }
 
     // Scope

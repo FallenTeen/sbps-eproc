@@ -11,6 +11,7 @@ class ServiceHistory extends Model
     use HasUuids;
 
     protected $table = 'service_history';
+
     protected $fillable = [
         'serviceable_type',
         'serviceable_id',
@@ -18,8 +19,9 @@ class ServiceHistory extends Model
         'jenis_servis',
         'biaya',
         'notes',
-        'purchase_order_id'
+        'purchase_order_id',
     ];
+
     protected $casts = [
         'tanggal' => 'date',
         'biaya' => 'float',

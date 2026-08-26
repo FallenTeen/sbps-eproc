@@ -2,9 +2,15 @@
 
 namespace Tests\Feature\Production;
 
+use App\Domain\Production\Actions\CalculateProductionCostAction;
+use App\Models\BahanBaku;
+use App\Models\MesinProduksi;
+use App\Models\ProductionSession;
+use App\Models\Produk;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
-uses(\Illuminate\Foundation\Testing\DatabaseTransactions::class);
+uses(DatabaseTransactions::class);
 
 class ProductionCostTest extends TestCase
 {
@@ -12,13 +18,13 @@ class ProductionCostTest extends TestCase
     public function it_calculates_production_cost_correctly()
     {
         // Create a production session with items that consume materials
-        $produk = \App\Models\Produk::factory()->create();
-        $mesin = \App\Models\MesinProduksi::factory()->create([
+        $produk = Produk::factory()->create();
+        $mesin = MesinProduksi::factory()->create([
             'biaya_per_jam' => 100000, // 100,000 per hour
         ]);
 
         // Create a production session
-        $session = \App\Models\ProductionSession::create([
+        $session = ProductionSession::create([
             'mesin_id' => $mesin->id,
             'produk_id' => $produk->id,
             'mulai' => now(),
@@ -27,10 +33,10 @@ class ProductionCostTest extends TestCase
         ]);
 
         // Add items that consume materials
-        $bahan1 = \App\Models\BahanBaku::factory()->create([
+        $bahan1 = BahanBaku::factory()->create([
             'harga' => 50000, // 50,000 per unit
         ]);
-        $bahan2 = \App\Models\BahanBaku::factory()->create([
+        $bahan2 = BahanBaku::factory()->create([
             'harga' => 30000, // 30,000 per unit
         ]);
 
@@ -40,7 +46,7 @@ class ProductionCostTest extends TestCase
         ]);
 
         // Calculate cost
-        $costAction = new \App\Domain\Production\Actions\CalculateProductionCostAction();
+        $costAction = new CalculateProductionCostAction;
         $cost = $costAction->execute($session);
 
         // Expected cost: (duration * machine cost) + (material cost)

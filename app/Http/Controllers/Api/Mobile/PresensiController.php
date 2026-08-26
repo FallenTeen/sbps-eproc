@@ -64,7 +64,7 @@ class PresensiController extends Controller
             return $this->error('Anda sudah check-in hari ini.', 422);
         }
 
-        $statusValidasi = (new ValidateLocationCheckInAction())->execute(
+        $statusValidasi = (new ValidateLocationCheckInAction)->execute(
             $titik,
             (float) $validated['latitude'],
             (float) $validated['longitude']
@@ -116,7 +116,7 @@ class PresensiController extends Controller
             ->latest('check_in')
             ->first();
 
-        if (!$presensi) {
+        if (! $presensi) {
             return $this->error('Anda belum check-in hari ini.', 422);
         }
 
@@ -150,7 +150,7 @@ class PresensiController extends Controller
             ->latest('check_in')
             ->first();
 
-        if (!$presensi) {
+        if (! $presensi) {
             return $this->success([
                 'presensi_id' => null,
                 'check_in' => null,
@@ -197,11 +197,11 @@ class PresensiController extends Controller
         $query = Presensi::with('titik')
             ->byKaryawan($karyawan->id);
 
-        if (!empty($validated['bulan'])) {
+        if (! empty($validated['bulan'])) {
             $query->whereMonth('check_in', $validated['bulan']);
         }
 
-        if (!empty($validated['tahun'])) {
+        if (! empty($validated['tahun'])) {
             $query->whereYear('check_in', $validated['tahun']);
         }
 
@@ -229,7 +229,7 @@ class PresensiController extends Controller
     {
         $karyawan = $request->user()->karyawan;
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             throw ValidationException::withMessages([
                 'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
             ]);

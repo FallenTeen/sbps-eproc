@@ -23,7 +23,7 @@ class SetActiveRole
             $activeRole = session('active_role');
 
             // If the stored role is no longer valid for this user, reset
-            if (!$activeRole || !$roles->contains($activeRole)) {
+            if (! $activeRole || ! $roles->contains($activeRole)) {
                 $activeRole = $roles->first();
                 session(['active_role' => $activeRole]);
             }

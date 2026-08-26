@@ -1,9 +1,8 @@
 <?php
 
-use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
@@ -11,12 +10,10 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\SewaAlatJam;
-use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
-use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 
 uses(TestCase::class, DatabaseTransactions::class);
@@ -26,6 +23,7 @@ function fleetUser(): User
     $user = User::factory()->create();
     Permission::findOrCreate('manage fleet');
     $user->givePermissionTo('manage fleet');
+
     return $user;
 }
 

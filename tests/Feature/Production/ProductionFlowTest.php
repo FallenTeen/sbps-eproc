@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Production;
 
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\HR\Models\Karyawan;
 use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\HargaBeli;
+use App\Domain\Procurement\Models\Supplier;
 use App\Domain\Production\Models\MesinProduksi;
-use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Production\Models\QCSample;
+use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -20,12 +23,19 @@ class ProductionFlowTest extends TestCase
     use DatabaseTransactions;
 
     protected $user;
+
     protected $unitBisnis;
+
     protected $titik;
+
     protected $mesin;
+
     protected $produk;
+
     protected $resep;
+
     protected $bahanBaku1;
+
     protected $bahanBaku2;
 
     protected function setUp(): void
@@ -39,7 +49,7 @@ class ProductionFlowTest extends TestCase
 
         // Setup Data Dasar
         $this->unitBisnis = UnitBisnis::factory()->create(['nama' => 'Batching Plant Jakarta']);
-        $proyek = \App\Domain\Core\Models\Proyek::factory()->create(['unit_bisnis_id' => $this->unitBisnis->id]);
+        $proyek = Proyek::factory()->create(['unit_bisnis_id' => $this->unitBisnis->id]);
         $this->titik = Titik::factory()->create(['proyek_id' => $proyek->id]);
 
         $this->produk = Produk::create([
@@ -64,10 +74,10 @@ class ProductionFlowTest extends TestCase
         $this->bahanBaku1 = BahanBaku::factory()->create(['nama' => 'Semen', 'satuan' => 'kg']);
         $this->bahanBaku2 = BahanBaku::factory()->create(['nama' => 'Pasir', 'satuan' => 'ton']);
 
-        $supplier = \App\Domain\Procurement\Models\Supplier::factory()->create();
+        $supplier = Supplier::factory()->create();
 
         // Set harga bahan baku (assuming there's a setHarga route or just create HargaBeli directly)
-        \App\Domain\Procurement\Models\HargaBeli::create([
+        HargaBeli::create([
             'bahan_baku_id' => $this->bahanBaku1->id,
             'supplier_id' => $supplier->id,
             'harga' => 1500,
@@ -75,7 +85,7 @@ class ProductionFlowTest extends TestCase
             'aktif' => true,
         ]);
 
-        \App\Domain\Procurement\Models\HargaBeli::create([
+        HargaBeli::create([
             'bahan_baku_id' => $this->bahanBaku2->id,
             'supplier_id' => $supplier->id,
             'harga' => 200000,
@@ -104,13 +114,13 @@ class ProductionFlowTest extends TestCase
 
     public function test_can_start_production_session()
     {
-        $operator = \App\Domain\HR\Models\Karyawan::create([
+        $operator = Karyawan::create([
             'nama' => 'Operator Test',
             'nik' => '123456',
             'tipe' => 'tetap',
             'status' => 'aktif',
             'jabatan' => 'Operator',
-            'departemen' => 'Produksi'
+            'departemen' => 'Produksi',
         ]);
 
         $response = $this->actingAs($this->user)->post(route('production.sessions.store', [
@@ -118,43 +128,43 @@ class ProductionFlowTest extends TestCase
             'titik_id' => $this->titik->id,
             'produk_id' => $this->produk->id,
             'operator_karyawan_id' => $operator->id,
-            'catatan' => 'Test mulai produksi'
+            'catatan' => 'Test mulai produksi',
         ]));
 
         $response->assertRedirect();
         $this->assertDatabaseHas('production_sessions', [
             'mesin_id' => $this->mesin->id,
-            'status' => 'berjalan'
+            'status' => 'berjalan',
         ]);
     }
 
     public function test_can_end_production_session_with_auto_cost_calculation()
     {
-        $operator = \App\Domain\HR\Models\Karyawan::create([
+        $operator = Karyawan::create([
             'nama' => 'Operator Test 2',
             'nik' => '123457',
             'tipe' => 'tetap',
             'status' => 'aktif',
             'jabatan' => 'Operator',
-            'departemen' => 'Produksi'
+            'departemen' => 'Produksi',
         ]);
-        
+
         $session = ProductionSession::create([
             'mesin_id' => $this->mesin->id,
             'titik_id' => $this->titik->id,
             'produk_id' => $this->produk->id,
             'operator_karyawan_id' => $operator->id,
             'mulai' => now()->subHours(2),
-            'status' => 'berjalan'
+            'status' => 'berjalan',
         ]);
 
         $response = $this->actingAs($this->user)->post(route('production.sessions.end', $session->id), [
             'hasil_output' => 10,
-            'catatan' => 'Selesai produksi'
+            'catatan' => 'Selesai produksi',
         ]);
 
         $response->assertRedirect();
-        
+
         $session->refresh();
         $this->assertEquals('selesai', $session->status);
         $this->assertEquals(10, $session->hasil_output);
@@ -163,13 +173,13 @@ class ProductionFlowTest extends TestCase
 
     public function test_can_record_qc_sample()
     {
-        $operator = \App\Domain\HR\Models\Karyawan::create([
+        $operator = Karyawan::create([
             'nama' => 'Operator Test 3',
             'nik' => '123458',
             'tipe' => 'tetap',
             'status' => 'aktif',
             'jabatan' => 'Operator',
-            'departemen' => 'Produksi'
+            'departemen' => 'Produksi',
         ]);
         $session = ProductionSession::create([
             'mesin_id' => $this->mesin->id,
@@ -179,7 +189,7 @@ class ProductionFlowTest extends TestCase
             'mulai' => now()->subHours(2),
             'selesai' => now(),
             'status' => 'selesai',
-            'hasil_output' => 10
+            'hasil_output' => 10,
         ]);
 
         $response = $this->actingAs($this->user)->post(route('production.qc.store'), [
@@ -188,7 +198,7 @@ class ProductionFlowTest extends TestCase
             'umur_uji' => 28,
             'tanggal_ambil' => now()->format('Y-m-d'),
             'kuat_tekan_target' => 30,
-            'catatan' => 'Sample test'
+            'catatan' => 'Sample test',
         ]);
 
         $response->assertRedirect();

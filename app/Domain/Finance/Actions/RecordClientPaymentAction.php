@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Domain\Finance\Actions;
-use App\Domain\Finance\Models\PembayaranKlien;
+
 use App\Domain\Finance\Models\Invoice;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Domain\Finance\Models\MutasiKasBank;
+use App\Domain\Finance\Models\PembayaranKlien;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RecordClientPaymentAction
 {

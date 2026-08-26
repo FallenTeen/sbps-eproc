@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domain\Core\Models\UnitBisnis;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UnitBisnisSeeder extends Seeder
 {
@@ -18,7 +19,7 @@ class UnitBisnisSeeder extends Seeder
         // Insert data
         UnitBisnis::insert([
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'GCS',
                 'nama' => 'General Contractor & Supplier',
                 'deskripsi' => 'Jasa angkutan & sewa alat berat',
@@ -27,7 +28,7 @@ class UnitBisnisSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'CBP',
                 'nama' => 'Concrete Batching Plant',
                 'deskripsi' => 'Produksi beton ready-mix',
@@ -36,7 +37,7 @@ class UnitBisnisSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'kode' => 'AMP',
                 'nama' => 'Asphalt Mixing Plant',
                 'deskripsi' => 'Produksi hotmix',

@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Domain\Procurement\Actions;
 
-use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Actions\GetRABRealisasiAction;
+use App\Domain\Core\Models\Rab;
 use App\Domain\Procurement\Models\PurchaseOrder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class ValidateBudgetAction
@@ -27,21 +27,22 @@ class ValidateBudgetAction
                 })
                 ->first();
 
-            if (!$rab) {
-                $errors[] = "Tidak ada RAB kategori bahan_baku untuk proyek/titik ini.";
+            if (! $rab) {
+                $errors[] = 'Tidak ada RAB kategori bahan_baku untuk proyek/titik ini.';
+
                 continue;
             }
 
-            $realisasi = (new GetRABRealisasiAction())->execute($rab);
+            $realisasi = (new GetRABRealisasiAction)->execute($rab);
             // Tambahkan subtotal item ini (karena belum termasuk dalam realisasi saat submit)
             $totalSetelah = $realisasi + $item->subtotal;
 
-            if ($totalSetelah > $rab->rencana && !Auth::user()->hasRole('Owner')) {
+            if ($totalSetelah > $rab->rencana && ! Auth::user()->hasRole('Owner')) {
                 $errors[] = "RAB {$rab->kategori} melebihi rencana (rencana: {$rab->rencana}, realisasi: {$realisasi}, tambahan: {$item->subtotal})";
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw new \Exception(implode("\n", $errors));
         }
 

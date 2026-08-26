@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Models\User;
 
 /**
  * CATATAN DESAIN:
@@ -25,21 +25,22 @@ class ArmadaChecklistHarianPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator GCS',
-                    'Koordinator CBP',
-                    'Koordinator AMP',
-                    'Ketua Divisi Armada',
-                    'Ketua Divisi Produksi CBP',
-                    'Ketua Divisi Produksi AMP',
-                    'Admin Keuangan',
-                    'Mandor Proyek',
-                ])
+            'Koordinator GCS',
+            'Koordinator CBP',
+            'Koordinator AMP',
+            'Ketua Divisi Armada',
+            'Ketua Divisi Produksi CBP',
+            'Ketua Divisi Produksi AMP',
+            'Admin Keuangan',
+            'Mandor Proyek',
+        ])
             || $user->hasPermissionTo('manage fleet')
             || $user->hasPermissionTo('view fleet')
             || $user->hasPermissionTo('manage production')
@@ -48,7 +49,7 @@ class ArmadaChecklistHarianPolicy
 
     public function view(User $user, ArmadaChecklistHarian $checklist): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -71,9 +72,10 @@ class ArmadaChecklistHarianPolicy
         if ($user->hasRole(['Admin Keuangan', 'Mandor Proyek'])) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

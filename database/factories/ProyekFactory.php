@@ -17,7 +17,7 @@ class ProyekFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'unit_bisnis_id' => UnitBisnis::factory(),
-            'kode_proyek' => 'PRY-' . strtoupper(Str::random(8)),
+            'kode_proyek' => 'PRY-'.strtoupper(Str::random(8)),
             'nama' => $this->faker->sentence(3),
             'tipe_proyek' => $this->faker->randomElement(['internal', 'kontrak_klien']),
             'client' => $this->faker->optional()->company,
@@ -33,7 +33,7 @@ class ProyekFactory extends Factory
 
     public function internal(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'tipe_proyek' => 'internal',
             'client' => null,
         ]);
@@ -41,7 +41,7 @@ class ProyekFactory extends Factory
 
     public function kontrakKlien(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'tipe_proyek' => 'kontrak_klien',
             'client' => $this->faker->company,
         ]);

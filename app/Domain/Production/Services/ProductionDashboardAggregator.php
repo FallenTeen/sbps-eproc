@@ -8,7 +8,6 @@ use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\QCSample;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ProductionDashboardAggregator
 {
@@ -25,14 +24,15 @@ class ProductionDashboardAggregator
             ->whereDate('selesai', $today)
             ->get();
 
-        $outputTodayPerProduct = $completedToday->groupBy(function($session) {
+        $outputTodayPerProduct = $completedToday->groupBy(function ($session) {
             return $session->produk ? $session->produk->nama : 'Unknown';
-        })->map(function($sessions) {
+        })->map(function ($sessions) {
             $volume = $sessions->sum('hasil_output');
             $satuan = $sessions->first()->produk ? $sessions->first()->produk->satuan_output : '';
+
             return [
                 'volume' => $volume,
-                'satuan' => $satuan
+                'satuan' => $satuan,
             ];
         });
 
@@ -40,8 +40,8 @@ class ProductionDashboardAggregator
         $totalCostToday = 0;
         $totalRevenueToday = 0;
 
-        $costAction = new CalculateProductionCostAction();
-        $revAction = new CalculateProductionRevenueAction();
+        $costAction = new CalculateProductionCostAction;
+        $revAction = new CalculateProductionRevenueAction;
 
         foreach ($completedToday as $session) {
             $totalCostToday += $costAction->execute($session);
@@ -67,7 +67,7 @@ class ProductionDashboardAggregator
         // Format data untuk grafik (misal: array dengan key tanggal, tiap produk jadi dataset)
         $chartData = [
             'labels' => [], // Tanggal
-            'datasets' => [] // { label: 'Produk A', data: [10, 20, 0, ...] }
+            'datasets' => [], // { label: 'Produk A', data: [10, 20, 0, ...] }
         ];
 
         // Buat labels tanggal
@@ -80,21 +80,23 @@ class ProductionDashboardAggregator
         $groupedByProduct = $weeklySessions->groupBy('produk_id');
         foreach ($groupedByProduct as $produkId => $sessions) {
             $produk = $sessions->first()->produk;
-            if (!$produk) continue;
+            if (! $produk) {
+                continue;
+            }
 
             $dataset = [
                 'label' => $produk->nama,
-                'data' => array_fill(0, 7, 0)
+                'data' => array_fill(0, 7, 0),
             ];
 
             // Isi volume per tanggal
             foreach ($sessions as $session) {
                 $dateIndex = array_search(Carbon::parse($session->selesai)->format('Y-m-d'), $chartData['labels']);
                 if ($dateIndex !== false) {
-                    $dataset['data'][$dateIndex] += (float)$session->hasil_output;
+                    $dataset['data'][$dateIndex] += (float) $session->hasil_output;
                 }
             }
-            
+
             $chartData['datasets'][] = $dataset;
         }
 

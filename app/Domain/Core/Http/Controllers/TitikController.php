@@ -2,12 +2,11 @@
 
 namespace App\Domain\Core\Http\Controllers;
 
-use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\Titik;
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class TitikController extends Controller
 {

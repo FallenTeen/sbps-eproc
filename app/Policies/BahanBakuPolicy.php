@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Procurement\Models\BahanBaku;
+use App\Models\User;
 
 class BahanBakuPolicy
 {
@@ -12,15 +12,16 @@ class BahanBakuPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator Procurement',
-                    'Admin Keuangan',
-                ])
+            'Koordinator Procurement',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage bahan baku')
             || $user->hasPermissionTo('view bahan baku')
             || $user->hasPermissionTo('manage procurement')

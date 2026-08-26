@@ -16,9 +16,9 @@ class CalculateNextServiceDateAction
             $lastService = $serviceable->serviceHistories()->latest('tanggal')->first();
             if ($lastService && $lastService->tanggal) {
                 $lastDate = Carbon::parse($lastService->tanggal);
-            } elseif (!empty($serviceable->tanggal_servis_terakhir)) {
+            } elseif (! empty($serviceable->tanggal_servis_terakhir)) {
                 $lastDate = Carbon::parse($serviceable->tanggal_servis_terakhir);
-            } elseif (!empty($serviceable->tanggal_mulai_pakai)) {
+            } elseif (! empty($serviceable->tanggal_mulai_pakai)) {
                 $lastDate = Carbon::parse($serviceable->tanggal_mulai_pakai);
             }
         }
@@ -34,6 +34,7 @@ class CalculateNextServiceDateAction
             $totalJam = $interval->serviceable->total_jam_operasional ?? 0;
             $estimatedJamPerBulan = 200; // estimasi
             $nextByHours = $lastDate->copy()->addDays(($interval->interval_jam_operasional / $estimatedJamPerBulan) * 30);
+
             return $nextByHours->lt($nextByMonth) ? $nextByHours : $nextByMonth;
         }
 

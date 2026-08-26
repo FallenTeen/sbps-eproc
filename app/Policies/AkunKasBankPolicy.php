@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Finance\Models\AkunKasBank;
+use App\Models\User;
 
 class AkunKasBankPolicy
 {
@@ -12,16 +12,17 @@ class AkunKasBankPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage kas')
             || $user->hasPermissionTo('view finance');
@@ -29,7 +30,7 @@ class AkunKasBankPolicy
 
     public function view(User $user, AkunKasBank $akunKas): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -39,17 +40,17 @@ class AkunKasBankPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage kas');
     }
 
     public function update(User $user, AkunKasBank $akunKas): bool
     {
-        if (!$this->create($user)) {
+        if (! $this->create($user)) {
             return false;
         }
 
@@ -71,9 +72,10 @@ class AkunKasBankPolicy
         if ($user->hasRole('Admin Keuangan')) {
             return true;
         }
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

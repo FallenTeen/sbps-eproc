@@ -11,7 +11,9 @@ class ProductionSessionItem extends Model
     use HasUuids;
 
     protected $table = 'production_session_items';
+
     protected $fillable = ['production_session_id', 'bahan_baku_id', 'jumlah_terpakai'];
+
     protected $casts = ['jumlah_terpakai' => 'float'];
 
     // Relasi

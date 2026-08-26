@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Fleet\Models\Armada;
+use App\Models\User;
 
 class ArmadaPolicy
 {
@@ -12,23 +12,24 @@ class ArmadaPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator GCS',
-                    'Ketua Divisi Armada',
-                    'Admin Keuangan',
-                ])
+            'Koordinator GCS',
+            'Ketua Divisi Armada',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage fleet')
             || $user->hasPermissionTo('view fleet');
     }
 
     public function view(User $user, Armada $armada): bool
     {
-        if (!($user->hasRole([
+        if (! ($user->hasRole([
             'Koordinator GCS',
             'Ketua Divisi Armada',
         ])
@@ -37,6 +38,7 @@ class ArmadaPolicy
             if ($user->hasRole('Admin Keuangan')) {
                 return $this->unitBisnisAllowed($user, $armada->unit_bisnis_id);
             }
+
             return false;
         }
 
@@ -46,15 +48,15 @@ class ArmadaPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator GCS',
-                    'Ketua Divisi Armada',
-                ])
+            'Koordinator GCS',
+            'Ketua Divisi Armada',
+        ])
             || $user->hasPermissionTo('manage fleet');
     }
 
     public function update(User $user, Armada $armada): bool
     {
-        if (!($user->hasRole([
+        if (! ($user->hasRole([
             'Koordinator GCS',
             'Ketua Divisi Armada',
         ])
@@ -67,7 +69,7 @@ class ArmadaPolicy
 
     public function delete(User $user, Armada $armada): bool
     {
-        if (!($user->hasRole('Ketua Divisi Armada')
+        if (! ($user->hasRole('Ketua Divisi Armada')
             || $user->hasPermissionTo('manage fleet'))) {
             return false;
         }
@@ -77,7 +79,7 @@ class ArmadaPolicy
 
     public function recordRitase(User $user, Armada $armada): bool
     {
-        if (!($user->hasRole([
+        if (! ($user->hasRole([
             'Koordinator GCS',
             'Ketua Divisi Armada',
         ])
@@ -91,7 +93,7 @@ class ArmadaPolicy
 
     public function recordSewa(User $user, Armada $armada): bool
     {
-        if (!($user->hasRole([
+        if (! ($user->hasRole([
             'Koordinator GCS',
             'Ketua Divisi Armada',
         ])
@@ -135,9 +137,10 @@ class ArmadaPolicy
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

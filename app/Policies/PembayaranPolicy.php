@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Procurement\Models\Pembayaran;
+use App\Models\User;
 
 class PembayaranPolicy
 {
@@ -15,6 +15,7 @@ class PembayaranPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
@@ -25,11 +26,11 @@ class PembayaranPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                    'Koordinator Procurement',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+            'Koordinator Procurement',
+        ])
             || $user->hasPermissionTo('pay procurement')
             || $user->hasPermissionTo('view procurement')
             || $user->hasPermissionTo('manage procurement');
@@ -40,7 +41,7 @@ class PembayaranPolicy
      */
     public function view(User $user, Pembayaran $pembayaran): bool
     {
-        if (!$this->viewAny($user)) {
+        if (! $this->viewAny($user)) {
             return false;
         }
 
@@ -62,9 +63,10 @@ class PembayaranPolicy
 
     protected function unitBisnisAllowed(User $user, ?string $resourceUnitId): bool
     {
-        if (!$user->unit_bisnis_id || !$resourceUnitId) {
+        if (! $user->unit_bisnis_id || ! $resourceUnitId) {
             return true;
         }
+
         return $user->unit_bisnis_id === $resourceUnitId;
     }
 }

@@ -23,9 +23,9 @@ class CompleteDeliveryAction
         if ($pengiriman->waktu_muat && $pengiriman->waktu_selesai_tuang) {
             $durasiMenit = (float) $pengiriman->waktu_muat->diffInMinutes($pengiriman->waktu_selesai_tuang);
             if ($durasiMenit > self::BATAS_TUANG_MENIT) {
-                $flag = "Waktu tuang melebihi batas {$durasiMenit} menit (>) " . self::BATAS_TUANG_MENIT . " menit — berpotensi terganggu kualitasnya.";
+                $flag = "Waktu tuang melebihi batas {$durasiMenit} menit (>) ".self::BATAS_TUANG_MENIT.' menit — berpotensi terganggu kualitasnya.';
                 $pengiriman->update([
-                    'catatan' => trim(($data['catatan'] ?? '') . " | " . $flag, " |"),
+                    'catatan' => trim(($data['catatan'] ?? '').' | '.$flag, ' |'),
                 ]);
             }
         }

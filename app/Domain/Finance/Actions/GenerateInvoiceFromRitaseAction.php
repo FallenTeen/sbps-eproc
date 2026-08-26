@@ -2,9 +2,9 @@
 
 namespace App\Domain\Finance\Actions;
 
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Fleet\Models\RitaseBiayaLain;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -13,11 +13,10 @@ class GenerateInvoiceFromRitaseAction
     /**
      * Generate invoice dari ritase yang sudah disetujui dan belum ditagih.
      *
-     * @param int $proyekId ID proyek (optional, bisa null jika customer eksternal)
-     * @param string|null $customer Nama customer eksternal (jika tidak terkait proyek)
-     * @param array|null $ritaseIds Array ID ritase spesifik (jika null, ambil semua yang belum ditagih)
-     * @param int|null $unitBisnisId Untuk memastikan unit bisnis sesuai
-     * @return Invoice
+     * @param  int  $proyekId  ID proyek (optional, bisa null jika customer eksternal)
+     * @param  string|null  $customer  Nama customer eksternal (jika tidak terkait proyek)
+     * @param  array|null  $ritaseIds  Array ID ritase spesifik (jika null, ambil semua yang belum ditagih)
+     * @param  int|null  $unitBisnisId  Untuk memastikan unit bisnis sesuai
      */
     public function execute(
         ?string $proyekId = null,
@@ -95,7 +94,7 @@ class GenerateInvoiceFromRitaseAction
      */
     private function generateInvoiceCode(string $unitBisnisId): string
     {
-        $unitKode = \App\Domain\Core\Models\UnitBisnis::find($unitBisnisId)->kode;
+        $unitKode = UnitBisnis::find($unitBisnisId)->kode;
         $year = date('Y');
         $lastInvoice = Invoice::where('unit_bisnis_id', $unitBisnisId)
             ->whereYear('created_at', $year)

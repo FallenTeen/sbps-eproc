@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\HR\Models\Karyawan;
+use App\Models\User;
 
 class KaryawanPolicy
 {
@@ -12,17 +12,18 @@ class KaryawanPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Ketua Divisi Kontraktor',
-                    'Mandor Proyek',
-                    'Admin Keuangan',
-                ])
+            'Koordinator SDM',
+            'Ketua Divisi Kontraktor',
+            'Mandor Proyek',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage hr')
             || $user->hasPermissionTo('view hr');
     }
@@ -40,9 +41,9 @@ class KaryawanPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Ketua Divisi Kontraktor',
-                ])
+            'Koordinator SDM',
+            'Ketua Divisi Kontraktor',
+        ])
             || $user->hasPermissionTo('manage hr');
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Procurement\Models\Supplier;
+use App\Models\User;
 
 class SupplierPolicy
 {
@@ -12,15 +12,16 @@ class SupplierPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator Procurement',
-                    'Admin Keuangan',
-                ])
+            'Koordinator Procurement',
+            'Admin Keuangan',
+        ])
             || $user->hasPermissionTo('manage supplier')
             || $user->hasPermissionTo('view supplier')
             || $user->hasPermissionTo('manage procurement')

@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Domain\Procurement\Models\PurchaseOrderItem;
-use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\BahanBaku;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\PurchaseOrderItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -16,6 +16,7 @@ class PurchaseOrderItemFactory extends Factory
     {
         $jumlah = $this->faker->numberBetween(1, 100);
         $harga = $this->faker->numberBetween(10000, 500000);
+
         return [
             'id' => (string) Str::uuid(),
             'purchase_order_id' => PurchaseOrder::factory(),

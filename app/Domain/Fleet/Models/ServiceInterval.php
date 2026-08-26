@@ -10,12 +10,14 @@ class ServiceInterval extends Model
     use HasUuids;
 
     protected $table = 'service_intervals';
+
     protected $fillable = [
         'serviceable_type',
         'serviceable_id',
         'interval_bulan',
-        'interval_jam_operasional'
+        'interval_jam_operasional',
     ];
+
     protected $casts = [
         'interval_bulan' => 'integer',
         'interval_jam_operasional' => 'integer',

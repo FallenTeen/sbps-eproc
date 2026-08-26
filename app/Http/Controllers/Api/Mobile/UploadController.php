@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Domain\Shared\Models\Dokumen;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 
 class UploadController extends Controller
@@ -14,6 +15,7 @@ class UploadController extends Controller
     /**
      * POST /api/mobile/upload
      * Multipart: files[] (multiple), file_type (foto|pdf|dokumen), ...
+     * Idempotent via client_uuid: retry dengan uuid sama tidak membuat dokumen dobel.
      */
     public function upload(Request $request)
     {
@@ -21,6 +23,7 @@ class UploadController extends Controller
         $maxSizeKb = (int) config('mobile.upload.max_size_mb', 10) * 1024;
 
         $validated = $request->validate([
+            'client_uuid' => 'required|uuid',
             'files' => "required|array|min:1|max:{$maxFiles}",
             'files.*' => "file|max:{$maxSizeKb}",
             'file_type' => 'required|in:foto,pdf,dokumen',
@@ -30,39 +33,98 @@ class UploadController extends Controller
             'catatan' => 'nullable|string|max:2000',
         ]);
 
+        // Kiriman ulang dengan client_uuid sama → balas hasil upload sebelumnya.
+        $existing = Dokumen::where('client_uuid', $validated['client_uuid'])
+            ->orderBy('created_at')
+            ->get();
+
+        if ($existing->isNotEmpty()) {
+            return $this->success(
+                $existing->map(fn (Dokumen $d) => $this->dokumenPayload($d, $validated['file_type']))->all(),
+                'File sudah diupload sebelumnya.'
+            );
+        }
+
         $fileType = $validated['file_type'];
         $files = [];
+        // Unik komposit (client_uuid, nama): dua file bernama sama dalam satu
+        // kiriman diberi sufiks agar keduanya tetap tersimpan.
+        $namaCount = [];
 
-        foreach ($request->file('files') as $file) {
-            // Baca metadata SEBELUM addMedia() (medialibrary menghapus file asli).
-            $nama = $file->getClientOriginalName();
-            $mime = $file->getMimeType();
-            $size = $file->getSize();
+        try {
+            foreach ($request->file('files') as $file) {
+                // Baca metadata SEBELUM addMedia() (medialibrary menghapus file asli).
+                $nama = $file->getClientOriginalName();
 
-            $dokumen = Dokumen::create([
-                'subject_type' => $validated['subject_type'] ?? null,
-                'subject_id' => $validated['subject_id'] ?? null,
-                'nama' => $nama,
-                'kategori' => $validated['kategori'] ?? $fileType,
-                'tipe' => $mime,
-                'catatan' => $validated['catatan'] ?? null,
-                'uploaded_by' => $request->user()->id,
-            ]);
+                if (array_key_exists($nama, $namaCount)) {
+                    $namaCount[$nama]++;
+                    $nama = pathinfo($nama, PATHINFO_FILENAME)."-{$namaCount[$nama]}.".pathinfo($nama, PATHINFO_EXTENSION);
+                } else {
+                    $namaCount[$nama] = 0;
+                }
 
-            $dokumen->addMedia($file)
-                ->toMediaCollection('file', config('mobile.upload.disk', 'public'));
+                $mime = $file->getMimeType();
+                $size = $file->getSize();
 
-            $files[] = [
-                'id' => $dokumen->id,
-                'nama' => $nama,
-                'file_type' => $fileType,
-                'mime' => $mime,
-                'size' => $size,
-                'url' => $dokumen->getFirstMediaUrl('file'),
-            ];
+                try {
+                    $dokumen = Dokumen::create([
+                        'subject_type' => $validated['subject_type'] ?? null,
+                        'subject_id' => $validated['subject_id'] ?? null,
+                        'nama' => $nama,
+                        'kategori' => $validated['kategori'] ?? $fileType,
+                        'tipe' => $mime,
+                        'catatan' => $validated['catatan'] ?? null,
+                        'uploaded_by' => $request->user()->id,
+                        'client_uuid' => $validated['client_uuid'],
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    // Request paralel dengan client_uuid sama menembak bersamaan.
+                    return $this->success(
+                        Dokumen::where('client_uuid', $validated['client_uuid'])
+                            ->orderBy('created_at')
+                            ->get()
+                            ->map(fn (Dokumen $d) => $this->dokumenPayload($d, $fileType))
+                            ->all(),
+                        'File sudah diupload sebelumnya.'
+                    );
+                }
+
+                $dokumen->addMedia($file)
+                    ->toMediaCollection('file', config('mobile.upload.disk', 'public'));
+
+                $files[] = [
+                    'id' => $dokumen->id,
+                    'nama' => $nama,
+                    'file_type' => $fileType,
+                    'mime' => $mime,
+                    'size' => $size,
+                    'url' => $dokumen->getFirstMediaUrl('file'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Gagal di tengah batch: buang baris dokumen yang sudah terlanjur dibuat
+            // agar retry dengan client_uuid sama bisa diproses utuh dari awal.
+            Dokumen::where('client_uuid', $validated['client_uuid'])->get()
+                ->each(fn (Dokumen $d) => $d->delete());
+
+            throw $e;
         }
 
         return $this->success($files, 'File berhasil diupload.', 201);
+    }
+
+    private function dokumenPayload(Dokumen $dokumen, string $fileType): array
+    {
+        $media = $dokumen->getFirstMedia('file');
+
+        return [
+            'id' => $dokumen->id,
+            'nama' => $dokumen->nama,
+            'file_type' => $fileType,
+            'mime' => $media?->mime_type ?? $dokumen->tipe,
+            'size' => $media?->size,
+            'url' => $dokumen->getFirstMediaUrl('file'),
+        ];
     }
 
     /**
@@ -72,7 +134,7 @@ class UploadController extends Controller
     {
         $dokumen = Dokumen::findOrFail($id);
 
-        if ($dokumen->uploaded_by !== $request->user()->id && !$request->user()->isOwner()) {
+        if ($dokumen->uploaded_by !== $request->user()->id && ! $request->user()->isOwner()) {
             return $this->error('Anda tidak berhak menghapus file ini.', 403);
         }
 

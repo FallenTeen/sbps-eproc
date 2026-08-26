@@ -3,7 +3,6 @@
 namespace App\Domain\Production\Actions;
 
 use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Production\Models\HargaJual;
 
 class CalculateProductionCostAction
 {

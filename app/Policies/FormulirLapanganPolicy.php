@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Attendance\Models\FormulirLapangan;
+use App\Models\User;
 
 class FormulirLapanganPolicy
 {
@@ -12,17 +12,18 @@ class FormulirLapanganPolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Koordinator SDM',
-                    'Ketua Divisi Kontraktor',
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                ])
+            'Koordinator SDM',
+            'Ketua Divisi Kontraktor',
+            'Mandor Proyek',
+            'Mandor Titik',
+        ])
             || $user->hasPermissionTo('manage formulir lapangan')
             || $user->hasPermissionTo('view hr')
             || $user->hasPermissionTo('manage hr');
@@ -36,12 +37,12 @@ class FormulirLapanganPolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Mandor Proyek',
-                    'Mandor Titik',
-                    'Driver Standby',
-                    'Driver Kondisional',
-                    'SDM Lapangan Kondisional',
-                ])
+            'Mandor Proyek',
+            'Mandor Titik',
+            'Driver Standby',
+            'Driver Kondisional',
+            'SDM Lapangan Kondisional',
+        ])
             || $user->hasPermissionTo('manage formulir lapangan')
             || $user->hasPermissionTo('manage hr');
     }

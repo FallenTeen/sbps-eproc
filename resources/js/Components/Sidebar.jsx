@@ -50,9 +50,9 @@ function getAllMenus() {
         {
             title: 'Procurement',
             icon: ShoppingCart,
-            permission: ['manage procurement', 'view procurement', 'approve purchase order', 'manage bahan baku', 'manage supplier'],
+            permission: ['manage procurement', 'view procurement', 'approve procurement', 'manage bahan baku', 'manage supplier'],
             items: [
-                { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*', permission: ['manage procurement', 'view procurement', 'approve purchase order'] },
+                { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*', permission: ['manage procurement', 'view procurement', 'approve procurement'] },
                 { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', permission: ['manage bahan baku', 'view bahan baku'] },
                 { title: 'Daftar Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*', permission: ['manage supplier', 'view supplier'] },
             ],
@@ -112,14 +112,6 @@ function getAllMenus() {
                 { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: ['finance.invoice.*', '!finance.invoice.outstanding', '!finance.invoice.aging'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: ['finance.invoice.outstanding', 'finance.invoice.aging', 'finance.pembayaran-klien.*'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
-            ],
-        },
-        {
-            title: 'Unit Bisnis',
-            icon: Building2,
-            permission: ['manage unit bisnis'],
-            items: [
-                { title: 'Daftar Unit Bisnis', href: safeRoute('core.unit-bisnis.index', {}, '/core/unit-bisnis'), routeName: 'core.unit-bisnis.*', permission: ['manage unit bisnis'] },
             ],
         },
         {

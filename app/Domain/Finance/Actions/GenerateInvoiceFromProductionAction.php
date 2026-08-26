@@ -1,14 +1,16 @@
 <?php
+
 namespace App\Domain\Finance\Actions;
 
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Finance\Models\Invoice;
-use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Actions\CalculateProductionRevenueAction;
+use App\Domain\Production\Models\ProductionSession;
 use Illuminate\Support\Facades\Auth;
 
 class GenerateInvoiceFromProductionAction
 {
-    public function execute(string $proyekId, array $sessionIdsOrOptions = null): Invoice
+    public function execute(string $proyekId, ?array $sessionIdsOrOptions = null): Invoice
     {
         $sessionIds = null;
         $options = [];
@@ -26,16 +28,16 @@ class GenerateInvoiceFromProductionAction
         })
             ->where('status', 'selesai')
             ->whereDoesntHave('invoiceItems') // belum ditagih
-            ->when($sessionIds, fn($q) => $q->whereIn('id', $sessionIds));
+            ->when($sessionIds, fn ($q) => $q->whereIn('id', $sessionIds));
 
         $sessions = $query->get();
 
-        $proyek = \App\Domain\Core\Models\Proyek::findOrFail($proyekId);
+        $proyek = Proyek::findOrFail($proyekId);
 
         $invoice = Invoice::create([
             'unit_bisnis_id' => $proyek->unit_bisnis_id,
             'proyek_id' => $proyekId,
-            'kode_invoice' => 'INV-' . date('Ymd') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
+            'kode_invoice' => 'INV-'.date('Ymd').'-'.str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
             'status' => 'draft',
             'tanggal_terbit' => $options['tanggal_terbit'] ?? now(),
             'tanggal_jatuh_tempo' => isset($options['termin_pembayaran_hari']) ? now()->addDays($options['termin_pembayaran_hari']) : now()->addDays(30),
@@ -44,7 +46,7 @@ class GenerateInvoiceFromProductionAction
         ]);
 
         foreach ($sessions as $session) {
-            $revenue = (new CalculateProductionRevenueAction())->execute($session);
+            $revenue = (new CalculateProductionRevenueAction)->execute($session);
             $invoice->items()->create([
                 'deskripsi' => "Produksi {$session->produk->nama} - {$session->hasil_output} {$session->produk->satuan_output}",
                 'referensi_type' => ProductionSession::class,

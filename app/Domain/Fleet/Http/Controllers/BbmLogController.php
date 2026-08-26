@@ -6,13 +6,14 @@ use App\Domain\Fleet\Actions\RecordBBMAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\Ritase;
-use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Procurement\Models\PurchaseOrder;
-use App\Domain\Procurement\States\Diterima;
 use App\Domain\Procurement\States\DibayarSebagian;
+use App\Domain\Procurement\States\Diterima;
 use App\Domain\Procurement\States\Lunas;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class BbmLogController extends Controller
@@ -114,7 +115,7 @@ class BbmLogController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'serviceable_type' => 'required|string|in:' . implode(',', array_keys(self::SERVICEABLE_MAP)),
+            'serviceable_type' => 'required|string|in:'.implode(',', array_keys(self::SERVICEABLE_MAP)),
             'serviceable_id' => 'required|string',
             'tanggal' => 'nullable|date|before_or_equal:today',
             'liter' => 'required|numeric|min:0.01',
@@ -132,13 +133,13 @@ class BbmLogController extends Controller
         // yang masih draft/diajukan/ditolak. Belum memvalidasi kategori
         // item PO benar-benar "BBM" karena belum ada penanda kategori
         // eksplisit untuk itu di data bahan baku (lihat catatan sebelumnya).
-        if (!empty($validated['purchase_order_id'])) {
+        if (! empty($validated['purchase_order_id'])) {
             $po = PurchaseOrder::findOrFail($validated['purchase_order_id']);
             $statusDiizinkan = $po->status instanceof Diterima
                 || $po->status instanceof DibayarSebagian
                 || $po->status instanceof Lunas;
 
-            if (!$statusDiizinkan) {
+            if (! $statusDiizinkan) {
                 return back()
                     ->withErrors(['purchase_order_id' => 'PO belum diterima, tidak bisa dipakai untuk pencatatan BBM.'])
                     ->withInput();
@@ -187,13 +188,13 @@ class BbmLogController extends Controller
             'purchase_order_id' => 'nullable|exists:purchase_orders,id',
         ]);
 
-        if (!empty($validated['purchase_order_id'])) {
+        if (! empty($validated['purchase_order_id'])) {
             $po = PurchaseOrder::findOrFail($validated['purchase_order_id']);
             $statusDiizinkan = $po->status instanceof Diterima
                 || $po->status instanceof DibayarSebagian
                 || $po->status instanceof Lunas;
 
-            if (!$statusDiizinkan) {
+            if (! $statusDiizinkan) {
                 return back()
                     ->withErrors(['purchase_order_id' => 'PO belum diterima, tidak bisa dipakai untuk pencatatan BBM.'])
                     ->withInput();
@@ -270,7 +271,7 @@ class BbmLogController extends Controller
         }
 
         $logs = $query->get()
-            ->groupBy(fn ($log) => $log->serviceable_type . ':' . $log->serviceable_id);
+            ->groupBy(fn ($log) => $log->serviceable_type.':'.$log->serviceable_id);
 
         $anomalies = collect();
 
@@ -294,9 +295,9 @@ class BbmLogController extends Controller
      * estimasi kebutuhan BBM dari jarak tempuh (Ritase x RuteTarif) di
      * antara dua tanggal pengisian berurutan.
      *
-     * @param \Illuminate\Support\Collection<int, BbmLog> $sortedLogs BBM log 1 armada, terurut tanggal ASC.
+     * @param  Collection<int, BbmLog>  $sortedLogs  BBM log 1 armada, terurut tanggal ASC.
      */
-    protected function detectAnomaliArmadaBerbasisRute($sortedLogs): \Illuminate\Support\Collection
+    protected function detectAnomaliArmadaBerbasisRute($sortedLogs): Collection
     {
         $result = collect();
         $armadaId = $sortedLogs->first()->serviceable_id;
@@ -316,6 +317,7 @@ class BbmLogController extends Controller
                 // Tidak ada data rute yang bisa dipakai di periode ini,
                 // simpan pasangan ini untuk dicoba lewat fallback rata-rata.
                 $sisaUntukFallback->push($curr);
+
                 continue;
             }
 
@@ -329,6 +331,7 @@ class BbmLogController extends Controller
 
             if ($estimasiLiter <= 0) {
                 $sisaUntukFallback->push($curr);
+
                 continue;
             }
 
@@ -361,9 +364,9 @@ class BbmLogController extends Controller
      * (dipakai untuk MesinProduksi, dan untuk armada yang tidak punya data
      * Ritase yang cocok di periode terkait).
      *
-     * @param \Illuminate\Support\Collection<int, BbmLog> $sortedLogs
+     * @param  Collection<int, BbmLog>  $sortedLogs
      */
-    protected function detectAnomaliRataRataHistoris($sortedLogs, string $metode = 'rata_rata_historis'): \Illuminate\Support\Collection
+    protected function detectAnomaliRataRataHistoris($sortedLogs, string $metode = 'rata_rata_historis'): Collection
     {
         $result = collect();
         $rates = [];
@@ -414,7 +417,7 @@ class BbmLogController extends Controller
     {
         $modelClass = self::SERVICEABLE_MAP[$type] ?? null;
 
-        if (!$modelClass) {
+        if (! $modelClass) {
             abort(404, "Tipe serviceable '{$type}' tidak dikenal.");
         }
 

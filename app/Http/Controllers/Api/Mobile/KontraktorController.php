@@ -73,7 +73,7 @@ class KontraktorController extends Controller
         // 2. RAB agregat (rencana vs realisasi)
         $totalRencana = 0;
         $totalRealisasi = 0;
-        $getRabAction = new GetRABRealisasiAction();
+        $getRabAction = new GetRABRealisasiAction;
 
         foreach ($proyek->rab as $rab) {
             $totalRencana += (float) $rab->rencana;

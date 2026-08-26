@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Core\Services\OwnerDashboardAggregatorService;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class DashboardController extends Controller

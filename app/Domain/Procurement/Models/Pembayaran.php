@@ -3,6 +3,7 @@
 namespace App\Domain\Procurement\Models;
 
 use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Finance\Models\MutasiKasBank;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,9 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pembayaran extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'pembayarans';
+
     protected $fillable = [
         'purchase_order_id',
         'jumlah',
@@ -20,8 +22,9 @@ class Pembayaran extends Model
         'metode',
         'akun_kas_bank_id',
         'dicatat_oleh',
-        'catatan'
+        'catatan',
     ];
+
     protected $casts = [
         'jumlah' => 'float',
         'tanggal' => 'date',
@@ -45,6 +48,6 @@ class Pembayaran extends Model
 
     public function mutasiKasBank()
     {
-        return $this->morphOne(\App\Domain\Finance\Models\MutasiKasBank::class, 'referensi');
+        return $this->morphOne(MutasiKasBank::class, 'referensi');
     }
 }

@@ -11,7 +11,9 @@ class ResepProduksi extends Model
     use HasUuids;
 
     protected $table = 'resep_produksis';
+
     protected $fillable = ['produk_id', 'bahan_baku_id', 'jumlah_per_unit_output'];
+
     protected $casts = ['jumlah_per_unit_output' => 'float'];
 
     // Relasi

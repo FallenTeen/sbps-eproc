@@ -1,15 +1,15 @@
 <?php
 
-use App\Domain\Core\Models\UnitBisnis;
-use App\Domain\Core\Models\Proyek;
-use App\Domain\Core\Models\Titik;
-use App\Domain\Core\Models\Rab;
-use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Actions\CompareRABRealisasiAction;
+use App\Domain\Core\Actions\GetRABRealisasiAction;
+use App\Domain\Core\Models\Proyek;
+use App\Domain\Core\Models\Rab;
+use App\Domain\Core\Models\Titik;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Procurement\Models\BahanBaku;
-use App\Domain\Procurement\Models\Supplier;
-use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\HargaBeli;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Procurement\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
@@ -20,12 +20,12 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
 
-    $this->unit   = UnitBisnis::factory()->gcs()->create();
+    $this->unit = UnitBisnis::factory()->gcs()->create();
     $this->proyek = Proyek::factory()
         ->for($this->unit)
         ->internal()
         ->create(['created_by' => $this->user->id]);
-    $this->titik  = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
+    $this->titik = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
 });
 
 // =========================================================
@@ -68,7 +68,7 @@ describe('Proyek dan Titik', function () {
     test('proyek kontrak klien wajib memiliki nama klien', function () {
         $proyek = Proyek::factory()->for($this->unit)->kontrakKlien()->create([
             'created_by' => $this->user->id,
-            'client'     => 'PT Maju Jaya',
+            'client' => 'PT Maju Jaya',
         ]);
 
         expect($proyek->tipe_proyek)->toBe('kontrak_klien');
@@ -77,9 +77,9 @@ describe('Proyek dan Titik', function () {
 
     test('titik menyimpan koordinat dan radius presensi', function () {
         $titik = Titik::factory()->create([
-            'proyek_id'             => $this->proyek->id,
-            'latitude'              => -7.2504,
-            'longitude'             => 109.3184,
+            'proyek_id' => $this->proyek->id,
+            'latitude' => -7.2504,
+            'longitude' => 109.3184,
             'radius_presensi_meter' => 150,
         ]);
 
@@ -101,10 +101,10 @@ describe('Proyek dan Titik', function () {
 
 describe('RAB - Rencana Anggaran Biaya', function () {
     test('rab dibuat per kategori berbeda di level proyek', function () {
-        $rabBB  = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 5_000_000]);
+        $rabBB = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 5_000_000]);
         $rabSDM = Rab::factory()->for($this->proyek)->create([
             'kategori' => 'sdm_tetap',
-            'rencana'  => 10_000_000,
+            'rencana' => 10_000_000,
         ]);
 
         expect($rabBB->kategori)->toBe('bahan_baku');
@@ -113,9 +113,9 @@ describe('RAB - Rencana Anggaran Biaya', function () {
 
     test('rab bisa di-scope ke titik spesifik (titik_id nullable)', function () {
         $rabProyek = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 3_000_000]);
-        $rabTitik  = Rab::factory()->for($this->proyek)->bahanBaku()->create([
+        $rabTitik = Rab::factory()->for($this->proyek)->bahanBaku()->create([
             'titik_id' => $this->titik->id,
-            'rencana'  => 1_500_000,
+            'rencana' => 1_500_000,
         ]);
 
         expect($rabProyek->titik_id)->toBeNull();
@@ -130,15 +130,15 @@ describe('RAB - Rencana Anggaran Biaya', function () {
 describe('GetRABRealisasiAction - Realisasi Dihitung On-the-Fly', function () {
     test('realisasi RAB bahan_baku dari PO yang sudah diterima', function () {
         $rab = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 5_000_000]);
-        $bb  = BahanBaku::factory()->bahanBaku()->create();
+        $bb = BahanBaku::factory()->bahanBaku()->create();
         $sup = Supplier::factory()->create();
 
         HargaBeli::create([
             'bahan_baku_id' => $bb->id,
-            'supplier_id'   => $sup->id,
-            'harga'         => 10_000,
-            'berlaku_dari'  => now()->subDay(),
-            'aktif'         => true,
+            'supplier_id' => $sup->id,
+            'harga' => 10_000,
+            'berlaku_dari' => now()->subDay(),
+            'aktif' => true,
         ]);
 
         // Status 'diterima' = PO sudah received (barang masuk gudang)
@@ -146,13 +146,13 @@ describe('GetRABRealisasiAction - Realisasi Dihitung On-the-Fly', function () {
             'titik_id' => $this->titik->id,
         ]);
         $po->items()->create([
-            'bahan_baku_id'         => $bb->id,
-            'jumlah'                => 100,
+            'bahan_baku_id' => $bb->id,
+            'jumlah' => 100,
             'harga_satuan_snapshot' => 10_000,
-            'subtotal'              => 1_000_000,
+            'subtotal' => 1_000_000,
         ]);
 
-        $realisasi = (new GetRABRealisasiAction())->execute($rab);
+        $realisasi = (new GetRABRealisasiAction)->execute($rab);
 
         expect($realisasi)->toEqual(1_000_000);
     });
@@ -160,7 +160,7 @@ describe('GetRABRealisasiAction - Realisasi Dihitung On-the-Fly', function () {
     test('realisasi RAB adalah 0 ketika belum ada transaksi', function () {
         $rab = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 3_000_000]);
 
-        $realisasi = (new GetRABRealisasiAction())->execute($rab);
+        $realisasi = (new GetRABRealisasiAction)->execute($rab);
 
         expect($realisasi)->toEqual(0);
     });
@@ -174,28 +174,28 @@ describe('GetRABRealisasiAction - Realisasi Dihitung On-the-Fly', function () {
 
     test('PO berstatus draft tidak masuk realisasi RAB', function () {
         $rab = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 5_000_000]);
-        $bb  = BahanBaku::factory()->bahanBaku()->create();
+        $bb = BahanBaku::factory()->bahanBaku()->create();
 
         // Draft = belum committed ke workflow
         $po = PurchaseOrder::factory()->for($this->proyek)->draft()->create([
             'titik_id' => $this->titik->id,
         ]);
         $po->items()->create([
-            'bahan_baku_id'         => $bb->id,
-            'jumlah'                => 50,
+            'bahan_baku_id' => $bb->id,
+            'jumlah' => 50,
             'harga_satuan_snapshot' => 10_000,
-            'subtotal'              => 500_000,
+            'subtotal' => 500_000,
         ]);
 
         // Draft belum masuk hitungan realisasi RAB
-        $realisasi = (new GetRABRealisasiAction())->execute($rab);
+        $realisasi = (new GetRABRealisasiAction)->execute($rab);
         expect($realisasi)->toEqual(0);
     });
 
     test('CompareRABRealisasiAction mengembalikan struktur rencana realisasi selisih persen', function () {
         $rab = Rab::factory()->for($this->proyek)->bahanBaku()->create(['rencana' => 5_000_000]);
 
-        $result = (new CompareRABRealisasiAction())->execute($rab);
+        $result = (new CompareRABRealisasiAction)->execute($rab);
 
         // Action mengembalikan key 'persentase' (bukan 'persen_serap')
         expect($result)->toHaveKey('rencana');

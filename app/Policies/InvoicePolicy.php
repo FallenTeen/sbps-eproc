@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Domain\Finance\Models\Invoice;
+use App\Models\User;
 
 class InvoicePolicy
 {
@@ -12,17 +12,18 @@ class InvoicePolicy
         if ($user->hasRole('Owner')) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Kontraktor',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Kontraktor',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage invoice')
             || $user->hasPermissionTo('view invoice')
@@ -37,11 +38,11 @@ class InvoicePolicy
     public function create(User $user): bool
     {
         return $user->hasRole([
-                    'Admin Keuangan',
-                    'Ketua Divisi Kontraktor',
-                    'Ketua Divisi Finance',
-                    'Ketua Divisi Keuangan',
-                ])
+            'Admin Keuangan',
+            'Ketua Divisi Kontraktor',
+            'Ketua Divisi Finance',
+            'Ketua Divisi Keuangan',
+        ])
             || $user->hasPermissionTo('manage finance')
             || $user->hasPermissionTo('manage invoice');
     }
@@ -55,6 +56,7 @@ class InvoicePolicy
 
         if ($user->hasRole('Ketua Divisi Kontraktor')) {
             $invoice->loadMissing('proyek');
+
             // Hanya untuk proyek kontrak klien
             return $invoice->proyek?->tipe_proyek === 'kontrak_klien';
         }

@@ -4,11 +4,12 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\SewaAlatJam;
+use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 uses(TestCase::class, DatabaseTransactions::class);
 
@@ -17,11 +18,12 @@ function createFleetRoleUser(string $roleName, ?string $unitBisnisId = null): Us
     Role::findOrCreate($roleName);
     $user = User::factory()->create(['unit_bisnis_id' => $unitBisnisId]);
     $user->assignRole($roleName);
+
     return $user;
 }
 
 beforeEach(function () {
-    (new \Database\Seeders\RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $this->unitGcs = UnitBisnis::factory()->gcs()->create();
     $this->unitCbp = UnitBisnis::factory()->cbp()->create();
@@ -29,7 +31,7 @@ beforeEach(function () {
     $this->armadaGcs = Armada::factory()->create(['unit_bisnis_id' => $this->unitGcs->id]);
     $this->armadaCbp = Armada::factory()->create(['unit_bisnis_id' => $this->unitCbp->id]);
 
-    $this->driver = \App\Domain\HR\Models\Karyawan::factory()->create([
+    $this->driver = Karyawan::factory()->create([
         'status' => 'aktif',
     ]);
 });

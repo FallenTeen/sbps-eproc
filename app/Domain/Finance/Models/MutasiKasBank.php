@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class MutasiKasBank extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'mutasi_kas_banks';
+
     protected $fillable = [
         'akun_kas_bank_id',
         'kategori',
@@ -20,8 +21,9 @@ class MutasiKasBank extends Model
         'referensi_id',
         'tanggal',
         'catatan',
-        'created_by'
+        'created_by',
     ];
+
     protected $casts = [
         'jumlah' => 'float',
         'tanggal' => 'date',

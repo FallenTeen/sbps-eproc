@@ -12,6 +12,7 @@ class Dokumen extends Model implements HasMedia
     use HasUuids, InteractsWithMedia;
 
     protected $table = 'dokumens';
+
     protected $fillable = [
         'subject_type',
         'subject_id',
@@ -20,6 +21,7 @@ class Dokumen extends Model implements HasMedia
         'tipe',
         'catatan',
         'uploaded_by',
+        'client_uuid',
     ];
 
     public function subject()

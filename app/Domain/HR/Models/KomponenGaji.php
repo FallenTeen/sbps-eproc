@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class KomponenGaji extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'komponen_gajis';
+
     protected $fillable = ['gaji_periode_id', 'jenis', 'jumlah', 'keterangan'];
+
     protected $casts = ['jumlah' => 'float'];
 
     // Relasi

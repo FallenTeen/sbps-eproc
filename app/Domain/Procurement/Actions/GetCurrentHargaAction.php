@@ -15,7 +15,7 @@ class GetCurrentHargaAction
             ->where('berlaku_dari', '<=', $tanggal)
             ->where(function ($q) use ($tanggal) {
                 $q->whereNull('berlaku_sampai')
-                  ->orWhere('berlaku_sampai', '>=', $tanggal);
+                    ->orWhere('berlaku_sampai', '>=', $tanggal);
             })
             ->first();
 
