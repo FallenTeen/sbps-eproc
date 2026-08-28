@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Mobile\AppVersionController;
+use App\Http\Controllers\Api\Mobile\ArmadaController;
 use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
@@ -95,6 +96,12 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
         Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
         Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
+
+        // Armada (driver)
+        Route::get('armada/saya', [ArmadaController::class, 'saya'])->name('armada.saya');
+        Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
+        Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
+        Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

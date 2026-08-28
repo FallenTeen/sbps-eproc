@@ -7,6 +7,8 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaDriver;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\Procurement\Models\BahanBaku;
@@ -185,14 +187,15 @@ class MobileTestUserSeeder extends Seeder
                 'rate_harian' => 0,
                 'tugas' => false,
             ],
-            // Driver yang "mengampu" armada. Role Mandor Titik agar punya akses
-            // mobile (tidak ada role driver di daftar portal mobile).
+            // Driver yang "mengampu" armada. Role Driver Armada masuk daftar
+            // portal mobile sehingga home menampilkan modul Armada (bukan
+            // Produksi/QC) — lihat lib/features/proyek/role_permissions.dart.
             [
                 'email' => 'test.driver.armada@example.com',
                 'name' => 'Test Driver Armada',
                 'nama_lengkap' => 'Eko Driver Armada',
                 'jabatan' => 'Driver Dump Truck',
-                'role' => 'Mandor Titik',
+                'role' => 'Driver Armada',
                 'divisi' => 'Armada',
                 'karyawan_nama' => 'Eko Driver Armada',
                 'tipe' => 'borongan_rit',
@@ -266,7 +269,7 @@ class MobileTestUserSeeder extends Seeder
         );
         $this->seedDriverArmada(
             $createdKaryawanByEmail['test.driver.armada@example.com'] ?? null,
-            $gcs, $titik
+            $gcs, $titik, $proyek
         );
 
         $emails = array_column($users, 'email');
@@ -332,10 +335,15 @@ class MobileTestUserSeeder extends Seeder
     }
 
     /**
-     * Buat driver yang "mengampu" sebuah armada (dump truck GCS) via ArmadaDriver.
+     * Buat driver yang "mengampu" sebuah armada (dump truck GCS) via ArmadaDriver,
+     * plus beberapa ritase demo untuk pengiriman milik driver tsb.
      */
-    private function seedDriverArmada(?Karyawan $driver, ?UnitBisnis $gcs, Titik $titik): void
-    {
+    private function seedDriverArmada(
+        ?Karyawan $driver,
+        ?UnitBisnis $gcs,
+        Titik $titik,
+        ?Proyek $proyek
+    ): void {
         if (! $driver) {
             return;
         }
@@ -369,5 +377,64 @@ class MobileTestUserSeeder extends Seeder
                 'status' => 'aktif',
             ]
         );
+
+        $this->seedDriverRitase($driver, $armada, $titik, $proyek, $gcs);
+    }
+
+    /**
+     * Buat rute tarif + beberapa ritase demo untuk driver (modul Armada).
+     */
+    private function seedDriverRitase(
+        Karyawan $driver,
+        Armada $armada,
+        Titik $titik,
+        ?Proyek $proyek,
+        ?UnitBisnis $gcs
+    ): void {
+        $rute = RuteTarif::updateOrCreate(
+            ['unit_bisnis_id' => $gcs?->id, 'lokasi_asal' => 'Quarry Cikarang', 'lokasi_tujuan' => 'Proyek Uji Coba'],
+            [
+                'jarak_km' => 12.5,
+                'tarif_per_rit' => 150_000,
+                'indeks_liter_solar_per_km' => 0.4,
+                'berlaku_dari' => now()->subMonths(6)->toDateString(),
+                'berlaku_sampai' => null,
+            ]
+        );
+
+        $materials = ['Agregat Kelas A', 'Batu Pecah 1-2', 'Pasir Urug'];
+        $statuses = ['draft', 'disetujui', 'ditagih'];
+
+        $existing = Ritase::where('driver_karyawan_id', $driver->id)
+            ->where('armada_id', $armada->id)
+            ->count();
+
+        if ($existing >= 8) {
+            return;
+        }
+
+        for ($i = 0; $i < 8; $i++) {
+            $tanggal = now()->subDays($i);
+
+            Ritase::updateOrCreate(
+                [
+                    'driver_karyawan_id' => $driver->id,
+                    'armada_id' => $armada->id,
+                    'tanggal' => $tanggal->toDateString(),
+                ],
+                [
+                    'rute_tarif_id' => $rute->id,
+                    'kategori' => 'angkut_material',
+                    'material' => $materials[$i % count($materials)],
+                    'jumlah_rit' => random_int(2, 8),
+                    'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
+                    'proyek_id' => $proyek?->id,
+                    'titik_id' => $titik->id,
+                    'customer' => 'Client Uji Coba',
+                    'status' => $statuses[$i % count($statuses)],
+                    'catatan' => 'Ritase demo untuk uji modul Armada.',
+                ]
+            );
+        }
     }
 }

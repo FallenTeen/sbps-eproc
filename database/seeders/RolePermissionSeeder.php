@@ -179,6 +179,7 @@ class RolePermissionSeeder extends Seeder
             'Mandor Titik' => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
             'Driver Standby' => ['view proyek', 'manage formulir lapangan'],
             'Driver Kondisional' => ['view proyek', 'manage formulir lapangan'],
+            'Driver Armada' => ['view proyek', 'view fleet'],
             'SDM Lapangan Kondisional' => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
         ];
 
