@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             AttendanceDataSeeder::class,
             AppVersionSeeder::class,
             MobileTestUserSeeder::class,
+            MobileDemoDataSeeder::class,
         ]);
     }
 }
