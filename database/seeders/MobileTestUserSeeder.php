@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\Procurement\Models\BahanBaku;
@@ -46,6 +48,7 @@ class MobileTestUserSeeder extends Seeder
     {
         // ─────────────────────── Unit Bisnis / master ───────────────────────
         $gcs = UnitBisnis::where('kode', 'GCS')->first();
+        $cbp = UnitBisnis::where('kode', 'CBP')->first();
         // created_by pada proyeks tidak boleh NULL → pakai user owner jika ada.
         $owner = User::where('email', 'owner@example.com')->first();
 
@@ -105,6 +108,7 @@ class MobileTestUserSeeder extends Seeder
 
         // ────────────────────────────── USER TEST ───────────────────────────
         // Karena karyawans.user_id unik, tiap user punya karyawan sendiri.
+        $createdKaryawanByEmail = [];
         $users = [
             [
                 'email' => 'test.mandor@example.com',
@@ -166,6 +170,35 @@ class MobileTestUserSeeder extends Seeder
                 'rate_harian' => 0,
                 'tugas' => false,
             ],
+            // Operator yang "mengampu" mesin produksi. Role Mandor Titik dipakai
+            // agar user ini punya akses portal proyek + modul produksi di aplikasi
+            // mobile (role koordinator CBP tidak masuk daftar portal mobile).
+            [
+                'email' => 'test.operator.mesin@example.com',
+                'name' => 'Test Operator Mesin',
+                'nama_lengkap' => 'Donny Operator Mesin',
+                'jabatan' => 'Operator Batching Plant',
+                'role' => 'Mandor Titik',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Donny Operator Mesin',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            // Driver yang "mengampu" armada. Role Mandor Titik agar punya akses
+            // mobile (tidak ada role driver di daftar portal mobile).
+            [
+                'email' => 'test.driver.armada@example.com',
+                'name' => 'Test Driver Armada',
+                'nama_lengkap' => 'Eko Driver Armada',
+                'jabatan' => 'Driver Dump Truck',
+                'role' => 'Mandor Titik',
+                'divisi' => 'Armada',
+                'karyawan_nama' => 'Eko Driver Armada',
+                'tipe' => 'borongan_rit',
+                'rate_harian' => 150_000,
+                'tugas' => false,
+            ],
         ];
 
         foreach ($users as $data) {
@@ -217,12 +250,124 @@ class MobileTestUserSeeder extends Seeder
                         ]
                     );
                 }
+
+                $createdKaryawanByEmail[$user->email] = $karyawan;
             }
         }
 
+        // ══════════════════ USER: OPERATOR MESIN & DRIVER ARMADA ═════════════
+        // "Mengampu" sebuah unit kerja (mesin produksi / armada). Untuk mesin
+        // tidak ada tabel assignment permanen → dibuatkan sesi produksi aktif
+        // agar modul operasional menampilkan sesi milik operator tsb. Untuk
+        // armada dipakai tabel persisten ArmadaDriver.
+        $this->seedOperatorMesin(
+            $createdKaryawanByEmail['test.operator.mesin@example.com'] ?? null,
+            $cbp, $titik
+        );
+        $this->seedDriverArmada(
+            $createdKaryawanByEmail['test.driver.armada@example.com'] ?? null,
+            $gcs, $titik
+        );
+
+        $emails = array_column($users, 'email');
         $this->command?->info(
             'User test mobile dibuat (password: '.self::TEST_PASSWORD.'): '
-            .implode(', ', array_column($users, 'email'))
+            .implode(', ', $emails)
+        );
+    }
+
+    /**
+     * Buat operator yang "mengampu" sebuah mesin produksi (Batching Plant CBP)
+     * beserta master produk/bahan baku, dan seekan sesi produksi aktif miliknya.
+     */
+    private function seedOperatorMesin(?Karyawan $operator, ?UnitBisnis $cbp, Titik $titik): void
+    {
+        if (! $operator) {
+            return;
+        }
+
+        $produk = Produk::updateOrCreate(
+            ['unit_bisnis_id' => $cbp?->id, 'nama' => 'Beton K-225 (Test)'],
+            ['kategori' => 'BETON_COR', 'satuan_output' => 'm3', 'aktif' => true]
+        );
+
+        $mesin = MesinProduksi::updateOrCreate(
+            ['unit_bisnis_id' => $cbp?->id, 'nama' => 'Batching Plant Test-01'],
+            [
+                'jenis' => 'mixer_beton',
+                'kapasitas' => '90 m³/jam',
+                'status' => 'aktif',
+                'titik_id' => $titik->id,
+                'produk_id' => $produk->id,
+                'biaya_per_jam' => 850_000,
+            ]
+        );
+
+        // Pastikan bahan baku tersedia untuk pencatatan konsumsi (resep produksi).
+        BahanBaku::firstOrCreate(
+            ['kode' => 'BB-TEST-SEMEN'],
+            ['nama' => 'Semen Test', 'kategori' => 'bahan_baku', 'satuan' => 'kg', 'aktif' => true]
+        );
+
+        // Sesi aktif milik operator agar terlihat "mengampu" mesin tsb.
+        $existing = \App\Domain\Production\Models\ProductionSession::where('operator_karyawan_id', $operator->id)
+            ->where('mesin_id', $mesin->id)
+            ->where('status', 'berjalan')
+            ->exists();
+
+        if (! $existing) {
+            \App\Domain\Production\Models\ProductionSession::create([
+                'mesin_id' => $mesin->id,
+                'titik_id' => $titik->id,
+                'produk_id' => $produk->id,
+                'operator_karyawan_id' => $operator->id,
+                'client_uuid' => null,
+                'mulai' => now()->subMinutes(45),
+                'selesai' => null,
+                'hasil_output' => null,
+                'status' => 'berjalan',
+                'catatan' => 'Sesi produksi test operator mesin.',
+            ]);
+        }
+    }
+
+    /**
+     * Buat driver yang "mengampu" sebuah armada (dump truck GCS) via ArmadaDriver.
+     */
+    private function seedDriverArmada(?Karyawan $driver, ?UnitBisnis $gcs, Titik $titik): void
+    {
+        if (! $driver) {
+            return;
+        }
+
+        $armada = Armada::updateOrCreate(
+            ['plat_nomor' => 'B 9999 TEST'],
+            [
+                'unit_bisnis_id' => $gcs?->id,
+                'kode_unit' => 'GCS-TEST-DT-01',
+                'jenis' => 'dump_truck',
+                'model_tarif' => 'ritase',
+                'tahun' => 2021,
+                'kapasitas' => '8 m³',
+                'titik_id' => $titik->id,
+                'status' => 'aktif',
+                'tanggal_mulai_pakai' => now()->subMonths(3)->toDateString(),
+            ]
+        );
+
+        // Tutup assignment aktif sebelumnya ke armada ini jika ada, lalu assign.
+        ArmadaDriver::where('armada_id', $armada->id)
+            ->where('status', 'aktif')
+            ->update(['status' => 'selesai', 'tanggal_selesai' => now()]);
+
+        ArmadaDriver::updateOrCreate(
+            ['armada_id' => $armada->id, 'karyawan_id' => $driver->id],
+            [
+                'tipe' => 'standby',
+                'tanggal_mulai' => now()->subDays(7)->toDateString(),
+                'tanggal_selesai' => null,
+                'status' => 'aktif',
+            ]
         );
     }
 }
