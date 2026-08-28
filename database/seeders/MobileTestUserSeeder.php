@@ -15,25 +15,31 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Seeder khusus untuk pengujian mobile (staging).
+ * Seeder khusus pengujian aplikasi mobile (staging).
  *
- * Membuat user test dengan role "Mandor Titik" + data karyawan dan tugas
- * (penugasan ke Titik Kerja) lengkap, sehingga bisa login via aplikasi
- * mobile dan mencoba fitur:
- *  - Portal Presensi  : check-in/check-out, formulir lapangan, tracking
- *  - Portal Proyek     : produksi (mulai/selesai sesi), QC, tracking, dashboard
+ * Membuat beberapa user test dengan role berbeda + data karyawan & tugas
+ * (penugasan ke Titik Kerja) lengkap, sehingga bisa login via aplikasi mobile
+ * dan melihat dinamika antar-role:
  *
- * Note role "Mandor Titik" dipilih karena di aplikasi mobile role ini
- * punya akses ke KEDUA portal (presensi & proyek) serta modul operasional
- * (produksi, qc, tracking, dashboard).
+ *   Role                      Portal yang muncul     Modul proyek         Tugas (assignment)
+ *   ------------------------  ---------------------  -------------------  ------------------
+ *   Mandor Titik              Presensi + Proyek      produksi, qc,        ya
+ *                                                     tracking, dashboard
+ *   SDM Lapangan Kondisional  Presensi               (tidak ada)          ya
+ *   Kontraktor                Proyek                 dashboard            tidak
+ *   Owner                     Proyek                 produksi, qc,        tidak
+ *                                                     tracking, dashboard,
+ *                                                     keuangan (+ monitoring tracking)
+ *   Admin Keuangan            Proyek                 tracking, dashboard, tidak
+ *                                                     keuangan (+ monitoring tracking)
  *
- * Seeder ini idempotent (updateOrCreate), jadi aman dijalankan berulang.
- * Tidak menghapus data lain.
+ * Semua user memakai password yang sama (lihat TEST_PASSWORD) agar mudah
+ * dicoba. Seeder ini idempotent (updateOrCreate), aman dijalankan berulang,
+ * dan tidak menghapus/mengubah data lainnya.
  */
 class MobileTestUserSeeder extends Seeder
 {
-    /** Kredensial test yang dipakai untuk login via aplikasi mobile. */
-    public const TEST_EMAIL = 'test.lapangan@example.com';
+    /** Kredensial login yang dipakai semua user test. */
     public const TEST_PASSWORD = 'password';
 
     public function run(): void
@@ -43,7 +49,7 @@ class MobileTestUserSeeder extends Seeder
         // created_by pada proyeks tidak boleh NULL → pakai user owner jika ada.
         $owner = User::where('email', 'owner@example.com')->first();
 
-        // ────────────────────────────── PROYEK ─────────────────────────────
+        // ────────────────────────────── PROYEK/TITIK ────────────────────────
         $proyek = Proyek::updateOrCreate(
             ['kode_proyek' => 'PRJ-TEST-MOBILE'],
             [
@@ -60,8 +66,8 @@ class MobileTestUserSeeder extends Seeder
             ]
         );
 
-        // Koordinat titik uji (bebas, asalkan konsisten dengan yang dikirim
-        // dari perangkat saat check-in agar status radius = valid).
+        // Koordinat titik uji (bebas, asalkan konsisten dengan koordinat yang
+        // dikirim dari perangkat saat check-in agar status radius = valid).
         $titik = Titik::updateOrCreate(
             ['proyek_id' => $proyek->id, 'nama' => 'Titik Kerja Uji Coba'],
             [
@@ -72,61 +78,8 @@ class MobileTestUserSeeder extends Seeder
             ]
         );
 
-        // ────────────────────────────── USER ─────────────────────────────
-        $user = User::updateOrCreate(
-            ['email' => self::TEST_EMAIL],
-            [
-                'name' => 'Test Lapangan',
-                'nama_lengkap' => 'Test Karyawan Mobile Lapangan',
-                'jabatan' => 'Mandor Titik',
-                'password' => Hash::make(self::TEST_PASSWORD),
-                'unit_bisnis_id' => $gcs?->id,
-                'divisi' => 'Lapangan',
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Role "Mandor Titik": akses portal presensi + proyek + modul operasional.
-        $user->syncRoles(['Mandor Titik']);
-
-        // ─────────────────────────── KARYAWAN ───────────────────────────
-        $karyawan = Karyawan::updateOrCreate(
-            ['nama' => 'Test Karyawan Mobile Lapangan'],
-            [
-                'user_id' => $user->id,
-                'tipe' => 'harian',
-                'jabatan' => 'Mandor Titik',
-                'rate_gaji_pokok' => null,
-                'rate_harian' => 175_000,
-                'npwp' => '00.000.000.0-000.000',
-                'no_bpjs_kesehatan' => '0000000000000',
-                'no_bpjs_ketenagakerjaan' => '0000000000000',
-                'status_ptkp' => 'TK/0',
-                'status' => 'aktif',
-            ]
-        );
-
-        // Amankan relasi user <-> karyawan (jika sebelumnya user_id kosong).
-        if ($karyawan->user_id !== $user->id) {
-            $karyawan->update(['user_id' => $user->id]);
-        }
-
-        // ─────────────── TUGAS / PENUGASAN KE TITIK KERJA ───────────────
-        KaryawanTitikAssignment::updateOrCreate(
-            [
-                'karyawan_id' => $karyawan->id,
-                'titik_id' => $titik->id,
-            ],
-            [
-                'tanggal_mulai' => now()->startOfMonth()->toDateString(),
-                'tanggal_selesai' => null,
-                'status' => 'aktif',
-            ]
-        );
-
         // ─────────── MASTER PRODUKSI UNTUK MODUL OPERASIONAL ────────────
-        // Gunakan unit bisnis GCS agar sejalan dengan titik uji.
+        // Dimiliki satu kali, dipakai oleh role lapangan yang punya modul produksi.
         $produk = Produk::updateOrCreate(
             ['unit_bisnis_id' => $gcs?->id, 'nama' => 'Agregat Kelas A (Test)'],
             ['kategori' => 'SPLIT', 'satuan_output' => 'ton', 'aktif' => true]
@@ -144,15 +97,132 @@ class MobileTestUserSeeder extends Seeder
             ]
         );
 
-        // Pastikan minimal satu bahan baku tersedia untuk pencatatan konsumsi
-        // (opsional; hanya jika tabel bahan baku belum terisi).
+        // Pastikan minimal satu bahan baku tersedia untuk pencatatan konsumsi.
         BahanBaku::firstOrCreate(
             ['kode' => 'BB-TEST-AGR'],
             ['nama' => 'Agregat Test', 'kategori' => 'bahan_baku', 'satuan' => 'ton', 'aktif' => true]
         );
 
+        // ────────────────────────────── USER TEST ───────────────────────────
+        // Karena karyawans.user_id unik, tiap user punya karyawan sendiri.
+        $users = [
+            [
+                'email' => 'test.mandor@example.com',
+                'name' => 'Test Mandor Titik',
+                'nama_lengkap' => 'Budi Mandor Titik',
+                'jabatan' => 'Mandor Titik',
+                'role' => 'Mandor Titik',
+                'divisi' => 'Lapangan',
+                'karyawan_nama' => 'Budi Mandor Titik',
+                'tipe' => 'harian',
+                'rate_harian' => 175_000,
+                'tugas' => true,
+            ],
+            [
+                'email' => 'test.sdm@example.com',
+                'name' => 'Test SDM Lapangan',
+                'nama_lengkap' => 'Sari SDM Lapangan',
+                'jabatan' => 'SDM Lapangan Kondisional',
+                'role' => 'SDM Lapangan Kondisional',
+                'divisi' => 'Lapangan',
+                'karyawan_nama' => 'Sari SDM Lapangan',
+                'tipe' => 'harian',
+                'rate_harian' => 150_000,
+                'tugas' => true,
+            ],
+            [
+                'email' => 'test.kontraktor@example.com',
+                'name' => 'Test Kontraktor',
+                'nama_lengkap' => 'Perwakilan Kontraktor Client',
+                'jabatan' => 'Kontraktor',
+                'role' => 'Kontraktor',
+                'divisi' => 'Eksternal',
+                'karyawan_nama' => null,
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.owner@example.com',
+                'name' => 'Test Owner',
+                'nama_lengkap' => 'Owner Pemilik Perusahaan',
+                'jabatan' => 'Owner / Direktur',
+                'role' => 'Owner',
+                'divisi' => 'Manajemen',
+                'karyawan_nama' => null,
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.keuangan@example.com',
+                'name' => 'Test Admin Keuangan',
+                'nama_lengkap' => 'Ani Admin Keuangan',
+                'jabatan' => 'Admin Keuangan',
+                'role' => 'Admin Keuangan',
+                'divisi' => 'Finance',
+                'karyawan_nama' => null,
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+        ];
+
+        foreach ($users as $data) {
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'nama_lengkap' => $data['nama_lengkap'],
+                    'jabatan' => $data['jabatan'],
+                    'password' => Hash::make(self::TEST_PASSWORD),
+                    'unit_bisnis_id' => $gcs?->id,
+                    'divisi' => $data['divisi'],
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
+            $user->syncRoles([$data['role']]);
+
+            // Role lapangan (Mandor Titik / SDM) perlu Karyawan terhubung agar
+            // endpoint presensi & produksi bisa dipanggil.
+            if ($data['karyawan_nama']) {
+                $karyawan = Karyawan::updateOrCreate(
+                    ['nama' => $data['karyawan_nama']],
+                    [
+                        'user_id' => $user->id,
+                        'tipe' => $data['tipe'],
+                        'jabatan' => $data['jabatan'],
+                        'rate_gaji_pokok' => null,
+                        'rate_harian' => $data['rate_harian'] > 0 ? $data['rate_harian'] : null,
+                        'npwp' => '00.000.000.0-000.000',
+                        'no_bpjs_kesehatan' => '0000000000000',
+                        'no_bpjs_ketenagakerjaan' => '0000000000000',
+                        'status_ptkp' => 'TK/0',
+                        'status' => 'aktif',
+                    ]
+                );
+                if ($karyawan->user_id !== $user->id) {
+                    $karyawan->update(['user_id' => $user->id]);
+                }
+
+                // Tugas (penugasan) ke Titik Kerja uji coba.
+                if ($data['tugas']) {
+                    KaryawanTitikAssignment::updateOrCreate(
+                        ['karyawan_id' => $karyawan->id, 'titik_id' => $titik->id],
+                        [
+                            'tanggal_mulai' => now()->startOfMonth()->toDateString(),
+                            'tanggal_selesai' => null,
+                            'status' => 'aktif',
+                        ]
+                    );
+                }
+            }
+        }
+
         $this->command?->info(
-            'User test mobile dibuat: '.self::TEST_EMAIL.' / '.self::TEST_PASSWORD
+            'User test mobile dibuat (password: '.self::TEST_PASSWORD.'): '
+            .implode(', ', array_column($users, 'email'))
         );
     }
 }
