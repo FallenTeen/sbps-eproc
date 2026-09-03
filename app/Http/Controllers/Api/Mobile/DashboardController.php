@@ -33,34 +33,42 @@ class DashboardController extends Controller
                 'karyawanAssignments as sdm_count',
             ])
             ->orderBy('nama')
-            ->get()
-            ->map(function (Titik $titik) use ($today) {
-                $produksiToday = (float) ProductionSession::where('titik_id', $titik->id)
-                    ->where('status', 'selesai')
-                    ->whereDate('mulai', $today)
-                    ->sum('hasil_output');
+            ->get();
 
-                $presensiToday = Presensi::where('titik_id', $titik->id)
-                    ->whereDate('check_in', $today)
-                    ->count();
+        // Batch queries untuk production & presensi hari ini (anti N+1).
+        $titikIds = $titiks->pluck('id');
 
-                return [
-                    'titik_id' => $titik->id,
-                    'titik' => $titik->nama,
-                    'proyek' => $titik->proyek?->nama,
-                    'latitude' => (float) $titik->latitude,
-                    'longitude' => (float) $titik->longitude,
-                    'sdm_count' => (int) $titik->sdm_count,
-                    'armada_count' => (int) $titik->armada_count,
-                    'presensi_today' => $presensiToday,
-                    'produksi_today' => $produksiToday,
-                ];
-            });
+        $produksiMap = ProductionSession::where('status', 'selesai')
+            ->whereDate('mulai', $today)
+            ->whereIn('titik_id', $titikIds)
+            ->selectRaw('titik_id, COALESCE(SUM(hasil_output), 0) as total')
+            ->groupBy('titik_id')
+            ->pluck('total', 'titik_id');
+
+        $presensiMap = Presensi::whereDate('check_in', $today)
+            ->whereIn('titik_id', $titikIds)
+            ->selectRaw('titik_id, COUNT(*) as total')
+            ->groupBy('titik_id')
+            ->pluck('total', 'titik_id');
+
+        $items = $titiks->map(function (Titik $titik) use ($produksiMap, $presensiMap) {
+            return [
+                'titik_id' => $titik->id,
+                'titik' => $titik->nama,
+                'proyek' => $titik->proyek?->nama,
+                'latitude' => (float) $titik->latitude,
+                'longitude' => (float) $titik->longitude,
+                'sdm_count' => (int) $titik->sdm_count,
+                'armada_count' => (int) $titik->armada_count,
+                'presensi_today' => (int) ($presensiMap[$titik->id] ?? 0),
+                'produksi_today' => (float) ($produksiMap[$titik->id] ?? 0),
+            ];
+        });
 
         return $this->success([
             'tanggal' => $today,
             'total_titik' => $titiks->count(),
-            'items' => $titiks,
+            'items' => $items,
         ], 'Ringkasan dashboard mobile.');
     }
 

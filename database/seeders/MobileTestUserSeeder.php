@@ -200,7 +200,7 @@ class MobileTestUserSeeder extends Seeder
                 'karyawan_nama' => 'Eko Driver Armada',
                 'tipe' => 'borongan_rit',
                 'rate_harian' => 150_000,
-                'tugas' => false,
+                'tugas' => true,
             ],
         ];
 

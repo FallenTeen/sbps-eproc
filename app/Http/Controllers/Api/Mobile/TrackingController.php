@@ -173,17 +173,25 @@ class TrackingController extends Controller
 
         $oneHourAgo = now()->subHour();
 
-        $users = MobileTrackingLocation::selectRaw('
+        $activeRows = MobileTrackingLocation::selectRaw('
                 karyawan_id,
                 max(recorded_at) as last_seen,
                 count(*) as point_count
             ')
             ->where('recorded_at', '>=', $oneHourAgo)
             ->groupBy('karyawan_id')
+            ->get();
+
+        // Batch load karyawan + user (anti N+1).
+        $karyawanIds = $activeRows->pluck('karyawan_id');
+        $karyawanMap = Karyawan::with('user')
+            ->whereIn('id', $karyawanIds)
             ->get()
-            ->map(function ($row) {
-                $karyawan = Karyawan::with('user')
-                    ->find($row->karyawan_id);
+            ->keyBy('id');
+
+        $items = $activeRows
+            ->map(function ($row) use ($karyawanMap) {
+                $karyawan = $karyawanMap[$row->karyawan_id];
 
                 return [
                     'karyawan_id' => $row->karyawan_id,
@@ -197,8 +205,8 @@ class TrackingController extends Controller
             ->values();
 
         return $this->success([
-            'total' => $users->count(),
-            'items' => $users,
+            'total' => $items->count(),
+            'items' => $items,
         ], 'User aktif.');
     }
 }
