@@ -133,6 +133,7 @@ describe('Sewa Alat Jam - HM Based', function () {
         $action = new RecordSewaAlatJamAction;
         $sewa = $action->execute([
             'armada_id' => $armada->id,
+            'proyek_id' => $this->proyek->id,
             'penyewa_eksternal' => 'PT Sewa Alat',
             'harga_per_jam_snapshot' => 200_000,
             'tanggal' => now()->toDateString(),
@@ -151,6 +152,7 @@ describe('Sewa Alat Jam - HM Based', function () {
         $action = new RecordSewaAlatJamAction;
         $sewa = $action->execute([
             'armada_id' => $armada->id,
+            'proyek_id' => $this->proyek->id,
             'harga_per_jam_snapshot' => 150_000,
             'tanggal' => now()->toDateString(),
             'jumlah_jam' => 10,

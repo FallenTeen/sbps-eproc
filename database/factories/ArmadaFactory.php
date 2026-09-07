@@ -19,6 +19,7 @@ class ArmadaFactory extends Factory
             'plat_nomor' => $this->faker->unique()->regexify('[A-Z] \d{3,4} [A-Z]{2,3}'),
             'kode_unit' => $this->faker->unique()->regexify('GCS-[A-Z]{2}-\d{2}'),
             'jenis' => 'dump_truck',
+            'tipe_unit' => 'armada_jalan',
             'model_tarif' => 'ritase',
             'tahun' => $this->faker->numberBetween(2015, 2025),
             'kapasitas' => $this->faker->randomElement(['8 m³', '5 ton', '12 m³']),
@@ -35,7 +36,7 @@ class ArmadaFactory extends Factory
 
     public function alatBerat(): static
     {
-        return $this->state(fn () => ['jenis' => 'alat_berat', 'model_tarif' => 'sewa_jam']);
+        return $this->state(fn () => ['jenis' => 'alat_berat', 'tipe_unit' => 'alat_berat', 'model_tarif' => 'sewa_jam']);
     }
 
     public function truckMolen(): static

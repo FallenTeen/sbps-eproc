@@ -20,6 +20,7 @@ class Armada extends Model
         'plat_nomor',
         'kode_unit',
         'jenis',
+        'tipe_unit',
         'model_tarif',
         'tahun',
         'kapasitas',
@@ -91,6 +92,35 @@ class Armada extends Model
     public function currentDriver()
     {
         return $this->hasOne(ArmadaDriver::class)->where('status', 'aktif')->latestOfMany();
+    }
+
+    // v6 (21.2) — riwayat penanggung jawab (utama & cadangan)
+    public function penanggungJawabs()
+    {
+        return $this->hasMany(ArmadaPenanggungJawab::class);
+    }
+
+    /**
+     * PIC aktif = baris peran=utama yang `sampai` null; fallback ke cadangan aktif.
+     * (spec Bagian 21.2 — utama menang, cadangan dipakai kalau utama sedang non-aktif)
+     */
+    public function getActivePenanggungJawabAttribute()
+    {
+        $utama = $this->penanggungJawabs()
+            ->where('peran', 'utama')
+            ->whereNull('sampai')
+            ->latest('mulai_dari')
+            ->first();
+
+        if ($utama) {
+            return $utama;
+        }
+
+        return $this->penanggungJawabs()
+            ->where('peran', 'cadangan')
+            ->whereNull('sampai')
+            ->latest('mulai_dari')
+            ->first();
     }
 
     // Scope

@@ -24,7 +24,11 @@ class Ritase extends Model
         'kategori',
         'material',
         'jumlah_rit',
+        'satuan_volume',
+        'jumlah_volume',
         'tarif_per_rit_snapshot',
+        'nominal',
+        'total_upah_rit',
         'proyek_id',
         'titik_id',
         'customer',
@@ -35,12 +39,16 @@ class Ritase extends Model
     protected $casts = [
         'tanggal' => 'date',
         'jumlah_rit' => 'integer',
+        'jumlah_volume' => 'float',
         'tarif_per_rit_snapshot' => 'float',
+        'nominal' => 'float',
+        'total_upah_rit' => 'float',
     ];
 
     public function getTotalUpahRitAttribute(): float
     {
-        return (float) (($this->jumlah_rit ?? 0) * ($this->tarif_per_rit_snapshot ?? 0));
+        // Kolom sudah berisi nilai efektif (dari RecordRitaseAction).
+        return (float) ($this->attributes['total_upah_rit'] ?? 0);
     }
 
     // Relasi

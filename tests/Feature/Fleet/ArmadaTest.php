@@ -196,6 +196,7 @@ test('record ritase berhasil', function () {
             'driver_karyawan_id' => $this->driver->id,
             'tanggal' => '2026-08-12',
             'jumlah_rit' => 6,
+            'satuan_volume' => 'ritase',
             'tarif_per_rit_snapshot' => 50000,
             'customer' => 'PT Klien',
             'biaya_lain' => [
@@ -230,6 +231,7 @@ test('record ritase memakai tarif dari rute tarif', function () {
             'tanggal' => '2026-08-12',
             'rute_tarif_id' => $rute->id,
             'jumlah_rit' => 3,
+            'satuan_volume' => 'ritase',
         ],
     )->assertRedirect();
 
@@ -259,7 +261,9 @@ test('record sewa alat berhasil', function () {
     $this->from(route('fleet.armada.index'))->post(
         route('fleet.armada.record-sewa', $armada->id),
         [
+            'tipe_sewa' => 'eksternal',
             'penyewa_eksternal' => 'PT Sewa',
+            'penyewa_nama' => 'PT Sewa',
             'harga_per_jam_snapshot' => 150000,
             'tanggal' => '2026-08-12',
             'jumlah_jam' => 8,
@@ -278,6 +282,8 @@ test('record sewa menghitung jam otomatis dari HM', function () {
     $this->from(route('fleet.armada.index'))->post(
         route('fleet.armada.record-sewa', $armada->id),
         [
+            'tipe_sewa' => 'eksternal',
+            'penyewa_nama' => 'PT Uji',
             'harga_per_jam_snapshot' => 150000,
             'tanggal' => '2026-08-12',
             'hm_awal' => 100,

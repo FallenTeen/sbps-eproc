@@ -9,6 +9,7 @@ export default function Edit({ armada, unitBisnis, titiks }) {
         plat_nomor: armada.plat_nomor || "",
         kode_unit: armada.kode_unit || "",
         jenis: armada.jenis || "dump_truck",
+        tipe_unit: armada.tipe_unit || "armada_jalan",
         model_tarif: armada.model_tarif || "ritase",
         tahun: armada.tahun || "",
         kapasitas: armada.kapasitas || "",
@@ -110,7 +111,16 @@ export default function Edit({ armada, unitBisnis, titiks }) {
                         </label>
                         <select
                             value={data.jenis}
-                            onChange={(e) => setData("jenis", e.target.value)}
+                            onChange={(e) =>
+                                setData({
+                                    ...data,
+                                    jenis: e.target.value,
+                                    tipe_unit:
+                                        e.target.value === "alat_berat"
+                                            ? "alat_berat"
+                                            : "armada_jalan",
+                                })
+                            }
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="dump_truck">Dump Truck</option>
@@ -121,6 +131,27 @@ export default function Edit({ armada, unitBisnis, titiks }) {
                         {errors.jenis && (
                             <p className="text-red-600 text-sm mt-1">
                                 {errors.jenis}
+                            </p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tipe Unit ("v6") *
+                        </label>
+                        <select
+                            value={data.tipe_unit}
+                            onChange={(e) =>
+                                setData("tipe_unit", e.target.value)
+                            }
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="armada_jalan">Armada Jalan</option>
+                            <option value="alat_berat">Alat Berat</option>
+                        </select>
+                        {errors.tipe_unit && (
+                            <p className="text-red-600 text-sm mt-1">
+                                {errors.tipe_unit}
                             </p>
                         )}
                     </div>

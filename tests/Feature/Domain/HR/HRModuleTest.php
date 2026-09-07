@@ -245,6 +245,7 @@ class HRModuleTest extends TestCase
             'status' => 'disetujui',
             'jumlah_rit' => 1,
             'tarif_per_rit_snapshot' => 150000,
+            'total_upah_rit' => 150000,
         ]);
 
         Ritase::forceCreate([
@@ -255,6 +256,7 @@ class HRModuleTest extends TestCase
             'status' => 'disetujui',
             'jumlah_rit' => 1,
             'tarif_per_rit_snapshot' => 120000,
+            'total_upah_rit' => 120000,
         ]);
         Schema::enableForeignKeyConstraints();
 

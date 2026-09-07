@@ -16,6 +16,7 @@ use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
 use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
+use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
@@ -145,6 +146,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Armada
         Route::resource('armada', ArmadaController::class);
         Route::post('armada/{armada}/assign-driver', [ArmadaController::class, 'assignDriver'])->name('armada.assign-driver');
+
+        // v6 (21.2) — Penanggung Jawab Armada (utama & cadangan)
+        Route::get('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'index'])->name('armada.penanggung-jawab.index');
+        Route::post('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'store'])->name('armada.penanggung-jawab.store');
+        Route::post('armada/{armada}/penanggung-jawab/cadangan', [ArmadaPenanggungJawabController::class, 'activateCadangan'])->name('armada.penanggung-jawab.cadangan');
         Route::post('armada/{armada}/record-ritase', [ArmadaController::class, 'recordRitase'])->name('armada.record-ritase');
         Route::post('armada/{armada}/record-sewa', [ArmadaController::class, 'recordSewa'])->name('armada.record-sewa');
         Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');

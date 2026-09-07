@@ -15,6 +15,7 @@ use App\Domain\Finance\Models\PembayaranKlien;
 use App\Domain\Finance\Models\TransferAntarKas;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
@@ -33,6 +34,7 @@ use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
 use App\Policies\AkunKasBankPolicy;
 use App\Policies\ArmadaChecklistHarianPolicy;
+use App\Policies\ArmadaPenanggungJawabPolicy;
 use App\Policies\ArmadaPolicy;
 use App\Policies\BahanBakuPolicy;
 use App\Policies\BbmLogPolicy;
@@ -149,6 +151,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Fleet Policies
         Gate::policy(Armada::class, ArmadaPolicy::class);
+        Gate::policy(ArmadaPenanggungJawab::class, ArmadaPenanggungJawabPolicy::class);
         Gate::policy(Ritase::class, RitasePolicy::class);
         Gate::policy(SewaAlatJam::class, SewaAlatPolicy::class);
         Gate::policy(ArmadaChecklistHarian::class, ArmadaChecklistHarianPolicy::class);

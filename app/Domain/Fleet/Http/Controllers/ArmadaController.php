@@ -93,9 +93,11 @@ class ArmadaController extends Controller
             'plat_nomor' => 'required|unique:armadas',
             'kode_unit' => 'required|unique:armadas',
             'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
+'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',
+            'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
@@ -186,11 +188,12 @@ class ArmadaController extends Controller
             'plat_nomor' => 'required|unique:armadas,plat_nomor,'.$armada->id,
             'kode_unit' => 'required|unique:armadas,kode_unit,'.$armada->id,
             'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
+'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',
+            'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
-            'status' => 'in:aktif,servis,nonaktif',
             'tanggal_mulai_pakai' => 'nullable|date',
         ]);
         $armada->update($validated);
@@ -218,7 +221,10 @@ class ArmadaController extends Controller
             'kategori' => 'nullable|string',
             'material' => 'nullable|string',
             'jumlah_rit' => 'required|integer|min:1',
+            'satuan_volume' => 'required|in:tonase,ritase,m3,harian',
+            'jumlah_volume' => 'nullable|numeric|min:0',
             'tarif_per_rit_snapshot' => 'nullable|numeric|min:0',
+            'nominal' => 'nullable|numeric|min:0',
             'proyek_id' => 'nullable|exists:proyeks,id',
             'titik_id' => 'nullable|exists:titiks,id',
             'customer' => 'nullable|string',
@@ -239,8 +245,14 @@ class ArmadaController extends Controller
         $this->authorize('recordSewa', $armada);
 
         $data = $request->validate([
+            'tipe_sewa' => 'required|in:internal,eksternal',
             'proyek_id' => 'nullable|exists:proyeks,id',
             'penyewa_eksternal' => 'nullable|string',
+            'penyewa_nama' => 'nullable|string',
+            'penyewa_pt' => 'nullable|string',
+            'penyewa_alamat' => 'nullable|string',
+            'penyewa_penanggung_jawab' => 'nullable|string',
+            'penyewa_no_hp' => 'nullable|string',
             'lokasi_pekerjaan' => 'nullable|string',
             'harga_per_jam_snapshot' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
