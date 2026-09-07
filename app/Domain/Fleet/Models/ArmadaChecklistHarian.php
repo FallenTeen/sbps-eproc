@@ -21,11 +21,29 @@ class ArmadaChecklistHarian extends Model
         'kondisi_baik',
         'item_bermasalah',
         'dicatat_oleh_karyawan_id',
+        'status',
+        'solar_liter',
+        'solar_harga_rp',
+        'odo_pagi',
+        'foto_odo_pagi',
+        'odo_sore',
+        'foto_odo_sore',
+        'jam_mulai_operasi',
+        'jam_selesai_operasi',
+        'hm_odo',
+        'odo_anomali',
+        'client_uuid',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'kondisi_baik' => 'boolean',
+        'solar_liter' => 'float',
+        'solar_harga_rp' => 'float',
+        'odo_pagi' => 'float',
+        'odo_sore' => 'float',
+        'hm_odo' => 'float',
+        'odo_anomali' => 'boolean',
     ];
 
     protected static function newFactory()

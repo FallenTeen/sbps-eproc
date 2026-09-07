@@ -102,6 +102,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
         Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
         Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
+        Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])->name('armada.odo-awal-proyek');
+        Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

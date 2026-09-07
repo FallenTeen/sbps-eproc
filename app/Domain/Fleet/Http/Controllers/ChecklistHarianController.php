@@ -96,6 +96,17 @@ class ChecklistHarianController extends Controller
             'tanggal' => 'nullable|date|before_or_equal:today',
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
+            'status' => 'nullable|in:berjalan,selesai',
+            'solar_liter' => 'nullable|numeric|min:0',
+            'solar_harga_rp' => 'nullable|numeric|min:0',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'odo_sore' => 'nullable|numeric|min:0',
+            'foto_odo_sore' => 'nullable|string',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'jam_selesai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
         ]);
 
         if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
@@ -122,14 +133,20 @@ class ChecklistHarianController extends Controller
             'kondisi_baik' => $validated['kondisi_baik'],
             'item_bermasalah' => $validated['item_bermasalah'] ?? null,
             'dicatat_oleh_karyawan_id' => $karyawan->id,
+            'status' => $validated['status'] ?? null,
+            'solar_liter' => $validated['solar_liter'] ?? null,
+            'solar_harga_rp' => $validated['solar_harga_rp'] ?? null,
+            'odo_pagi' => $validated['odo_pagi'] ?? null,
+            'foto_odo_pagi' => $validated['foto_odo_pagi'] ?? null,
+            'odo_sore' => $validated['odo_sore'] ?? null,
+            'foto_odo_sore' => $validated['foto_odo_sore'] ?? null,
+            'jam_mulai_operasi' => $validated['jam_mulai_operasi'] ?? null,
+            'jam_selesai_operasi' => $validated['jam_selesai_operasi'] ?? null,
+            'hm_odo' => $validated['hm_odo'] ?? null,
+            'client_uuid' => $validated['client_uuid'] ?? null,
         ];
 
-        if ($existing) {
-            $existing->update($data);
-            $checklist = $existing;
-        } else {
-            $checklist = app(RecordChecklistHarianAction::class)->execute($checkable, $data);
-        }
+        $checklist = app(RecordChecklistHarianAction::class)->execute($checkable, $data);
 
         return back()->with('success', $existing
             ? 'Checklist hari ini berhasil diperbarui.'
@@ -162,6 +179,16 @@ class ChecklistHarianController extends Controller
         $validated = $request->validate([
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
+            'status' => 'nullable|in:berjalan,selesai',
+            'solar_liter' => 'nullable|numeric|min:0',
+            'solar_harga_rp' => 'nullable|numeric|min:0',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'odo_sore' => 'nullable|numeric|min:0',
+            'foto_odo_sore' => 'nullable|string',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'jam_selesai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
         ]);
 
         if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {

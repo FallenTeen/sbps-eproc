@@ -292,6 +292,17 @@ class ArmadaController extends Controller
             'kondisi_baik' => 'required|boolean',
             'item_bermasalah' => 'nullable|string',
             'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
+            'status' => 'nullable|in:berjalan,selesai',
+            'solar_liter' => 'nullable|numeric|min:0',
+            'solar_harga_rp' => 'nullable|numeric|min:0',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'odo_sore' => 'nullable|numeric|min:0',
+            'foto_odo_sore' => 'nullable|string',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'jam_selesai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
         ]);
         (new RecordChecklistHarianAction)->execute($armada, $data);
 

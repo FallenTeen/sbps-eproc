@@ -63,6 +63,11 @@ class Armada extends Model
         return $this->morphMany(ArmadaChecklistHarian::class, 'checkable');
     }
 
+    public function odoAwalProyeks()
+    {
+        return $this->hasMany(ArmadaOdoAwalProyek::class);
+    }
+
     public function bbmLogs()
     {
         return $this->morphMany(BbmLog::class, 'serviceable');
