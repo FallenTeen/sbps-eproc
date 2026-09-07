@@ -116,10 +116,10 @@ test('Alur lengkap butuh sparepart: assign -> request -> record -> selesai (+ se
     expect($pengajuan->fresh()->status)->toBeInstanceOf(MenungguSparepart::class);
 
     // Workshop ajukan item sparepart
-    (new RequestSparepartAction)->execute($pengajuan, $this->workshop, [
+    (new RequestSparepartAction)->execute($this->workshop, [
         ['nama_item' => 'Pompa Air', 'jumlah' => 1, 'satuan' => 'pcs', 'nominal' => 250000],
         ['nama_item' => 'Oli Mesin', 'jumlah' => 2, 'satuan' => 'liter', 'nominal' => 50000],
-    ]);
+    ], $pengajuan);
     expect(PengajuanServisSparepart::where('pengajuan_servis_armada_id', $pengajuan->id)->count())->toBe(2);
 
     // Inventory catat pengadaan -> sparepart_tersedia + total biaya

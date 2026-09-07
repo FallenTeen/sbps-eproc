@@ -133,7 +133,7 @@ class PengajuanServisArmadaController extends Controller
             'items.*.nominal' => 'nullable|numeric|min:0',
         ]);
 
-        app(RequestSparepartAction::class)->execute($pengajuan, $request->user(), $validated['items']);
+        app(RequestSparepartAction::class)->execute($request->user(), $validated['items'], $pengajuan);
 
         return back()->with('success', 'Permintaan sparepart diajukan ke Inventory.');
     }

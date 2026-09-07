@@ -15,6 +15,7 @@ import {
     Building2,
     ShieldCheck,
     MapPin,
+    Wrench,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -82,6 +83,17 @@ function getAllMenus() {
                 { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
                 { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
+            ],
+        },
+        {
+            title: 'Workshop',
+            icon: Wrench,
+            permission: ['view fleet service', 'manage fleet service', 'manage sparepart', 'view sparepart'],
+            items: [
+                { title: 'To-Do List Servis', href: safeRoute('fleet.workshop.todo.index', {}, '/fleet/workshop/todo'), routeName: 'fleet.workshop.todo.*', permission: ['view fleet service', 'manage fleet service'] },
+                { title: 'Ajuan Sparepart', href: safeRoute('fleet.workshop.sparepart.index', {}, '/fleet/workshop/sparepart'), routeName: 'fleet.workshop.sparepart.*', permission: ['view fleet service', 'manage sparepart', 'view sparepart'] },
+                { title: 'Riwayat Servis', href: safeRoute('fleet.workshop.riwayat.index', {}, '/fleet/workshop/riwayat'), routeName: 'fleet.workshop.riwayat.*', permission: ['view fleet service', 'manage fleet service'] },
+                { title: 'Monitoring Kondisi', href: safeRoute('fleet.workshop.monitoring.index', {}, '/fleet/workshop/monitoring'), routeName: 'fleet.workshop.monitoring.*', permission: ['view fleet service', 'view fleet', 'view production'] },
             ],
         },
         {

@@ -19,6 +19,8 @@ use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
 use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
 use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
+use App\Domain\Fleet\Http\Controllers\WorkshopController;
+use App\Domain\Fleet\Http\Controllers\WorkshopTodoController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
@@ -251,6 +253,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('servis-armada/{pengajuan}/record-sparepart', [PengajuanServisArmadaController::class, 'recordSparepart'])->name('servis-armada.record-sparepart');
         Route::post('servis-armada/{pengajuan}/complete', [PengajuanServisArmadaController::class, 'complete'])->name('servis-armada.complete');
         Route::get('servis-armada/{pengajuan}', [PengajuanServisArmadaController::class, 'show'])->name('servis-armada.show');
+    });
+
+    // v6 (21.9) — Role Workshop: to-do servis rutin terjadwal, ajuan sparepart
+    // dari to-do, riwayat servis gabungan, monitoring kondisi alat produksi.
+    Route::prefix('fleet/workshop')->name('fleet.workshop.')->middleware([
+        'permission:view fleet service|manage fleet service|manage sparepart|view sparepart|view fleet|manage fleet',
+    ])->group(function () {
+        Route::get('todo', [WorkshopTodoController::class, 'index'])->name('todo.index');
+        Route::post('todo', [WorkshopTodoController::class, 'store'])->name('todo.store');
+        Route::put('todo/{todo}', [WorkshopTodoController::class, 'update'])->name('todo.update');
+        Route::delete('todo/{todo}', [WorkshopTodoController::class, 'destroy'])->name('todo.destroy');
+        Route::post('todo/{todo}/complete', [WorkshopTodoController::class, 'complete'])->name('todo.complete');
+        Route::post('todo/{todo}/request-sparepart', [WorkshopTodoController::class, 'requestSparepart'])->name('todo.request-sparepart');
+        Route::get('sparepart', [WorkshopController::class, 'sparepartIndex'])->name('sparepart.index');
+        Route::post('sparepart/record', [WorkshopController::class, 'sparepartRecord'])->name('sparepart.record');
+        Route::get('riwayat', [WorkshopController::class, 'riwayat'])->name('riwayat.index');
+        Route::get('monitoring', [WorkshopController::class, 'monitoring'])->name('monitoring.index');
     });
 
     // ============================================================

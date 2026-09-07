@@ -13,6 +13,7 @@ class PengajuanServisSparepart extends Model
 
     protected $fillable = [
         'pengajuan_servis_armada_id',
+        'workshop_todo_id',
         'nama_item',
         'jumlah',
         'satuan',
@@ -32,5 +33,10 @@ class PengajuanServisSparepart extends Model
     public function pengajuan()
     {
         return $this->belongsTo(PengajuanServisArmada::class, 'pengajuan_servis_armada_id');
+    }
+
+    public function workshopTodo()
+    {
+        return $this->belongsTo(WorkshopTodo::class, 'workshop_todo_id');
     }
 }
