@@ -57,6 +57,11 @@ class SewaAlatJam extends Model
         return $this->morphMany(InvoiceItem::class, 'referensi');
     }
 
+    public function checklists()
+    {
+        return $this->hasMany(ChecklistSerahTerima::class, 'sewa_alat_jam_id');
+    }
+
     // Scope
     public function scopeDisetujui($query)
     {

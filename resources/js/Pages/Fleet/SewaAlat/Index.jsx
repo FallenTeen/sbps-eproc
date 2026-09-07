@@ -174,12 +174,18 @@ export default function SewaAlatIndex({ auth, sewaList, filters = {}, armadaList
                                                 {s.status}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <Link href={route('fleet.armada.show', s.armada_id)}
-                                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold">
-                                                <Eye className="w-3.5 h-3.5" /> Detail
-                                            </Link>
-                                        </td>
+<td className="px-4 py-3">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                            <Link href={route('fleet.armada.show', s.armada_id)}
+                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold">
+                                <Eye className="w-3 h-3" /> Detail
+                            </Link>
+                            <Link href={route('fleet.sewa-alat.serah-terima.show', s.id)}
+                                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-semibold">
+                                <Clock className="w-3 h-3" /> Serah Terima
+                            </Link>
+                        </div>
+                    </td>
                                     </tr>
                                 );
                             })}

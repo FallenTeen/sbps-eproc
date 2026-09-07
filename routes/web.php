@@ -22,7 +22,7 @@ use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
 use App\Domain\Fleet\Http\Controllers\WorkshopController;
 use App\Domain\Fleet\Http\Controllers\WorkshopTodoController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
-use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
+use App\Domain\Fleet\Http\Controllers\ChecklistSerahTerimaController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
 use App\Domain\Fleet\Http\Controllers\RitaseController;
 use App\Domain\Fleet\Http\Controllers\RuteTarifController;
@@ -230,6 +230,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('sewa-alat/{sewaAlat}/approve', [SewaAlatController::class, 'approve'])->name('sewa-alat.approve');
         Route::post('sewa-alat/bulk', [SewaAlatController::class, 'bulkStore'])->name('sewa-alat.bulk');
         Route::get('sewa-alat/report/mingguan', [SewaAlatController::class, 'reportMingguan'])->name('sewa-alat.report-mingguan');
+
+        // Checklist Serah Terima (21.10)
+        Route::get('sewa-alat/{sewaAlat}/serah-terima', [ChecklistSerahTerimaController::class, 'show'])->name('sewa-alat.serah-terima.show');
+        Route::post('sewa-alat/{sewaAlat}/serah-terima', [ChecklistSerahTerimaController::class, 'store'])->name('sewa-alat.serah-terima.store');
+        Route::get('sewa-alat/{sewaAlat}/serah-terima/pdf', [ChecklistSerahTerimaController::class, 'print'])->name('sewa-alat.serah-terima.print');
 
         // Rute Tarif
         Route::resource('rute-tarif', RuteTarifController::class);
