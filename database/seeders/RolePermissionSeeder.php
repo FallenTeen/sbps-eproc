@@ -58,6 +58,14 @@ class RolePermissionSeeder extends Seeder
             'record ritase',
             'record sewa',
 
+            // Fleet Service (Sistem Servis Armada, 21.8)
+            'view fleet service',
+            'manage fleet service',
+            'approve fleet service',
+            'submit fleet service',
+            'manage sparepart',
+            'view sparepart',
+
             // Production
             'manage production',
             'manage production cbp',
@@ -101,6 +109,7 @@ class RolePermissionSeeder extends Seeder
                 'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
                 'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa',
+                'view fleet service', 'manage fleet service', 'approve fleet service', 'submit fleet service', 'manage sparepart', 'view sparepart',
                 'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
                 'manage hr', 'view hr', 'manage payroll', 'view payroll',
                 'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
@@ -123,13 +132,19 @@ class RolePermissionSeeder extends Seeder
             ],
             'Koordinator GCS' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+                'view fleet service', 'submit fleet service',
             ],
             'Inventory' => [
                 'manage inventory', 'view inventory',
                 'manage stok opname', 'view stok opname',
                 'manage procurement', 'view procurement', 'receive procurement',
                 'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+                'view fleet service', 'manage sparepart', 'view sparepart', 'view fleet',
                 'view proyek', 'view rab',
+            ],
+            'Workshop' => [
+                'view fleet service', 'manage fleet service', 'submit fleet service',
+                'manage sparepart', 'view sparepart', 'view fleet',
             ],
             'Koordinator CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -167,6 +182,7 @@ class RolePermissionSeeder extends Seeder
             'Ketua Divisi Armada' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
                 'approve procurement fleet',
+                'view fleet service', 'approve fleet service',
             ],
             'Ketua Divisi Produksi CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -192,7 +208,7 @@ class RolePermissionSeeder extends Seeder
             'Mandor Titik' => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
             'Driver Standby' => ['view proyek', 'manage formulir lapangan'],
             'Driver Kondisional' => ['view proyek', 'manage formulir lapangan'],
-            'Driver Armada' => ['view proyek', 'view fleet'],
+            'Driver Armada' => ['view proyek', 'view fleet', 'view fleet service', 'submit fleet service'],
             'SDM Lapangan Kondisional' => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
         ];
 

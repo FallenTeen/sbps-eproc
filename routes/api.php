@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Mobile\MasterDataController;
 use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
+use App\Http\Controllers\Api\Mobile\PengajuanServisController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
 use App\Http\Controllers\Api\Mobile\TrackingController;
 use App\Http\Controllers\Api\Mobile\UploadController;
@@ -107,6 +108,11 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
 // v6 (21.6) — helper armada & presensi (dicatat PIC)
 Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
 Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])->name('armada.helper.presensi');
+
+// v6 (21.8) — Sistem Servis Armada (mobile: ajuan bagian 1 dari PIC/operator)
+Route::get('servis-armada/saya', [PengajuanServisController::class, 'saya'])->name('servis-armada.saya');
+Route::post('servis-armada', [PengajuanServisController::class, 'store'])->name('servis-armada.store');
+Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

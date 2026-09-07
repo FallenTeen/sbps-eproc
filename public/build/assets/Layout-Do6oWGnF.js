@@ -1,1 +1,0 @@
-import{t as e}from"./app-FxSX_xzx.js";import{t}from"./AuthenticatedLayout-CumQH_Ly.js";var n=e();function r({header:e,children:r}){return(0,n.jsx)(t,{header:e,children:r})}export{r as t};

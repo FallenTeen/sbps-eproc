@@ -36,6 +36,7 @@ class SeedProduction extends Command
             'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
             'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
             'manage fleet', 'view fleet', 'record ritase', 'record sewa',
+            'view fleet service', 'manage fleet service', 'approve fleet service', 'submit fleet service', 'manage sparepart', 'view sparepart',
             'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
             'manage hr', 'view hr', 'manage payroll', 'view payroll',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
@@ -63,6 +64,7 @@ class SeedProduction extends Command
                 'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
                 'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa',
+                'view fleet service', 'manage fleet service', 'approve fleet service', 'submit fleet service', 'manage sparepart', 'view sparepart',
                 'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
                 'manage hr', 'view hr', 'manage payroll', 'view payroll',
                 'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
@@ -83,13 +85,19 @@ class SeedProduction extends Command
             ],
             'Koordinator GCS' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+                'view fleet service', 'submit fleet service',
             ],
             'Inventory' => [
                 'manage inventory', 'view inventory',
                 'manage stok opname', 'view stok opname',
                 'manage procurement', 'view procurement', 'receive procurement',
                 'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+                'view fleet service', 'manage sparepart', 'view sparepart', 'view fleet',
                 'view proyek', 'view rab',
+            ],
+            'Workshop' => [
+                'view fleet service', 'manage fleet service', 'submit fleet service',
+                'manage sparepart', 'view sparepart', 'view fleet',
             ],
             'Koordinator CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -125,6 +133,7 @@ class SeedProduction extends Command
             'Ketua Divisi Armada' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
                 'approve procurement fleet',
+                'view fleet service', 'approve fleet service',
             ],
             'Ketua Divisi Produksi CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -146,8 +155,8 @@ class SeedProduction extends Command
                 'approve procurement kontrak',
             ],
             'Mandor Titik'              => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
-            'Driver Standby'            => ['view proyek', 'manage formulir lapangan'],
-            'Driver Kondisional'        => ['view proyek', 'manage formulir lapangan'],
+            'Driver Standby'            => ['view proyek', 'manage formulir lapangan', 'view fleet service', 'submit fleet service'],
+            'Driver Kondisional'        => ['view proyek', 'manage formulir lapangan', 'view fleet service', 'submit fleet service'],
             'SDM Lapangan Kondisional'  => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
         ];
 
@@ -229,6 +238,7 @@ class SeedProduction extends Command
             ['email' => 'ketua.amp@example.com', 'name' => 'Ketua Divisi Produksi AMP', 'nama_lengkap' => 'Bapak Ketua Produksi AMP', 'jabatan' => 'Head of AMP Plant', 'role' => 'Ketua Divisi Produksi AMP', 'unit_bisnis_id' => $amp?->id, 'divisi' => 'Produksi'],
             ['email' => 'procurement@example.com', 'name' => 'Koordinator Procurement', 'nama_lengkap' => 'Staf Koordinator Procurement', 'jabatan' => 'Procurement Officer', 'role' => 'Koordinator Procurement', 'unit_bisnis_id' => null, 'divisi' => 'Procurement'],
             ['email' => 'inventory@example.com', 'name' => 'Staff Inventory', 'nama_lengkap' => 'Staf Gudang Inventory', 'jabatan' => 'Inventory Officer', 'role' => 'Inventory', 'unit_bisnis_id' => null, 'divisi' => 'Inventory'],
+            ['email' => 'workshop@example.com', 'name' => 'Staff Workshop', 'nama_lengkap' => 'Mekanik / Admin Workshop', 'jabatan' => 'Workshop Fleet Officer', 'role' => 'Workshop', 'unit_bisnis_id' => $gcs?->id, 'divisi' => 'Armada'],
             ['email' => 'gcs@example.com', 'name' => 'Koordinator GCS', 'nama_lengkap' => 'Staf Operasional Armada GCS', 'jabatan' => 'GCS Fleet Officer', 'role' => 'Koordinator GCS', 'unit_bisnis_id' => $gcs?->id, 'divisi' => 'Armada'],
             ['email' => 'cbp@example.com', 'name' => 'Koordinator CBP', 'nama_lengkap' => 'Staf Operasional Batching Plant', 'jabatan' => 'CBP Plant Officer', 'role' => 'Koordinator CBP', 'unit_bisnis_id' => $cbp?->id, 'divisi' => 'Produksi'],
             ['email' => 'amp@example.com', 'name' => 'Koordinator AMP', 'nama_lengkap' => 'Staf Operasional Hotmix Plant', 'jabatan' => 'AMP Plant Officer', 'role' => 'Koordinator AMP', 'unit_bisnis_id' => $amp?->id, 'divisi' => 'Produksi'],

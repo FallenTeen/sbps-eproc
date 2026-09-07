@@ -18,6 +18,7 @@ use App\Domain\Finance\Http\Controllers\TransferKasController;
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
 use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
+use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
@@ -232,6 +233,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('rute-tarif', RuteTarifController::class);
         Route::post('rute-tarif/{ruteTarif}/set-harga', [RuteTarifController::class, 'setHarga'])->name('rute-tarif.set-harga');
         Route::get('rute-tarif/current/{asal}/{tujuan}', [RuteTarifController::class, 'current'])->name('rute-tarif.current');
+    });
+
+    // v6 (21.8) — Sistem Servis Armada (multi-bagian: ajuan → approval →
+    // workshop → sparepart Inventory). Group terpisah agar role Workshop &
+    // Inventory ikut ter-expose (policy yang memilah akses per bagian).
+    Route::prefix('fleet')->name('fleet.')->middleware([
+        'permission:view fleet service|manage fleet service|approve fleet service|manage sparepart|view sparepart|view fleet|manage fleet',
+    ])->group(function () {
+        Route::get('servis-armada', [PengajuanServisArmadaController::class, 'index'])->name('servis-armada.index');
+        Route::get('servis-armada/create', [PengajuanServisArmadaController::class, 'create'])->name('servis-armada.create');
+        Route::post('servis-armada', [PengajuanServisArmadaController::class, 'store'])->name('servis-armada.store');
+        Route::post('servis-armada/{pengajuan}/approve', [PengajuanServisArmadaController::class, 'approve'])->name('servis-armada.approve');
+        Route::post('servis-armada/{pengajuan}/reject', [PengajuanServisArmadaController::class, 'reject'])->name('servis-armada.reject');
+        Route::post('servis-armada/{pengajuan}/assign-workshop', [PengajuanServisArmadaController::class, 'assignWorkshop'])->name('servis-armada.assign-workshop');
+        Route::post('servis-armada/{pengajuan}/request-sparepart', [PengajuanServisArmadaController::class, 'requestSparepart'])->name('servis-armada.request-sparepart');
+        Route::post('servis-armada/{pengajuan}/record-sparepart', [PengajuanServisArmadaController::class, 'recordSparepart'])->name('servis-armada.record-sparepart');
+        Route::post('servis-armada/{pengajuan}/complete', [PengajuanServisArmadaController::class, 'complete'])->name('servis-armada.complete');
+        Route::get('servis-armada/{pengajuan}', [PengajuanServisArmadaController::class, 'show'])->name('servis-armada.show');
     });
 
     // ============================================================

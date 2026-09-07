@@ -17,7 +17,9 @@ use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\HelperArmada;
+use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Policies\HelperArmadaPolicy;
+use App\Policies\PengajuanServisPolicy;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
@@ -165,6 +167,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DowntimeLog::class, DowntimeLogPolicy::class);
         Gate::policy(RuteTarif::class, RuteTarifPolicy::class);
         Gate::policy(ServiceHistory::class, ServiceHistoryPolicy::class);
+        Gate::policy(PengajuanServisArmada::class, PengajuanServisPolicy::class);
 
         // Production Policies
         Gate::policy(MesinProduksi::class, MesinProduksiPolicy::class);
