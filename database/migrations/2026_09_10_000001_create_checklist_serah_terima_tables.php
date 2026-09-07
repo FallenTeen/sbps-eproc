@@ -49,7 +49,7 @@ return new class extends Migration
             $table->text('catatan')->nullable();
             $table->timestamps();
 
-            $table->foreign('checklist_serah_terima_armada_id')
+            $table->foreign('checklist_serah_terima_armada_id', 'fk_cst_detail_csta_id')
                 ->references('id')->on('checklist_serah_terima_armada')->cascadeOnDelete();
         });
     }
