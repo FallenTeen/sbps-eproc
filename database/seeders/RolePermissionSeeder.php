@@ -46,6 +46,12 @@ class RolePermissionSeeder extends Seeder
             'approve procurement kontrak',  // approve PO kontrak max 30jt
             'approve procurement keuangan', // approve PO keuangan max 50jt
 
+            // Inventory (role gudang, 21.7)
+            'manage inventory',
+            'view inventory',
+            'manage stok opname',
+            'view stok opname',
+
             // Fleet
             'manage fleet',
             'view fleet',
@@ -117,6 +123,13 @@ class RolePermissionSeeder extends Seeder
             ],
             'Koordinator GCS' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+            ],
+            'Inventory' => [
+                'manage inventory', 'view inventory',
+                'manage stok opname', 'view stok opname',
+                'manage procurement', 'view procurement', 'receive procurement',
+                'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+                'view proyek', 'view rab',
             ],
             'Koordinator CBP' => [
                 'manage production', 'manage production cbp', 'view production',

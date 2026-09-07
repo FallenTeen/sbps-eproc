@@ -33,6 +33,8 @@ use App\Domain\Procurement\Http\Controllers\BahanBakuController;
 use App\Domain\Procurement\Http\Controllers\PembayaranController;
 use App\Domain\Procurement\Http\Controllers\PurchaseOrderController;
 use App\Domain\Procurement\Http\Controllers\SupplierController;
+use App\Domain\Inventory\Http\Controllers\DashboardController as InventoryDashboardController;
+use App\Domain\Inventory\Http\Controllers\StokOpnameController;
 // HR Controllers
 use App\Domain\Production\Http\Controllers\MesinProduksiController;
 use App\Domain\Production\Http\Controllers\MixDesignController;
@@ -138,6 +140,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Pembayaran (internal)
         Route::resource('pembayaran', PembayaranController::class)->only(['index', 'show']);
         Route::get('pembayaran/{pembayaran}/print', [PembayaranController::class, 'print'])->name('pembayaran.print');
+    });
+
+    // ============================================================
+    // INVENTORY MODULE (Bagian 21.7) — role baru, reuse Procurement
+    // ============================================================
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('dashboard', [InventoryDashboardController::class, 'index'])
+            ->middleware('permission:manage inventory|view inventory|manage procurement|view procurement')
+            ->name('dashboard');
+
+        Route::prefix('stok-opname')->name('stok-opname.')->middleware(['permission:manage stok opname|view stok opname'])->group(function () {
+            Route::get('/', [StokOpnameController::class, 'index'])->name('index');
+            Route::get('create', [StokOpnameController::class, 'create'])->name('create');
+            Route::post('/', [StokOpnameController::class, 'store'])->name('store');
+            Route::delete('{stokOpname}', [StokOpnameController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // ============================================================

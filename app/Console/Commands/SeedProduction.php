@@ -44,6 +44,7 @@ class SeedProduction extends Command
             'manage procurement division', 'approve procurement division', 'approve procurement threshold',
             'manage fleet division', 'manage production cbp division', 'manage production amp division',
             'manage hr division', 'manage finance division', 'approve expense division', 'approve payroll division',
+            'manage inventory', 'view inventory', 'manage stok opname', 'view stok opname',
         ];
 
         foreach ($permissions as $permission) {
@@ -82,6 +83,13 @@ class SeedProduction extends Command
             ],
             'Koordinator GCS' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+            ],
+            'Inventory' => [
+                'manage inventory', 'view inventory',
+                'manage stok opname', 'view stok opname',
+                'manage procurement', 'view procurement', 'receive procurement',
+                'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+                'view proyek', 'view rab',
             ],
             'Koordinator CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -220,6 +228,7 @@ class SeedProduction extends Command
             ['email' => 'ketua.cbp@example.com', 'name' => 'Ketua Divisi Produksi CBP', 'nama_lengkap' => 'Bapak Ketua Produksi CBP', 'jabatan' => 'Head of CBP Plant', 'role' => 'Ketua Divisi Produksi CBP', 'unit_bisnis_id' => $cbp?->id, 'divisi' => 'Produksi'],
             ['email' => 'ketua.amp@example.com', 'name' => 'Ketua Divisi Produksi AMP', 'nama_lengkap' => 'Bapak Ketua Produksi AMP', 'jabatan' => 'Head of AMP Plant', 'role' => 'Ketua Divisi Produksi AMP', 'unit_bisnis_id' => $amp?->id, 'divisi' => 'Produksi'],
             ['email' => 'procurement@example.com', 'name' => 'Koordinator Procurement', 'nama_lengkap' => 'Staf Koordinator Procurement', 'jabatan' => 'Procurement Officer', 'role' => 'Koordinator Procurement', 'unit_bisnis_id' => null, 'divisi' => 'Procurement'],
+            ['email' => 'inventory@example.com', 'name' => 'Staff Inventory', 'nama_lengkap' => 'Staf Gudang Inventory', 'jabatan' => 'Inventory Officer', 'role' => 'Inventory', 'unit_bisnis_id' => null, 'divisi' => 'Inventory'],
             ['email' => 'gcs@example.com', 'name' => 'Koordinator GCS', 'nama_lengkap' => 'Staf Operasional Armada GCS', 'jabatan' => 'GCS Fleet Officer', 'role' => 'Koordinator GCS', 'unit_bisnis_id' => $gcs?->id, 'divisi' => 'Armada'],
             ['email' => 'cbp@example.com', 'name' => 'Koordinator CBP', 'nama_lengkap' => 'Staf Operasional Batching Plant', 'jabatan' => 'CBP Plant Officer', 'role' => 'Koordinator CBP', 'unit_bisnis_id' => $cbp?->id, 'divisi' => 'Produksi'],
             ['email' => 'amp@example.com', 'name' => 'Koordinator AMP', 'nama_lengkap' => 'Staf Operasional Hotmix Plant', 'jabatan' => 'AMP Plant Officer', 'role' => 'Koordinator AMP', 'unit_bisnis_id' => $amp?->id, 'divisi' => 'Produksi'],

@@ -26,6 +26,7 @@ use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\HR\Models\GajiPeriode;
 use App\Domain\HR\Models\Karyawan;
+use App\Domain\Inventory\Models\StokOpname;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Pembayaran;
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -61,6 +62,7 @@ use App\Policies\RuteTarifPolicy;
 use App\Policies\ServiceHistoryPolicy;
 use App\Policies\SewaAlatPolicy;
 use App\Policies\SupplierPolicy;
+use App\Policies\StokOpnamePolicy;
 use App\Policies\TitikPolicy;
 use App\Policies\TransferKasPolicy;
 use App\Policies\UnitBisnisPolicy;
@@ -150,6 +152,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(BahanBaku::class, BahanBakuPolicy::class);
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(Pembayaran::class, PembayaranPolicy::class);
+        Gate::policy(StokOpname::class, StokOpnamePolicy::class);
 
         // Fleet Policies
         Gate::policy(Armada::class, ArmadaPolicy::class);

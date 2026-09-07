@@ -19,7 +19,7 @@ return [
             'description' => 'Manajemen sistem, user, procurement, audit log, dan pengaturan global.',
             'icon' => 'Shield',
             'color' => 'red',
-            'roles' => ['Owner', 'Koordinator Procurement'],
+            'roles' => ['Owner', 'Koordinator Procurement', 'Inventory'],
         ],
 
         'armada' => [

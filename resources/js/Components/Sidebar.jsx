@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     FolderKanban,
     ShoppingCart,
+    Package,
     Truck,
     Factory,
     Users,
@@ -55,6 +56,16 @@ function getAllMenus() {
                 { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*', permission: ['manage procurement', 'view procurement', 'approve procurement'] },
                 { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', permission: ['manage bahan baku', 'view bahan baku'] },
                 { title: 'Daftar Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*', permission: ['manage supplier', 'view supplier'] },
+            ],
+        },
+        {
+            title: 'Inventory',
+            icon: Package,
+            permission: ['manage inventory', 'view inventory', 'manage stok opname', 'view stok opname', 'manage bahan baku', 'view bahan baku'],
+            items: [
+                { title: 'Dashboard Inventory', href: safeRoute('inventory.dashboard', {}, '/inventory/dashboard'), routeName: 'inventory.dashboard', permission: ['manage inventory', 'view inventory', 'manage stok opname', 'view stok opname', 'manage procurement', 'view procurement'] },
+                { title: 'Material & Sparepart', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', permission: ['manage bahan baku', 'view bahan baku'] },
+                { title: 'Stok Opname', href: safeRoute('inventory.stok-opname.index', {}, '/inventory/stok-opname'), routeName: 'inventory.stok-opname.*', permission: ['manage stok opname', 'view stok opname'] },
             ],
         },
         {

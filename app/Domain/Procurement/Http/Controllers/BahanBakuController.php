@@ -2,6 +2,7 @@
 
 namespace App\Domain\Procurement\Http\Controllers;
 
+use App\Domain\Procurement\Actions\GetStokSaldoAction;
 use App\Domain\Procurement\Actions\SetHargaBeliAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Supplier;
@@ -78,18 +79,7 @@ class BahanBakuController extends Controller
 
         $bahanBaku->load(['hargaBeli.supplier']);
 
-        $stokPerTitik = $bahanBaku->stokMutasis()
-            ->with('titik')
-            ->get()
-            ->groupBy('titik_id')
-            ->map(function ($mutasis, $titikId) {
-                return [
-                    'titik_id' => $titikId,
-                    'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
-                ];
-            })
-            ->values();
+        $stokPerTitik = (new GetStokSaldoAction)->perTitik($bahanBaku);
 
         $bahanBaku->setAttribute('stok_per_titik', $stokPerTitik);
 
@@ -150,17 +140,7 @@ class BahanBakuController extends Controller
     {
         $this->authorize('view', $bahanBaku);
 
-        $perTitik = $bahanBaku->stokMutasis()
-            ->get()
-            ->groupBy('titik_id')
-            ->map(function ($mutasis, $titikId) {
-                return [
-                    'titik_id' => $titikId,
-                    'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
-                ];
-            })
-            ->values();
+        $perTitik = (new GetStokSaldoAction)->perTitik($bahanBaku);
 
         $mutasis = $bahanBaku->stokMutasis()
             ->with('titik')
