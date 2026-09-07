@@ -12,6 +12,7 @@ import {
     Wrench,
     ClipboardCheck,
     Clock,
+    Users,
     Truck,
     User,
 } from "lucide-react";
@@ -1374,6 +1375,197 @@ function DriverSection({ armada, options }) {
     );
 }
 
+function HelperSection({ armada }) {
+    const { data, setData, post, processing, errors } = useForm({
+        nama: "",
+        no_hp: "",
+        honor: "",
+        durasi_mulai: new Date().toISOString().split("T")[0],
+        durasi_selesai: "",
+    });
+
+    const submit = (e) => {
+        e.preventDefault();
+        post(route("fleet.armada.helper.store", armada.id), {
+            preserveScroll: true,
+            onSuccess: () => reset(),
+        });
+    };
+
+    const helpers = armada.helper_armadas || [];
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" /> Tambah Helper
+                </h3>
+                <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Field label="Nama *" error={errors.nama}>
+                        <input
+                            type="text"
+                            value={data.nama}
+                            onChange={(e) => setData("nama", e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                    <Field label="No HP" error={errors.no_hp}>
+                        <input
+                            type="text"
+                            value={data.no_hp}
+                            onChange={(e) => setData("no_hp", e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                    <Field label="Honor (Rp)" error={errors.honor}>
+                        <input
+                            type="number"
+                            value={data.honor}
+                            onChange={(e) => setData("honor", e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                    <Field label="Durasi Mulai *" error={errors.durasi_mulai}>
+                        <input
+                            type="date"
+                            value={data.durasi_mulai}
+                            onChange={(e) => setData("durasi_mulai", e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                    <Field label="Durasi Selesai" error={errors.durasi_selesai}>
+                        <input
+                            type="date"
+                            value={data.durasi_selesai}
+                            onChange={(e) => setData("durasi_selesai", e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                    <div className="flex items-end">
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                            <Plus className="w-4 h-4" /> Tambah
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {helpers.length > 0 && (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Nama</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">No HP</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Honor</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Durasi</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Presensi</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {helpers.map((h) => (
+                                <HelperRow key={h.id} armada={armada} helper={h} />
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function HelperRow({ armada, helper }) {
+    const [editing, setEditing] = useState(false);
+    const { data, setData, put, delete: destroy, processing } = useForm({
+        nama: helper.nama,
+        no_hp: helper.no_hp || "",
+        honor: helper.honor,
+        durasi_mulai: helper.durasi_mulai,
+        durasi_selesai: helper.durasi_selesai || "",
+        status: helper.status,
+    });
+
+    const save = (e) => {
+        e.preventDefault();
+        put(route("fleet.armada.helper.update", [armada.id, helper.id]), {
+            preserveScroll: true,
+            onSuccess: () => setEditing(false),
+        });
+    };
+
+    const presensis = helper.presensis || [];
+
+    return (
+        <tr>
+            <td className="px-4 py-3 text-sm font-medium">{helper.nama}</td>
+            <td className="px-4 py-3 text-sm">{helper.no_hp || "-"}</td>
+            <td className="px-4 py-3 text-sm">
+                {Number(helper.honor || 0).toLocaleString("id-ID")}
+            </td>
+            <td className="px-4 py-3 text-sm">
+                {helper.durasi_mulai}
+                {helper.durasi_selesai ? ` s/d ${helper.durasi_selesai}` : ""}
+            </td>
+            <td className="px-4 py-3 text-sm">
+                {presensis.length === 0 ? (
+                    "-"
+                ) : (
+                    <ul className="space-y-0.5">
+                        {presensis.map((p) => (
+                            <li key={p.id}>
+                                {p.tanggal} ·{" "}
+                                {p.check_in
+                                    ? new Date(p.check_in).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                      })
+                                    : "?"}
+                                {" - "}
+                                {p.check_out
+                                    ? new Date(p.check_out).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                      })
+                                    : "?"}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </td>
+            <td className="px-4 py-3 text-sm">
+                <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        helper.status === "aktif"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-200 text-gray-600"
+                    }`}
+                >
+                    {helper.status}
+                </span>
+            </td>
+            <td className="px-4 py-3 text-sm text-right space-x-2">
+                <button
+                    onClick={() => setEditing(!editing)}
+                    className="text-blue-600 hover:underline"
+                >
+                    {editing ? "Batal" : "Edit"}
+                </button>
+                <button
+                    onClick={() => destroy(route("fleet.armada.helper.destroy", [armada.id, helper.id]))}
+                    className="text-red-600 hover:underline"
+                >
+                    Hapus
+                </button>
+            </td>
+        </tr>
+    );
+}
+
 export default function Show({ armada, options, can }) {
     const [tab, setTab] = useState("ritase");
 
@@ -1385,6 +1577,9 @@ export default function Show({ armada, options, can }) {
         { key: "checklist", label: "Checklist", icon: <ClipboardCheck className="w-4 h-4" /> },
         { key: "downtime", label: "Downtime", icon: <Play className="w-4 h-4" /> },
         { key: "driver", label: "Driver", icon: <UserPlus className="w-4 h-4" /> },
+        ...(can.helper
+            ? [{ key: "helper", label: "Helper", icon: <Users className="w-4 h-4" /> }]
+            : []),
     ];
 
     return (
@@ -1494,6 +1689,7 @@ export default function Show({ armada, options, can }) {
             {tab === "driver" && (
                 <DriverSection armada={armada} options={options} />
             )}
+            {tab === "helper" && can.helper && <HelperSection armada={armada} />}
         </Layout>
     );
 }

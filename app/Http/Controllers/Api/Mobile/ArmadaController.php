@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordHelperPresensiAction;
 use App\Domain\Fleet\Actions\RecordOdoAwalProyekAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
+use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
+use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Core\Models\Proyek;
 use App\Http\Controllers\Api\ApiResponse;
@@ -350,6 +353,95 @@ class ArmadaController extends Controller
         ]);
 
         return $this->success(['items' => $items], 'Riwayat ODO awal proyek.');
+    }
+
+    /**
+     * GET /api/mobile/armada/helper
+     * Daftar helper milik PIC yang login (Bagian 21.6). Visibility object-level:
+     * helper muncul kalau armada-nya dipegang PIC user ini, atau user adalah creator-nya.
+     */
+    public function indexHelper(Request $request)
+    {
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->success(['items' => []]);
+        }
+
+        $picArmadaIds = ArmadaPenanggungJawab::where('karyawan_id', $karyawan->id)
+            ->whereNull('sampai')
+            ->pluck('armada_id');
+
+        $today = now()->toDateString();
+
+        $helpers = HelperArmada::with([
+            'armada',
+            'presensis' => fn ($q) => $q->whereDate('tanggal', $today),
+        ])
+            ->whereIn('armada_id', $picArmadaIds)
+            ->orWhere('created_by', $request->user()->id)
+            ->latest('durasi_mulai')
+            ->get();
+
+        $items = $helpers->map(fn (HelperArmada $h) => [
+            'id' => $h->id,
+            'armada_id' => $h->armada_id,
+            'armada_plat' => $h->armada?->plat_nomor,
+            'nama' => $h->nama,
+            'no_hp' => $h->no_hp,
+            'foto' => $h->foto,
+            'honor' => (float) $h->honor,
+            'durasi_mulai' => $h->durasi_mulai?->toDateString(),
+            'durasi_selesai' => $h->durasi_selesai?->toDateString(),
+            'status' => $h->status,
+            'presensi_hari_ini' => $h->presensis->first() ? [
+                'tanggal' => $h->presensis->first()->tanggal->toDateString(),
+                'check_in' => $h->presensis->first()->check_in?->format('H:i:s'),
+                'foto_check_in' => $h->presensis->first()->foto_check_in,
+                'check_out' => $h->presensis->first()->check_out?->format('H:i:s'),
+                'foto_check_out' => $h->presensis->first()->foto_check_out,
+            ] : null,
+        ]);
+
+        return $this->success(['items' => $items], 'Helper milik PIC.');
+    }
+
+    /**
+     * POST /api/mobile/armada/helper/{helper}/presensi
+     * PIC mengabsenkan helper (check-in / check-out + foto). Helper tidak punya akun.
+     */
+    public function storeHelperPresensi(Request $request, HelperArmada $helper)
+    {
+        $validated = $request->validate([
+            'tipe' => 'required|in:check_in,check_out',
+            'tanggal' => 'nullable|date|before_or_equal:today',
+            'foto' => 'required',
+        ]);
+
+        $foto = $this->storeFoto($request->file('foto') ?? $validated['foto'] ?? null);
+        if (! $foto) {
+            return $this->error('Foto presensi helper wajib diisi.', 422);
+        }
+
+        try {
+            $presensi = app(RecordHelperPresensiAction::class)->execute($helper, $request->user(), [
+                'tipe' => $validated['tipe'],
+                'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
+                'foto' => $foto,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->error('Presensi helper ditolak.', 422, $e->errors());
+        }
+
+        return $this->success([
+            'id' => $presensi->id,
+            'helper_armada_id' => $presensi->helper_armada_id,
+            'tanggal' => $presensi->tanggal->toDateString(),
+            'check_in' => $presensi->check_in?->format('H:i:s'),
+            'foto_check_in' => $presensi->foto_check_in,
+            'check_out' => $presensi->check_out?->format('H:i:s'),
+            'foto_check_out' => $presensi->foto_check_out,
+            'dicatat_oleh' => $presensi->dicatat_oleh,
+        ], 'Presensi helper tersimpan.');
     }
 
     private function storeFoto($file): ?string

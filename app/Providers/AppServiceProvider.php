@@ -16,6 +16,8 @@ use App\Domain\Finance\Models\TransferAntarKas;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
+use App\Domain\Fleet\Models\HelperArmada;
+use App\Policies\HelperArmadaPolicy;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
@@ -152,6 +154,7 @@ class AppServiceProvider extends ServiceProvider
         // Fleet Policies
         Gate::policy(Armada::class, ArmadaPolicy::class);
         Gate::policy(ArmadaPenanggungJawab::class, ArmadaPenanggungJawabPolicy::class);
+        Gate::policy(HelperArmada::class, HelperArmadaPolicy::class);
         Gate::policy(Ritase::class, RitasePolicy::class);
         Gate::policy(SewaAlatJam::class, SewaAlatPolicy::class);
         Gate::policy(ArmadaChecklistHarian::class, ArmadaChecklistHarianPolicy::class);

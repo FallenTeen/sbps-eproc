@@ -17,6 +17,7 @@ use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
+use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
@@ -151,6 +152,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'index'])->name('armada.penanggung-jawab.index');
         Route::post('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'store'])->name('armada.penanggung-jawab.store');
         Route::post('armada/{armada}/penanggung-jawab/cadangan', [ArmadaPenanggungJawabController::class, 'activateCadangan'])->name('armada.penanggung-jawab.cadangan');
+
+        // v6 (21.6) — Helper Armada (visibility object-level: hanya PIC armada)
+        Route::post('armada/{armada}/helper', [HelperArmadaController::class, 'store'])->name('armada.helper.store');
+        Route::put('armada/{armada}/helper/{helper}', [HelperArmadaController::class, 'update'])->name('armada.helper.update');
+        Route::delete('armada/{armada}/helper/{helper}', [HelperArmadaController::class, 'destroy'])->name('armada.helper.destroy');
+
         Route::post('armada/{armada}/record-ritase', [ArmadaController::class, 'recordRitase'])->name('armada.record-ritase');
         Route::post('armada/{armada}/record-sewa', [ArmadaController::class, 'recordSewa'])->name('armada.record-sewa');
         Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');

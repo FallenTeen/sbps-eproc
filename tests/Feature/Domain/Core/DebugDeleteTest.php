@@ -18,7 +18,11 @@ test('debug delete via http with query log', function () {
     $unit = UnitBisnis::factory()->create();
     $resp = $this->actingAs($this->owner)
         ->delete(route('core.unit-bisnis.destroy', $unit));
-    $log = fopen(sys_get_temp_dir().'/opencode/dbg_queries.txt', 'w');
+    $dir = sys_get_temp_dir().'/opencode';
+    if (! is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+    $log = fopen($dir.'/dbg_queries.txt', 'w');
     foreach (DB::getQueryLog() as $q) {
         fwrite($log, $q['query'].' -- '.json_encode($q['bindings'])."\n");
     }

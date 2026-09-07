@@ -104,6 +104,9 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
         Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])->name('armada.odo-awal-proyek');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
+// v6 (21.6) — helper armada & presensi (dicatat PIC)
+Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
+Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])->name('armada.helper.presensi');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

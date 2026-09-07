@@ -15,6 +15,7 @@ use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
 use App\Domain\Fleet\Actions\StartDowntimeAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\DowntimeLog;
+use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
@@ -120,6 +121,7 @@ class ArmadaController extends Controller
             'ritases' => fn ($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
             'sewaAlatJams' => fn ($q) => $q->with('proyek')->latest('tanggal')->limit(50),
             'driverAssignments' => fn ($q) => $q->with('karyawan')->latest('tanggal_mulai'),
+            'helperArmadas' => fn ($q) => $q->with('presensis')->latest('durasi_mulai'),
         ]);
 
         $user = auth()->user();
@@ -135,6 +137,7 @@ class ArmadaController extends Controller
         $canRecordRitase = $user->can('recordRitase', $armada);
         $canRecordSewa = $user->can('recordSewa', $armada);
         $canUpdate = $user->can('update', $armada);
+        $canManageHelper = $user->can('create', [HelperArmada::class, $armada]);
 
         return Inertia::render('Fleet/Armada/Show', [
             'armada' => $armada,
@@ -153,6 +156,7 @@ class ArmadaController extends Controller
                 'recordBbm' => $canUpdate,
                 'startDowntime' => $canUpdate,
                 'assignDriver' => $canUpdate,
+                'helper' => $canManageHelper,
             ],
         ]);
     }

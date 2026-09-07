@@ -68,6 +68,11 @@ class Armada extends Model
         return $this->hasMany(ArmadaOdoAwalProyek::class);
     }
 
+    public function helperArmadas()
+    {
+        return $this->hasMany(HelperArmada::class);
+    }
+
     public function bbmLogs()
     {
         return $this->morphMany(BbmLog::class, 'serviceable');
@@ -126,6 +131,20 @@ class Armada extends Model
             ->whereNull('sampai')
             ->latest('mulai_dari')
             ->first();
+    }
+
+    /**
+     * v6 (21.6) — apakah karyawan ini PIC aktif (utama/cadangan) armada saat ini.
+     */
+    public function isActivePicFor($karyawan): bool
+    {
+        if (! $karyawan) {
+            return false;
+        }
+
+        $pic = $this->getActivePenanggungJawabAttribute();
+
+        return $pic && $pic->karyawan_id === $karyawan->id;
     }
 
     // Scope
