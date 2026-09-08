@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Plus, Trash2, SearchX } from "lucide-react";
+import TitikSelectorWithMap from "@/Components/TitikSelectorWithMap";
 
 export default function Index({ opnames, titiks, filters }) {
     const { auth } = usePage().props;
@@ -62,19 +63,15 @@ export default function Index({ opnames, titiks, filters }) {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Titik</label>
-                        <select
+                        <TitikSelectorWithMap
+                            titiks={titiks}
                             value={titikId}
-                            onChange={(e) => setTitikId(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                        >
-                            <option value="">Semua Titik</option>
-                            {titiks.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.nama}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(val) => setTitikId(val)}
+                            label="Titik"
+                            placeholder="Semua Titik"
+                            optionFormatter={(t) => t.nama}
+                            mapHeight="240px"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>

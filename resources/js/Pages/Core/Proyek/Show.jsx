@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import { ArrowLeft, Edit, Trash2, Plus } from 'lucide-react';
+import PetaTitikProyek from '@/Components/PetaTitikProyek';
 
 export default function Show({ proyek, rabRealisasi, stats }) {
     const [activeTab, setActiveTab] = useState('info');
+    const [selectedTitikId, setSelectedTitikId] = useState(null);
 
     const getStatusBadge = (status) => {
         const colors = {
@@ -190,28 +192,56 @@ export default function Show({ proyek, rabRealisasi, stats }) {
 
                     {/* Tab: Titik */}
                     {activeTab === 'titik' && (
-                        <div>
+                        <div className="space-y-6">
                             {proyek.titik.length === 0 ? (
                                 <p className="text-gray-500">Belum ada titik untuk proyek ini.</p>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {proyek.titik.map((titik) => (
-                                        <div key={titik.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                                            <div className="font-medium">{titik.nama}</div>
-                                            <div className="text-sm text-gray-600">
-                                                {titik.latitude}, {titik.longitude}
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                Radius: {titik.radius_presensi_meter}m
-                                            </div>
-                                            <div className="text-sm">
-                                                Status: <span className={titik.status === 'aktif' ? 'text-green-600' : 'text-red-600'}>
-                                                    {titik.status}
-                                                </span>
-                                            </div>
+                                <>
+                                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-sm font-bold text-gray-800">Peta Sebaran Titik Proyek</h3>
+                                            <span className="text-xs text-gray-500">{proyek.titik.length} titik terdaftar</span>
                                         </div>
-                                    ))}
-                                </div>
+                                        <PetaTitikProyek
+                                            titiks={proyek.titik}
+                                            selectedTitikId={selectedTitikId}
+                                            onMarkerClick={(id) => setSelectedTitikId(id)}
+                                            height="360px"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {proyek.titik.map((titik) => {
+                                            const isSelected = String(titik.id) === String(selectedTitikId);
+                                            return (
+                                                <div
+                                                    key={titik.id}
+                                                    onClick={() => setSelectedTitikId(titik.id)}
+                                                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                                        isSelected
+                                                            ? 'border-black bg-gray-50 ring-2 ring-black'
+                                                            : 'hover:bg-gray-50 border-gray-200'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="font-bold text-gray-900">{titik.nama}</div>
+                                                        <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                                                            titik.status === 'aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {titik.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 font-mono mt-1">
+                                                        {titik.latitude}, {titik.longitude}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 mt-1">
+                                                        Radius Presensi: <span className="font-medium">{titik.radius_presensi_meter}m</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
                             )}
                         </div>
                     )}

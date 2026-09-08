@@ -21,19 +21,46 @@ class OwnerDashboardAggregatorService
         // 1. Peta Aktif (Titik dengan SDM & Armada aktif)
         $titikAktif = Titik::query()
             ->where('status', 'aktif')
-            ->with(['proyek:id,nama', 'armadas', 'karyawanAssignments'])
+            ->with(['proyek:id,nama,kode_proyek,client,lokasi,status,tipe_proyek,tanggal_mulai,tanggal_selesai_rencana', 'armadas', 'karyawanAssignments'])
             ->get()
             ->map(function ($titik) {
                 return [
                     'id' => $titik->id,
                     'nama' => $titik->nama,
+                    'proyek_id' => $titik->proyek_id,
                     'proyek_nama' => $titik->proyek ? $titik->proyek->nama : '-',
+                    'kode_proyek' => $titik->proyek?->kode_proyek,
+                    'client' => $titik->proyek?->client,
+                    'proyek_lokasi' => $titik->proyek?->lokasi,
+                    'proyek_status' => $titik->proyek?->status,
+                    'tipe_proyek' => $titik->proyek?->tipe_proyek,
+                    'tanggal_mulai' => $titik->proyek?->tanggal_mulai?->format('Y-m-d'),
+                    'tanggal_selesai_rencana' => $titik->proyek?->tanggal_selesai_rencana?->format('Y-m-d'),
                     'latitude' => (float) $titik->latitude,
                     'longitude' => (float) $titik->longitude,
+                    'radius_presensi_meter' => (int) $titik->radius_presensi_meter,
+                    'status' => $titik->status,
                     'sdm_count' => $titik->karyawanAssignments ? $titik->karyawanAssignments->count() : 0,
                     'armada_count' => $titik->armadas ? $titik->armadas->count() : 0,
                 ];
             });
+
+        // 1b. Daftar Proyek untuk Filter & Monitoring
+        $proyekList = Proyek::withCount('titik')
+            ->orderBy('nama')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'nama' => $p->nama,
+                'kode_proyek' => $p->kode_proyek,
+                'status' => $p->status,
+                'client' => $p->client,
+                'lokasi' => $p->lokasi,
+                'tipe_proyek' => $p->tipe_proyek,
+                'tanggal_mulai' => $p->tanggal_mulai?->format('Y-m-d'),
+                'tanggal_selesai_rencana' => $p->tanggal_selesai_rencana?->format('Y-m-d'),
+                'titik_count' => $p->titik_count,
+            ]);
 
         // 2. Ringkasan Hari Ini
         $produksiHariIni = (float) ProductionSession::whereDate('mulai', $today)->sum('hasil_output');
@@ -88,11 +115,14 @@ class OwnerDashboardAggregatorService
 
         return [
             'peta_titik' => $titikAktif,
+            'proyek_list' => $proyekList,
             'summary_today' => [
                 'produksi_output' => $produksiHariIni,
                 'pengeluaran' => $pengeluaranHariIni,
                 'po_pending_approval' => $poMenungguApproval,
                 'unit_servis_jatuh_tempo' => $unitServisJatuhTempo,
+                'total_proyek' => $proyekList->count(),
+                'total_titik_aktif' => $titikAktif->count(),
             ],
             'rab_summary' => [
                 'total_proyek_aktif' => $proyekAktif->count(),

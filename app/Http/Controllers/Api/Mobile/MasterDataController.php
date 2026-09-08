@@ -83,4 +83,26 @@ class MasterDataController extends Controller
 
         return $this->success($items, 'Daftar bahan baku.');
     }
+
+    /**
+     * GET /api/mobile/master/armada
+     * Daftar seluruh unit armada untuk dropdown pengajuan servis.
+     */
+    public function armada()
+    {
+        $items = \App\Domain\Fleet\Models\Armada::query()
+            ->where('status', '!=', 'nonaktif')
+            ->orderBy('plat_nomor')
+            ->get()
+            ->map(fn (\App\Domain\Fleet\Models\Armada $a) => [
+                'id' => $a->id,
+                'plat_nomor' => $a->plat_nomor,
+                'kode_unit' => $a->kode_unit ?? $a->kode,
+                'jenis' => $a->jenis ?? $a->tipe_unit,
+                'status' => $a->status,
+            ])
+            ->values();
+
+        return $this->success($items, 'Daftar master armada.');
+    }
 }

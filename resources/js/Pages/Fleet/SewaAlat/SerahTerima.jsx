@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Plus, Calendar, CheckCircle, Trash, Printer, XMark } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
+import { Plus, Calendar, CheckCircle, Trash, Printer, X } from 'lucide-react';
 
 const STATUS_COLOR = {
     baik:   'bg-green-100 text-green-800',
@@ -194,7 +193,7 @@ export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pe
                         <button
                             onClick={closeModal}
                             className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-                            <XMark className="w-4 h-4" />
+                            <X className="w-4 h-4" />
                         </button>
 
                         <form onSubmit={handleSubmit} className="space-y-4">

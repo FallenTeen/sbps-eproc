@@ -17,6 +17,7 @@ import InputError from '@/Components/InputError';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import TitikSelectorWithMap from '@/Components/TitikSelectorWithMap';
 
 export default function Show({ auth, karyawan, titiks }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -180,38 +181,38 @@ export default function Show({ auth, karyawan, titiks }) {
                                     Penugasan titik baru akan otomatis menutup/mengakhiri penugasan yang masih aktif saat ini.
                                 </p>
                                 
-                                <form onSubmit={submitAssign} className="flex flex-col sm:flex-row gap-4 items-end bg-gray-50 p-4 rounded-md">
-                                    <div className="flex-1 w-full">
-                                        <InputLabel htmlFor="titik_id" value="Pilih Titik Lokasi" />
-                                        <select
+                                <form onSubmit={submitAssign} className="flex flex-col gap-4 bg-gray-50 p-4 rounded-md">
+                                    <div className="w-full">
+                                        <TitikSelectorWithMap
                                             id="titik_id"
-                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            name="titik_id"
+                                            titiks={titiks}
                                             value={data.titik_id}
-                                            onChange={(e) => setData('titik_id', e.target.value)}
-                                            required
-                                        >
-                                            <option value="">-- Pilih Titik --</option>
-                                            {titiks.map(t => (
-                                                <option key={t.id} value={t.id}>{t.nama} (Proyek: {t.proyek?.nama || '-'})</option>
-                                            ))}
-                                        </select>
-                                        <InputError message={errors.titik_id} className="mt-2" />
-                                    </div>
-                                    <div className="w-full sm:w-48">
-                                        <InputLabel htmlFor="tanggal_mulai" value="Tgl. Mulai Berlaku" />
-                                        <input
-                                            type="date"
-                                            id="tanggal_mulai"
-                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                            value={data.tanggal_mulai}
-                                            onChange={(e) => setData('tanggal_mulai', e.target.value)}
-                                            required
+                                            onChange={(val) => setData('titik_id', val)}
+                                            error={errors.titik_id}
+                                            label="Pilih Titik Lokasi"
+                                            placeholder="-- Pilih Titik --"
+                                            required={true}
+                                            mapHeight="280px"
                                         />
-                                        <InputError message={errors.tanggal_mulai} className="mt-2" />
                                     </div>
-                                    <PrimaryButton disabled={processing} className="h-[42px] mb-[2px]">
-                                        <Save className="w-4 h-4 mr-2" /> Assign
-                                    </PrimaryButton>
+                                    <div className="flex flex-col sm:flex-row gap-4 items-end">
+                                        <div className="w-full sm:w-48">
+                                            <InputLabel htmlFor="tanggal_mulai" value="Tgl. Mulai Berlaku" />
+                                            <input
+                                                type="date"
+                                                id="tanggal_mulai"
+                                                className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                                value={data.tanggal_mulai}
+                                                onChange={(e) => setData('tanggal_mulai', e.target.value)}
+                                                required
+                                            />
+                                            <InputError message={errors.tanggal_mulai} className="mt-2" />
+                                        </div>
+                                        <PrimaryButton disabled={processing} className="h-[42px] mb-[2px]">
+                                            <Save className="w-4 h-4 mr-2" /> Assign
+                                        </PrimaryButton>
+                                    </div>
                                 </form>
                             </div>
 

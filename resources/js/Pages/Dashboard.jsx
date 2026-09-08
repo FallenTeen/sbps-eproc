@@ -7,6 +7,7 @@ import {
     ClipboardList, Wallet, Eye,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import DashboardPetaProyek from '@/Components/DashboardPetaProyek';
 
 const portalConfig = {
     admin: {
@@ -354,9 +355,20 @@ function KontraktorDashboard() {
 export default function Dashboard({ auth, ownerData = {} }) {
     const portal = auth?.portal;
     const activeRole = auth?.active_role;
+    const permissions = auth?.permissions || [];
     const summaryToday = ownerData?.summary_today || {};
     const rabSummary = ownerData?.rab_summary || {};
     const trenBulanan = ownerData?.tren_bulanan || [];
+    const petaTitik = ownerData?.peta_titik || [];
+    const proyekList = ownerData?.proyek_list || [];
+
+    // Role yang memiliki privilege untuk mengatur atau melihat proyek
+    const canManageOrViewProyek =
+        permissions.includes('manage proyek') ||
+        permissions.includes('view proyek') ||
+        permissions.includes('view owner dashboard') ||
+        ['Owner', 'Superadmin', 'Admin', 'Mandor Proyek', 'Ketua Divisi Kontraktor', 'Admin Keuangan'].includes(activeRole) ||
+        ['admin', 'produksi', 'kontraktor'].includes(portal);
 
     const config = portalConfig[portal] || {
         title: 'Dashboard',
@@ -405,6 +417,14 @@ export default function Dashboard({ auth, ownerData = {} }) {
             <div className="py-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {renderPortalDashboard()}
+
+                    {/* Monitoring Peta & Titik Proyek — untuk role yang memiliki privilege mengatur/melihat proyek */}
+                    {canManageOrViewProyek && (
+                        <DashboardPetaProyek
+                            titiks={petaTitik}
+                            proyeks={proyekList}
+                        />
+                    )}
 
                     {/* RAB Summary — visible for admin, produksi, keuangan */}
                     {['admin', 'produksi', 'keuangan'].includes(portal) && (

@@ -1,0 +1,1 @@
+import{n as e}from"./app-FwcWlpRS.js";var t=e();function n({value:e,className:n=``,children:r,...i}){return(0,t.jsx)(`label`,{...i,className:`block text-xs font-black uppercase tracking-wider text-ink.DEFAULT mb-1.5 `+n,children:e||r})}export{n as t};

@@ -17,12 +17,17 @@ class AppVersionController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'app' => 'required|string|in:presensi,proyek',
+            'app' => 'required|string|in:presensi,proyek,mobile',
             'platform' => 'required|string|in:android,ios',
         ]);
 
         $version = AppVersion::query()
-            ->where('app', $validated['app'])
+            ->where(function ($q) use ($validated) {
+                $q->where('app', $validated['app']);
+                if ($validated['app'] === 'mobile') {
+                    $q->orWhere('app', 'presensi');
+                }
+            })
             ->where('platform', $validated['platform'])
             ->first();
 

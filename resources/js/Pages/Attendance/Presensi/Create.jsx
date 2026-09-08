@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { ArrowLeft, LocateFixed, Save } from "lucide-react";
+import TitikSelectorWithMap from "@/Components/TitikSelectorWithMap";
 
 export default function Create({ karyawan, titiks }) {
     const [data, setData] = useState({
@@ -81,20 +82,15 @@ export default function Create({ karyawan, titiks }) {
                     {errors.karyawan_id && <p className="text-red-600 text-sm mt-1">{errors.karyawan_id}</p>}
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Titik</label>
-                    <select
-                        value={data.titik_id}
-                        onChange={(e) => setData({ ...data, titik_id: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    >
-                        <option value="">-- Pilih Titik (opsional) --</option>
-                        {titiks.map((t) => (
-                            <option key={t.id} value={t.id}>{t.nama}</option>
-                        ))}
-                    </select>
-                    {errors.titik_id && <p className="text-red-600 text-sm mt-1">{errors.titik_id}</p>}
-                </div>
+                <TitikSelectorWithMap
+                    titiks={titiks}
+                    value={data.titik_id}
+                    onChange={(val) => setData({ ...data, titik_id: val })}
+                    error={errors.titik_id}
+                    label="Titik"
+                    placeholder="-- Pilih Titik (opsional) --"
+                    optionFormatter={(t) => t.nama}
+                />
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Waktu Check-In *</label>

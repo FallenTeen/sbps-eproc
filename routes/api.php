@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\PengajuanServisController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
+use App\Http\Controllers\Api\Mobile\TitikMapController;
 use App\Http\Controllers\Api\Mobile\TrackingController;
 use App\Http\Controllers\Api\Mobile\UploadController;
 use Illuminate\Support\Facades\Route;
@@ -44,8 +45,9 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // Penugasan User
         Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
 
-        // Presensi
+        // Presensi & Peta Titik
         Route::get('titik-aktif', [PresensiController::class, 'titikAktif'])->name('titik-aktif');
+        Route::get('titik-map', [TitikMapController::class, 'index'])->name('titik-map');
         Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])
             ->name('presensi.check-in')->middleware('idempotency');
         Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])
@@ -66,10 +68,11 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
         Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
 
-        // Master Data (mesin, produk, bahan baku)
+        // Master Data (mesin, produk, bahan baku, armada)
         Route::get('master/mesin', [MasterDataController::class, 'mesin'])->name('master.mesin');
         Route::get('master/produk', [MasterDataController::class, 'produk'])->name('master.produk');
         Route::get('master/bahan-baku', [MasterDataController::class, 'bahanBaku'])->name('master.bahan-baku');
+        Route::get('master/armada', [MasterDataController::class, 'armada'])->name('master.armada');
 
         // GPS Tracking
         Route::post('tracking/batch', [TrackingController::class, 'batch'])
@@ -103,16 +106,23 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
         Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
         Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
-        Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])->name('armada.odo-awal-proyek');
+        Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
+            ->name('armada.odo-awal-proyek')->middleware('idempotency');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
-// v6 (21.6) — helper armada & presensi (dicatat PIC)
-Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
-Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])->name('armada.helper.presensi');
+        
+        // v6 (21.6) — helper armada & presensi (dicatat PIC)
+        Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
+        Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])
+            ->name('armada.helper.presensi')->middleware('idempotency');
 
-// v6 (21.8) — Sistem Servis Armada (mobile: ajuan bagian 1 dari PIC/operator)
-Route::get('servis-armada/saya', [PengajuanServisController::class, 'saya'])->name('servis-armada.saya');
-Route::post('servis-armada', [PengajuanServisController::class, 'store'])->name('servis-armada.store');
-Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
+        // v6 (21.8) — Sistem Servis Armada (mobile: ajuan, riwayat, detail, approval/reject)
+        Route::get('servis-armada', [PengajuanServisController::class, 'index'])->name('servis-armada.index');
+        Route::get('servis-armada/saya', [PengajuanServisController::class, 'saya'])->name('servis-armada.saya');
+        Route::post('servis-armada', [PengajuanServisController::class, 'store'])
+            ->name('servis-armada.store')->middleware('idempotency');
+        Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
+        Route::post('servis-armada/{id}/approve', [PengajuanServisController::class, 'approve'])->name('servis-armada.approve');
+        Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])->name('servis-armada.tolak');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
