@@ -27,6 +27,8 @@ class NotificationController extends Controller
                 'title' => $n->data['title'] ?? 'Notifikasi',
                 'body' => $n->data['body'] ?? '',
                 'action_url' => $n->data['action_url'] ?? null,
+                'route' => $this->mobileRoute($n->data),
+                'id' => $this->mobileRouteId($n->data),
                 'is_read' => (bool) $n->read_at,
                 'time' => $n->created_at->toIso8601String(),
             ]),
@@ -44,5 +46,35 @@ class NotificationController extends Controller
         $notification->markAsRead();
 
         return $this->success(null, 'Notifikasi ditandai sudah dibaca.');
+    }
+
+    private function mobileRoute(array $data): ?string
+    {
+        if (! empty($data['route'])) {
+            return rtrim((string) $data['route'], '/');
+        }
+
+        $actionUrl = (string) ($data['action_url'] ?? '');
+        return match (true) {
+            str_starts_with($actionUrl, '/fleet/armada/') => '/armada',
+            str_starts_with($actionUrl, '/fleet/checklist-harian/') => '/armada/checklist',
+            str_starts_with($actionUrl, '/fleet/servis-armada/') => '/armada/servis',
+            default => null,
+        };
+    }
+
+    private function mobileRouteId(array $data): ?string
+    {
+        if (! empty($data['id'])) {
+            return (string) $data['id'];
+        }
+
+        $actionUrl = trim((string) ($data['action_url'] ?? ''), '/');
+        if ($actionUrl === '') {
+            return null;
+        }
+
+        $segments = explode('/', $actionUrl);
+        return end($segments) ?: null;
     }
 }

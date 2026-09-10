@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
 use App\Domain\Fleet\Actions\RecordHelperPresensiAction;
 use App\Domain\Fleet\Actions\RecordOdoAwalProyekAction;
+use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
@@ -136,6 +137,59 @@ class ArmadaController extends Controller
             'last_page' => $page->lastPage(),
             'total' => $page->total(),
         ], 'Riwayat ritase driver.');
+    }
+
+    /**
+     * POST /api/mobile/armada/ritase/input
+     * Catat satu atau beberapa muatan untuk armada yang dipegang driver.
+     */
+    public function storeRitase(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|string|exists:armadas,id',
+            'tanggal' => 'nullable|date|before_or_equal:today',
+            'rute_tarif_id' => 'nullable|string|exists:rute_tarifs,id',
+            'kategori' => 'nullable|string|max:100',
+            'material' => 'nullable|string|max:100',
+            'jumlah_rit' => 'required|integer|min:1',
+            'satuan_volume' => 'nullable|in:ritase,tonase,m3,harian',
+            'jumlah_volume' => 'nullable|numeric|min:0',
+            'tarif_per_rit_snapshot' => 'nullable|numeric|min:0',
+            'nominal' => 'nullable|numeric|min:0',
+            'proyek_id' => 'nullable|string|exists:proyeks,id',
+            'titik_id' => 'nullable|string|exists:titiks,id',
+            'customer' => 'nullable|string|max:150',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->error('Akun tidak terhubung ke data karyawan.', 403);
+        }
+
+        $held = ArmadaDriver::where('armada_id', $validated['armada_id'])
+            ->where('karyawan_id', $karyawan->id)
+            ->where('status', 'aktif')
+            ->exists();
+
+        if (! $held) {
+            return $this->error('Armada bukan milik driver ini.', 403);
+        }
+
+        $ritase = app(RecordRitaseAction::class)->execute([
+            ...$validated,
+            'driver_karyawan_id' => $karyawan->id,
+        ]);
+
+        return $this->success([
+            'id' => $ritase->id,
+            'armada_id' => $ritase->armada_id,
+            'driver_karyawan_id' => $ritase->driver_karyawan_id,
+            'tanggal' => $ritase->tanggal?->toDateString(),
+            'jumlah_rit' => $ritase->jumlah_rit,
+            'total_upah_rit' => $ritase->totalUpahRit,
+            'status' => $ritase->status,
+        ], 'Ritase berhasil dicatat.');
     }
 
     /**

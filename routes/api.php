@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\PengajuanServisController;
+use App\Http\Controllers\Api\Mobile\PendingSummaryController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
 use App\Http\Controllers\Api\Mobile\TitikMapController;
 use App\Http\Controllers\Api\Mobile\TrackingController;
@@ -104,12 +105,14 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // Armada (driver)
         Route::get('armada/saya', [ArmadaController::class, 'saya'])->name('armada.saya');
         Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
+        Route::post('armada/ritase/input', [ArmadaController::class, 'storeRitase'])
+            ->name('armada.ritase.input')->middleware('idempotency');
         Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
         Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
         Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
             ->name('armada.odo-awal-proyek')->middleware('idempotency');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
-        
+
         // v6 (21.6) — helper armada & presensi (dicatat PIC)
         Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
         Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])
@@ -135,3 +138,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])->name('kontraktor.komunikasi');
     });
 });
+
+// Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1).
+Route::get('me/pending-summary', PendingSummaryController::class)
+    ->name('mobile.me.pending-summary')
+    ->middleware(['auth:sanctum', 'mobile.auth', 'active.role', 'throttle:mobile']);
