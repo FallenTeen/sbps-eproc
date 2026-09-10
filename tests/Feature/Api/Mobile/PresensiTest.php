@@ -60,7 +60,7 @@ test('check-in dalam radius tercatat status valid', function () {
     ]);
 });
 
-test('check-in di luar radius tetap tercatat status luar_radius', function () {
+test('check-in di luar radius tetap tercatat status luar_radius dengan catatan otomatis', function () {
     $response = $this->withToken($this->token)
         ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/presensi/check-in', presensiCheckInPayload($this->titik, 'jauh.jpg', false));
@@ -72,6 +72,11 @@ test('check-in di luar radius tetap tercatat status luar_radius', function () {
         'karyawan_id' => $this->karyawan->id,
         'status_validasi' => 'luar_radius',
     ]);
+
+    $presensi = Presensi::where('karyawan_id', $this->karyawan->id)->latest('check_in')->first();
+    expect($presensi->catatan_override)
+        ->toStartWith('Di luar area kerja — jarak ')
+        ->toEndWith(' m');
 });
 
 test('check-in ganda dalam sehari ditolak', function () {

@@ -64,11 +64,13 @@ class PresensiController extends Controller
             return $this->error('Anda sudah check-in hari ini.', 422);
         }
 
-        $statusValidasi = (new ValidateLocationCheckInAction)->execute(
+        $validation = (new ValidateLocationCheckInAction)->execute(
             $titik,
             (float) $validated['latitude'],
             (float) $validated['longitude']
         );
+        $statusValidasi = $validation['status_validasi'];
+        $catatanOverride = $validation['catatan_override'];
 
         $photoPath = $request->file('photo')->store('presensi/check-in', 'public');
 
@@ -82,6 +84,7 @@ class PresensiController extends Controller
             'check_in_photo_metadata' => $validated['photo_metadata'] ?? null,
             'device_id' => $validated['device_id'] ?? null,
             'status_validasi' => $statusValidasi,
+            'catatan_override' => $catatanOverride,
         ]);
 
         $request->user()->update(['last_tracking_at' => now()]);

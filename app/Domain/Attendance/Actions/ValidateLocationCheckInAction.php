@@ -6,11 +6,17 @@ use App\Domain\Core\Models\Titik;
 
 class ValidateLocationCheckInAction
 {
-    public function execute(Titik $titik, float $lat, float $lng): string
+    public function execute(Titik $titik, float $lat, float $lng): array
     {
         $distance = $this->haversine($titik->latitude, $titik->longitude, $lat, $lng);
+        $status = $distance <= $titik->radius_presensi_meter ? 'valid' : 'luar_radius';
 
-        return $distance <= $titik->radius_presensi_meter ? 'valid' : 'luar_radius';
+        return [
+            'status_validasi' => $status,
+            'catatan_override' => $status === 'luar_radius'
+                ? sprintf('Di luar area kerja — jarak %d m', (int) round($distance))
+                : null,
+        ];
     }
 
     private function haversine($lat1, $lon1, $lat2, $lon2): float

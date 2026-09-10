@@ -65,11 +65,15 @@ class PresensiController extends Controller
         $titik = Titik::find($validated['titik_id'] ?? null);
 
         if ($titik) {
-            $statusValidasi = (new ValidateLocationCheckInAction)->execute(
+            $validation = (new ValidateLocationCheckInAction)->execute(
                 $titik,
                 (float) $validated['check_in_lat'],
                 (float) $validated['check_in_lng']
             );
+            $statusValidasi = $validation['status_validasi'];
+            $catatanOverride = $validation['catatan_override'];
+        } else {
+            $catatanOverride = null;
         }
 
         $presensi = Presensi::create([
@@ -79,6 +83,7 @@ class PresensiController extends Controller
             'check_in_lat' => $validated['check_in_lat'],
             'check_in_lng' => $validated['check_in_lng'],
             'status_validasi' => $statusValidasi,
+            'catatan_override' => $catatanOverride,
         ]);
 
         return redirect()->route('attendance.presensi.index')
