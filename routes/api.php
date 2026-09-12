@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Mobile\ArmadaController;
 use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
+use App\Http\Controllers\Api\Mobile\InventoryController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
 use App\Http\Controllers\Api\Mobile\MasterDataController;
 use App\Http\Controllers\Api\Mobile\MobileQcController;
@@ -126,6 +127,20 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
         Route::post('servis-armada/{id}/approve', [PengajuanServisController::class, 'approve'])->name('servis-armada.approve');
         Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])->name('servis-armada.tolak');
+
+        // v6 (21.8 #3-4) — Pengerjaan workshop (mulai, selesai, request sparepart)
+        Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])->name('servis-armada.mulai');
+        Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])->name('servis-armada.selesai');
+        Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])->name('workshop.job.request-sparepart');
+
+        // v6 (21.7 & 14d) — Modul Inventory (stok, request sparepart, opname)
+        Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
+        Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
+        Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
+        Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
+        Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])->name('inventory.request.proses');
+        Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
+        Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])->name('inventory.opname');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Domain\Fleet\Actions\ApprovePengajuanServisAction;
+use App\Domain\Fleet\Actions\AssignWorkshopPengerjaanAction;
+use App\Domain\Fleet\Actions\CompletePengajuanServisAction;
 use App\Domain\Fleet\Actions\RejectPengajuanServisAction;
+use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
@@ -150,5 +153,91 @@ class PengajuanServisController extends Controller
         );
 
         return $this->success($updated->load(['armada', 'disetujuiOleh']), 'Pengajuan servis ditolak.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/mulai
+     * Bagian 21.8 #3 — Workshop mulai mengerjakan servis (menunggu -> dikerjakan).
+     */
+    public function mulai(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'catatan_pengerjaan' => 'nullable|string|max:2000',
+            'butuh_sparepart' => 'nullable|boolean',
+            'personels' => 'nullable|array',
+            'personels.*.nama_personel' => 'nullable|string|max:255',
+            'personels.*.peran' => 'nullable|string|max:255',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $updated = app(AssignWorkshopPengerjaanAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            $validated,
+        );
+
+        return $this->success($updated->fresh(['armada', 'spareparts']), 'Pengerjaan servis dimulai.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/selesai
+     * Bagian 21.8 #4+ — Tandai servis selesai (dikerjakan/menunggu_sparepart -> selesai).
+     */
+    public function selesai(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'catatan_workshop' => 'nullable|string|max:2000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $updated = app(CompletePengajuanServisAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            ['catatan_pengerjaan' => $validated['catatan_workshop'] ?? null],
+        );
+
+        return $this->success($updated->fresh(['armada', 'spareparts']), 'Servis selesai dikerjakan.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/request-sparepart
+     * Bagian 21.8 #4 — Workshop mengajukan permintaan sparepart ke Inventory.
+     * Item dikirim sebagai `nama_barang` (mobile) — dipetakan ke `nama_item`.
+     */
+    public function requestSparepart(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.nama_barang' => 'required|string|max:255',
+            'items.*.jumlah' => 'nullable|numeric|min:0',
+            'items.*.satuan' => 'nullable|string|max:50',
+            'items.*.keterangan' => 'nullable|string|max:1000',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $items = collect($validated['items'])
+            ->map(fn ($item) => [
+                'nama_item' => $item['nama_barang'],
+                'jumlah' => $item['jumlah'] ?? 1,
+                'satuan' => $item['satuan'] ?? null,
+                'nominal' => 0,
+            ])
+            ->all();
+
+        $updated = app(RequestSparepartAction::class)->execute(
+            $request->user(),
+            $items,
+            pengajuan: $pengajuan,
+        );
+
+        return $this->success(
+            $updated->fresh(['armada', 'spareparts']),
+            'Request sparepart dikirim ke inventory.',
+            201,
+        );
     }
 }

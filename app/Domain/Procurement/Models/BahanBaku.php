@@ -16,7 +16,7 @@ class BahanBaku extends Model
 
     protected $table = 'bahan_bakus';
 
-    protected $fillable = ['kode', 'nama', 'kategori', 'sparepart_untuk', 'satuan', 'aktif'];
+    protected $fillable = ['kode', 'nama', 'kategori', 'sparepart_untuk', 'satuan', 'stok_minimum', 'aktif'];
 
     protected $casts = ['aktif' => 'boolean'];
 
