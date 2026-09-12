@@ -33,6 +33,7 @@ class WorkshopTodo extends Model
         'assigned_to',
         'terkait_pengajuan_servis_id',
         'created_by',
+        'foto_bukti',
     ];
 
     protected $appends = ['due_date', 'status_text', 'unit_label', 'jadwal_label'];

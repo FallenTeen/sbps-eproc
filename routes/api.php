@@ -132,6 +132,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])->name('servis-armada.mulai');
         Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])->name('servis-armada.selesai');
         Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])->name('workshop.job.request-sparepart');
+        Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])->name('workshop.job.todo.toggle');
+        Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])->name('workshop.job.todo.photo');
 
         // v6 (21.7 & 14d) — Modul Inventory (stok, request sparepart, opname)
         Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');

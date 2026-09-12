@@ -11,6 +11,7 @@ use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -107,10 +108,64 @@ class PengajuanServisController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts'])
+        $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts', 'workshopTodos'])
             ->findOrFail($id);
 
-        return $this->success($pengajuan, 'Detail servis armada.');
+        $payload = $pengajuan->toArray();
+        $payload['todos'] = $pengajuan->workshopTodos
+            ->map(fn (WorkshopTodo $t) => $this->mapTodo($t, $pengajuan->id))
+            ->values();
+
+        return $this->success($payload, 'Detail servis armada.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/todo/{todoId}/toggle
+     * Checklist to-do workshop pada job servis terhubung.
+     * Body: { is_done: boolean } → status to-do `selesai`/`terjadwal`.
+     */
+    public function toggleTodo(Request $request, $id, $todoId)
+    {
+        $validated = $request->validate([
+            'is_done' => 'required|boolean',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $todo = WorkshopTodo::query()
+            ->where('id', $todoId)
+            ->where('terkait_pengajuan_servis_id', $pengajuan->id)
+            ->firstOrFail();
+
+        $todo->update([
+            'status' => $validated['is_done'] ? 'selesai' : 'terjadwal',
+        ]);
+
+        return $this->success($this->mapTodo($todo->fresh(), $pengajuan->id), 'Checklist to-do diperbarui.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/todo/{todoId}/photo
+     * Upload foto bukti pengerjaan to-do (multipart `photo`).
+     */
+    public function uploadTodoPhoto(Request $request, $id, $todoId)
+    {
+        $validated = $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $todo = WorkshopTodo::query()
+            ->where('id', $todoId)
+            ->where('terkait_pengajuan_servis_id', $pengajuan->id)
+            ->firstOrFail();
+
+        $path = $request->file('photo')->store('workshop/todo/'.now()->format('Y/m'), 'public');
+
+        $todo->update(['foto_bukti' => $path]);
+
+        return $this->success($this->mapTodo($todo->fresh(), $pengajuan->id), 'Foto bukti to-do terunggah.');
     }
 
     /**
@@ -239,5 +294,22 @@ class PengajuanServisController extends Controller
             'Request sparepart dikirim ke inventory.',
             201,
         );
+    }
+
+    // ── Helper ──────────────────────────────────────────────────────────────
+
+    /**
+     * Map satu to-do workshop ke kontrak checklist mobile
+     * (`WorkshopTodoItem` Flutter).
+     */
+    private function mapTodo(WorkshopTodo $todo, string $jobId): array
+    {
+        return [
+            'id' => $todo->id,
+            'jobId' => $jobId,
+            'label' => $todo->judul,
+            'isDone' => $todo->status === 'selesai',
+            'photoPath' => $todo->foto_bukti ? asset('storage/'.$todo->foto_bukti) : null,
+        ];
     }
 }

@@ -83,6 +83,11 @@ class PengajuanServisArmada extends Model
         return $this->hasMany(PengajuanServisSparepart::class);
     }
 
+    public function workshopTodos()
+    {
+        return $this->hasMany(WorkshopTodo::class, 'terkait_pengajuan_servis_id');
+    }
+
     // Scope
     public function scopeByStatus($query, $status)
     {
