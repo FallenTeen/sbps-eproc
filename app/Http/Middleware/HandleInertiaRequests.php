@@ -123,6 +123,9 @@ class HandleInertiaRequests extends Middleware
         'hr.payroll.show' => 'Detail Payroll',
         'hr.payroll.review' => 'Review Payroll',
 
+        'attendance.presensi.index' => 'Presensi',
+        'attendance.presensi.rekap' => 'Rekap Presensi',
+
         'finance.akun-kas.index' => 'Kas & Bank',
         'finance.akun-kas.create' => 'Tambah Akun Kas',
         'finance.akun-kas.show' => 'Detail Akun Kas',
@@ -240,6 +243,8 @@ class HandleInertiaRequests extends Middleware
         'hr.karyawan.edit' => 'hr.karyawan.index',
         'hr.payroll.show' => 'hr.payroll.index',
         'hr.payroll.review' => 'hr.payroll.index',
+
+        'attendance.presensi.rekap' => 'attendance.presensi.index',
 
         'finance.akun-kas.create' => 'finance.akun-kas.index',
         'finance.akun-kas.show' => 'finance.akun-kas.index',
