@@ -1,13 +1,16 @@
 <?php
 
 use App\Domain\Fleet\Actions\RecordChecklistSerahTerimaAction;
+use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\TestCase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-uses(TestCase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $perms = [
@@ -63,7 +66,7 @@ test('RecordChecklistSerahTerimaAction catat checklist berangkat dengan data pen
     expect($checklist->tipe)->toBe('berangkat');
     expect($checklist->data_penyewa['nama'])->toBe('Perusahaan Test');
     expect($checklist->data_penyewa['pt'])->toBe('Perusahaan Test');
-    expect($checklist->odo_atau_hm)->toBe(150);
+    expect($checklist->odo_atau_hm)->toEqual(150);
     expect($checklist->details->count())->toBe(2);
     expect($checklist->details->first()->item)->toBe('Kondisi Mesin');
     expect($checklist->details->first()->kondisi)->toBe('baik');
@@ -80,7 +83,7 @@ test('RecordChecklistSerahTerimaAction catat checklist berangkat dengan data pen
         'foto_kondisi' => [],
     ]);
 
-    expect($checklist2->odo_atau_hm)->toBe(180);
+    expect($checklist2->odo_atau_hm)->toEqual(180);
     expect(ChecklistSerahTerima::where('tipe', 'berangkat')->count())->toBe(1);
 });
 
@@ -107,7 +110,7 @@ test('RecordChecklistSerahTerimaAction catat checklist kembali dan menghitung pe
     ]);
 
     expect($checklistKembali->tipe)->toBe('kembali');
-    expect($checklistKembali->odo_atau_hm)->toBe(250);
+    expect($checklistKembali->odo_atau_hm)->toEqual(250);
     // pemakaian = 250 - 150 = 100 (dihitung on-the-fly, tidak disimpan di DB)
     expect(true)->toBeTrue(); // validasi lanjut di controller/view
 });

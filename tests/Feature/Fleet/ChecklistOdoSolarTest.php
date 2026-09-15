@@ -228,7 +228,7 @@ test('ODO awal proyek tercatat sekali dan duplikat ditolak', function () {
     $proyek = Proyek::factory()->internal()->create(['created_by' => $this->user->id]);
 
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/armada/odo-awal-proyek', [
             'armada_id' => $this->armada->id,
             'proyek_id' => $proyek->id,
@@ -245,7 +245,7 @@ test('ODO awal proyek tercatat sekali dan duplikat ditolak', function () {
 
     // Duplikat -> 422
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/armada/odo-awal-proyek', [
             'armada_id' => $this->armada->id,
             'proyek_id' => $proyek->id,

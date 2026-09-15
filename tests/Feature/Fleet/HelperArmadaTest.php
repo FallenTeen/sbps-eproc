@@ -238,7 +238,7 @@ test('POST mobile presensi helper: check-in lalu check-out oleh PIC', function (
     $token = $this->pic->createToken('mobile-test')->plainTextToken;
 
     $this->withToken($token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson("/api/mobile/armada/helper/{$helper->id}/presensi", [
             'tipe' => 'check_in',
             'foto' => 'foto/presensi-helper/mobile-in.jpg',
@@ -247,7 +247,7 @@ test('POST mobile presensi helper: check-in lalu check-out oleh PIC', function (
         ->assertJsonPath('data.foto_check_in', 'foto/presensi-helper/mobile-in.jpg');
 
     $this->withToken($token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson("/api/mobile/armada/helper/{$helper->id}/presensi", [
             'tipe' => 'check_out',
             'foto' => 'foto/presensi-helper/mobile-out.jpg',
