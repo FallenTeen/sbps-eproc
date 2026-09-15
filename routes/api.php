@@ -138,6 +138,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // v6 (21.7 & 14d) — Modul Inventory (stok, request sparepart, opname)
         Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
         Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
+        Route::get('inventory/materials/{id}/mutasi', [InventoryController::class, 'materialMutasi'])->name('inventory.material-mutasi');
+        Route::get('inventory/mutasi', [InventoryController::class, 'mutasi'])->name('inventory.mutasi');
         Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
         Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
         Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])->name('inventory.request.proses');

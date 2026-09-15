@@ -210,6 +210,94 @@ class InventoryController extends Controller
         return $this->success($created, 'Stok opname berhasil disimpan.', 201);
     }
 
+    /**
+     * GET /api/mobile/inventory/mutasi?kategori=&bahan_baku_id=&tanggal_mulai=&tanggal_akhir=&per_page=&page=
+     * Riwayat mutasi stok lintas semua barang (Bahan Baku & Sparepart).
+     * Pagination mengikuti pola riwayat lain (QC / ritase): { items, pagination }.
+     */
+    public function mutasi(Request $request)
+    {
+        $validated = $request->validate([
+            'kategori' => 'nullable|string|in:bahan_baku,sparepart',
+            'bahan_baku_id' => 'nullable|exists:bahan_bakus,id',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_akhir' => 'nullable|date',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $query = StokMutasi::with(['bahanBaku', 'createdBy'])
+            ->latest('tanggal')
+            ->latest('created_at');
+
+        if (! empty($validated['kategori'])) {
+            $query->whereHas('bahanBaku', fn ($q) => $q->where('kategori', $validated['kategori']));
+        }
+
+        if (! empty($validated['bahan_baku_id'])) {
+            $query->where('bahan_baku_id', $validated['bahan_baku_id']);
+        }
+
+        if (! empty($validated['tanggal_mulai'])) {
+            $query->whereDate('tanggal', '>=', $validated['tanggal_mulai']);
+        }
+
+        if (! empty($validated['tanggal_akhir'])) {
+            $query->whereDate('tanggal', '<=', $validated['tanggal_akhir']);
+        }
+
+        $mutasis = $query->paginate($validated['per_page'] ?? 20);
+
+        return $this->success([
+            'items' => $mutasis->map(fn (StokMutasi $m) => $this->mapMutasi($m))->values(),
+            'pagination' => [
+                'current_page' => $mutasis->currentPage(),
+                'last_page' => $mutasis->lastPage(),
+                'per_page' => $mutasis->perPage(),
+                'total' => $mutasis->total(),
+            ],
+        ], 'Riwayat mutasi stok.');
+    }
+
+    /**
+     * GET /api/mobile/inventory/materials/{id}/mutasi?tanggal_mulai=&tanggal_akhir=&per_page=&page=
+     * Riwayat mutasi khusus 1 barang (dipakai layar Detail Stok).
+     */
+    public function materialMutasi(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_akhir' => 'nullable|date',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        BahanBaku::findOrFail($id);
+
+        $query = StokMutasi::with(['bahanBaku', 'createdBy'])
+            ->where('bahan_baku_id', $id)
+            ->latest('tanggal')
+            ->latest('created_at');
+
+        if (! empty($validated['tanggal_mulai'])) {
+            $query->whereDate('tanggal', '>=', $validated['tanggal_mulai']);
+        }
+
+        if (! empty($validated['tanggal_akhir'])) {
+            $query->whereDate('tanggal', '<=', $validated['tanggal_akhir']);
+        }
+
+        $mutasis = $query->paginate($validated['per_page'] ?? 20);
+
+        return $this->success([
+            'items' => $mutasis->map(fn (StokMutasi $m) => $this->mapMutasi($m))->values(),
+            'pagination' => [
+                'current_page' => $mutasis->currentPage(),
+                'last_page' => $mutasis->lastPage(),
+                'per_page' => $mutasis->perPage(),
+                'total' => $mutasis->total(),
+            ],
+        ], 'Riwayat mutasi barang.');
+    }
+
     // ── Helper ──────────────────────────────────────────────────────────────
 
     private function mapRequest(PengajuanServisArmada $p): array
@@ -238,6 +326,41 @@ class InventoryController extends Controller
             'status' => $status,
             'created_at' => $p->tanggal_ajuan->toDateString(),
             'items' => $items->values(),
+        ];
+    }
+
+    /**
+     * Satu baris riwayat mutasi stok. `sumber` memetakan polimorfis
+     * referensi_type ke label bisnis: opname / request_sparepart /
+     * pembelian / produksi / manual.
+     */
+    private function mapMutasi(StokMutasi $m): array
+    {
+        $referensiType = $m->referensi_type;
+
+        $sumber = match (true) {
+            str_contains((string) $referensiType, 'StokOpname') => 'opname',
+            str_contains((string) $referensiType, 'PengajuanServis') => 'request_sparepart',
+            str_contains((string) $referensiType, 'PurchaseOrder') => 'pembelian',
+            str_contains((string) $referensiType, 'ProductionSession') => 'produksi',
+            default => 'manual',
+        };
+
+        return [
+            'id' => $m->id,
+            'bahan_baku_id' => $m->bahan_baku_id,
+            'nama_barang' => $m->bahanBaku?->nama ?? '-',
+            'kategori' => $m->bahanBaku
+                ? ($m->bahanBaku->kategori === 'bahan_baku' ? 'Bahan Baku' : 'Sparepart')
+                : '-',
+            'tipe' => $m->tipe,
+            'jumlah' => round((float) $m->jumlah, 2),
+            'satuan' => $m->bahanBaku?->satuan ?? '-',
+            'sumber' => $sumber,
+            'referensi_id' => $m->referensi_id,
+            'catatan' => $m->catatan,
+            'created_at' => $m->created_at?->toIso8601String() ?? $m->tanggal?->toDateString(),
+            'created_by' => $m->createdBy ? ($m->createdBy->nama_lengkap ?? $m->createdBy->name) : 'Sistem',
         ];
     }
 

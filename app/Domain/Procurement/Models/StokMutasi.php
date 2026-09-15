@@ -3,6 +3,7 @@
 namespace App\Domain\Procurement\Models;
 
 use App\Domain\Core\Models\Titik;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +45,11 @@ class StokMutasi extends Model
     public function referensi()
     {
         return $this->morphTo();
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // Scope
