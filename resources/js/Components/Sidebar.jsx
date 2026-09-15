@@ -123,8 +123,7 @@ function getAllMenus() {
             icon: MapPin,
             permission: ['manage hr', 'manage presensi', 'manage formulir lapangan'],
             items: [
-                { title: 'Presensi', href: safeRoute('attendance.presensi.index', {}, '/attendance/presensi'), routeName: ['attendance.presensi.*', '!attendance.presensi.rekap'], permission: ['manage hr', 'manage presensi', 'view hr'] },
-                { title: 'Rekap Presensi', href: safeRoute('attendance.presensi.rekap', {}, '/attendance/presensi/rekap'), routeName: 'attendance.presensi.rekap', permission: ['manage hr', 'manage presensi', 'view hr'] },
+                { title: 'Presensi', href: safeRoute('attendance.presensi.index', {}, '/attendance/presensi'), routeName: 'attendance.presensi.*', permission: ['manage hr', 'manage presensi', 'view hr'] },
                 { title: 'Formulir Lapangan', href: safeRoute('attendance.formulir.index', {}, '/attendance/formulir'), routeName: 'attendance.formulir.*', permission: ['manage hr', 'manage formulir lapangan', 'view hr'] },
             ],
         },

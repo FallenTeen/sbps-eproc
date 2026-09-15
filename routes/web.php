@@ -381,7 +381,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Presensi
         Route::prefix('presensi')->name('presensi.')->group(function () {
             Route::get('/', [PresensiController::class, 'index'])->name('index');
-            Route::get('/rekap', [PresensiController::class, 'rekap'])->name('rekap');
+            Route::get('/rekap-detail', [PresensiController::class, 'rekapDetail'])->name('rekapDetail');
             Route::get('/create', [PresensiController::class, 'create'])->name('create');
             Route::post('/', [PresensiController::class, 'store'])->name('store');
             Route::get('/{presensi}', [PresensiController::class, 'show'])->name('show');

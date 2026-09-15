@@ -53,11 +53,12 @@ beforeEach(function () {
     ]);
 });
 
-test('halaman rekap presensi menampilkan agregasi per hari', function () {
-    $this->getJson(route('attendance.presensi.rekap'))
+test('index presensi mode grouped menampilkan agregasi per hari', function () {
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'hari']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Attendance/Presensi/Rekap')
+            ->component('Attendance/Presensi/Index')
+            ->where('mode', 'grouped')
             ->has('summary')
             ->has('groups')
             ->where('summary.total', 2)
@@ -68,8 +69,8 @@ test('halaman rekap presensi menampilkan agregasi per hari', function () {
             ->where('filters.group_by', 'hari'));
 });
 
-test('rekap per hari memiliki baris untuk tanggal presensi', function () {
-    $this->getJson(route('attendance.presensi.rekap', ['group_by' => 'hari']))
+test('index grouped per hari memiliki baris untuk tanggal presensi', function () {
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'hari']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('groups', function (Illuminate\Support\Collection $groups): bool {
             $baris = $groups->first(fn ($g) => $g['key'] === now()->toDateString());
@@ -78,8 +79,8 @@ test('rekap per hari memiliki baris untuk tanggal presensi', function () {
         }));
 });
 
-test('rekap per titik kerja mengelompokkan berdasarkan titik', function () {
-    $this->getJson(route('attendance.presensi.rekap', ['group_by' => 'titik']))
+test('index grouped per titik kerja mengelompokkan berdasarkan titik', function () {
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'titik']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('groups', function (Illuminate\Support\Collection $groups): bool {
             $baris = $groups->first(fn ($g) => $g['key'] === (string) $this->titik->id);
@@ -90,8 +91,8 @@ test('rekap per titik kerja mengelompokkan berdasarkan titik', function () {
         }));
 });
 
-test('rekap per proyek mengelompokkan berdasarkan proyek titik', function () {
-    $this->getJson(route('attendance.presensi.rekap', ['group_by' => 'proyek']))
+test('index grouped per proyek mengelompokkan berdasarkan proyek titik', function () {
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'proyek']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('groups', function (Illuminate\Support\Collection $groups): bool {
             $baris = $groups->first(fn ($g) => $g['key'] === (string) $this->proyek->id);
@@ -102,7 +103,21 @@ test('rekap per proyek mengelompokkan berdasarkan proyek titik', function () {
         }));
 });
 
-test('rekap per role mengelompokkan berdasarkan role user', function () {
+test('index grouped per karyawan mengelompokkan berdasarkan karyawan', function () {
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'karyawan']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('groups', function (Illuminate\Support\Collection $groups): bool {
+            $byKey = $groups->keyBy('key');
+
+            return isset($byKey[(string) $this->driver->id])
+                && isset($byKey[(string) $this->workshop->id])
+                && $byKey[(string) $this->driver->id]['total'] === 1
+                && $byKey[(string) $this->driver->id]['label'] === 'Ahmad Driver'
+                && $byKey[(string) $this->workshop->id]['total'] === 1;
+        }));
+});
+
+test('index grouped per role mengelompokkan berdasarkan role user', function () {
     Presensi::create([
         'karyawan_id' => Karyawan::factory()->create(['nama' => 'Tenaga Harian'])->id,
         'titik_id' => $this->titik->id,
@@ -110,7 +125,7 @@ test('rekap per role mengelompokkan berdasarkan role user', function () {
         'status_validasi' => 'tidak_valid',
     ]);
 
-    $this->getJson(route('attendance.presensi.rekap', ['group_by' => 'role']))
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'role']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('summary.total', 3)
@@ -126,8 +141,9 @@ test('rekap per role mengelompokkan berdasarkan role user', function () {
             }));
 });
 
-test('rekap dapat difilter berdasarkan rentang tanggal', function () {
-    $this->getJson(route('attendance.presensi.rekap', [
+test('index grouped dapat difilter berdasarkan rentang tanggal', function () {
+    $this->getJson(route('attendance.presensi.index', [
+        'group_by' => 'hari',
         'from' => now()->subDays(10)->toDateString(),
         'to' => now()->subDays(9)->toDateString(),
     ]))
@@ -135,15 +151,18 @@ test('rekap dapat difilter berdasarkan rentang tanggal', function () {
         ->assertInertia(fn (Assert $page) => $page->where('summary.total', 0));
 });
 
-test('rekap dapat difilter berdasarkan status validasi', function () {
-    $this->getJson(route('attendance.presensi.rekap', ['status_validasi' => 'valid']))
+test('index grouped dapat difilter berdasarkan status validasi', function () {
+    $this->getJson(route('attendance.presensi.index', [
+        'group_by' => 'hari',
+        'status_validasi' => 'valid',
+    ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('summary.total', 1)
             ->where('summary.valid', 1));
 });
 
-test('rekap dapat difilter berdasarkan titik kerja', function () {
+test('index grouped dapat difilter berdasarkan titik kerja', function () {
     $titikLain = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
     Presensi::create([
         'karyawan_id' => $this->workshop->id,
@@ -153,14 +172,85 @@ test('rekap dapat difilter berdasarkan titik kerja', function () {
         'status_validasi' => 'valid',
     ]);
 
-    $this->getJson(route('attendance.presensi.rekap', ['titik_id' => $this->titik->id]))
+    $this->getJson(route('attendance.presensi.index', [
+        'group_by' => 'hari',
+        'titik_id' => $this->titik->id,
+    ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('summary.total', 2));
 });
 
-test('akses rekap presensi ditolak tanpa izin', function () {
+test('rekap detail per hari menampilkan list presensi dari tanggal tersebut', function () {
+    $this->getJson(route('attendance.presensi.rekapDetail', [
+        'group_by' => 'hari',
+        'group_key' => now()->toDateString(),
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Attendance/Presensi/RekapDetail')
+            ->has('presensis')
+            ->where('group_by', 'hari')
+            ->where('presensis.total', 2)
+            ->where('presensis.data', function (Illuminate\Support\Collection $data): bool {
+                return $data->count() === 2;
+            }));
+});
+
+test('rekap detail per titik kerja menampilkan hanya presensi titik tersebut', function () {
+    $titikLain = Titik::factory()->create(['proyek_id' => $this->proyek->id]);
+    Presensi::create([
+        'karyawan_id' => $this->driver->id,
+        'titik_id' => $titikLain->id,
+        'check_in' => now()->startOfDay()->addHours(5),
+        'status_validasi' => 'valid',
+    ]);
+
+    $this->getJson(route('attendance.presensi.rekapDetail', [
+        'group_by' => 'titik',
+        'group_key' => $this->titik->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('presensis.total', 2));
+});
+
+test('rekap detail per karyawan menampilkan hanya presensi karyawan tersebut', function () {
+    $badrul = Karyawan::factory()->create(['nama' => 'Badrul Karyawan']);
+    Presensi::create([
+        'karyawan_id' => $badrul->id,
+        'titik_id' => $this->titik->id,
+        'check_in' => now()->startOfDay()->addHours(6),
+        'status_validasi' => 'valid',
+    ]);
+
+    $this->getJson(route('attendance.presensi.rekapDetail', [
+        'group_by' => 'karyawan',
+        'group_key' => $this->driver->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('group_label', 'Ahmad Driver')
+            ->where('presensis.total', 1));
+});
+
+test('rekap detail dapat difilter berdasarkan status validasi', function () {
+    $this->getJson(route('attendance.presensi.rekapDetail', [
+        'group_by' => 'hari',
+        'group_key' => now()->toDateString(),
+        'status_validasi' => 'valid',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('presensis.total', 1));
+});
+
+test('akses presensi index dan rekap detail ditolak tanpa izin', function () {
     $user = User::factory()->create();
-    $this->actingAs($user)
-        ->get('/attendance/presensi/rekap')
+    $this->actingAs($user);
+
+    $this->getJson(route('attendance.presensi.index', ['group_by' => 'hari']))
         ->assertForbidden();
+
+    $this->getJson(route('attendance.presensi.rekapDetail', [
+        'group_by' => 'hari',
+        'group_key' => now()->toDateString(),
+    ]))->assertForbidden();
 });
