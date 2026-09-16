@@ -62,21 +62,37 @@ class ArmadaController extends Controller
      */
     public function saya(Request $request)
     {
-        $items = $this->activeArmadas($request)->values()->map(fn (Armada $a) => [
-            'id' => $a->id,
-            'plat_nomor' => $a->plat_nomor,
-            'kode_unit' => $a->kode_unit,
-            'jenis' => $a->jenis,
-            'model_tarif' => $a->model_tarif,
-            'tahun' => $a->tahun,
-            'kapasitas' => $a->kapasitas,
-            'status' => $a->status,
-            'unit_bisnis' => $a->unitBisnis?->nama,
-            'titik' => $a->titik ? [
-                'id' => $a->titik->id,
-                'nama' => $a->titik->nama,
-            ] : null,
-        ]);
+        $items = $this->activeArmadas($request)->values()->map(function (Armada $a) {
+            $latestChecklist = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+                ->where('checkable_id', $a->id)
+                ->latest('tanggal')
+                ->first();
+            $latestOdo = $latestChecklist ? ($latestChecklist->odo_sore ?? $latestChecklist->odo_pagi) : null;
+            if ($latestOdo === null) {
+                $odoAwal = ArmadaOdoAwalProyek::where('armada_id', $a->id)->latest('tanggal')->first();
+                $latestOdo = $odoAwal ? (float) $odoAwal->odo_awal : null;
+            }
+
+            return [
+                'id' => $a->id,
+                'plat_nomor' => $a->plat_nomor,
+                'kode_unit' => $a->kode_unit,
+                'jenis' => $a->jenis,
+                'tipe_unit' => $a->tipe_unit,
+                'model_tarif' => $a->model_tarif,
+                'tahun' => $a->tahun,
+                'kapasitas' => $a->kapasitas,
+                'status' => $a->status,
+                'unit_bisnis' => $a->unitBisnis?->nama,
+                'titik' => $a->titik ? [
+                    'id' => $a->titik->id,
+                    'nama' => $a->titik->nama,
+                    'proyek_id' => $a->titik->proyek_id,
+                ] : null,
+                'odo_terkini' => $latestOdo,
+                'jam_operasional_terkini' => $latestChecklist ? (float) $latestChecklist->hm_odo : null,
+            ];
+        });
 
         return $this->success(['items' => $items], 'Armada milik driver.');
     }
@@ -329,7 +345,8 @@ class ArmadaController extends Controller
     {
         $validated = $request->validate([
             'armada_id' => 'required|string|exists:armadas,id',
-            'proyek_id' => 'required|string|exists:proyeks,id',
+            'proyek_id' => 'nullable|string|exists:proyeks,id',
+            'titik_id' => 'nullable|string|exists:titiks,id',
             'odo_awal' => 'required|numeric|min:0',
             'jarak_ke_pusat_km' => 'nullable|numeric|min:0',
             'tanggal' => 'nullable|date|before_or_equal:today',
@@ -349,8 +366,26 @@ class ArmadaController extends Controller
             return $this->error('Armada bukan milik driver ini.', 403);
         }
 
-        $armada = Armada::where('id', $validated['armada_id'])->firstOrFail();
-        $proyek = Proyek::where('id', $validated['proyek_id'])->firstOrFail();
+        $armada = Armada::with('titik.proyek')->where('id', $validated['armada_id'])->firstOrFail();
+
+        $proyek = null;
+        if (! empty($validated['proyek_id'])) {
+            $proyek = Proyek::find($validated['proyek_id']);
+        } elseif (! empty($validated['titik_id'])) {
+            $proyek = \App\Domain\Core\Models\Titik::with('proyek')->find($validated['titik_id'])?->proyek;
+        }
+
+        if (! $proyek) {
+            $proyek = $armada->titik?->proyek;
+        }
+
+        if (! $proyek) {
+            $proyek = Proyek::first();
+        }
+
+        if (! $proyek) {
+            return $this->error('Proyek untuk armada ini belum ditentukan.', 422);
+        }
 
         try {
             $odo = app(RecordOdoAwalProyekAction::class)->execute($armada, $proyek, [
