@@ -106,8 +106,11 @@ class ArmadaController extends Controller
      */
     public function ritase(Request $request)
     {
+        $user = $request->user();
+        $isManager = $user && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
+
         $karyawan = $this->currentKaryawan($request);
-        if (! $karyawan) {
+        if (! $karyawan && ! $isManager) {
             return $this->success(['items' => [], 'current_page' => 1, 'last_page' => 1, 'total' => 0]);
         }
 
@@ -121,7 +124,7 @@ class ArmadaController extends Controller
         $perPage = $validated['per_page'] ?? 15;
 
         $query = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik'])
-            ->where('driver_karyawan_id', $karyawan->id)
+            ->when(! $isManager, fn ($q) => $q->where('driver_karyawan_id', $karyawan?->id))
             ->orderByDesc('tanggal');
 
         if (isset($validated['bulan']) && isset($validated['tahun'])) {
@@ -220,7 +223,12 @@ class ArmadaController extends Controller
     public function checklistHariIni(Request $request)
     {
         $today = now()->toDateString();
-        $armadas = $this->activeArmadas($request);
+        $user = $request->user();
+        $isManager = $user && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
+
+        $armadas = $isManager
+            ? Armada::with(['unitBisnis', 'titik'])->where('status', '!=', 'nonaktif')->get()
+            : $this->activeArmadas($request);
 
         $items = $armadas->map(function (Armada $a) use ($today) {
             $checklist = ArmadaChecklistHarian::where('checkable_type', Armada::class)

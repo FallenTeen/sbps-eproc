@@ -35,7 +35,7 @@ class PendingSummaryController extends Controller
         $produksi = ['sesi_menunggu_qc' => 0];
         $workshop = ['job_aktif' => 0];
 
-        if ($user->hasAnyRole(['Driver Armada', 'Kepala Divisi Armada', 'Owner', 'Admin Keuangan'])) {
+        if ($user->hasAnyRole(['Driver Armada', 'Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan'])) {
             $karyawanId = $user->karyawan?->id;
             if ($karyawanId) {
                 $armadaIds = ArmadaDriver::where('karyawan_id', $karyawanId)
@@ -50,13 +50,14 @@ class PendingSummaryController extends Controller
                 $armada['checklist_belum'] = $armadaIds->diff($filledChecklistIds)->count();
             }
 
+            $isArmadaManager = $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
             $armada['servis_menunggu_approval'] = PengajuanServisArmada::query()
-                ->where('diajukan_oleh', $user->id)
                 ->where('status', 'diajukan')
+                ->when(! $isArmadaManager, fn ($query) => $query->where('diajukan_oleh', $user->id))
                 ->count();
         }
 
-        if ($user->hasAnyRole(['Mandor Titik', 'Owner'])) {
+        if ($user->hasAnyRole(['Mandor Titik', 'Owner', 'Operator Mesin'])) {
             $produksi['sesi_menunggu_qc'] = ProductionSession::query()
                 ->where('status', 'selesai')
                 ->whereDoesntHave('qcSamples')
