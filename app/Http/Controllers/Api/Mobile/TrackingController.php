@@ -160,8 +160,19 @@ class TrackingController extends Controller
 
     /**
      * GET /api/mobile/tracking/active-users
-     * User yang sedang aktif (kirim tracking dalam 1 jam terakhir).
-     * Hanya role tertentu (Owner / Admin).
+     * Karyawan yang masih ber-presensi aktif HARI INI (check-in, belum
+     * check-out) beserta status GPS terkini. Setiap field adalah data ABSAH
+     * server — tidak ada fabrikasi realtime:
+     *
+     * - `titik`        : titik kerja dari presensi aktif mereka;
+     * - `aktif_sejak`  : waktu check-in yang masih aktif (ISO);
+     * - `last_seen`    : timestamp lokasi GPS TERAKHIR hari ini
+     *                    (null bila belum ada GPS tercatat hari ini);
+     * - `point_count`  : jumlah titik GPS hari ini.
+     *
+     * Freshness / stale-state dihitung klien dari `last_seen`. Daftar ini
+     * BUKAN janji realtime — app wajib menyebut keterlambatannya bila lama.
+     * Khusus role Owner / Admin.
      */
     public function activeUsers(Request $request)
     {
@@ -171,42 +182,49 @@ class TrackingController extends Controller
             return $this->error('Anda tidak berhak melihat data ini.', 403);
         }
 
-        $oneHourAgo = now()->subHour();
+        $today = now()->toDateString();
 
-        $activeRows = MobileTrackingLocation::selectRaw('
-                karyawan_id,
-                max(recorded_at) as last_seen,
-                count(*) as point_count
-            ')
-            ->where('recorded_at', '>=', $oneHourAgo)
-            ->groupBy('karyawan_id')
+        $presensis = Presensi::with(['karyawan.user', 'karyawan', 'titik'])
+            ->whereDate('check_in', $today)
+            ->whereNull('check_out')
+            ->orderByDesc('check_in')
             ->get();
 
-        // Batch load karyawan + user (anti N+1).
-        $karyawanIds = $activeRows->pluck('karyawan_id');
-        $karyawanMap = Karyawan::with('user')
-            ->whereIn('id', $karyawanIds)
-            ->get()
-            ->keyBy('id');
+        $karyawanIds = $presensis->pluck('karyawan_id')->filter()->values();
 
-        $items = $activeRows
-            ->map(function ($row) use ($karyawanMap) {
-                $karyawan = $karyawanMap[$row->karyawan_id];
+        // GPS terakhir & jumlah titik hari ini per karyawan (anti N+1).
+        $lastLocations = MobileTrackingLocation::selectRaw('karyawan_id, max(recorded_at) as last_seen')
+            ->whereIn('karyawan_id', $karyawanIds)
+            ->whereDate('recorded_at', $today)
+            ->groupBy('karyawan_id')
+            ->pluck('last_seen', 'karyawan_id');
+
+        $pointCounts = MobileTrackingLocation::selectRaw('karyawan_id, count(*) as point_count')
+            ->whereIn('karyawan_id', $karyawanIds)
+            ->whereDate('recorded_at', $today)
+            ->groupBy('karyawan_id')
+            ->pluck('point_count', 'karyawan_id');
+
+        $items = $presensis
+            ->filter(fn (Presensi $p) => $p->karyawan !== null && $p->karyawan->user !== null)
+            ->map(function (Presensi $p) use ($lastLocations, $pointCounts) {
+                $lastSeen = $lastLocations[$p->karyawan_id] ?? null;
 
                 return [
-                    'karyawan_id' => $row->karyawan_id,
-                    'nama' => $karyawan?->nama,
-                    'user_id' => $karyawan?->user_id,
-                    'last_seen' => Carbon::parse($row->last_seen)->toIso8601String(),
-                    'point_count' => (int) $row->point_count,
+                    'karyawan_id' => $p->karyawan_id,
+                    'nama' => $p->karyawan->nama,
+                    'user_id' => $p->karyawan->user_id,
+                    'titik' => $p->titik?->nama,
+                    'aktif_sejak' => $p->check_in?->toIso8601String(),
+                    'last_seen' => $lastSeen ? Carbon::parse($lastSeen)->toIso8601String() : null,
+                    'point_count' => (int) ($pointCounts[$p->karyawan_id] ?? 0),
                 ];
             })
-            ->filter(fn ($u) => $u['nama'] !== null)
             ->values();
 
         return $this->success([
             'total' => $items->count(),
             'items' => $items,
-        ], 'User aktif.');
+        ], 'Karyawan ber-presensi aktif & status GPS.');
     }
 }
