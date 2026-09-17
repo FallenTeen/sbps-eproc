@@ -131,7 +131,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         // v6 (21.8 #3-4) — Pengerjaan workshop (mulai, selesai, request sparepart)
         Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])->name('servis-armada.mulai');
         Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])->name('servis-armada.selesai');
-        Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])->name('workshop.job.request-sparepart');
+        Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])
+            ->name('workshop.job.request-sparepart')->middleware('idempotency');
         Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])->name('workshop.job.todo.toggle');
         Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])->name('workshop.job.todo.photo');
 

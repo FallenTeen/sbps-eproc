@@ -15,6 +15,7 @@ use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * v6 (21.8) — Sistem Servis Armada (mobile).
@@ -161,7 +162,16 @@ class PengajuanServisController extends Controller
             ->where('terkait_pengajuan_servis_id', $pengajuan->id)
             ->firstOrFail();
 
+        // Retry outbox memakai foto yang sama dengan idempotency key yang sama —
+        // file lama dibuang dulu supaya tiap retry TIDAK menimbun file yatim
+        // di storage (baris DB tetap tunggal: foto_bukti last-write-wins).
+        $previous = $todo->foto_bukti;
+
         $path = $request->file('photo')->store('workshop/todo/'.now()->format('Y/m'), 'public');
+
+        if ($previous) {
+            Storage::disk('public')->delete($previous);
+        }
 
         $todo->update(['foto_bukti' => $path]);
 
