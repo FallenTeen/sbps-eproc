@@ -88,6 +88,28 @@ class MobileDemoDataSeeder extends Seeder
             $this->seedPresensiHariIni($driver->id, $titik->id);
         }
 
+        // Operator Mesin: presensi hari ini
+        if ($operator) {
+            $this->seedPresensiRiwayat($operator->id, $titik->id, 3);
+            $this->seedPresensiHariIni($operator->id, $titik->id);
+        }
+
+        // Karyawan role lainnya: presensi hari ini
+        $ketua = $this->karyawan('Hendra Ketua Armada');
+        if ($ketua) {
+            $this->seedPresensiHariIni($ketua->id, $titik->id);
+        }
+
+        $workshopKaryawan = $this->karyawan('Wahyu Teknisi Workshop');
+        if ($workshopKaryawan) {
+            $this->seedPresensiHariIni($workshopKaryawan->id, $titik->id);
+        }
+
+        $inventoryKaryawan = $this->karyawan('Indra Staf Inventory');
+        if ($inventoryKaryawan) {
+            $this->seedPresensiHariIni($inventoryKaryawan->id, $titik->id);
+        }
+
         // ──────────────────────────── PRODUKSI ────────────────────────────────
         if ($mesinCrusher && $mandor) {
             $this->seedProduksi($mesinCrusher, $mandor->id, $titik->id);
@@ -98,7 +120,7 @@ class MobileDemoDataSeeder extends Seeder
         }
 
         // ─────────────────────────────── QC ───────────────────────────────────
-        // Sampel QC dilampirkan ke sesi produksi demo terbaru yang sudah selesai.
+        // Sampel QC dilampirkan ke sesi produksi demo terbaru yang sudah selesai (Mandor & Operator).
         if ($mesinCrusher && $mandor) {
             $session = ProductionSession::where('mesin_id', $mesinCrusher->id)
                 ->where('operator_karyawan_id', $mandor->id)
@@ -108,6 +130,18 @@ class MobileDemoDataSeeder extends Seeder
 
             if ($session) {
                 $this->seedQc($session);
+            }
+        }
+
+        if ($mesinBatching && $operator) {
+            $sessionBatching = ProductionSession::where('mesin_id', $mesinBatching->id)
+                ->where('operator_karyawan_id', $operator->id)
+                ->where('status', 'selesai')
+                ->latest('selesai')
+                ->first();
+
+            if ($sessionBatching) {
+                $this->seedQc($sessionBatching);
             }
         }
 

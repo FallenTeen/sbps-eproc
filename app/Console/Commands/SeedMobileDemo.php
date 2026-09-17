@@ -18,6 +18,12 @@ class SeedMobileDemo extends Command
         $this->info('═══════════════════════════════════════════════════');
         $this->newLine();
 
+        // Step 0: Pastikan role & permissions terdaftar
+        Artisan::call('db:seed', [
+            '--class' => \Database\Seeders\RolePermissionSeeder::class,
+            '--force' => true,
+        ]);
+
         // Step 1: MobileTestUserSeeder (users + armada + ritase)
         $this->info('▶ Step 1/3: Menyiapkan user test & data master...');
         Artisan::call('db:seed', [
@@ -50,13 +56,16 @@ class SeedMobileDemo extends Command
 
         $this->info('Akun test (password: password):');
         $this->table(['Role', 'Email', 'Portal', 'Modul'], [
-            ['Mandor Titik', 'test.mandor@example.com', 'Presensi + Proyek', 'produksi, qc, tracking, dashboard, armada'],
-            ['SDM Lapangan', 'test.sdm@example.com', 'Presensi', '—'],
+            ['Mandor Titik', 'test.mandor@example.com', 'Presensi + Proyek', 'produksi, qc, tracking, dashboard'],
+            ['SDM Lapangan', 'test.sdm@example.com', 'Presensi', 'presensi harian & formulir'],
+            ['Operator Mesin', 'test.operator.mesin@example.com', 'Presensi + Proyek', 'produksi, qc'],
+            ['Driver Armada', 'test.driver.armada@example.com', 'Presensi + Proyek', 'armada (ritase, checklist, ODO, servis, helper)'],
+            ['Ketua Armada', 'test.ketua.armada@example.com', 'Presensi + Proyek', 'armada (overview, approval servis, monitoring ritase/checklist)'],
+            ['Workshop', 'test.workshop@example.com', 'Presensi + Proyek', 'workshop (antrian pengerjaan servis, checklist, sparepart)'],
+            ['Inventory', 'test.inventory@example.com', 'Presensi + Proyek', 'inventory (stok barang & sparepart, opname)'],
             ['Kontraktor', 'test.kontraktor@example.com', 'Proyek', 'dashboard, kontraktor'],
-            ['Owner', 'test.owner@example.com', 'Proyek', 'semua modul'],
-            ['Admin Keuangan', 'test.keuangan@example.com', 'Proyek', 'tracking, dashboard, keuangan, armada'],
-            ['Operator Mesin', 'test.operator.mesin@example.com', 'Proyek', 'produksi, qc, tracking, dashboard'],
-            ['Driver Armada', 'test.driver.armada@example.com', 'Proyek', 'armada'],
+            ['Owner', 'test.owner@example.com', 'Presensi + Proyek', 'semua modul'],
+            ['Admin Keuangan', 'test.keuangan@example.com', 'Presensi + Proyek', 'tracking, dashboard, keuangan, armada'],
         ]);
 
         return Command::SUCCESS;

@@ -182,7 +182,17 @@ class RolePermissionSeeder extends Seeder
             'Ketua Divisi Armada' => [
                 'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
                 'approve procurement fleet',
-                'view fleet service', 'approve fleet service',
+                'view fleet service', 'approve fleet service', 'manage fleet service',
+            ],
+            'Kepala Divisi Armada' => [
+                'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+                'approve procurement fleet',
+                'view fleet service', 'approve fleet service', 'manage fleet service',
+            ],
+            'Ketua Armada' => [
+                'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
+                'approve procurement fleet',
+                'view fleet service', 'approve fleet service', 'manage fleet service',
             ],
             'Ketua Divisi Produksi CBP' => [
                 'manage production', 'manage production cbp', 'view production',
@@ -205,10 +215,17 @@ class RolePermissionSeeder extends Seeder
             ],
 
             // ─── Role Lapangan ──────────────────────────────────────────
-            'Mandor Titik' => ['view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan'],
+            'Mandor Titik' => [
+                'view proyek', 'view rab', 'manage presensi', 'manage formulir lapangan',
+                'view production', 'start session', 'end session', 'manage qc',
+            ],
+            'Operator Mesin' => [
+                'view proyek', 'view production', 'start session', 'end session', 'manage qc',
+                'manage presensi', 'manage formulir lapangan',
+            ],
             'Driver Standby' => ['view proyek', 'manage formulir lapangan'],
             'Driver Kondisional' => ['view proyek', 'manage formulir lapangan'],
-            'Driver Armada' => ['view proyek', 'view fleet', 'view fleet service', 'submit fleet service'],
+            'Driver Armada' => ['view proyek', 'view fleet', 'view fleet service', 'submit fleet service', 'record ritase', 'manage presensi'],
             'SDM Lapangan Kondisional' => ['view proyek', 'manage presensi', 'manage formulir lapangan'],
         ];
 

@@ -172,24 +172,18 @@ class MobileTestUserSeeder extends Seeder
                 'rate_harian' => 0,
                 'tugas' => false,
             ],
-            // Operator yang "mengampu" mesin produksi. Role Mandor Titik dipakai
-            // agar user ini punya akses portal proyek + modul produksi di aplikasi
-            // mobile (role koordinator CBP tidak masuk daftar portal mobile).
             [
                 'email' => 'test.operator.mesin@example.com',
                 'name' => 'Test Operator Mesin',
                 'nama_lengkap' => 'Donny Operator Mesin',
                 'jabatan' => 'Operator Batching Plant',
-                'role' => 'Mandor Titik',
+                'role' => 'Operator Mesin',
                 'divisi' => 'Produksi',
                 'karyawan_nama' => 'Donny Operator Mesin',
                 'tipe' => 'tetap',
                 'rate_harian' => 0,
-                'tugas' => false,
+                'tugas' => true,
             ],
-            // Driver yang "mengampu" armada. Role Driver Armada masuk daftar
-            // portal mobile sehingga home menampilkan modul Armada (bukan
-            // Produksi/QC) — lihat lib/features/proyek/role_permissions.dart.
             [
                 'email' => 'test.driver.armada@example.com',
                 'name' => 'Test Driver Armada',
@@ -201,6 +195,42 @@ class MobileTestUserSeeder extends Seeder
                 'tipe' => 'borongan_rit',
                 'rate_harian' => 150_000,
                 'tugas' => true,
+            ],
+            [
+                'email' => 'test.ketua.armada@example.com',
+                'name' => 'Test Ketua Armada',
+                'nama_lengkap' => 'Hendra Ketua Armada',
+                'jabatan' => 'Ketua Divisi Armada',
+                'role' => 'Ketua Armada',
+                'divisi' => 'Armada',
+                'karyawan_nama' => 'Hendra Ketua Armada',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.workshop@example.com',
+                'name' => 'Test Workshop',
+                'nama_lengkap' => 'Wahyu Teknisi Workshop',
+                'jabatan' => 'Teknisi Workshop',
+                'role' => 'Workshop',
+                'divisi' => 'Armada',
+                'karyawan_nama' => 'Wahyu Teknisi Workshop',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.inventory@example.com',
+                'name' => 'Test Inventory',
+                'nama_lengkap' => 'Indra Staf Inventory',
+                'jabatan' => 'Staf Inventory',
+                'role' => 'Inventory',
+                'divisi' => 'Inventory',
+                'karyawan_nama' => 'Indra Staf Inventory',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
             ],
         ];
 

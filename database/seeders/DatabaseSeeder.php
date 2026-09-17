@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             AppVersionSeeder::class,
             MobileTestUserSeeder::class,
             MobileDemoDataSeeder::class,
+            MobileArmadaDemoSeeder::class,
         ]);
     }
 }
