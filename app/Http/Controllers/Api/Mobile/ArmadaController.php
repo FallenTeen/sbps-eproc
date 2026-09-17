@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistSerahTerimaAction;
 use App\Domain\Fleet\Actions\RecordHelperPresensiAction;
 use App\Domain\Fleet\Actions\RecordOdoAwalProyekAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
@@ -11,8 +12,10 @@ use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
+use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Core\Models\Proyek;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -533,6 +536,111 @@ class ArmadaController extends Controller
         ], 'Presensi helper tersimpan.');
     }
 
+    /**
+     * POST /api/mobile/armada/checklist-major
+     * Mencatat Checklist Major (Serah Terima Kendaraan / Sewa Alat) - Bagian 21.10.
+     */
+    public function submitChecklistMajor(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|string|exists:armadas,id',
+            'tipe' => 'nullable|in:berangkat,kembali',
+            'odo_atau_hm' => 'nullable|numeric|min:0',
+            'tanggal' => 'nullable|date',
+            'catatan' => 'nullable|string|max:2000',
+            'ditandatangani_oleh' => 'nullable|string|max:255',
+            'items' => 'nullable',
+            'photos' => 'nullable|array',
+            'foto_kondisi' => 'nullable|array',
+        ]);
+
+        $armada = Armada::with('titik.proyek')->where('id', $validated['armada_id'])->firstOrFail();
+
+        // Cari atau buat transaksi sewa aktif/terkini untuk armada ini
+        $sewa = SewaAlatJam::where('armada_id', $armada->id)->latest('tanggal')->first();
+        if (! $sewa) {
+            $sewa = SewaAlatJam::create([
+                'armada_id' => $armada->id,
+                'tipe_sewa' => 'internal',
+                'penyewa_nama' => 'Internal / Proyek ' . ($armada->titik?->proyek?->nama ?? 'SBPS'),
+                'penyewa_pt' => 'SBPS Corp',
+                'penyewa_alamat' => $armada->titik?->alamat ?? 'Lokasi Proyek',
+                'penyewa_penanggung_jawab' => $request->user()?->name ?? 'Driver',
+                'penyewa_no_hp' => $request->user()?->phone ?? '08',
+                'harga_per_jam_snapshot' => 0,
+                'status' => 'disetujui',
+                'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
+                'hm_awal' => $validated['odo_atau_hm'] ?? 0,
+                'hm_akhir' => $validated['odo_atau_hm'] ?? 0,
+                'jumlah_jam' => 0,
+            ]);
+        }
+
+        // Upload foto kondisi
+        $fotoPaths = [];
+        $uploadedPhotos = $request->file('photos') ?? $request->file('foto_kondisi') ?? [];
+        if (is_array($uploadedPhotos)) {
+            foreach ($uploadedPhotos as $photo) {
+                if ($photo && method_exists($photo, 'store')) {
+                    $fotoPaths[] = $photo->store('armada/serah-terima/'.now()->format('Y/m'), 'public');
+                }
+            }
+        }
+
+        // Parse items
+        $rawItems = $request->input('items', []);
+        if (is_string($rawItems)) {
+            $decoded = json_decode($rawItems, true);
+            if (is_array($decoded)) {
+                $rawItems = $decoded;
+            }
+        }
+
+        $items = [];
+        if (is_array($rawItems)) {
+            foreach ($rawItems as $idx => $item) {
+                if (is_array($item)) {
+                    $label = $item['label'] ?? $item['item'] ?? ('Item ' . ($idx + 1));
+                    $status = $item['status'] ?? $item['kondisi'] ?? 'baik';
+                    $catatanItem = $item['catatan'] ?? null;
+                    $items[] = [
+                        'item' => $label,
+                        'kondisi' => ($status === 'baik' ? 'baik' : 'rusak'),
+                        'catatan' => $catatanItem,
+                    ];
+                }
+            }
+        }
+
+        $tipe = $validated['tipe'] ?? 'berangkat';
+
+        $checklist = app(RecordChecklistSerahTerimaAction::class)->execute($sewa, $tipe, [
+            'odo_atau_hm' => $validated['odo_atau_hm'] ?? null,
+            'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
+            'catatan' => $validated['catatan'] ?? null,
+            'ditandatangani_oleh' => $validated['ditandatangani_oleh'] ?? null,
+            'items' => $items,
+            'foto_kondisi' => $fotoPaths,
+        ], $request->user());
+
+        return $this->success([
+            'id' => $checklist->id,
+            'armada_id' => $checklist->armada_id,
+            'sewa_alat_jam_id' => $checklist->sewa_alat_jam_id,
+            'tipe' => $checklist->tipe,
+            'tanggal' => $checklist->tanggal?->toDateString(),
+            'odo_atau_hm' => $checklist->odo_atau_hm,
+            'catatan' => $checklist->catatan,
+            'items_count' => $checklist->details->count(),
+            'items' => $checklist->details->map(fn ($d) => [
+                'id' => $d->id,
+                'item' => $d->item,
+                'kondisi' => $d->kondisi,
+                'catatan' => $d->catatan,
+            ]),
+        ], 'Checklist major serah terima berhasil disimpan.');
+    }
+
     private function storeFoto($file): ?string
     {
         if (is_string($file) && $file !== '') {
@@ -546,3 +654,4 @@ class ArmadaController extends Controller
         return null;
     }
 }
+

@@ -113,6 +113,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
             ->name('armada.odo-awal-proyek')->middleware('idempotency');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
+        Route::post('armada/checklist-major', [ArmadaController::class, 'submitChecklistMajor'])
+            ->name('armada.checklist-major')->middleware('idempotency');
 
         // v6 (21.6) — helper armada & presensi (dicatat PIC)
         Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
@@ -156,10 +158,13 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
         Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
         Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])->name('kontraktor.komunikasi');
+
+        // Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1)
+        Route::get('me/pending-summary', PendingSummaryController::class)->name('me.pending-summary');
     });
 });
 
-// Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1).
+// Alias kompatibilitas root /api/me/pending-summary
 Route::get('me/pending-summary', PendingSummaryController::class)
     ->name('mobile.me.pending-summary')
     ->middleware(['auth:sanctum', 'mobile.auth', 'active.role', 'throttle:mobile']);
