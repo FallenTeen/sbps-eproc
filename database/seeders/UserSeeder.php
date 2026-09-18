@@ -107,6 +107,16 @@ class UserSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'email' => 'inventory@example.com',
+                'name' => 'Staff Inventory',
+                'nama_lengkap' => 'Staf Gudang Inventory',
+                'jabatan' => 'Inventory Officer',
+                'role' => 'Inventory',
+                'unit_bisnis_id' => null,
+                'divisi' => 'Inventory',
+                'is_active' => true,
+            ],
+            [
                 'email' => 'gcs@example.com',
                 'name' => 'Koordinator GCS',
                 'nama_lengkap' => 'Staf Operasional Armada GCS',
