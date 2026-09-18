@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(TestCase::class, DatabaseTransactions::class);
 
@@ -33,6 +34,7 @@ beforeEach(function () {
     ]);
 
     // Token mobile
+    Role::findOrCreate('Driver Armada', 'web');
     $this->user->assignRole('Driver Armada');
     $this->token = $this->user->createToken('mobile-test')->plainTextToken;
 });

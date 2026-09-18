@@ -11,11 +11,13 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(TestCase::class, DatabaseTransactions::class);
 
 beforeEach(function () {
     Permission::findOrCreate('manage fleet');
+    Role::findOrCreate('Driver Armada', 'web');
 
     $this->unit = UnitBisnis::factory()->create(['kode' => 'U-'.((string) Illuminate\Support\Str::uuid())]);
     $this->armada = Armada::factory()->for($this->unit)->create();
