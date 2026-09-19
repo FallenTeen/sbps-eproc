@@ -127,16 +127,21 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('servis-armada', [PengajuanServisController::class, 'store'])
             ->name('servis-armada.store')->middleware('idempotency');
         Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
-        Route::post('servis-armada/{id}/approve', [PengajuanServisController::class, 'approve'])->name('servis-armada.approve');
-        Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])->name('servis-armada.tolak');
+        Route::post('servis-armada/{id}/approve', [PengajuanServisController::class, 'approve'])
+            ->name('servis-armada.approve')->middleware('idempotency');
+        Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])
+            ->name('servis-armada.tolak')->middleware('idempotency');
 
         // v6 (21.8 #3-4) — Pengerjaan workshop (mulai, selesai, request sparepart)
-        Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])->name('servis-armada.mulai');
-        Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])->name('servis-armada.selesai');
+        Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])
+            ->name('servis-armada.mulai')->middleware('idempotency');
+        Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])
+            ->name('servis-armada.selesai')->middleware('idempotency');
         Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])
             ->name('workshop.job.request-sparepart')->middleware('idempotency');
         Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])->name('workshop.job.todo.toggle');
-        Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])->name('workshop.job.todo.photo');
+        Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])
+            ->name('workshop.job.todo.photo')->middleware('idempotency');
 
         // v6 (21.7 & 14d) — Modul Inventory (stok, request sparepart, opname)
         Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
