@@ -13,8 +13,10 @@ use App\Domain\HR\Models\Karyawan;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Production\Models\MesinProduksi;
+use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -43,16 +45,20 @@ use Illuminate\Support\Facades\Hash;
  */
 class MobileTestUserSeeder extends Seeder
 {
+    use StagingOnly;
+
     /** Kredensial login yang dipakai semua user test. */
     public const TEST_PASSWORD = 'password';
 
     public function run(): void
     {
+        $this->assertNotProduction();
+
         // ─────────────────────── Unit Bisnis / master ───────────────────────
         $gcs = UnitBisnis::where('kode', 'GCS')->first();
         $cbp = UnitBisnis::where('kode', 'CBP')->first();
         // created_by pada proyeks tidak boleh NULL → pakai user owner jika ada.
-        $owner = User::where('email', 'owner@example.com')->first();
+        $owner = User::where('email', 'owner@real.com')->first();
 
         // ────────────────────────────── PROYEK/TITIK ────────────────────────
         $proyek = Proyek::updateOrCreate(
@@ -113,7 +119,7 @@ class MobileTestUserSeeder extends Seeder
         $createdKaryawanByEmail = [];
         $users = [
             [
-                'email' => 'test.mandor@example.com',
+                'email' => 'test.mandor@dummy.com',
                 'name' => 'Test Mandor Titik',
                 'nama_lengkap' => 'Budi Mandor Titik',
                 'jabatan' => 'Mandor Titik',
@@ -125,7 +131,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => true,
             ],
             [
-                'email' => 'test.sdm@example.com',
+                'email' => 'test.sdm@dummy.com',
                 'name' => 'Test SDM Lapangan',
                 'nama_lengkap' => 'Sari SDM Lapangan',
                 'jabatan' => 'SDM Lapangan Kondisional',
@@ -137,7 +143,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => true,
             ],
             [
-                'email' => 'test.kontraktor@example.com',
+                'email' => 'test.kontraktor@dummy.com',
                 'name' => 'Test Kontraktor',
                 'nama_lengkap' => 'Perwakilan Kontraktor Client',
                 'jabatan' => 'Kontraktor',
@@ -149,7 +155,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => false,
             ],
             [
-                'email' => 'test.owner@example.com',
+                'email' => 'test.owner@dummy.com',
                 'name' => 'Test Owner',
                 'nama_lengkap' => 'Owner Pemilik Perusahaan',
                 'jabatan' => 'Owner / Direktur',
@@ -161,7 +167,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => false,
             ],
             [
-                'email' => 'test.keuangan@example.com',
+                'email' => 'test.keuangan@dummy.com',
                 'name' => 'Test Admin Keuangan',
                 'nama_lengkap' => 'Ani Admin Keuangan',
                 'jabatan' => 'Admin Keuangan',
@@ -173,7 +179,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => false,
             ],
             [
-                'email' => 'test.operator.mesin@example.com',
+                'email' => 'test.operator.mesin@dummy.com',
                 'name' => 'Test Operator Mesin',
                 'nama_lengkap' => 'Donny Operator Mesin',
                 'jabatan' => 'Operator Batching Plant',
@@ -185,7 +191,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => true,
             ],
             [
-                'email' => 'test.driver.armada@example.com',
+                'email' => 'test.driver.armada@dummy.com',
                 'name' => 'Test Driver Armada',
                 'nama_lengkap' => 'Eko Driver Armada',
                 'jabatan' => 'Driver Dump Truck',
@@ -197,7 +203,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => true,
             ],
             [
-                'email' => 'test.ketua.armada@example.com',
+                'email' => 'test.ketua.armada@dummy.com',
                 'name' => 'Test Ketua Armada',
                 'nama_lengkap' => 'Hendra Ketua Armada',
                 'jabatan' => 'Ketua Divisi Armada',
@@ -209,7 +215,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => false,
             ],
             [
-                'email' => 'test.workshop@example.com',
+                'email' => 'test.workshop@dummy.com',
                 'name' => 'Test Workshop',
                 'nama_lengkap' => 'Wahyu Teknisi Workshop',
                 'jabatan' => 'Teknisi Workshop',
@@ -221,7 +227,7 @@ class MobileTestUserSeeder extends Seeder
                 'tugas' => false,
             ],
             [
-                'email' => 'test.inventory@example.com',
+                'email' => 'test.inventory@dummy.com',
                 'name' => 'Test Inventory',
                 'nama_lengkap' => 'Indra Staf Inventory',
                 'jabatan' => 'Staf Inventory',
@@ -294,11 +300,11 @@ class MobileTestUserSeeder extends Seeder
         // agar modul operasional menampilkan sesi milik operator tsb. Untuk
         // armada dipakai tabel persisten ArmadaDriver.
         $this->seedOperatorMesin(
-            $createdKaryawanByEmail['test.operator.mesin@example.com'] ?? null,
+            $createdKaryawanByEmail['test.operator.mesin@dummy.com'] ?? null,
             $cbp, $titik
         );
         $this->seedDriverArmada(
-            $createdKaryawanByEmail['test.driver.armada@example.com'] ?? null,
+            $createdKaryawanByEmail['test.driver.armada@dummy.com'] ?? null,
             $gcs, $titik, $proyek
         );
 
@@ -343,13 +349,13 @@ class MobileTestUserSeeder extends Seeder
         );
 
         // Sesi aktif milik operator agar terlihat "mengampu" mesin tsb.
-        $existing = \App\Domain\Production\Models\ProductionSession::where('operator_karyawan_id', $operator->id)
+        $existing = ProductionSession::where('operator_karyawan_id', $operator->id)
             ->where('mesin_id', $mesin->id)
             ->where('status', 'berjalan')
             ->exists();
 
         if (! $existing) {
-            \App\Domain\Production\Models\ProductionSession::create([
+            ProductionSession::create([
                 'mesin_id' => $mesin->id,
                 'titik_id' => $titik->id,
                 'produk_id' => $produk->id,

@@ -3,13 +3,18 @@
 namespace Database\Seeders;
 
 use App\Domain\Procurement\Models\Supplier;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class SupplierSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         Supplier::query()->delete();
 
         Supplier::insert([

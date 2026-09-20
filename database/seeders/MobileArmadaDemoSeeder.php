@@ -19,6 +19,7 @@ use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 /**
@@ -41,18 +42,22 @@ use Illuminate\Database\Seeder;
  */
 class MobileArmadaDemoSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $gcs = UnitBisnis::where('kode', 'GCS')->first();
         $cbp = UnitBisnis::where('kode', 'CBP')->first();
         $titik = Titik::where('nama', 'Titik Kerja Uji Coba')->first();
         $proyek = Proyek::where('kode_proyek', 'PRJ-TEST-MOBILE')->first();
 
         $driver = $this->karyawan('Eko Driver Armada');
-        $driverUser = User::where('email', 'test.driver.armada@example.com')->first() ?? $driver?->user;
-        $owner = User::where('email', 'test.owner@example.com')->first() ?? User::where('email', 'owner@example.com')->first();
-        $workshop = User::where('email', 'test.workshop@example.com')->first() ?? User::where('email', 'workshop@example.com')->first();
-        $kepala = User::where('email', 'test.ketua.armada@example.com')->first() ?? User::where('email', 'ketua.armada@example.com')->first();
+        $driverUser = User::where('email', 'test.driver.armada@dummy.com')->first() ?? $driver?->user;
+        $owner = User::where('email', 'test.owner@dummy.com')->first() ?? User::where('email', 'owner@real.com')->first();
+        $workshop = User::where('email', 'test.workshop@dummy.com')->first() ?? User::where('email', 'workshop@real.com')->first();
+        $kepala = User::where('email', 'test.ketua.armada@dummy.com')->first() ?? User::where('email', 'ketua.armada@real.com')->first();
 
         // ──────────────────────── MASTER ARMADA TAMBAHAN ────────────────────────
         $armada1 = Armada::updateOrCreate(

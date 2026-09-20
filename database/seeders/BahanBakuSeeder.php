@@ -3,13 +3,18 @@
 namespace Database\Seeders;
 
 use App\Domain\Procurement\Models\BahanBaku;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class BahanBakuSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         BahanBaku::query()->delete();
 
         BahanBaku::insert([

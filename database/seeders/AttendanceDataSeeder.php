@@ -6,12 +6,17 @@ use App\Domain\Attendance\Models\FormulirLapangan;
 use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class AttendanceDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $titikBlokA = Titik::where('nama', 'Lahan Blok A')->firstOrFail();
         $titikTambang = Titik::where('nama', 'Lokasi Tambang')->firstOrFail();
         $titikBendungan = Titik::where('nama', 'Lokasi Bendungan')->firstOrFail();

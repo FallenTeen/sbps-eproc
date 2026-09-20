@@ -24,19 +24,24 @@ use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class ProductionDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $gcs = UnitBisnis::where('kode', 'GCS')->firstOrFail();
         $cbp = UnitBisnis::where('kode', 'CBP')->firstOrFail();
         $amp = UnitBisnis::where('kode', 'AMP')->firstOrFail();
 
-        $cbpUser = User::where('email', 'cbp@example.com')->firstOrFail();
-        $ampUser = User::where('email', 'amp@example.com')->firstOrFail();
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
+        $cbpUser = User::where('email', 'cbp@real.com')->firstOrFail();
+        $ampUser = User::where('email', 'amp@real.com')->firstOrFail();
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
 
         $titikPlantCbp = Titik::where('nama', 'Plant CBP')->firstOrFail();
         $titikPlantAmp = Titik::where('nama', 'Plant AMP')->firstOrFail();
@@ -47,7 +52,7 @@ class ProductionDataSeeder extends Seeder
         $operatorCbp2 = Karyawan::where('nama', 'Dedi Kurniawan')->firstOrFail();
         $operatorAmp = Karyawan::where('nama', 'Hendra Wijaya')->firstOrFail();
         $operatorAmp2 = Karyawan::where('nama', 'Andi Firmansyah')->firstOrFail();
-        $operatorCrusher = Karyawan::where('nama', 'Yanto')->firstOrFail();
+        $operatorCrusher = Karyawan::where('nama', 'Yanto Operator')->firstOrFail();
         $driverStandby = Karyawan::where('nama', 'Rudi Hartono')->firstOrFail();
         $driverTambahan = Karyawan::where('nama', 'Slamet Riyadi')->firstOrFail();
 
@@ -56,8 +61,8 @@ class ProductionDataSeeder extends Seeder
         $split = BahanBaku::where('kode', 'BB-003')->firstOrFail();
         $air = BahanBaku::where('kode', 'BB-004')->firstOrFail();
 
-        $molen1 = Armada::where('kode_unit', 'CBP-TM-01')->firstOrFail();
-        $molen2 = Armada::where('kode_unit', 'CBP-TM-02')->firstOrFail();
+        $molen1 = Armada::where('kode_unit', 'TM 01 C')->firstOrFail();
+        $molen2 = Armada::where('kode_unit', 'TM 02 C')->firstOrFail();
 
         // ─────────────────────────── PRODUK ───────────────────────────
         $produkBeton225 = Produk::updateOrCreate(

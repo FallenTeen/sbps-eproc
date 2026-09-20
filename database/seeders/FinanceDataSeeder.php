@@ -12,17 +12,24 @@ use App\Domain\Finance\Models\PembayaranKlien;
 use App\Domain\Finance\Models\TransferAntarKas;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\Fleet\Models\SewaAlatJam;
+use App\Domain\HR\Models\Karyawan;
 use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class FinanceDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
-        $gcsUser = User::where('email', 'gcs@example.com')->firstOrFail();
+        $this->assertNotProduction();
+
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
+        $gcsUser = User::where('email', 'gcs@real.com')->firstOrFail();
 
         $gcs = UnitBisnis::where('kode', 'GCS')->firstOrFail();
         $cbp = UnitBisnis::where('kode', 'CBP')->firstOrFail();
@@ -36,10 +43,77 @@ class FinanceDataSeeder extends Seeder
         $bankBca = AkunKasBank::where('nama', 'Bank BCA GCS')->firstOrFail();
 
         // Referensi tagihan (dari Fleet & Production)
-        $armadaDt01 = Armada::where('kode_unit', 'GCS-DT-01')->firstOrFail();
-        $ritase1 = Ritase::where('armada_id', $armadaDt01->id)->where('status', 'disetujui')->orderBy('tanggal')->firstOrFail();
-        $ritase3 = Ritase::where('armada_id', $armadaDt01->id)->where('status', 'disetujui')->orderBy('tanggal', 'desc')->firstOrFail();
-        $sewa1 = SewaAlatJam::where('status', 'disetujui')->firstOrFail();
+        $armadaDt01 = Armada::where('kode_unit', 'DT 01')->firstOrFail();
+        $driverNovi = Karyawan::where('nama', 'NOVI')->firstOrFail();
+
+        // Ritase demo (staging) untuk armada DT 01 — armada & driver asli.
+        $ruteTarif = RuteTarif::firstOrCreate(
+            ['unit_bisnis_id' => $gcs->id, 'lokasi_asal' => 'Lokasi Tambang', 'lokasi_tujuan' => 'Plant GCS'],
+            [
+                'jarak_km' => 18,
+                'tarif_per_rit' => 1_200_000,
+                'indeks_liter_solar_per_km' => 0.35,
+                'berlaku_dari' => now()->subMonth()->toDateString(),
+                'berlaku_sampai' => null,
+            ]
+        );
+
+        $ritase1 = Ritase::updateOrCreate(
+            ['armada_id' => $armadaDt01->id, 'tanggal' => now()->subDays(4)->toDateString()],
+            [
+                'driver_karyawan_id' => $driverNovi->id,
+                'rute_tarif_id' => $ruteTarif->id,
+                'kategori' => 'angkut',
+                'material' => 'Pasir',
+                'jumlah_rit' => 12,
+                'satuan_volume' => 'ritase',
+                'jumlah_volume' => null,
+                'tarif_per_rit_snapshot' => 1_200_000,
+                'nominal' => 14_400_000,
+                'total_upah_rit' => 14_400_000,
+                'proyek_id' => $proyek2->id,
+                'titik_id' => null,
+                'customer' => null,
+                'status' => 'disetujui',
+                'catatan' => 'Ritase angkut pasir untuk demo finance.',
+            ]
+        );
+
+        $ritase3 = Ritase::updateOrCreate(
+            ['armada_id' => $armadaDt01->id, 'tanggal' => now()->subDays(9)->toDateString()],
+            [
+                'driver_karyawan_id' => $driverNovi->id,
+                'rute_tarif_id' => $ruteTarif->id,
+                'kategori' => 'angkut',
+                'material' => 'Pasir',
+                'jumlah_rit' => 10,
+                'satuan_volume' => 'ritase',
+                'jumlah_volume' => null,
+                'tarif_per_rit_snapshot' => 1_200_000,
+                'nominal' => 12_000_000,
+                'total_upah_rit' => 12_000_000,
+                'proyek_id' => $proyek2->id,
+                'titik_id' => null,
+                'customer' => null,
+                'status' => 'disetujui',
+                'catatan' => 'Ritase angkut pasir untuk demo finance.',
+            ]
+        );
+
+        $sewa1 = SewaAlatJam::firstOrCreate(
+            ['armada_id' => $armadaDt01->id, 'proyek_id' => $proyek2->id, 'tanggal' => now()->subDays(6)->toDateString()],
+            [
+                'penyewa_eksternal' => 'PT Karya Cikarang Mandiri',
+                'lokasi_pekerjaan' => 'Area Galian Blok A',
+                'harga_per_jam_snapshot' => 350_000,
+                'hm_awal' => 1500.0,
+                'hm_akhir' => 1540.0,
+                'jumlah_jam' => 40,
+                'status' => 'disetujui',
+                'catatan' => 'Sewa alat berat untuk demo finance.',
+            ]
+        );
+
         $session1 = ProductionSession::where('status', 'selesai')->whereNotNull('hasil_output')->firstOrFail();
 
         // ─────────────────────── MUTASI KAS BANK ───────────────────────

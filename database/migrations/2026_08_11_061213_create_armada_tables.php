@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('armadas', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('unit_bisnis_id'); // hanya GCS (tapi truck molen CBP juga dicatat di sini)
-            $table->string('plat_nomor')->unique();
+            $table->string('plat_nomor')->nullable()->unique(); // nullable: plat TM/CBP belum terdata di CSV
             $table->string('kode_unit')->unique();
-            $table->enum('jenis', ['dump_truck', 'alat_berat', 'truck_molen', 'lainnya']);
+            $table->enum('jenis', ['dump_truck', 'dump_truck_tronton', 'self_loader', 'alat_berat', 'truck_molen', 'lainnya']);
             $table->enum('model_tarif', ['ritase', 'sewa_jam', 'internal'])->default('ritase');
             $table->integer('tahun')->nullable();
             $table->string('kapasitas')->nullable(); // ton/m³

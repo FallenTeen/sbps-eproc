@@ -14,15 +14,20 @@ use App\Domain\Procurement\Models\PurchaseOrderItem;
 use App\Domain\Procurement\Models\StokMutasi;
 use App\Domain\Procurement\Models\Supplier;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class ProcurementDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
-        $gcsUser = User::where('email', 'gcs@example.com')->firstOrFail();
-        $ketuaArmada = User::where('email', 'ketua.armada@example.com')->firstOrFail();
+        $this->assertNotProduction();
+
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
+        $gcsUser = User::where('email', 'gcs@real.com')->firstOrFail();
+        $ketuaArmada = User::where('email', 'ketua.armada@real.com')->firstOrFail();
 
         $proyek1 = Proyek::where('kode_proyek', 'PRJ-GCS-001')->firstOrFail();
         $proyek2 = Proyek::where('kode_proyek', 'PRJ-GCS-002')->firstOrFail();

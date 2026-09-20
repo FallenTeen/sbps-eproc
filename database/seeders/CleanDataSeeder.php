@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  */
 class CleanDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     private array $tables = [
         // Finance
         'invoice_items',
@@ -44,6 +47,16 @@ class CleanDataSeeder extends Seeder
         'produks',
 
         // Fleet
+        'checklist_serah_terima_detail',
+        'checklist_serah_terima_armada',
+        'pengajuan_servis_spareparts',
+        'pengajuan_servis_personels',
+        'pengajuan_servis_armadas',
+        'workshop_todos',
+        'presensi_helpers',
+        'helper_armadas',
+        'armada_odo_awal_proyeks',
+        'armada_penanggung_jawabs',
         'ritase_biaya_lains',
         'ritases',
         'sewa_alat_jams',
@@ -53,6 +66,7 @@ class CleanDataSeeder extends Seeder
         'armada_drivers',
         'armadas',
         'rute_tarifs',
+        'stok_opnames',
 
         // HR & Payroll
         'komponen_gajis',
@@ -78,6 +92,8 @@ class CleanDataSeeder extends Seeder
 
     public function run(): void
     {
+        $this->assertNotProduction();
+
         foreach ($this->tables as $table) {
             DB::table($table)->delete();
         }

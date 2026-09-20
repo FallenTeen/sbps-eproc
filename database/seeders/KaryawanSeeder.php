@@ -9,19 +9,24 @@ use App\Domain\HR\Models\Karyawan;
 use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\HR\Models\KomponenGaji;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class KaryawanSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
-        $gcs = User::where('email', 'gcs@example.com')->firstOrFail();
-        $driverStandby = User::where('email', 'driver.standby@example.com')->firstOrFail();
-        $driverKondisional = User::where('email', 'driver.kondisional@example.com')->firstOrFail();
-        $mandorTitik = User::where('email', 'mandor.titik@example.com')->firstOrFail();
-        $cbp = User::where('email', 'cbp@example.com')->firstOrFail();
-        $amp = User::where('email', 'amp@example.com')->firstOrFail();
+        $this->assertNotProduction();
+
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
+        $gcs = User::where('email', 'gcs@real.com')->firstOrFail();
+        $driverStandby = User::where('email', 'driver.standby@dummy.com')->firstOrFail();
+        $driverKondisional = User::where('email', 'driver.kondisional@dummy.com')->firstOrFail();
+        $mandorTitik = User::where('email', 'mandor.titik@dummy.com')->firstOrFail();
+        $cbp = User::where('email', 'cbp@real.com')->firstOrFail();
+        $amp = User::where('email', 'amp@real.com')->firstOrFail();
 
         // ───────────────────────── KARYAWAN ─────────────────────────
         $karyawans = [
@@ -32,7 +37,7 @@ class KaryawanSeeder extends Seeder
             ['user_id' => $cbp->id, 'nama' => 'Agus Salim', 'tipe' => 'tetap', 'jabatan' => 'Operator Batching Plant', 'rate_gaji_pokok' => 7_000_000, 'rate_harian' => null],
             ['user_id' => $amp->id, 'nama' => 'Hendra Wijaya', 'tipe' => 'tetap', 'jabatan' => 'Operator AMP', 'rate_gaji_pokok' => 7_500_000, 'rate_harian' => null],
             ['user_id' => null, 'nama' => 'Slamet Riyadi', 'tipe' => 'borongan_rit', 'jabatan' => 'Driver Dump Truck', 'rate_gaji_pokok' => null, 'rate_harian' => 150_000],
-            ['user_id' => null, 'nama' => 'Yanto', 'tipe' => 'harian', 'jabatan' => 'Operator Excavator', 'rate_gaji_pokok' => null, 'rate_harian' => 200_000],
+            ['user_id' => null, 'nama' => 'Yanto Operator', 'tipe' => 'harian', 'jabatan' => 'Operator Excavator', 'rate_gaji_pokok' => null, 'rate_harian' => 200_000],
             ['user_id' => null, 'nama' => 'Dedi Kurniawan', 'tipe' => 'tetap', 'jabatan' => 'Operator Batching Plant', 'rate_gaji_pokok' => 6_800_000, 'rate_harian' => null],
             ['user_id' => null, 'nama' => 'Andi Firmansyah', 'tipe' => 'tetap', 'jabatan' => 'Operator AMP', 'rate_gaji_pokok' => 7_200_000, 'rate_harian' => null],
         ];

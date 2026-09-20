@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('no_bpjs_kesehatan')->nullable();
             $table->string('no_bpjs_ketenagakerjaan')->nullable();
             $table->string('status_ptkp')->nullable();
+            $table->string('no_hp')->nullable();
+            $table->string('alias')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
 

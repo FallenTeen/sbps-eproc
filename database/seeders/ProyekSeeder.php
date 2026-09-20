@@ -8,19 +8,24 @@ use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class ProyekSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $gcs = UnitBisnis::where('kode', 'GCS')->firstOrFail();
         $cbp = UnitBisnis::where('kode', 'CBP')->firstOrFail();
         $amp = UnitBisnis::where('kode', 'AMP')->firstOrFail();
 
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
-        $gcsUser = User::where('email', 'gcs@example.com')->firstOrFail();
-        $kontraktor = User::where('email', 'kontraktor@example.com')->firstOrFail();
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
+        $gcsUser = User::where('email', 'gcs@real.com')->firstOrFail();
+        $kontraktor = User::where('email', 'kontraktor@dummy.com')->firstOrFail();
 
         // ─────────────────────────── PROYEK ───────────────────────────
         $proyeks = [

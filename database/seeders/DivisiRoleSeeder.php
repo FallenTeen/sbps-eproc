@@ -15,7 +15,7 @@ class DivisiRoleSeeder extends Seeder
      * AMAN & NON-DESTRUKTIF terhadap privilege lain: syncPermissions diisi
      * hasil union matriks RoleMatrix, sehingga tidak pernah menghilangkan
      * permission seperti `approve fleet service` yang sebelumnya tertimpa
-     * (root cause tombol approval hilang untuk ketua.armada@example.com).
+     * (root cause tombol approval hilang untuk ketua.armada@real.com).
      */
     public function run(): void
     {

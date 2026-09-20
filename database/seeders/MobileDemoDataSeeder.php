@@ -7,12 +7,12 @@ use App\Domain\Attendance\Models\MobileTrackingLocation;
 use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
+use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\ProductionSession;
-use App\Domain\Production\Models\ProductionSessionItem;
 use App\Domain\Production\Models\QCSample;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 /**
  * Data demo untuk pengujian aplikasi mobile di staging.
@@ -38,12 +38,17 @@ use Illuminate\Support\Str;
  */
 class MobileDemoDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     /** Koordinat uji (sesuai Titik Kerja Uji Coba dari MobileTestUserSeeder). */
     private const TITIK_LAT = -6.2190;
+
     private const TITIK_LNG = 107.0010;
 
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $titik = Titik::where('nama', 'Titik Kerja Uji Coba')->first();
 
         if (! $titik) {
@@ -59,8 +64,8 @@ class MobileDemoDataSeeder extends Seeder
         $driver = $this->karyawan('Eko Driver Armada');
 
         // Mesin/produk test (dari MobileTestUserSeeder)
-        $mesinCrusher = \App\Domain\Production\Models\MesinProduksi::where('nama', 'Stone Crusher Test-01')->first();
-        $mesinBatching = \App\Domain\Production\Models\MesinProduksi::where('nama', 'Batching Plant Test-01')->first();
+        $mesinCrusher = MesinProduksi::where('nama', 'Stone Crusher Test-01')->first();
+        $mesinBatching = MesinProduksi::where('nama', 'Batching Plant Test-01')->first();
 
         // ─────────────────────────── PRESENSI & FORMULIR ──────────────────────
         // Hari ini diisi penuh (selesai) + formulir, plus riwayat beberapa hari.
