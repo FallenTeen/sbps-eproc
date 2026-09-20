@@ -4,7 +4,7 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Fleet\States\PengajuanServisState;
 use App\Models\User;
-use Database\Factories\PengajuanServisArmadaFactory;
+use Database\Factories\Domain\Fleet\Models\PengajuanServisArmadaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
