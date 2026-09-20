@@ -86,7 +86,14 @@ export default function Show({ auth, karyawan, titiks }) {
                                 <Users className="h-6 w-6 text-indigo-600" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-900">{karyawan.nama}</h3>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {karyawan.nama}
+                                    {karyawan.alias ? (
+                                        <span className="ml-2 text-sm font-normal text-indigo-600">
+                                            alias "{karyawan.alias}"
+                                        </span>
+                                    ) : null}
+                                </h3>
                                 <p className="text-sm text-gray-500">{karyawan.jabatan}</p>
                             </div>
                         </div>
@@ -138,6 +145,10 @@ export default function Show({ auth, karyawan, titiks }) {
                                             <dd className="mt-1 text-sm text-gray-900">{formatCurrency(karyawan.rate_harian)} / hari</dd>
                                         </div>
                                     )}
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">No. HP</dt>
+                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.no_hp || '-'}</dd>
+                                    </div>
                                     <div>
                                         <dt className="text-sm font-medium text-gray-500">Akun Login</dt>
                                         <dd className="mt-1 text-sm text-gray-900">{karyawan.user?.email || <span className="text-gray-400 italic">Belum ditautkan</span>}</dd>

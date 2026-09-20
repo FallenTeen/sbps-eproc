@@ -12,6 +12,8 @@ export default function Edit({ auth, karyawan }) {
         nama: karyawan.nama || '',
         tipe: karyawan.tipe || 'tetap',
         jabatan: karyawan.jabatan || '',
+        no_hp: karyawan.no_hp || '',
+        alias: karyawan.alias || '',
         rate_gaji_pokok: karyawan.rate_gaji_pokok || '',
         rate_harian: karyawan.rate_harian || '',
         npwp: karyawan.npwp || '',
@@ -81,6 +83,31 @@ export default function Edit({ auth, karyawan }) {
                                             required
                                         />
                                         <InputError className="mt-2" message={errors.jabatan} />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="no_hp" value="No. HP" />
+                                        <TextInput
+                                            id="no_hp"
+                                            type="tel"
+                                            className="mt-1 block w-full"
+                                            value={data.no_hp}
+                                            onChange={(e) => setData('no_hp', e.target.value)}
+                                            placeholder="08xx-xxxx-xxxx"
+                                        />
+                                        <InputError className="mt-2" message={errors.no_hp} />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="alias" value="Alias / Julukan" />
+                                        <TextInput
+                                            id="alias"
+                                            className="mt-1 block w-full"
+                                            value={data.alias}
+                                            onChange={(e) => setData('alias', e.target.value)}
+                                            placeholder="contoh: SAMSON"
+                                        />
+                                        <InputError className="mt-2" message={errors.alias} />
                                     </div>
 
                                     <div>

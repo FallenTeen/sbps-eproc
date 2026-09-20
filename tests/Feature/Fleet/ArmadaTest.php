@@ -124,6 +124,42 @@ test('store armada menolak plat nomor duplikat', function () {
     ])->assertSessionHasErrors('plat_nomor');
 });
 
+test('store armada dengan plat nomor kosong (nullable) berhasil', function () {
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => '',
+        'kode_unit' => 'TM 01 C',
+        'jenis' => 'truck_molen',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->assertDatabaseHas('armadas', [
+        'kode_unit' => 'TM 01 C',
+        'plat_nomor' => null,
+    ]);
+});
+
+test('store armada mendukung jenis baru dump_truck_tronton dan self_loader', function () {
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => 'R 8704 HR',
+        'kode_unit' => 'DTT 01',
+        'jenis' => 'dump_truck_tronton',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => 'B 9072 UIQ',
+        'kode_unit' => 'SL 01',
+        'jenis' => 'self_loader',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->assertDatabaseHas('armadas', ['kode_unit' => 'DTT 01', 'jenis' => 'dump_truck_tronton']);
+    $this->assertDatabaseHas('armadas', ['kode_unit' => 'SL 01', 'jenis' => 'self_loader']);
+});
+
 test('store armada memerlukan unit bisnis', function () {
     $this->post(route('fleet.armada.store'), [
         'plat_nomor' => 'B 2222 BBB',

@@ -74,6 +74,8 @@ class KaryawanController extends Controller
             'no_bpjs_kesehatan' => 'nullable|string|max:50',
             'no_bpjs_ketenagakerjaan' => 'nullable|string|max:50',
             'status_ptkp' => 'nullable|string|max:20',
+            'no_hp' => 'nullable|string|max:30',
+            'alias' => 'nullable|string|max:100',
             'status' => ['required', Rule::in(['aktif', 'nonaktif'])],
         ]);
 
@@ -128,6 +130,8 @@ class KaryawanController extends Controller
             'no_bpjs_kesehatan' => 'nullable|string|max:50',
             'no_bpjs_ketenagakerjaan' => 'nullable|string|max:50',
             'status_ptkp' => 'nullable|string|max:20',
+            'no_hp' => 'nullable|string|max:30',
+            'alias' => 'nullable|string|max:100',
             'status' => ['required', Rule::in(['aktif', 'nonaktif'])],
         ]);
 

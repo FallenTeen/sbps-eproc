@@ -34,6 +34,16 @@ class ArmadaFactory extends Factory
         return $this->state(fn () => ['jenis' => 'dump_truck', 'model_tarif' => 'ritase']);
     }
 
+    public function dumpTruckTronton(): static
+    {
+        return $this->state(fn () => ['jenis' => 'dump_truck_tronton', 'model_tarif' => 'ritase']);
+    }
+
+    public function selfLoader(): static
+    {
+        return $this->state(fn () => ['jenis' => 'self_loader', 'model_tarif' => 'ritase']);
+    }
+
     public function alatBerat(): static
     {
         return $this->state(fn () => ['jenis' => 'alat_berat', 'tipe_unit' => 'alat_berat', 'model_tarif' => 'sewa_jam']);

@@ -136,8 +136,17 @@ export default function Index({ auth, karyawans, filters }) {
                                                         <Users className="h-5 w-5 text-indigo-600" />
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">{k.nama}</div>
-                                                        <div className="text-xs text-gray-500">{k.user?.email || '-'}</div>
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {k.nama}
+                                                            {k.alias ? (
+                                                                <span className="ml-1 text-xs font-normal text-indigo-600">
+                                                                    alias "{k.alias}"
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {k.no_hp || k.user?.email || '-'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>

@@ -19,6 +19,8 @@ import {
 
 const JENIS = {
     dump_truck: "Dump Truck",
+    dump_truck_tronton: "Dump Truck Tronton",
+    self_loader: "Self Loader",
     alat_berat: "Alat Berat",
     truck_molen: "Truck Molen",
     lainnya: "Lainnya",
@@ -1617,7 +1619,7 @@ export default function Show({ armada, options, can }) {
                             Plat Nomor
                         </strong>
                         <span className="text-lg font-semibold">
-                            {armada.plat_nomor}
+                            {armada.plat_nomor || "-"}
                         </span>
                     </div>
                     <div>

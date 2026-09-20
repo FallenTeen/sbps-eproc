@@ -91,10 +91,10 @@ class ArmadaController extends Controller
 
         $validated = $request->validate([
             'unit_bisnis_id' => 'required|exists:unit_bisnis,id',
-            'plat_nomor' => 'required|unique:armadas',
+            'plat_nomor' => 'nullable|unique:armadas',
             'kode_unit' => 'required|unique:armadas',
-            'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
-'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
+            'jenis' => 'required|in:dump_truck,dump_truck_tronton,self_loader,alat_berat,truck_molen,lainnya',
+            'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',
@@ -189,10 +189,10 @@ class ArmadaController extends Controller
         $this->authorize('update', $armada);
 
         $validated = $request->validate([
-            'plat_nomor' => 'required|unique:armadas,plat_nomor,'.$armada->id,
+            'plat_nomor' => 'nullable|unique:armadas,plat_nomor,'.$armada->id,
             'kode_unit' => 'required|unique:armadas,kode_unit,'.$armada->id,
-            'jenis' => 'required|in:dump_truck,alat_berat,truck_molen,lainnya',
-'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
+            'jenis' => 'required|in:dump_truck,dump_truck_tronton,self_loader,alat_berat,truck_molen,lainnya',
+            'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
             'model_tarif' => 'required|in:ritase,sewa_jam,internal',
             'tahun' => 'nullable|integer',
             'kapasitas' => 'nullable|string',

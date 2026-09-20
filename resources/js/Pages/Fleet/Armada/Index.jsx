@@ -5,6 +5,8 @@ import { Plus, Search, Truck } from "lucide-react";
 
 const JENIS = {
     dump_truck: "Dump Truck",
+    dump_truck_tronton: "Dump Truck Tronton",
+    self_loader: "Self Loader",
     alat_berat: "Alat Berat",
     truck_molen: "Truck Molen",
     lainnya: "Lainnya",
@@ -173,7 +175,7 @@ export default function Index({ armadas, filters }) {
                                         {armada.kode_unit}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {armada.plat_nomor}
+                                        {armada.plat_nomor || "-"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {JENIS[armada.jenis] || armada.jenis}

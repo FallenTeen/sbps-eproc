@@ -66,7 +66,10 @@ export default function Create({ unitBisnis, titiks, drivers }) {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Plat Nomor *
+                            Plat Nomor{" "}
+                            <span className="text-gray-400 font-normal">
+                                (opsional — kosongkan jika belum ada)
+                            </span>
                         </label>
                         <input
                             type="text"
@@ -123,6 +126,10 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="dump_truck">Dump Truck</option>
+                            <option value="dump_truck_tronton">
+                                Dump Truck Tronton
+                            </option>
+                            <option value="self_loader">Self Loader</option>
                             <option value="alat_berat">Alat Berat</option>
                             <option value="truck_molen">Truck Molen</option>
                             <option value="lainnya">Lainnya</option>

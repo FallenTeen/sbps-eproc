@@ -25,7 +25,7 @@
             <div>
                 <h2>Berangkat</h2>
                 <table>
-                    <tr><th>Arma</th><td>{{$berangkat->armada->kode_unit . ' / ' . $berangkat->armada->plat_nomor}}</td></tr>
+                    <tr><th>Arma</th><td>{{$berangkat->armada->kode_unit . ' / ' . ($berangkat->armada->plat_nomor ?? 'belum ada plat')}}</td></tr>
                     <tr><th>Tanggal</th><td>{{$berangkat->tanggal->format('d F Y')}}</td></tr>
                     <tr><th>Penyewa</th><td>{{$berangkat->data_penyewa['nama'] ?? '-', ' - ' . $berangkat->data_penyewa['pt'] ?? ''}}</td></tr>
                     <tr><th>Odo / HM</th><td>{{$berangkat->odo_atau_hm ?? '–' }} HM</td></tr>
@@ -36,7 +36,7 @@
             <div>
                 <h2>Kembali</h2>
                 <table>
-                    <tr><th>Arma</th><td>{{$kembali->armada->kode_unit . ' / ' . $kembali->armada->plat_nomor}}</td></tr>
+                    <tr><th>Arma</th><td>{{$kembali->armada->kode_unit . ' / ' . ($kembali->armada->plat_nomor ?? 'belum ada plat')}}</td></tr>
                     <tr><th>Tanggal</th><td>{{$kembali->tanggal->format('d F Y')}}</td></tr>
                     <tr><th>Penyewa</th><td>{{$kembali->data_penyewa['nama'] ?? '-', ' - ' . $kembali->data_penyewa['pt'] ?? ''}}</td></tr>
                     <tr><th>Odo / HM</th><td>{{$kembali->odo_atau_hm ?? '–' }} HM</td></tr>
