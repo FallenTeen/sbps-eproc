@@ -17,28 +17,29 @@ use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
-use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
-use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
-use App\Domain\Fleet\Http\Controllers\WorkshopController;
-use App\Domain\Fleet\Http\Controllers\WorkshopTodoController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\ChecklistSerahTerimaController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
+use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
+use App\Domain\Fleet\Http\Controllers\MonitoringArmadaController;
+use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
 use App\Domain\Fleet\Http\Controllers\RitaseController;
 use App\Domain\Fleet\Http\Controllers\RuteTarifController;
 use App\Domain\Fleet\Http\Controllers\ServiceHistoryController;
 use App\Domain\Fleet\Http\Controllers\SewaAlatController;
+use App\Domain\Fleet\Http\Controllers\WorkshopController;
+use App\Domain\Fleet\Http\Controllers\WorkshopTodoController;
 // Production Controllers
 use App\Domain\HR\Http\Controllers\CutiController;
 use App\Domain\HR\Http\Controllers\KaryawanController;
 use App\Domain\HR\Http\Controllers\PayrollController;
+use App\Domain\Inventory\Http\Controllers\DashboardController as InventoryDashboardController;
+use App\Domain\Inventory\Http\Controllers\StokOpnameController;
 use App\Domain\Procurement\Http\Controllers\BahanBakuController;
 use App\Domain\Procurement\Http\Controllers\PembayaranController;
 use App\Domain\Procurement\Http\Controllers\PurchaseOrderController;
 use App\Domain\Procurement\Http\Controllers\SupplierController;
-use App\Domain\Inventory\Http\Controllers\DashboardController as InventoryDashboardController;
-use App\Domain\Inventory\Http\Controllers\StokOpnameController;
 // HR Controllers
 use App\Domain\Production\Http\Controllers\MesinProduksiController;
 use App\Domain\Production\Http\Controllers\MixDesignController;
@@ -241,6 +242,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('rute-tarif', RuteTarifController::class);
         Route::post('rute-tarif/{ruteTarif}/set-harga', [RuteTarifController::class, 'setHarga'])->name('rute-tarif.set-harga');
         Route::get('rute-tarif/current/{asal}/{tujuan}', [RuteTarifController::class, 'current'])->name('rute-tarif.current');
+
+        // v6 (21.11) — Monitoring Armada (metrik utilisasi & kondisi armada)
+        Route::get('monitoring-armada', [MonitoringArmadaController::class, 'index'])->name('monitoring-armada.index');
     });
 
     // v6 (21.8) — Sistem Servis Armada (multi-bagian: ajuan → approval →

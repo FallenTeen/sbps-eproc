@@ -7,6 +7,7 @@ use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Models\MutasiKasBank;
+use App\Domain\Fleet\Actions\CalculateArmadaUtilizationAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Production\Models\ProductionSession;
@@ -212,19 +213,52 @@ class DashboardController extends Controller
 
     /**
      * GET /api/mobile/dashboard/armada-status
-     * Distribusi status armada aktif.
+     * Distribusi status armada per unit bisnis (Section 12.5).
      */
     public function armadaStatus()
     {
-        $statuses = Armada::aktif()
-            ->selectRaw('status, count(*) as jumlah')
-            ->groupBy('status')
-            ->get();
+        $armadas = Armada::with('unitBisnis')->get();
+
+        $groupByStatus = fn ($items) => $items->groupBy('status')
+            ->map(fn ($rows, $status) => ['status' => $status, 'jumlah' => $rows->count()])
+            ->values();
+
+        $byUnitBisnis = $armadas->groupBy('unit_bisnis_id')
+            ->map(fn ($items, $unitBisnisId) => [
+                'unit_bisnis_id' => $unitBisnisId,
+                'kode' => $items->first()->unitBisnis?->kode,
+                'nama' => $items->first()->unitBisnis?->nama,
+                'total' => $items->count(),
+                'items' => $groupByStatus($items),
+            ])->values();
 
         return $this->success([
-            'total' => Armada::aktif()->count(),
-            'items' => $statuses,
+            'total' => $armadas->count(),
+            'items' => $groupByStatus($armadas),
+            'by_unit_bisnis' => $byUnitBisnis,
         ], 'Status armada.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/armada-monitoring
+     * Metrik utilisasi & kondisi seluruh armada (Bagian 21.11) —
+     * ringkasan KPI, rekap durasi per tanggal, dan baris per unit.
+     */
+    public function armadaMonitoring(Request $request, CalculateArmadaUtilizationAction $action)
+    {
+        $validated = $request->validate([
+            'unit_bisnis_id' => 'nullable|exists:unit_bisnis,id',
+            'dari' => 'nullable|date',
+            'sampai' => 'nullable|date|after_or_equal:dari',
+        ]);
+
+        $data = $action->execute(
+            dari: $validated['dari'] ?? null,
+            sampai: $validated['sampai'] ?? null,
+            unitBisnisId: $validated['unit_bisnis_id'] ?? null,
+        );
+
+        return $this->success($data, 'Monitoring armada.');
     }
 
     /**

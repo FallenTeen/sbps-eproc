@@ -15,32 +15,34 @@
         .total-row { font-weight: bold; margin-top: 10px; }
         .signature { margin-top: 30px; text-align: center; }
         .signature .line { border-top: 1px solid #333; display: block; padding-top: 4px; margin: 10px 0; }
+        .cols { display: flex; gap: 20px; }
+        .col { flex: 1; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Checklist Serah Terima — Sewa Alat Berat</h1>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-            <div>
+        <div class="cols">
+            <div class="col">
                 <h2>Berangkat</h2>
                 <table>
                     <tr><th>Arma</th><td>{{$berangkat->armada->kode_unit . ' / ' . ($berangkat->armada->plat_nomor ?? 'belum ada plat')}}</td></tr>
                     <tr><th>Tanggal</th><td>{{$berangkat->tanggal->format('d F Y')}}</td></tr>
-                    <tr><th>Penyewa</th><td>{{$berangkat->data_penyewa['nama'] ?? '-', ' - ' . $berangkat->data_penyewa['pt'] ?? ''}}</td></tr>
+                    <tr><th>Penyewa</th><td>{{ ($berangkat->data_penyewa['nama'] ?? '-') . ' / ' . ($berangkat->data_penyewa['pt'] ?? '') }}</td></tr>
                     <tr><th>Odo / HM</th><td>{{$berangkat->odo_atau_hm ?? '–' }} HM</td></tr>
                     <tr><th>Catatan</th><td>{{$berangkat->catatan ?? '-'}}</td></tr>
                     <tr><th>Ditandatangani Oleh</th><td>{{$berangkat->dicatatOleh?->name ?? '-'}}</td></tr>
                 </table>
             </div>
-            <div>
+            <div class="col">
                 <h2>Kembali</h2>
                 <table>
                     <tr><th>Arma</th><td>{{$kembali->armada->kode_unit . ' / ' . ($kembali->armada->plat_nomor ?? 'belum ada plat')}}</td></tr>
                     <tr><th>Tanggal</th><td>{{$kembali->tanggal->format('d F Y')}}</td></tr>
-                    <tr><th>Penyewa</th><td>{{$kembali->data_penyewa['nama'] ?? '-', ' - ' . $kembali->data_penyewa['pt'] ?? ''}}</td></tr>
+                    <tr><th>Penyewa</th><td>{{ ($kembali->data_penyewa['nama'] ?? '-') . ' / ' . ($kembali->data_penyewa['pt'] ?? '') }}</td></tr>
                     <tr><th>Odo / HM</th><td>{{$kembali->odo_atau_hm ?? '–' }} HM</td></tr>
-                    <tr><th>Pemakaian (selisih)</th><td>{{$pemakaian > 0 ? number_format($pemakaian, 1, ',', '.') + ' HM' : '–'}}</td></tr>
+                    <tr><th>Pemakaian (selisih)</th><td>{{$pemakaian > 0 ? number_format($pemakaian, 1, ',', '.') . ' HM' : '–'}}</td></tr>
                     <tr><th>Catatan</th><td>{{$kembali->catatan ?? '-'}}</td></tr>
                     <tr><th>Ditandatangani Oleh</th><td>{{$kembali->dicatatOleh?->name ?? '-'}}</td></tr>
                 </table>
@@ -52,25 +54,31 @@
             <h3>Item Kondisi (Berangkat)</h3>
             <table style="width:100%;border-collapse:collapse;">
                 <tr><th style="width:60%">Item</th><th style="width:20%">Kondisi</th><th style="width:20%">Catatan</th></tr>
-                {{$berangkat->details->map(function ($d) { ?>
+                @foreach($berangkat->details as $d)
                     <tr>
                         <td>{{$d->item}}</td>
                         <td style="text-align:center">{{ $d->kondisi }}</td>
                         <td>{{$d->catatan ?? ''}}</td>
                     </tr>
-                {{$})->toHtml() ?? '<tr><td colspan="3" style="text-align:center">Belum ada item</td></tr>'}}
+                @endforeach
+                @if($berangkat->details->isEmpty())
+                    <tr><td colspan="3" style="text-align:center">Belum ada item</td></tr>
+                @endif
             </table>
 
             <h3>Item Kondisi (Kembali)</h3>
             <table style="width:100%;border-collapse:collapse;margin-top:15px;">
                 <tr><th style="width:60%">Item</th><th style="width:20%">Kondisi</th><th style="width:20%">Catatan</th></tr>
-                {{$kembali->details->map(function ($d) { ?>
+                @foreach($kembali->details as $d)
                     <tr>
                         <td>{{$d->item}}</td>
                         <td style="text-align:center">{{ $d->kondisi }}</td>
                         <td>{{$d->catatan ?? ''}}</td>
                     </tr>
-                {{$})->toHtml() ?? '<tr><td colspan="3" style="text-align:center">Belum ada item</td></tr>'}}
+                @endforeach
+                @if($kembali->details->isEmpty())
+                    <tr><td colspan="3" style="text-align:center">Belum ada item</td></tr>
+                @endif
             </table>
         </div>
 
@@ -78,11 +86,11 @@
         <div style="margin-top: 20px;">
             <h3>Foto Kondisi (Berangkat)</h3>
             <p style="font-size:9px;max-height:60px;overflow:auto;">
-                {{$berangkat->foto_kondisi?->map(function ($f) { return '• ' . basename($f); })->implode('<br>' ?? '—' . '<br>')}}
+                {{$berangkat->foto_kondisi?->map(fn ($f) => '• ' . basename($f))->implode('<br>') ?? '—'}}
             </p>
             <h3>Foto Kondisi (Kembali)</h3>
             <p style="font-size:9px;max-height:60px;overflow:auto;">
-                {{$kembali->foto_kondisi?->map(function ($f) { return '• ' . basename($f); })->implode('<br>' ?? '—' . '<br>')}}
+                {{$kembali->foto_kondisi?->map(fn ($f) => '• ' . basename($f))->implode('<br>') ?? '—'}}
             </p>
         </div>
 

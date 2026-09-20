@@ -81,6 +81,7 @@ function getAllMenus() {
                 { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Monitoring Armada', href: safeRoute('fleet.monitoring-armada.index', {}, '/fleet/monitoring-armada'), routeName: 'fleet.monitoring-armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
                 { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
             ],

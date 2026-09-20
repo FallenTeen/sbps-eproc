@@ -84,6 +84,7 @@ class HandleInertiaRequests extends Middleware
         'fleet.checklist-harian.index' => 'Checklist Harian',
         'fleet.bbm.index' => 'Log BBM',
         'fleet.downtime.index' => 'Downtime Log',
+        'fleet.monitoring-armada.index' => 'Monitoring Armada',
 
         'production.dashboard' => 'Dashboard Produksi',
         'production.mesin.index' => 'Mesin Produksi',
