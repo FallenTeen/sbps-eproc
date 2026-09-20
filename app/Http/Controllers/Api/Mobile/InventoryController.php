@@ -35,6 +35,36 @@ class InventoryController extends Controller
     }
 
     /**
+     * Harga BELI TERBARU semua bahan baku (bulk query anti N+1).
+     *
+     * @param  array<string>  $bahanBakuIds
+     * @return \Illuminate\Support\Collection<string, float>  [bahan_baku_id => harga]
+     */
+    private function hargaTerbaruBulk(array $bahanBakuIds): \Illuminate\Support\Collection
+    {
+        if (empty($bahanBakuIds)) {
+            return collect();
+        }
+
+        $now = now();
+
+        // Query semua harga yang masih berlaku (non-expired), urut terbaru,
+        // lalu keyBy bahan_baku_id agar yang terbaru (terakhir) menang.
+        $hargas = \App\Domain\Procurement\Models\HargaBeli::query()
+            ->whereIn('bahan_baku_id', $bahanBakuIds)
+            ->where('berlaku_dari', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', $now);
+            })
+            ->orderBy('berlaku_dari', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->keyBy('bahan_baku_id');
+
+        return $hargas->map(fn ($h) => (float) $h->harga);
+    }
+
+    /**
      * GET /api/mobile/inventory/summary
      * Ringkasan untuk halaman utama inventory.
      */
@@ -42,6 +72,7 @@ class InventoryController extends Controller
     {
         $bahanBakus = BahanBaku::where('aktif', true)->get();
         $saldos = $this->saldoByBahanBaku();
+        $hargaTerbarus = $this->hargaTerbaruBulk($bahanBakus->pluck('id')->all());
 
         $nilaiStok = 0.0;
         $stokRendahCount = 0;
@@ -50,7 +81,8 @@ class InventoryController extends Controller
             if ($saldo < (float) $bahanBaku->stok_minimum) {
                 $stokRendahCount++;
             }
-            $nilaiStok += $saldo * $this->hargaTerbaru($bahanBaku->id);
+            $harga = (float) $hargaTerbarus->get($bahanBaku->id, 0.0);
+            $nilaiStok += $saldo * $harga;
         }
 
         $requestPendingCount = PengajuanServisArmada::query()

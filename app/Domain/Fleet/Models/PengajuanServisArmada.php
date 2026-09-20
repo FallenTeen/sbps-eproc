@@ -23,6 +23,10 @@ class PengajuanServisArmada extends Model
         'diajukan_oleh',
         'foto_armada',
         'catatan_ajuan',
+        'keluhan',
+        'kategori',
+        'odometer_saat_ajuan',
+        'jam_operasional_saat_ajuan',
         'catatan_acc',
         'status',
         'disetujui_oleh',
@@ -44,6 +48,8 @@ class PengajuanServisArmada extends Model
         'tanggal_selesai' => 'date',
         'butuh_sparepart' => 'boolean',
         'total_biaya' => 'float',
+        'odometer_saat_ajuan' => 'float',
+        'jam_operasional_saat_ajuan' => 'float',
         'status' => PengajuanServisState::class,
     ];
 

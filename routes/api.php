@@ -140,7 +140,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
             ->name('servis-armada.selesai')->middleware('idempotency');
         Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])
             ->name('workshop.job.request-sparepart')->middleware('idempotency');
-        Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])->name('workshop.job.todo.toggle');
+        Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])
+            ->name('workshop.job.todo.toggle')->middleware('idempotency');
         Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])
             ->name('workshop.job.todo.photo')->middleware('idempotency');
 
@@ -151,9 +152,11 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('inventory/mutasi', [InventoryController::class, 'mutasi'])->name('inventory.mutasi');
         Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
         Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
-        Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])->name('inventory.request.proses');
+        Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])
+            ->name('inventory.request.proses')->middleware('idempotency');
         Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
-        Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])->name('inventory.opname');
+        Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])
+            ->name('inventory.opname')->middleware('idempotency');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -163,7 +166,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('kontraktor/proyek', [KontraktorController::class, 'proyekList'])->name('kontraktor.proyek');
         Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
         Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
-        Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])->name('kontraktor.komunikasi');
+        Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])
+            ->name('kontraktor.komunikasi')->middleware('idempotency');
 
         // Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1)
         Route::get('me/pending-summary', PendingSummaryController::class)->name('me.pending-summary');

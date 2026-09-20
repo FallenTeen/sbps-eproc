@@ -99,7 +99,32 @@ class PengajuanServisController extends Controller
             $validated['catatan_ajuan'] = $validated['keluhan'];
         }
 
-        $pengajuan = app(SubmitPengajuanServisAction::class)->execute($request->user(), $validated);
+        $user = $request->user();
+        $allowedRoles = [
+            'Owner',
+            'Admin Keuangan',
+            'Kepala Divisi Armada',
+            'Ketua Divisi Armada',
+            'Ketua Armada',
+        ];
+
+        $isRoleAllowed = $user && $user->hasAnyRole($allowedRoles);
+        $isPic = in_array($validated['armada_id'], $this->activeArmadaIds($request), true);
+        $isDriver = false;
+
+        $karyawan = $user?->karyawan;
+        if ($karyawan) {
+            $isDriver = \App\Domain\Fleet\Models\ArmadaDriver::where('armada_id', $validated['armada_id'])
+                ->where('karyawan_id', $karyawan->id)
+                ->where('status', 'aktif')
+                ->exists();
+        }
+
+        if (! $isRoleAllowed && ! $isPic && ! $isDriver) {
+            return $this->error('Anda tidak berhak mengajukan servis untuk armada ini.', 403);
+        }
+
+        $pengajuan = app(SubmitPengajuanServisAction::class)->execute($user, $validated);
 
         return $this->success($pengajuan->load('armada'), 'Ajuan servis armada dibuat.', 201);
     }

@@ -65,14 +65,38 @@ class ArmadaController extends Controller
      */
     public function saya(Request $request)
     {
-        $items = $this->activeArmadas($request)->values()->map(function (Armada $a) {
-            $latestChecklist = ArmadaChecklistHarian::where('checkable_type', Armada::class)
-                ->where('checkable_id', $a->id)
-                ->latest('tanggal')
-                ->first();
+        $armadas = $this->activeArmadas($request)->values();
+        $armadaIds = $armadas->pluck('id')->all();
+
+        $latestChecklists = collect();
+        $latestOdoAwals = collect();
+
+        if (! empty($armadaIds)) {
+            // Bulk query checklist harian TERBARU per armada (anti N+1)
+            $checklistRows = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+                ->whereIn('checkable_id', $armadaIds)
+                ->orderByDesc('tanggal')
+                ->orderByDesc('created_at')
+                ->get()
+                ->keyBy('checkable_id');
+
+            $latestChecklists = $checklistRows;
+
+            // Bulk query ODO awal proyek TERBARU per armada
+            $odoAwalRows = ArmadaOdoAwalProyek::whereIn('armada_id', $armadaIds)
+                ->orderByDesc('tanggal')
+                ->orderByDesc('created_at')
+                ->get()
+                ->keyBy('armada_id');
+
+            $latestOdoAwals = $odoAwalRows;
+        }
+
+        $items = $armadas->map(function (Armada $a) use ($latestChecklists, $latestOdoAwals) {
+            $latestChecklist = $latestChecklists->get($a->id);
             $latestOdo = $latestChecklist ? ($latestChecklist->odo_sore ?? $latestChecklist->odo_pagi) : null;
             if ($latestOdo === null) {
-                $odoAwal = ArmadaOdoAwalProyek::where('armada_id', $a->id)->latest('tanggal')->first();
+                $odoAwal = $latestOdoAwals->get($a->id);
                 $latestOdo = $odoAwal ? (float) $odoAwal->odo_awal : null;
             }
 

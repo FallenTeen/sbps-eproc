@@ -24,6 +24,10 @@ class SubmitPengajuanServisAction
             'diajukan_oleh' => $user->id,
             'foto_armada' => $data['foto_armada'] ?? null,
             'catatan_ajuan' => $data['catatan_ajuan'] ?? null,
+            'keluhan' => $data['keluhan'] ?? null,
+            'kategori' => $data['kategori'] ?? null,
+            'odometer_saat_ajuan' => isset($data['odometer_saat_ajuan']) ? (float) $data['odometer_saat_ajuan'] : null,
+            'jam_operasional_saat_ajuan' => isset($data['jam_operasional_saat_ajuan']) ? (float) $data['jam_operasional_saat_ajuan'] : null,
             'status' => 'diajukan',
         ]);
     }
