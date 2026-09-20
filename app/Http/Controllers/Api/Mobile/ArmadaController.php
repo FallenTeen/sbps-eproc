@@ -139,6 +139,7 @@ class ArmadaController extends Controller
         }
 
         $validated = $request->validate([
+            'tanggal' => 'nullable|date',
             'bulan' => 'nullable|integer|between:1,12',
             'tahun' => 'nullable|integer|min:2000',
             'per_page' => 'nullable|integer|between:1,100',
@@ -151,7 +152,9 @@ class ArmadaController extends Controller
             ->when(! $isManager, fn ($q) => $q->where('driver_karyawan_id', $karyawan?->id))
             ->orderByDesc('tanggal');
 
-        if (isset($validated['bulan']) && isset($validated['tahun'])) {
+        if (isset($validated['tanggal'])) {
+            $query->whereDate('tanggal', $validated['tanggal']);
+        } elseif (isset($validated['bulan']) && isset($validated['tahun'])) {
             $query->whereMonth('tanggal', $validated['bulan'])
                 ->whereYear('tanggal', $validated['tahun']);
         }
@@ -289,6 +292,8 @@ class ArmadaController extends Controller
             'jam_mulai_operasi' => $checklist?->jam_mulai_operasi,
             'jam_selesai_operasi' => $checklist?->jam_selesai_operasi,
             'hm_odo' => $checklist ? (float) $checklist->hm_odo : null,
+            'odo_km' => $checklist ? (float) ($checklist->odo_sore ?? $checklist->odo_pagi) : null,
+            'jam_operasional' => $checklist ? (float) $checklist->hm_odo : null,
             'odo_anomali' => (bool) ($checklist?->odo_anomali ?? false),
         ];
     }
@@ -303,7 +308,7 @@ class ArmadaController extends Controller
     {
         $validated = $request->validate([
             'armada_id' => 'required|string|exists:armadas,id',
-            'kondisi_baik' => 'required|boolean',
+            'kondisi_baik' => 'nullable|boolean',
             'item_bermasalah' => 'nullable|string|max:1000',
             'status' => 'nullable|in:berjalan,selesai',
             'solar_liter' => 'nullable|numeric|min:0',
@@ -352,7 +357,9 @@ class ArmadaController extends Controller
 
         $checklist = app(RecordChecklistHarianAction::class)->execute($armada, [
             'tanggal' => $today,
-            'kondisi_baik' => (bool) $validated['kondisi_baik'],
+            'kondisi_baik' => array_key_exists('kondisi_baik', $validated) && $validated['kondisi_baik'] !== null
+                ? (bool) $validated['kondisi_baik']
+                : null,
             'item_bermasalah' => $validated['item_bermasalah'] ?? null,
             'dicatat_oleh_karyawan_id' => $karyawan->id,
             'dicatat_oleh' => $request->user()->id,

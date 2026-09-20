@@ -38,7 +38,9 @@ class RecordChecklistHarianAction
 
         $payload = [
             'status' => $this->resolveStatus($data),
-            'kondisi_baik' => (bool) $data['kondisi_baik'],
+            'kondisi_baik' => array_key_exists('kondisi_baik', $data) && $data['kondisi_baik'] !== null
+                ? (bool) $data['kondisi_baik']
+                : null,
             'item_bermasalah' => $data['item_bermasalah'] ?? null,
             'solar_liter' => $data['solar_liter'],
             'solar_harga_rp' => $data['solar_harga_rp'],
@@ -64,10 +66,23 @@ class RecordChecklistHarianAction
                     $payload[$field] = $existing->getAttribute($field);
                 }
             }
+
+            // Pertahankan kondisi_baik & item_bermasalah jika tidak dikirim (null)
+            // ATAU jika kondisi sebelumnya bermasalah namun update saat ini adalah update parsial ODO
+            // tanpa rincian item bermasalah baru.
+            if ($payload['kondisi_baik'] === null) {
+                $payload['kondisi_baik'] = (bool) $existing->kondisi_baik;
+                $payload['item_bermasalah'] = $existing->item_bermasalah;
+            } elseif ($existing->kondisi_baik === false && empty($payload['item_bermasalah']) && ! empty($existing->item_bermasalah)) {
+                $payload['kondisi_baik'] = false;
+                $payload['item_bermasalah'] = $existing->item_bermasalah;
+            }
+
             $payload['odo_anomali'] = $this->isOdoAnomaly($payload);
             $existing->update($payload);
             $checklist = $existing;
         } else {
+            $payload['kondisi_baik'] = $payload['kondisi_baik'] ?? true;
             $payload['odo_anomali'] = $this->isOdoAnomaly($payload);
             $checklist = $checkable->checklists()->create(
                 array_merge($payload, ['tanggal' => $data['tanggal']])
