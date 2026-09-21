@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Plus, Trash2, SearchX } from "lucide-react";
 import TitikSelectorWithMap from "@/Components/TitikSelectorWithMap";
+import { formatTanggal } from "@/utils/date";
 
 export default function Index({ opnames, titiks, filters }) {
     const { auth } = usePage().props;
@@ -129,7 +130,7 @@ export default function Index({ opnames, titiks, filters }) {
                         ) : (
                             opnames.data.map((o) => (
                                 <tr key={o.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{o.tanggal}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTanggal(o.tanggal)}</td>
                                     <td className="px-6 py-4 text-sm text-gray-900">
                                         {o.bahan_baku?.nama}
                                         <span className="block text-xs text-gray-400">{o.bahan_baku?.kode}</span>

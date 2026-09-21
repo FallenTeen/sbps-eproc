@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
+import { formatTanggalWaktu } from '@/utils/date';
 
 export default function Detail({ auth, proyek, produksiSummary = [], rabAgregat = {}, invoices = [], komunikasiLogs = [] }) {
     const [activeTab, setActiveTab] = useState('produksi');
@@ -213,7 +214,7 @@ export default function Detail({ auth, proyek, produksiSummary = [], rabAgregat 
                                                 <div className={`max-w-xl p-3.5 rounded-lg text-sm ${isKontraktor ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none shadow-sm'}`}>
                                                     <div className="flex justify-between items-center text-xs opacity-75 mb-1 gap-4">
                                                         <span className="font-semibold">{log.pengirim} ({log.pengirim_role})</span>
-                                                        <span>{log.waktu}</span>
+                                                        <span>{formatTanggalWaktu(log.waktu)}</span>
                                                     </div>
                                                     <p className="whitespace-pre-wrap">{log.pesan}</p>
                                                 </div>

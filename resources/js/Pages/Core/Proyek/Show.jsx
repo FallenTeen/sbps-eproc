@@ -193,6 +193,24 @@ export default function Show({ proyek, rabRealisasi, stats }) {
                     {/* Tab: Titik */}
                     {activeTab === 'titik' && (
                         <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-gray-800">Daftar Titik</h3>
+                                <div className="flex gap-2">
+                                    <Link
+                                        href={route('core.titik.index', proyek.id)}
+                                        className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm"
+                                    >
+                                        Kelola Titik
+                                    </Link>
+                                    <Link
+                                        href={route('core.titik.create', { proyek_id: proyek.id })}
+                                        className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm flex items-center gap-1"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Tambah Titik
+                                    </Link>
+                                </div>
+                            </div>
                             {proyek.titik.length === 0 ? (
                                 <p className="text-gray-500">Belum ada titik untuk proyek ini.</p>
                             ) : (

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useForm, router, usePage } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
+import { formatTanggal } from "@/utils/date";
 import {
     ArrowLeft,
     Plus,
@@ -1520,7 +1521,7 @@ function HelperRow({ armada, helper }) {
                     <ul className="space-y-0.5">
                         {presensis.map((p) => (
                             <li key={p.id}>
-                                {p.tanggal} ·{" "}
+                                {formatTanggal(p.tanggal)} ·{" "}
                                 {p.check_in
                                     ? new Date(p.check_in).toLocaleTimeString("id-ID", {
                                           hour: "2-digit",

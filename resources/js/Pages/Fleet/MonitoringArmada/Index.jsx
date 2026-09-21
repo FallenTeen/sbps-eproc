@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { router } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import { Head } from "@inertiajs/react";
+import { formatTanggal } from "@/utils/date";
 import {
     Truck,
     CalendarClock,
@@ -263,7 +264,7 @@ export default function Index({ ringkasan, rekap_per_tanggal, per_unit, unit_bis
                             <tbody>
                                 {rekap_per_tanggal.map((d) => (
                                     <tr key={d.tanggal} className="border-b last:border-0">
-                                        <td className="py-2 pr-4 font-medium">{d.tanggal}</td>
+                                        <td className="py-2 pr-4 font-medium">{formatTanggal(d.tanggal)}</td>
                                         <td className="py-2 pr-4">{d.jumlah_unit}</td>
                                         <td className="py-2 pr-4 text-right tabular-nums">{fmtNum(d.total_jam_aktif)}</td>
                                         <td className="py-2 pr-4 text-right tabular-nums">{fmtNum(d.total_hm)}</td>
@@ -342,7 +343,7 @@ export default function Index({ ringkasan, rekap_per_tanggal, per_unit, unit_bis
                                                 <span className="text-gray-400 text-xs">Belum ada checklist</span>
                                             )}
                                             {u.kondisi_terakhir ? (
-                                                <p className="text-xs text-gray-400">{u.kondisi_terakhir.tanggal}</p>
+                                                <p className="text-xs text-gray-400">{formatTanggal(u.kondisi_terakhir.tanggal)}</p>
                                             ) : null}
                                         </td>
                                         <td className="py-2 pr-4 text-center">

@@ -5,6 +5,7 @@ import {
     Plus, Search, Filter, Truck, MapPin, Calendar,
     ChevronRight, TrendingUp, Download, Eye
 } from 'lucide-react';
+import { formatTanggal } from '@/utils/date';
 
 const STATUS_COLOR = {
     selesai:    'bg-green-100 text-green-800',
@@ -149,7 +150,7 @@ export default function RitaseIndex({ auth, ritase, filters = {}, armadaList = [
                                     <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
                                         <div className="flex items-center gap-1.5">
                                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                            {r.tanggal}
+                                            {formatTanggal(r.tanggal)}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">

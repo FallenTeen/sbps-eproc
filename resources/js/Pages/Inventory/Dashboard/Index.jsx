@@ -3,6 +3,7 @@ import { Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { Boxes, AlertTriangle, ClipboardCheck, Clock, Wallet } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 export default function Index({ metrics }) {
     const fmt = (n) => "Rp " + Number(n).toLocaleString("id-ID");
@@ -96,7 +97,7 @@ export default function Index({ metrics }) {
                                     <div>
                                         <p className="text-sm font-semibold text-gray-800">{o.item}</p>
                                         <p className="text-xs text-gray-400">
-                                            {o.tanggal} · {o.titik}
+                                            {formatTanggal(o.tanggal)} · {o.titik}
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -128,7 +129,7 @@ export default function Index({ metrics }) {
                                 <tr key={m.id}>
                                     <td className="py-3 text-sm font-semibold text-gray-800">{m.item}</td>
                                     <td className="py-3 text-sm text-gray-500">{m.titik || "-"}</td>
-                                    <td className="py-3 text-sm text-gray-400">{m.tanggal}</td>
+                                    <td className="py-3 text-sm text-gray-400">{formatTanggal(m.tanggal)}</td>
                                     <td className="py-3 text-right">
                                         <span
                                             className={`px-2 py-0.5 rounded-full text-xs font-semibold ${

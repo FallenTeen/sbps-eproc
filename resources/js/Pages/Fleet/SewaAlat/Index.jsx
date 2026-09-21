@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Plus, Search, Filter, Clock, Calendar, Eye, Wrench } from 'lucide-react';
+import { formatTanggal } from '@/utils/date';
 
 const STATUS_COLOR = {
     aktif:    'bg-green-100 text-green-800',
@@ -157,7 +158,7 @@ export default function SewaAlatIndex({ auth, sewaList, filters = {}, armadaList
                                         <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                                {s.tanggal_mulai} – {s.tanggal_selesai ?? '…'}
+                                                {formatTanggal(s.tanggal_mulai)} – {s.tanggal_selesai ? formatTanggal(s.tanggal_selesai) : '…'}
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-slate-700">{s.hm_awal}</td>

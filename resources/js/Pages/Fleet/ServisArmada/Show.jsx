@@ -15,6 +15,7 @@ import {
     Truck,
     Check,
 } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 const STATUS_META = {
     diajukan: { label: "Diajukan", cls: "bg-blue-100 text-blue-700" },
@@ -143,7 +144,7 @@ export default function Show({ pengajuan, can }) {
                     <SectionTitle number={1} title="Ajuan Servis" desc="Data diajukan oleh PIC/operator/driver." />
                     <dl>
                         <Row label="Armada" value={`${pengajuan.armada?.plat_nomor} (${pengajuan.armada?.kode_unit || "-"})`} />
-                        <Row label="Tanggal Ajuan" value={pengajuan.tanggal_ajuan} />
+                        <Row label="Tanggal Ajuan" value={formatTanggal(pengajuan.tanggal_ajuan)} />
                         <Row label="Diajukan Oleh" value={pengajuan.diajukan_oleh?.name} />
                         <Row label="Catatan / Kerusakan" value={pengajuan.catatan_ajuan} />
                     </dl>
@@ -155,7 +156,7 @@ export default function Show({ pengajuan, can }) {
                     <dl>
                         <Row label="Status ACC" value={pengajuan.catatan_acc} />
                         <Row label="Disetujui Oleh" value={pengajuan.disetujui_oleh?.name} />
-                        <Row label="Tanggal ACC" value={pengajuan.tanggal_acc} />
+                        <Row label="Tanggal ACC" value={formatTanggal(pengajuan.tanggal_acc)} />
                     </dl>
 
                     {can.approve && (
@@ -192,8 +193,8 @@ export default function Show({ pengajuan, can }) {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                     <SectionTitle number={3} title="Pengerjaan Workshop" desc="Assign personel & catat pengerjaan oleh Workshop." />
                     <dl>
-                        <Row label="Mulai Kerja" value={pengajuan.tanggal_mulai_kerja} />
-                        <Row label="Selesai Kerja" value={pengajuan.tanggal_selesai_kerja} />
+                        <Row label="Mulai Kerja" value={formatTanggal(pengajuan.tanggal_mulai_kerja)} />
+                        <Row label="Selesai Kerja" value={formatTanggal(pengajuan.tanggal_selesai_kerja)} />
                         <Row label="Catatan Pengerjaan" value={pengajuan.catatan_pengerjaan} />
                         <Row label="Butuh Sparepart" value={pengajuan.butuh_sparepart ? "Ya" : "Tidak"} />
                     </dl>
@@ -311,7 +312,7 @@ export default function Show({ pengajuan, can }) {
                     <div className="mb-4">
                         <Row label="Status Pengadaan" value={pengajuan.status_pengadaan_sparepart || "-"} />
                         <Row label="Total Biaya" value={`Rp ${Number(pengajuan.total_biaya || 0).toLocaleString("id-ID")}`} />
-                        <Row label="Selesai" value={pengajuan.tanggal_selesai} />
+                        <Row label="Selesai" value={formatTanggal(pengajuan.tanggal_selesai)} />
                     </div>
 
                     {(pengajuan.spareparts?.length > 0 || can.requestSparepart) && (

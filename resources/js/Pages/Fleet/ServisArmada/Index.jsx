@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Plus, SearchX, Eye } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 const STATUS_META = {
     diajukan: { label: "Diajukan", cls: "bg-blue-100 text-blue-700" },
@@ -158,7 +159,7 @@ export default function Index({ pengajuans, armadas, filters }) {
                                             <span className="block text-xs text-gray-400">{p.armada?.kode_unit}</span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{p.diajukan_oleh?.name || "-"}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{p.tanggal_ajuan}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{formatTanggal(p.tanggal_ajuan)}</td>
                                         <td className="px-6 py-4 text-sm">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${meta.cls}`}>
                                                 {meta.label}

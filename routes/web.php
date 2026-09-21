@@ -2,6 +2,7 @@
 
 use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
 use App\Domain\Attendance\Http\Controllers\PresensiController;
+use App\Domain\Core\Http\Controllers\LokasiController;
 use App\Domain\Core\Http\Controllers\ProyekController;
 use App\Domain\Core\Http\Controllers\RabController;
 // Core Controllers
@@ -112,6 +113,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Titik
         Route::resource('titik', TitikController::class)->except(['index']);
         Route::get('proyek/{proyek}/titik', [TitikController::class, 'index'])->name('titik.index');
+
+        // Bantuan input lokasi (tempel link Google Maps -> lat/lng + alamat).
+        Route::get('lokasi/resolve', [LokasiController::class, 'resolve'])->name('lokasi.resolve');
+        Route::get('lokasi/reverse', [LokasiController::class, 'reverse'])->name('lokasi.reverse');
 
         // RAB
         Route::resource('rab', RabController::class)->except(['index']);

@@ -10,6 +10,7 @@ import {
     FileText
 } from 'lucide-react';
 import PrimaryButton from '@/Components/PrimaryButton';
+import { formatTanggal } from '@/utils/date';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import Modal from '@/Components/Modal';
@@ -108,7 +109,7 @@ export default function Index({ auth, cutis, karyawan, filters }) {
                                                 {cuti.tipe}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {cuti.tanggal_mulai} s/d {cuti.tanggal_selesai}
+                                                {formatTanggal(cuti.tanggal_mulai)} s/d {formatTanggal(cuti.tanggal_selesai)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full flex items-center w-fit gap-1 ${

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
+import PilihLokasiDariLink from '@/Components/PilihLokasiDariLink';
 import { ArrowLeft } from 'lucide-react';
 
 export default function Edit({ proyek, unitBisnis }) {
@@ -99,6 +100,12 @@ export default function Edit({ proyek, unitBisnis }) {
                             {errors.client && <p className="text-red-600 text-sm mt-1">{errors.client}</p>}
                         </div>
                     )}
+
+                    <PilihLokasiDariLink
+                        onConfirm={({ latitude, longitude, alamat }) =>
+                            setData('lokasi', alamat || `${latitude}, ${longitude}`)
+                        }
+                    />
 
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
