@@ -82,16 +82,16 @@ class ProyekSeeder extends Seeder
                 'created_by' => $owner->id,
             ],
             [
-                'kode_proyek' => 'PRJ-CBP-002',
-                'unit_bisnis_id' => $cbp->id,
-                'nama' => 'Pengerasan Area Plant',
+                'kode_proyek' => 'PRJ-KTR-001',
+                'unit_bisnis_id' => $gcs->id,
+                'nama' => 'Kantor Pusat SBPS',
                 'tipe_proyek' => 'internal',
                 'client' => null,
-                'lokasi' => 'Cibitung, Jawa Barat',
-                'tanggal_mulai' => now()->subMonths(1)->toDateString(),
-                'tanggal_selesai_rencana' => now()->addMonths(2)->toDateString(),
-                'status' => 'draft',
-                'catatan' => 'Pengerasan halaman plant dengan beton K-225.',
+                'lokasi' => 'Patikraja, Banyumas, Jawa Tengah',
+                'tanggal_mulai' => now()->subMonths(8)->toDateString(),
+                'tanggal_selesai_rencana' => now()->addYears(5)->toDateString(),
+                'status' => 'aktif',
+                'catatan' => 'Head Office PT Satria Buana Pamula Sakti — lokasi absen karyawan kantor.',
                 'created_by' => $owner->id,
             ],
         ];
@@ -111,6 +111,9 @@ class ProyekSeeder extends Seeder
             ['PRJ-AMP-001', 'Plant AMP', -6.23800000, 107.02000000, 100],
             ['PRJ-AMP-001', 'Jalan Provinsi KM 12', -6.18000000, 107.18000000, 100],
             ['PRJ-CBP-002', 'Area Plant CBP-2', -6.23000000, 107.01000000, 100],
+            // Kantor utama SBPS (Jl. Raya Patikraja No. 99, Patikraja, Banyumas)
+            // — titik absen wajib karyawan kantor.
+            ['PRJ-KTR-001', 'Kantor Pusat', -7.4685527, 109.217636, 100],
         ];
 
         $titikIds = [];

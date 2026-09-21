@@ -128,7 +128,7 @@ test('invoice list mengembalikan invoice proyek kontrak', function () {
 
 test('sendMessage mencatat komunikasi log', function () {
     $response = $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/kontraktor/komunikasi', [
             'proyek_id' => $this->proyekKontrak->id,
             'pesan' => 'Progress sudah 70%',
@@ -146,7 +146,7 @@ test('sendMessage mencatat komunikasi log', function () {
 
 test('sendMessage menolak proyek internal', function () {
     $this->withToken($this->token)
-        ->withHeaders(mobileAuthHeaders())
+        ->withHeaders(mobileIdemHeaders())
         ->postJson('/api/mobile/kontraktor/komunikasi', [
             'proyek_id' => $this->proyekInternal->id,
             'pesan' => 'Halo',

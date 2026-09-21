@@ -9,6 +9,7 @@ use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\GeoUrl;
 use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -143,18 +144,24 @@ class TrackingController extends Controller
         $locations = MobileTrackingLocation::where('karyawan_id', $target->karyawan->id)
             ->whereDate('recorded_at', now()->toDateString())
             ->orderBy('recorded_at')
-            ->get()
-            ->map(fn (MobileTrackingLocation $l) => [
-                'lat' => (float) $l->latitude,
-                'lng' => (float) $l->longitude,
-                'timestamp' => $l->recorded_at->toIso8601String(),
-            ]);
+            ->get();
+
+        $lastLocation = $locations->last();
 
         return $this->success([
             'user_id' => $target->id,
             'nama' => $target->name,
             'tanggal' => now()->toDateString(),
-            'items' => $locations,
+            'last_lat' => $lastLocation ? (float) $lastLocation->latitude : null,
+            'last_lng' => $lastLocation ? (float) $lastLocation->longitude : null,
+            'google_maps_url' => $lastLocation
+                ? GeoUrl::googleMaps((float) $lastLocation->latitude, (float) $lastLocation->longitude)
+                : null,
+            'items' => $locations->map(fn (MobileTrackingLocation $l) => [
+                'lat' => (float) $l->latitude,
+                'lng' => (float) $l->longitude,
+                'timestamp' => $l->recorded_at->toIso8601String(),
+            ]),
         ], 'Tracking hari ini.');
     }
 
@@ -168,6 +175,11 @@ class TrackingController extends Controller
      * - `aktif_sejak`  : waktu check-in yang masih aktif (ISO);
      * - `last_seen`    : timestamp lokasi GPS TERAKHIR hari ini
      *                    (null bila belum ada GPS tercatat hari ini);
+     * - `last_lat`     : latitude GPS TERAKHIR hari ini (null bila tanpa GPS);
+     * - `last_lng`     : longitude GPS TERAKHIR hari ini (null bila tanpa GPS);
+     * - `google_maps_url` : URL universal Google Maps dari koordinat GPS terakhir
+     *                    (null bila tanpa GPS) — dipakai aksi "Buka di Google
+     *                    Maps" / "Bagikan Lokasi", format sama di mobile & web;
      * - `point_count`  : jumlah titik GPS hari ini.
      *
      * Freshness / stale-state dihitung klien dari `last_seen`. Daftar ini
@@ -192,12 +204,26 @@ class TrackingController extends Controller
 
         $karyawanIds = $presensis->pluck('karyawan_id')->filter()->values();
 
-        // GPS terakhir & jumlah titik hari ini per karyawan (anti N+1).
-        $lastLocations = MobileTrackingLocation::selectRaw('karyawan_id, max(recorded_at) as last_seen')
-            ->whereIn('karyawan_id', $karyawanIds)
-            ->whereDate('recorded_at', $today)
-            ->groupBy('karyawan_id')
-            ->pluck('last_seen', 'karyawan_id');
+        // Baris lokasi GPS TERAKHIR per karyawan (anti N+1 via join subquery).
+        $lastLocations = MobileTrackingLocation::query()
+            ->select(
+                'mobile_tracking_locations.karyawan_id',
+                'mobile_tracking_locations.latitude',
+                'mobile_tracking_locations.longitude',
+                'mobile_tracking_locations.recorded_at'
+            )
+            ->joinSub(
+                MobileTrackingLocation::query()
+                    ->selectRaw('karyawan_id, max(recorded_at) as last_seen')
+                    ->whereIn('karyawan_id', $karyawanIds)
+                    ->whereDate('recorded_at', $today)
+                    ->groupBy('karyawan_id'),
+                'latest',
+                fn ($join) => $join->on('mobile_tracking_locations.karyawan_id', '=', 'latest.karyawan_id')
+                    ->on('mobile_tracking_locations.recorded_at', '=', 'latest.last_seen')
+            )
+            ->get()
+            ->keyBy('karyawan_id');
 
         $pointCounts = MobileTrackingLocation::selectRaw('karyawan_id, count(*) as point_count')
             ->whereIn('karyawan_id', $karyawanIds)
@@ -208,7 +234,7 @@ class TrackingController extends Controller
         $items = $presensis
             ->filter(fn (Presensi $p) => $p->karyawan !== null && $p->karyawan->user !== null)
             ->map(function (Presensi $p) use ($lastLocations, $pointCounts) {
-                $lastSeen = $lastLocations[$p->karyawan_id] ?? null;
+                $last = $lastLocations[$p->karyawan_id] ?? null;
 
                 return [
                     'karyawan_id' => $p->karyawan_id,
@@ -216,7 +242,12 @@ class TrackingController extends Controller
                     'user_id' => $p->karyawan->user_id,
                     'titik' => $p->titik?->nama,
                     'aktif_sejak' => $p->check_in?->toIso8601String(),
-                    'last_seen' => $lastSeen ? Carbon::parse($lastSeen)->toIso8601String() : null,
+                    'last_seen' => $last?->recorded_at?->toIso8601String(),
+                    'last_lat' => $last ? (float) $last->latitude : null,
+                    'last_lng' => $last ? (float) $last->longitude : null,
+                    'google_maps_url' => $last
+                        ? GeoUrl::googleMaps((float) $last->latitude, (float) $last->longitude)
+                        : null,
                     'point_count' => (int) ($pointCounts[$p->karyawan_id] ?? 0),
                 ];
             })

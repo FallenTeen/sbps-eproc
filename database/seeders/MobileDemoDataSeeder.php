@@ -45,6 +45,12 @@ class MobileDemoDataSeeder extends Seeder
 
     private const TITIK_LNG = 107.0010;
 
+    /** Koordinat Kantor Pusat SBPS (Titik "Kantor Pusat", Patikraja) —
+     *  tempat absen wajib karyawan kantor. */
+    private const OFFICE_LAT = -7.4685527;
+
+    private const OFFICE_LNG = 109.217636;
+
     public function run(): void
     {
         $this->assertNotProduction();
@@ -55,6 +61,13 @@ class MobileDemoDataSeeder extends Seeder
             $this->command?->warn('[MobileDemoData] Titik kerja uji coba tidak ditemukan. Jalankan MobileTestUserSeeder dulu.');
 
             return;
+        }
+
+        // Kantor pusat SBPS — karyawan kantor absen di sini (lihat ProyekSeeder).
+        $titikKantor = Titik::where('nama', 'Kantor Pusat')->first();
+        if (! $titikKantor) {
+            $this->command?->warn('[MobileDemoData] Titik "Kantor Pusat" tidak ditemukan — karyawan kantor memakai titik uji coba.');
+            $titikKantor = $titik;
         }
 
         // Karyawan test (dari MobileTestUserSeeder)
@@ -68,10 +81,13 @@ class MobileDemoDataSeeder extends Seeder
         $mesinBatching = MesinProduksi::where('nama', 'Batching Plant Test-01')->first();
 
         // ─────────────────────────── PRESENSI & FORMULIR ──────────────────────
-        // Hari ini diisi penuh (selesai) + formulir, plus riwayat beberapa hari.
+        // Karyawan kantor (SDM, Ketua Armada, Workshop, Inventory) absen di
+        // Kantor Pusat; karyawan lapangan (Mandor, Driver, Operator) di
+        // titik proyek. Presensi hari ini dibiarkan AKTIF (belum check-out)
+        // agar muncul di monitoring tracking user aktif.
         if ($sdm) {
-            $this->seedPresensiRiwayat($sdm->id, $titik->id, 4);
-            $presensi = $this->seedPresensiHariIni($sdm->id, $titik->id);
+            $this->seedPresensiRiwayat($sdm->id, $titikKantor->id, 4, self::OFFICE_LAT, self::OFFICE_LNG);
+            $presensi = $this->seedPresensiHariIni($sdm->id, $titikKantor->id, self::OFFICE_LAT, self::OFFICE_LNG);
             $this->seedFormulir($presensi, [
                 'aktivitas_dilakukan' => 'Pendampingan operasional di titik kerja: pengecekan material, koordinasi tim, dan pencatatan volume harian.',
                 'kondisi_area' => 'Kondisi area baik, cuaca cerah, material cukup.',
@@ -80,7 +96,7 @@ class MobileDemoDataSeeder extends Seeder
             ]);
         }
 
-        // Mandor: presensi hari ini juga (diperlukan agar tracking punya acuan
+        // Mandor: presensi hari ini (diperlukan agar tracking punya acuan
         // check-in) + formulir demo.
         if ($mandor) {
             $this->seedPresensiRiwayat($mandor->id, $titik->id, 3);
@@ -99,20 +115,20 @@ class MobileDemoDataSeeder extends Seeder
             $this->seedPresensiHariIni($operator->id, $titik->id);
         }
 
-        // Karyawan role lainnya: presensi hari ini
+        // Karyawan kantor lainnya: presensi hari ini di Kantor Pusat.
         $ketua = $this->karyawan('Hendra Ketua Armada');
         if ($ketua) {
-            $this->seedPresensiHariIni($ketua->id, $titik->id);
+            $this->seedPresensiHariIni($ketua->id, $titikKantor->id, self::OFFICE_LAT, self::OFFICE_LNG);
         }
 
         $workshopKaryawan = $this->karyawan('Wahyu Teknisi Workshop');
         if ($workshopKaryawan) {
-            $this->seedPresensiHariIni($workshopKaryawan->id, $titik->id);
+            $this->seedPresensiHariIni($workshopKaryawan->id, $titikKantor->id, self::OFFICE_LAT, self::OFFICE_LNG);
         }
 
         $inventoryKaryawan = $this->karyawan('Indra Staf Inventory');
         if ($inventoryKaryawan) {
-            $this->seedPresensiHariIni($inventoryKaryawan->id, $titik->id);
+            $this->seedPresensiHariIni($inventoryKaryawan->id, $titikKantor->id, self::OFFICE_LAT, self::OFFICE_LNG);
         }
 
         // ──────────────────────────── PRODUKSI ────────────────────────────────
@@ -151,10 +167,23 @@ class MobileDemoDataSeeder extends Seeder
         }
 
         // ───────────────────────── TRACKING GPS ───────────────────────────────
-        // Jejak lokasi hari ini untuk mandor (role yang dipantau), agar
-        // Owner/Admin bisa melihat user aktif di modul Tracking.
+        // Jejak lokasi hari ini agar Owner/Admin bisa melihat user aktif di
+        // modul Tracking: lapangan di sekeliling titik proyek, karyawan kantor
+        // di sekeliling Kantor Pusat (Purwokerto).
         if ($mandor) {
             $this->seedTracking($mandor->id, $titik->id);
+        }
+
+        if ($driver) {
+            $this->seedTracking($driver->id, $titik->id);
+        }
+
+        if ($operator) {
+            $this->seedTracking($operator->id, $titik->id);
+        }
+
+        if ($sdm) {
+            $this->seedTracking($sdm->id, $titikKantor->id, self::OFFICE_LAT, self::OFFICE_LNG);
         }
 
         $this->command?->info('[MobileDemoData] Data demo mobile berhasil ditambahkan.');
@@ -162,7 +191,7 @@ class MobileDemoDataSeeder extends Seeder
 
     // ─────────────────────────────── PRESENSI ───────────────────────────────
 
-    private function seedPresensiRiwayat(string $karyawanId, string $titikId, int $days): void
+    private function seedPresensiRiwayat(string $karyawanId, string $titikId, int $days, float $lat = self::TITIK_LAT, float $lng = self::TITIK_LNG): void
     {
         for ($i = 1; $i <= $days; $i++) {
             $date = now()->subDays($i)->startOfDay();
@@ -177,11 +206,11 @@ class MobileDemoDataSeeder extends Seeder
                 ['karyawan_id' => $karyawanId, 'check_in' => $checkIn],
                 [
                     'titik_id' => $titikId,
-                    'check_in_lat' => self::TITIK_LAT,
-                    'check_in_lng' => self::TITIK_LNG,
+                    'check_in_lat' => $lat,
+                    'check_in_lng' => $lng,
                     'check_out' => $checkOut,
-                    'check_out_lat' => self::TITIK_LAT,
-                    'check_out_lng' => self::TITIK_LNG,
+                    'check_out_lat' => $lat,
+                    'check_out_lng' => $lng,
                     'status_validasi' => 'valid',
                     'catatan_override' => null,
                     'device_id' => 'demo-device',
@@ -190,7 +219,7 @@ class MobileDemoDataSeeder extends Seeder
         }
     }
 
-    private function seedPresensiHariIni(string $karyawanId, string $titikId): Presensi
+    private function seedPresensiHariIni(string $karyawanId, string $titikId, float $lat = self::TITIK_LAT, float $lng = self::TITIK_LNG): Presensi
     {
         $presensi = Presensi::where('karyawan_id', $karyawanId)
             ->whereDate('check_in', now()->toDateString())
@@ -200,19 +229,21 @@ class MobileDemoDataSeeder extends Seeder
             return $presensi;
         }
 
+        // Presensi hari ini dibiarkan AKTIF (check_out null) agar karyawan
+        // tampil sebagai "user presensi aktif" di monitoring tracking.
         return Presensi::create([
             'karyawan_id' => $karyawanId,
             'titik_id' => $titikId,
             'check_in' => now()->startOfDay()->addHours(6)->addMinutes(45),
-            'check_in_lat' => self::TITIK_LAT,
-            'check_in_lng' => self::TITIK_LNG,
+            'check_in_lat' => $lat,
+            'check_in_lng' => $lng,
             'check_in_photo' => null,
-            'check_in_photo_metadata' => ['latitude' => self::TITIK_LAT, 'longitude' => self::TITIK_LNG],
-            'check_out' => now()->startOfDay()->addHours(16)->addMinutes(10),
-            'check_out_lat' => self::TITIK_LAT,
-            'check_out_lng' => self::TITIK_LNG,
+            'check_in_photo_metadata' => ['latitude' => $lat, 'longitude' => $lng],
+            'check_out' => null,
+            'check_out_lat' => null,
+            'check_out_lng' => null,
             'check_out_photo' => null,
-            'check_out_photo_metadata' => ['latitude' => self::TITIK_LAT, 'longitude' => self::TITIK_LNG],
+            'check_out_photo_metadata' => null,
             'status_validasi' => 'valid',
             'catatan_override' => null,
             'device_id' => 'demo-device',
@@ -325,7 +356,7 @@ class MobileDemoDataSeeder extends Seeder
 
     // ──────────────────────────── TRACKING GPS ─────────────────────────────
 
-    private function seedTracking(string $karyawanId, string $titikId): void
+    private function seedTracking(string $karyawanId, string $titikId, float $lat = self::TITIK_LAT, float $lng = self::TITIK_LNG): void
     {
         $presensi = Presensi::where('karyawan_id', $karyawanId)
             ->whereDate('check_in', now()->toDateString())
@@ -354,8 +385,8 @@ class MobileDemoDataSeeder extends Seeder
             MobileTrackingLocation::create([
                 'karyawan_id' => $karyawanId,
                 'presensi_id' => $presensi->id,
-                'latitude' => self::TITIK_LAT + $offset,
-                'longitude' => self::TITIK_LNG + $offset * 0.5,
+                'latitude' => $lat + $offset,
+                'longitude' => $lng + $offset * 0.5,
                 'recorded_at' => $start->copy()->addMinutes($i * 25),
             ]);
         }

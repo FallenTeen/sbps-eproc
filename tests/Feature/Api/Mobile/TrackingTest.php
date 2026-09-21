@@ -79,7 +79,10 @@ test('hari ini tracking dibatasi owner/admin', function () {
         ->withHeaders(mobileAuthHeaders())
         ->getJson("/api/mobile/tracking/hari-ini/{$targetUser->id}")
         ->assertOk()
-        ->assertJsonCount(1, 'data.items');
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonPath('data.last_lat', -7.1)
+        ->assertJsonPath('data.last_lng', 110.2)
+        ->assertJsonPath('data.google_maps_url', 'https://www.google.com/maps/search/?api=1&query=-7.1%2C110.2');
 });
 
 test('hari ini tracking ditolak untuk user biasa', function () {
@@ -97,4 +100,77 @@ test('hari ini tracking ditolak untuk user biasa', function () {
         ->withHeaders(mobileAuthHeaders())
         ->getJson("/api/mobile/tracking/hari-ini/{$otherUser->id}")
         ->assertStatus(403);
+});
+
+test('active users mengembalikan koordinat GPS terakhir & google maps url', function () {
+    [$owner, $ownerToken] = createMobileUserWithToken('Owner');
+
+    $targetUser = User::factory()->create();
+    $targetUser->assignRole('Mandor Titik');
+    $targetKaryawan = Karyawan::factory()->create(['user_id' => $targetUser->id]);
+
+    Presensi::create([
+        'karyawan_id' => $targetKaryawan->id,
+        'titik_id' => $this->titik->id,
+        'check_in' => now()->subHours(2),
+        'check_in_lat' => -7.1000,
+        'check_in_lng' => 110.2000,
+        'status_validasi' => 'valid',
+    ]);
+
+    // Titik GPS lama — harus TIDAK dipilih sebagai lokasi terakhir.
+    MobileTrackingLocation::create([
+        'karyawan_id' => $targetKaryawan->id,
+        'latitude' => -7.0900,
+        'longitude' => 110.1900,
+        'recorded_at' => now()->subHours(1),
+    ]);
+
+    // Titik GPS terbaru — inilah yang menjadi last_lat/last_lng & url.
+    MobileTrackingLocation::create([
+        'karyawan_id' => $targetKaryawan->id,
+        'latitude' => -7.1010,
+        'longitude' => 110.2020,
+        'recorded_at' => now()->subMinutes(3),
+    ]);
+
+    $response = $this->withToken($ownerToken)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson('/api/mobile/tracking/active-users')
+        ->assertOk();
+
+    $item = collect($response->json('data.items'))->firstWhere('user_id', $targetUser->id);
+
+    expect($item)->not->toBeNull();
+    expect($item['last_lat'])->toBe(-7.101);
+    expect($item['last_lng'])->toBe(110.202);
+    expect($item['google_maps_url'])
+        ->toBe('https://www.google.com/maps/search/?api=1&query=-7.101%2C110.202');
+});
+
+test('active users tanpa GPS terakhir mengembalikan google maps url null', function () {
+    [$owner, $ownerToken] = createMobileUserWithToken('Owner');
+
+    $targetUser = User::factory()->create();
+    $targetUser->assignRole('Mandor Titik');
+    $targetKaryawan = Karyawan::factory()->create(['user_id' => $targetUser->id]);
+
+    Presensi::create([
+        'karyawan_id' => $targetKaryawan->id,
+        'titik_id' => $this->titik->id,
+        'check_in' => now()->subHours(2),
+        'status_validasi' => 'valid',
+    ]);
+
+    $response = $this->withToken($ownerToken)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson('/api/mobile/tracking/active-users')
+        ->assertOk();
+
+    $item = collect($response->json('data.items'))->firstWhere('user_id', $targetUser->id);
+
+    expect($item)->not->toBeNull();
+    expect($item['last_lat'])->toBeNull();
+    expect($item['last_lng'])->toBeNull();
+    expect($item['google_maps_url'])->toBeNull();
 });
