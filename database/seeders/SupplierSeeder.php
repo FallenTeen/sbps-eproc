@@ -38,6 +38,36 @@ class SupplierSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SUP-003',
+                'nama' => 'PT Aspal Nusantara',
+                'kontak' => 'Cahyo',
+                'telepon' => '082122334455',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SUP-004',
+                'nama' => 'Toko Bangunan Berkah Jaya',
+                'kontak' => 'Dewi',
+                'telepon' => '082145678901',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SUP-005',
+                'nama' => 'PT Quarry Agrekon',
+                'kontak' => 'Eko',
+                'telepon' => '082189012345',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

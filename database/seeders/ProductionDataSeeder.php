@@ -64,7 +64,7 @@ class ProductionDataSeeder extends Seeder
         $molen1 = Armada::where('kode_unit', 'TM 01 C')->firstOrFail();
         $molen2 = Armada::where('kode_unit', 'TM 02 C')->firstOrFail();
 
-        // ─────────────────────────── PRODUK ───────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ PRODUK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $produkBeton225 = Produk::updateOrCreate(
             ['unit_bisnis_id' => $cbp->id, 'nama' => 'Beton K-225'],
             ['kategori' => 'BETON_COR', 'satuan_output' => 'm3', 'aktif' => true]
@@ -82,12 +82,12 @@ class ProductionDataSeeder extends Seeder
             ['kategori' => 'SPLIT', 'satuan_output' => 'ton', 'aktif' => true]
         );
 
-        // ───────────────────────── MESIN PRODUKSI ─────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ MESIN PRODUKSI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $mesinCbp = MesinProduksi::updateOrCreate(
             ['unit_bisnis_id' => $cbp->id, 'nama' => 'Batching Plant CBP-01'],
             [
                 'jenis' => 'mixer_beton',
-                'kapasitas' => '90 m³/jam',
+                'kapasitas' => '90 mÂ³/jam',
                 'status' => 'aktif',
                 'titik_id' => $titikPlantCbp->id,
                 'produk_id' => $produkBeton225->id,
@@ -117,7 +117,7 @@ class ProductionDataSeeder extends Seeder
             ]
         );
 
-        // ───────────────────────── HARGA JUAL ─────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ HARGA JUAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $hargaJual = [
             [$produkBeton225->id, 1_200_000],
             [$produkBeton300->id, 1_400_000],
@@ -133,14 +133,14 @@ class ProductionDataSeeder extends Seeder
             ]);
         }
 
-        // ─────────────────────── RESEP PRODUKSI (BOM) ───────────────────────
-        // Resep Beton K-225 per m³
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ RESEP PRODUKSI (BOM) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Resep Beton K-225 per mÂ³
         ResepProduksi::create(['produk_id' => $produkBeton225->id, 'bahan_baku_id' => $semen->id, 'jumlah_per_unit_output' => 350]);
         ResepProduksi::create(['produk_id' => $produkBeton225->id, 'bahan_baku_id' => $pasir->id, 'jumlah_per_unit_output' => 700]);
         ResepProduksi::create(['produk_id' => $produkBeton225->id, 'bahan_baku_id' => $split->id, 'jumlah_per_unit_output' => 1100]);
         ResepProduksi::create(['produk_id' => $produkBeton225->id, 'bahan_baku_id' => $air->id, 'jumlah_per_unit_output' => 200]);
 
-        // ─────────────────────── MIX DESIGN TEMPLATE ───────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ MIX DESIGN TEMPLATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $fc10 = MixDesignTemplate::create(['mutu_beton' => 'FC10', 'nama' => 'K-125', 'deskripsi' => 'Beton non-struktural.']);
         MixDesignTemplateItem::create(['mix_design_template_id' => $fc10->id, 'bahan_baku_id' => $semen->id, 'jumlah_per_m3' => 260]);
         MixDesignTemplateItem::create(['mix_design_template_id' => $fc10->id, 'bahan_baku_id' => $pasir->id, 'jumlah_per_m3' => 750]);
@@ -159,7 +159,7 @@ class ProductionDataSeeder extends Seeder
         MixDesignTemplateItem::create(['mix_design_template_id' => $fc25->id, 'bahan_baku_id' => $split->id, 'jumlah_per_m3' => 1100]);
         MixDesignTemplateItem::create(['mix_design_template_id' => $fc25->id, 'bahan_baku_id' => $air->id, 'jumlah_per_m3' => 200]);
 
-        // ────────────────────── PRODUCTION SESSION ──────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ PRODUCTION SESSION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $session1 = ProductionSession::create([
             'mesin_id' => $mesinCbp->id,
             'titik_id' => $titikPlantCbp->id,
@@ -212,7 +212,57 @@ class ProductionDataSeeder extends Seeder
             'catatan' => 'Produksi agregat kelas A.',
         ]);
 
-        // ────────────────────────── QC SAMPLE ──────────────────────────
+        // Session riwayat tambahan agar rekap produksi punya variasi hari.
+        $session5 = ProductionSession::create([
+            'mesin_id' => $mesinCbp->id,
+            'titik_id' => $titikPlantCbp->id,
+            'produk_id' => $produkBeton225->id,
+            'operator_karyawan_id' => $operatorCbp2->id,
+            'mulai' => now()->subDays(2)->startOfDay()->addHours(7),
+            'selesai' => now()->subDays(2)->startOfDay()->addHours(13),
+            'hasil_output' => 96,
+            'status' => 'selesai',
+            'catatan' => 'Produksi beton K-225 tahap 2.',
+        ]);
+        ProductionSessionItem::create(['production_session_id' => $session5->id, 'bahan_baku_id' => $semen->id, 'jumlah_terpakai' => 33_600]);
+        ProductionSessionItem::create(['production_session_id' => $session5->id, 'bahan_baku_id' => $pasir->id, 'jumlah_terpakai' => 67_200]);
+        ProductionSessionItem::create(['production_session_id' => $session5->id, 'bahan_baku_id' => $split->id, 'jumlah_terpakai' => 105_600]);
+        ProductionSessionItem::create(['production_session_id' => $session5->id, 'bahan_baku_id' => $air->id, 'jumlah_terpakai' => 19_200]);
+
+        $aspal = BahanBaku::where('kode', 'BB-005')->firstOrFail();
+        $filler = BahanBaku::where('kode', 'BB-006')->firstOrFail();
+
+        $session6 = ProductionSession::create([
+            'mesin_id' => $mesinAmp->id,
+            'titik_id' => $titikPlantAmp->id,
+            'produk_id' => $produkHotmix->id,
+            'operator_karyawan_id' => $operatorAmp2->id,
+            'mulai' => now()->subDays(1)->startOfDay()->addHours(7),
+            'selesai' => now()->subDays(1)->startOfDay()->addHours(15),
+            'hasil_output' => 110,
+            'status' => 'selesai',
+            'catatan' => 'Produksi hotmix AC-WC untuk jalan provinsi.',
+        ]);
+        ProductionSessionItem::create(['production_session_id' => $session6->id, 'bahan_baku_id' => $aspal->id, 'jumlah_terpakai' => 11_000]);
+        ProductionSessionItem::create(['production_session_id' => $session6->id, 'bahan_baku_id' => $pasir->id, 'jumlah_terpakai' => 55_000]);
+        ProductionSessionItem::create(['production_session_id' => $session6->id, 'bahan_baku_id' => $split->id, 'jumlah_terpakai' => 38_500]);
+        ProductionSessionItem::create(['production_session_id' => $session6->id, 'bahan_baku_id' => $filler->id, 'jumlah_terpakai' => 5_500]);
+
+        $session7 = ProductionSession::create([
+            'mesin_id' => $mesinCrusher->id,
+            'titik_id' => $titikTambang->id,
+            'produk_id' => $produkAgregat->id,
+            'operator_karyawan_id' => $operatorCrusher->id,
+            'mulai' => now()->subDays(1)->startOfDay()->addHours(8),
+            'selesai' => now()->subDays(1)->startOfDay()->addHours(14),
+            'hasil_output' => 150,
+            'status' => 'selesai',
+            'catatan' => 'Produksi agregat kelas A shift siang.',
+        ]);
+        ProductionSessionItem::create(['production_session_id' => $session7->id, 'bahan_baku_id' => $pasir->id, 'jumlah_terpakai' => 30_000]);
+        ProductionSessionItem::create(['production_session_id' => $session7->id, 'bahan_baku_id' => $split->id, 'jumlah_terpakai' => 120_000]);
+
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ QC SAMPLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         QCSample::create([
             'production_session_id' => $session1->id,
             'jenis_uji' => 'slump_test',
@@ -220,7 +270,7 @@ class ProductionDataSeeder extends Seeder
             'tanggal_uji_tekan_rencana' => null,
             'hasil_uji_tekan' => null,
             'status' => 'lolos',
-            'catatan' => 'Slump sesuai spesifikasi 12±2 cm.',
+            'catatan' => 'Slump sesuai spesifikasi 12Â±2 cm.',
         ]);
         QCSample::create([
             'production_session_id' => $session1->id,
@@ -241,7 +291,38 @@ class ProductionDataSeeder extends Seeder
             'catatan' => null,
         ]);
 
-        // ───────────────────────── PENGIRIMAN ─────────────────────────
+        // QC sesi ke-2 (K-225) â€” lengkap dengan jadwal uji tekan 28 hari.
+        QCSample::create([
+            'production_session_id' => $session5->id,
+            'jenis_uji' => 'slump_test',
+            'nilai_slump' => 12,
+            'tanggal_uji_tekan_rencana' => null,
+            'hasil_uji_tekan' => null,
+            'status' => 'lolos',
+            'catatan' => 'Slump 12 cm sesuai spesifikasi K-225.',
+        ]);
+        QCSample::create([
+            'production_session_id' => $session5->id,
+            'jenis_uji' => 'uji_tekan',
+            'nilai_slump' => null,
+            'tanggal_uji_tekan_rencana' => now()->addDays(28)->toDateString(),
+            'hasil_uji_tekan' => null,
+            'status' => 'menunggu_hasil',
+            'catatan' => 'Menunggu hasil uji tekan 28 hari.',
+        ]);
+
+        // QC sampel menolak â€” untuk demo alur review ulang.
+        QCSample::create([
+            'production_session_id' => $session5->id,
+            'jenis_uji' => 'slump_test',
+            'nilai_slump' => 16,
+            'tanggal_uji_tekan_rencana' => null,
+            'hasil_uji_tekan' => null,
+            'status' => 'tidak_lolos',
+            'catatan' => 'Slump 16 cm melebihi toleransi, perlu evaluasi komposisi.',
+        ]);
+
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ PENGIRIMAN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Pengiriman::create([
             'production_session_id' => $session1->id,
             'armada_id' => $molen1->id,
@@ -276,7 +357,36 @@ class ProductionDataSeeder extends Seeder
             'catatan' => null,
         ]);
 
-        // ─────────────── STOK MUTASI KELUAR (KONSUMSI) ────────────────
+        // Pengiriman hotmix (dump truck) â€” sesi AMP kemarin, sudah selesai.
+        $armadaDt01 = Armada::where('kode_unit', 'DT 01')->first();
+        $driverTambahan = Karyawan::where('nama', 'Slamet Riyadi')->firstOrFail();
+
+        Pengiriman::create([
+            'production_session_id' => $session6->id,
+            'armada_id' => $armadaDt01?->id,
+            'driver_karyawan_id' => $driverTambahan->id,
+            'tujuan_alamat' => 'Jalan Provinsi KM 12, Bekasi',
+            'waktu_muat' => now()->subDays(1)->startOfDay()->addHours(8),
+            'waktu_tiba_tujuan' => now()->subDays(1)->startOfDay()->addHours(8)->addMinutes(40),
+            'waktu_selesai_tuang' => now()->subDays(1)->startOfDay()->addHours(10),
+            'status' => 'selesai',
+            'catatan' => 'Penghamparan AC-WC selesai.',
+        ]);
+
+        // Pengiriman terjadwal berikutnya dari sesi yang sedang berjalan.
+        Pengiriman::create([
+            'production_session_id' => $session2->id,
+            'armada_id' => $molen2->id,
+            'driver_karyawan_id' => $driverTambahan->id,
+            'tujuan_alamat' => 'Lokasi Jembatan, Jakarta Barat',
+            'waktu_muat' => now()->addHours(2),
+            'waktu_tiba_tujuan' => null,
+            'waktu_selesai_tuang' => null,
+            'status' => 'dijadwalkan',
+            'catatan' => 'Load kedua dijadwalkan siang ini.',
+        ]);
+
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ STOK MUTASI KELUAR (KONSUMSI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $konsumsi = [
             [$semen->id, 42_000],
             [$pasir->id, 84_000],
@@ -297,7 +407,28 @@ class ProductionDataSeeder extends Seeder
             ]);
         }
 
-        // ──────────────── DATA FLEET UNTUK MESIN PRODUKSI ────────────────
+        // Konsumsi bahan untuk sesi ke-2 (K-225, 96 mÂ³).
+        $konsumsi2 = [
+            [$semen->id, 33_600],
+            [$pasir->id, 67_200],
+            [$split->id, 105_600],
+            [$air->id, 19_200],
+        ];
+        foreach ($konsumsi2 as [$bahanBakuId, $jumlah]) {
+            StokMutasi::create([
+                'bahan_baku_id' => $bahanBakuId,
+                'titik_id' => $titikPlantCbp->id,
+                'tipe' => 'keluar',
+                'jumlah' => $jumlah,
+                'referensi_type' => ProductionSession::class,
+                'referensi_id' => $session5->id,
+                'catatan' => 'Konsumsi produksi beton K-225 (tahap 2).',
+                'tanggal' => now()->subDays(2)->toDateString(),
+                'created_by' => $cbpUser->id,
+            ]);
+        }
+
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ DATA FLEET UNTUK MESIN PRODUKSI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // BBM mesin
         BbmLog::create(['serviceable_type' => MesinProduksi::class, 'serviceable_id' => $mesinCbp->id, 'tanggal' => now()->subDay()->toDateString(), 'liter' => 200, 'biaya' => 2_400_000, 'jam_operasional_saat_isi' => 6, 'purchase_order_id' => null, 'dicatat_oleh' => $cbpUser->id]);
         BbmLog::create(['serviceable_type' => MesinProduksi::class, 'serviceable_id' => $mesinAmp->id, 'tanggal' => now()->subDays(2)->toDateString(), 'liter' => 180, 'biaya' => 2_160_000, 'jam_operasional_saat_isi' => 7, 'purchase_order_id' => null, 'dicatat_oleh' => $ampUser->id]);

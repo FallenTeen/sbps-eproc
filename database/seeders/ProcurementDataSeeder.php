@@ -45,6 +45,17 @@ class ProcurementDataSeeder extends Seeder
         $supplier1 = Supplier::where('kode', 'SUP-001')->firstOrFail();
         $supplier2 = Supplier::where('kode', 'SUP-002')->firstOrFail();
 
+        $aspal = BahanBaku::where('kode', 'BB-005')->firstOrFail();
+        $filler = BahanBaku::where('kode', 'BB-006')->firstOrFail();
+        $aditif = BahanBaku::where('kode', 'BB-007')->firstOrFail();
+        $ban = BahanBaku::where('kode', 'SP-003')->firstOrFail();
+        $kampas = BahanBaku::where('kode', 'SP-004')->firstOrFail();
+        $screw = BahanBaku::where('kode', 'SP-005')->firstOrFail();
+
+        $supplier3 = Supplier::where('kode', 'SUP-003')->firstOrFail();
+        $supplier4 = Supplier::where('kode', 'SUP-004')->firstOrFail();
+        $supplier5 = Supplier::where('kode', 'SUP-005')->firstOrFail();
+
         // ───────────────────────── HARGA BELI ─────────────────────────
         $harga = [
             [$semen->id, $supplier1->id, 1_200],
@@ -52,6 +63,12 @@ class ProcurementDataSeeder extends Seeder
             [$split->id, $supplier1->id, 350],
             [$oli->id, $supplier2->id, 45_000],
             [$filter->id, $supplier2->id, 150_000],
+            [$aspal->id, $supplier3->id, 12_500],
+            [$filler->id, $supplier5->id, 400],
+            [$aditif->id, $supplier4->id, 25_000],
+            [$ban->id, $supplier4->id, 3_200_000],
+            [$kampas->id, $supplier2->id, 450_000],
+            [$screw->id, $supplier2->id, 85_000_000],
         ];
 
         foreach ($harga as [$bahanBakuId, $supplierId, $hargaSatuan]) {
@@ -154,6 +171,46 @@ class ProcurementDataSeeder extends Seeder
 
         PurchaseOrderApproval::create(['purchase_order_id' => $po4->id, 'approved_by' => $ketuaArmada->id, 'status' => 'disetujui', 'catatan' => null]);
 
+        // PO-5: ditolak (ajuan baru)
+        $po5 = PurchaseOrder::updateOrCreate(
+            ['kode_po' => 'PO-2026-0005'],
+            [
+                'proyek_id' => null,
+                'titik_id' => null,
+                'supplier_id' => $supplier4->id,
+                'created_by' => $gcsUser->id,
+                'tanggal_pesan' => now()->subDays(1)->toDateString(),
+                'tanggal_diperlukan' => now()->addDays(14)->toDateString(),
+                'total' => 25_000_000,
+                'status' => 'ditolak',
+                'catatan' => 'Pengadaan kampas rem dibatalkan.',
+            ]
+        );
+        PurchaseOrderItem::create(['purchase_order_id' => $po5->id, 'bahan_baku_id' => $kampas->id, 'jumlah' => 50, 'harga_satuan_snapshot' => 450_000, 'subtotal' => 22_500_000]);
+        PurchaseOrderItem::create(['purchase_order_id' => $po5->id, 'bahan_baku_id' => $oli->id, 'jumlah' => 55, 'harga_satuan_snapshot' => 45_000, 'subtotal' => 2_475_000]);
+
+        PurchaseOrderApproval::create(['purchase_order_id' => $po5->id, 'approved_by' => $ketuaArmada->id, 'status' => 'ditolak', 'catatan' => 'Stok kampas masih cukup.']);
+
+        // PO-6: diterima — aspal & filler untuk AMP (proyek hotmix).
+        $po6 = PurchaseOrder::updateOrCreate(
+            ['kode_po' => 'PO-2026-0006'],
+            [
+                'proyek_id' => Proyek::where('kode_proyek', 'PRJ-AMP-001')->firstOrFail()->id,
+                'titik_id' => Titik::where('nama', 'Plant AMP')->firstOrFail()->id,
+                'supplier_id' => $supplier3->id,
+                'created_by' => $owner->id,
+                'tanggal_pesan' => now()->subDays(6)->toDateString(),
+                'tanggal_diperlukan' => now()->subDays(1)->toDateString(),
+                'total' => 173_000_000,
+                'status' => 'diterima',
+                'catatan' => 'Bahan aspal & filler untuk produksi hotmix.',
+            ]
+        );
+        PurchaseOrderItem::create(['purchase_order_id' => $po6->id, 'bahan_baku_id' => $aspal->id, 'jumlah' => 12_000, 'harga_satuan_snapshot' => 12_500, 'subtotal' => 150_000_000]);
+        PurchaseOrderItem::create(['purchase_order_id' => $po6->id, 'bahan_baku_id' => $filler->id, 'jumlah' => 57_500, 'harga_satuan_snapshot' => 400, 'subtotal' => 23_000_000]);
+
+        PurchaseOrderApproval::create(['purchase_order_id' => $po6->id, 'approved_by' => $owner->id, 'status' => 'disetujui', 'catatan' => 'Mendukung target produksi hotmix AC-WC.']);
+
         // ───────────────────────── STOK MUTASI ─────────────────────────
         // Stok masuk dari PO-2 yang sudah diterima
         StokMutasi::create([
@@ -176,6 +233,31 @@ class ProcurementDataSeeder extends Seeder
             'referensi_id' => $po2->id,
             'catatan' => 'Penerimaan PO-2026-0002.',
             'tanggal' => now()->subDays(9)->toDateString(),
+            'created_by' => $owner->id,
+        ]);
+
+        // Stok masuk dari PO-6 (aspal & filler untuk AMP).
+        $titikPlantAmp = Titik::where('nama', 'Plant AMP')->firstOrFail();
+        StokMutasi::create([
+            'bahan_baku_id' => $aspal->id,
+            'titik_id' => $titikPlantAmp->id,
+            'tipe' => 'masuk',
+            'jumlah' => 12_000,
+            'referensi_type' => PurchaseOrder::class,
+            'referensi_id' => $po6->id,
+            'catatan' => 'Penerimaan PO-2026-0006.',
+            'tanggal' => now()->subDays(5)->toDateString(),
+            'created_by' => $owner->id,
+        ]);
+        StokMutasi::create([
+            'bahan_baku_id' => $filler->id,
+            'titik_id' => $titikPlantAmp->id,
+            'tipe' => 'masuk',
+            'jumlah' => 57_500,
+            'referensi_type' => PurchaseOrder::class,
+            'referensi_id' => $po6->id,
+            'catatan' => 'Penerimaan PO-2026-0006.',
+            'tanggal' => now()->subDays(5)->toDateString(),
             'created_by' => $owner->id,
         ]);
     }
