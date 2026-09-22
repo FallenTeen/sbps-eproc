@@ -1,19 +1,11 @@
 import React, { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import StatusBadge from "@/Components/StatusBadge";
 import {
     Plus, Search, Eye, MapPin, Clock, ClipboardList, Users,
     CheckCircle2, AlertTriangle, XCircle, ChevronRight,
 } from "lucide-react";
-
-const getStatusBadge = (status) => {
-    const colors = {
-        valid: "bg-green-200 text-green-800",
-        tidak_valid: "bg-red-200 text-red-800",
-        luar_radius: "bg-yellow-200 text-yellow-800",
-    };
-    return colors[status] || "bg-gray-200 text-gray-800";
-};
 
 const GROUP_OPTIONS = [
     { value: "", label: "List Individual" },
@@ -75,16 +67,26 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
         });
     };
 
-    const stats = isGrouped
+    // KPI ringkasan — ditampilkan di KEDUA mode (grouped maupun individual)
+    // selama backend mengirim prop `summary`, bukan cuma mode grouped seperti
+    // sebelumnya. Kartu Valid/Luar Radius/Tidak Valid juga jadi tombol filter
+    // cepat (filterValue) supaya user tak perlu buka dropdown Status Validasi.
+    const stats = summary
         ? [
             { label: "Total Presensi", value: summary.total ?? 0, icon: ClipboardList, color: "bg-gray-900 text-white" },
             { label: "Karyawan Unik", value: summary.karyawan_uniq ?? 0, icon: Users, color: "bg-blue-600 text-white" },
             { label: "Selesai Check-Out", value: summary.selesai ?? 0, icon: Clock, color: "bg-indigo-600 text-white" },
-            { label: "Valid", value: summary.valid ?? 0, icon: CheckCircle2, color: "bg-green-600 text-white" },
-            { label: "Luar Radius", value: summary.luar_radius ?? 0, icon: AlertTriangle, color: "bg-yellow-500 text-white" },
-            { label: "Tidak Valid", value: summary.tidak_valid ?? 0, icon: XCircle, color: "bg-red-600 text-white" },
+            { label: "Valid", value: summary.valid ?? 0, icon: CheckCircle2, color: "bg-green-600 text-white", filterValue: "valid" },
+            { label: "Luar Radius", value: summary.luar_radius ?? 0, icon: AlertTriangle, color: "bg-yellow-500 text-white", filterValue: "luar_radius" },
+            { label: "Tidak Valid", value: summary.tidak_valid ?? 0, icon: XCircle, color: "bg-red-600 text-white", filterValue: "tidak_valid" },
         ]
         : [];
+
+    const toggleStatFilter = (filterValue) => {
+        const next = status === filterValue ? "" : filterValue;
+        setStatus(next);
+        apply({ status: next });
+    };
 
     const groupedLabel = GROUP_OPTIONS.find((o) => o.value === groupBy)?.label || "Kelompok";
 
@@ -110,18 +112,36 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                 </Link>
             </div>
 
-            {/* Statistik (mode grouped) */}
-            {isGrouped && (
+            {/* Statistik — tampil di mode grouped maupun individual */}
+            {stats.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-                    {stats.map((stat) => (
-                        <div key={stat.label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-                            <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg mb-2 ${stat.color}`}>
-                                <stat.icon className="w-4 h-4" />
-                            </div>
-                            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                            <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
-                        </div>
-                    ))}
+                    {stats.map((stat) => {
+                        const clickable = Boolean(stat.filterValue);
+                        const active = clickable && status === stat.filterValue;
+                        return (
+                            <button
+                                key={stat.label}
+                                type="button"
+                                onClick={clickable ? () => toggleStatFilter(stat.filterValue) : undefined}
+                                className={`text-left bg-white rounded-xl border shadow-sm p-4 transition ${
+                                    clickable ? "hover:border-gray-400 cursor-pointer" : "cursor-default"
+                                } ${active ? "border-gray-900 ring-1 ring-gray-900" : "border-gray-200"}`}
+                            >
+                                <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg mb-2 ${stat.color}`}>
+                                    <stat.icon className="w-4 h-4" />
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {stat.label}
+                                    {clickable && (
+                                        <span className="block text-gray-400">
+                                            {active ? "Klik untuk hapus filter" : "Klik untuk filter"}
+                                        </span>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 
@@ -361,9 +381,7 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                                                 ) : "-"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(p.status_validasi)}`}>
-                                                    {p.status_validasi?.replace(/_/g, " ")}
-                                                </span>
+                                                <StatusBadge status={p.status_validasi} />
                                                 {p.catatan_override && (
                                                     <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
                                                 )}

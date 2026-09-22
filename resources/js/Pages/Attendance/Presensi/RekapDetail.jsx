@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import StatusBadge from "@/Components/StatusBadge";
 import { ArrowLeft, Search, Eye, MapPin, Clock } from "lucide-react";
 
 const GROUP_NAMES = {
@@ -9,15 +10,6 @@ const GROUP_NAMES = {
     proyek: "Proyek",
     karyawan: "Karyawan",
     role: "Role",
-};
-
-const getStatusBadge = (status) => {
-    const colors = {
-        valid: "bg-green-200 text-green-800",
-        tidak_valid: "bg-red-200 text-red-800",
-        luar_radius: "bg-yellow-200 text-yellow-800",
-    };
-    return colors[status] || "bg-gray-200 text-gray-800";
 };
 
 export default function RekapDetail({ presensis, group_by, group_key, group_label, filters, karyawan }) {
@@ -151,9 +143,7 @@ export default function RekapDetail({ presensis, group_by, group_key, group_labe
                                         ) : "-"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(p.status_validasi)}`}>
-                                            {p.status_validasi?.replace(/_/g, " ")}
-                                        </span>
+                                        <StatusBadge status={p.status_validasi} />
                                         {p.catatan_override && (
                                             <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
                                         )}

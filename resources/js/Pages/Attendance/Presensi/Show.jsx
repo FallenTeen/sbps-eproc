@@ -1,16 +1,8 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import StatusBadge from "@/Components/StatusBadge";
 import { ArrowLeft, Clock, LogOut, MapPin, ShieldCheck } from "lucide-react";
-
-const getStatusBadge = (status) => {
-    const colors = {
-        valid: "bg-green-200 text-green-800",
-        tidak_valid: "bg-red-200 text-red-800",
-        luar_radius: "bg-yellow-200 text-yellow-800",
-    };
-    return colors[status] || "bg-gray-200 text-gray-800";
-};
 
 export default function Show({ presensi }) {
     const [checkout, setCheckout] = useState({ check_out_lat: "", check_out_lng: "" });
@@ -67,9 +59,7 @@ export default function Show({ presensi }) {
                             <p className="text-lg font-semibold text-gray-900">{presensi.karyawan?.nama}</p>
                             <p className="text-sm text-gray-600">{presensi.karyawan?.jabatan} · {presensi.karyawan?.tipe}</p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(presensi.status_validasi)}`}>
-                            {presensi.status_validasi?.replace(/_/g, " ")}
-                        </span>
+                        <StatusBadge status={presensi.status_validasi} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
