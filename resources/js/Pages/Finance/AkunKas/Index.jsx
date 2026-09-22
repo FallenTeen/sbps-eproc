@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
-import { Plus, Edit, RefreshCw, Eye, Wallet } from 'lucide-react';
+import { Plus, Edit, RefreshCw, Eye, Wallet, Trash2 } from 'lucide-react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
@@ -177,6 +177,13 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
                                                     <Link
+                                                        href={route('finance.akun-kas.show', akun.id)}
+                                                        className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
+                                                        title="Detail Akun"
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-1" /> Detail
+                                                    </Link>
+                                                    <Link
                                                         href={route('finance.akun-kas.mutasi', akun.id)}
                                                         className="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium"
                                                         title="Lihat Mutasi"
@@ -189,6 +196,17 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                                                         title="Edit Akun"
                                                     >
                                                         <Edit className="w-4 h-4 mr-1" /> Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (window.confirm(`Yakin hapus akun "${akun.nama}"?`)) {
+                                                                router.delete(route('finance.akun-kas.destroy', akun.id));
+                                                            }
+                                                        }}
+                                                        className="inline-flex items-center text-red-600 hover:text-red-900 font-medium"
+                                                        title="Hapus Akun"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-1" /> Hapus
                                                     </button>
                                                 </td>
                                             </tr>

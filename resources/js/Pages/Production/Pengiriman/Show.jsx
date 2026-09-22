@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
-import { ArrowLeft, Truck, Play, CheckCircle2, Clock, MapPin, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Truck, Play, CheckCircle2, Clock, MapPin, XCircle, AlertTriangle, Edit } from 'lucide-react';
 
 export default function Show({ pengiriman }) {
     const isScheduled = pengiriman.status === 'dijadwalkan';
@@ -42,6 +42,12 @@ export default function Show({ pengiriman }) {
                 </div>
                 {isScheduled && (
                     <div className="flex gap-2">
+                        <Link
+                            href={route('production.pengiriman.edit', pengiriman.id)}
+                            className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                            <Edit className="w-4 h-4" /> Ubah
+                        </Link>
                         <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                             <XCircle className="w-4 h-4" /> Batalkan
                         </button>

@@ -86,6 +86,41 @@ class PengirimanController extends Controller
         ]);
     }
 
+    public function edit(Pengiriman $pengiriman)
+    {
+        if ($pengiriman->status !== 'dijadwalkan') {
+            return back()->with('error', 'Hanya pengiriman berstatus dijadwalkan yang bisa diubah.');
+        }
+
+        $pengiriman->load(['session.produk', 'session.mesin', 'armada', 'driver']);
+
+        return Inertia::render('Production/Pengiriman/Edit', [
+            'pengiriman' => $pengiriman,
+            'armadas' => Armada::aktif()->where('model_tarif', 'internal')->get(),
+            'drivers' => Karyawan::aktif()->get(),
+        ]);
+    }
+
+    public function update(Request $request, Pengiriman $pengiriman)
+    {
+        if ($pengiriman->status !== 'dijadwalkan') {
+            return back()->with('error', 'Hanya pengiriman berstatus dijadwalkan yang bisa diubah.');
+        }
+
+        $validated = $request->validate([
+            'armada_id' => 'nullable|exists:armadas,id',
+            'driver_karyawan_id' => 'nullable|exists:karyawans,id',
+            'tujuan_alamat' => 'required|string|max:255',
+            'waktu_muat' => 'required|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $pengiriman->update($validated);
+
+        return redirect()->route('production.pengiriman.show', $pengiriman)
+            ->with('success', 'Pengiriman diperbarui.');
+    }
+
     public function start(Pengiriman $pengiriman)
     {
         if ($pengiriman->status !== 'dijadwalkan') {

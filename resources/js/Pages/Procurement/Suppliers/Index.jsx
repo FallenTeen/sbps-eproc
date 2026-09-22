@@ -101,7 +101,12 @@ export default function Index({ suppliers, filters }) {
                                         {s.kode}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {s.nama}
+                                        <Link
+                                            href={route("procurement.supplier.show", s.id)}
+                                            className="text-gray-600 hover:text-blue-600"
+                                        >
+                                            {s.nama}
+                                        </Link>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {s.kontak || "-"}

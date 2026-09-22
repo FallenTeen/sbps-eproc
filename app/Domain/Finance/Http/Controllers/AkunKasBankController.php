@@ -5,12 +5,41 @@ namespace App\Domain\Finance\Http\Controllers;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
 use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Finance\Models\TransferAntarKas;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AkunKasBankController extends Controller
 {
+    public function show(AkunKasBank $akun_ka)
+    {
+        $this->authorize('view', $akun_ka);
+
+        $akun_ka->load(['unitBisnis', 'akunCoa']);
+
+        $totalMasuk = (float) $akun_ka->mutasis()->where('tipe', 'masuk')->sum('jumlah');
+        $totalKeluar = (float) $akun_ka->mutasis()->where('tipe', 'keluar')->sum('jumlah');
+        $saldoSaatIni = (float) $akun_ka->saldo_awal + $totalMasuk - $totalKeluar;
+
+        $mutasis = $akun_ka->mutasis()
+            ->with('referensi')
+            ->orderByDesc('tanggal')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        return Inertia::render('Finance/AkunKas/Show', [
+            'akunKas' => $akun_ka,
+            'summary' => [
+                'total_masuk' => $totalMasuk,
+                'total_keluar' => $totalKeluar,
+                'saldo_saat_ini' => $saldoSaatIni,
+            ],
+            'mutasis' => $mutasis,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', AkunKasBank::class);
@@ -116,6 +145,25 @@ class AkunKasBankController extends Controller
         $akun_ka->update($validated);
 
         return redirect()->route('finance.akun-kas.index', ['unit_bisnis_id' => $akun_ka->unit_bisnis_id])->with('success', 'Akun Kas berhasil diupdate.');
+    }
+
+    public function destroy(AkunKasBank $akun_ka)
+    {
+        $this->authorize('delete', $akun_ka);
+
+        $sudahDiproses = $akun_ka->mutasis()->exists()
+            || TransferAntarKas::where('dari_akun_kas_bank_id', $akun_ka->id)
+                ->orWhere('ke_akun_kas_bank_id', $akun_ka->id)
+                ->exists();
+
+        if ($sudahDiproses) {
+            return back()->with('error', 'Akun kas tidak bisa dihapus karena sudah memiliki riwayat mutasi atau transfer antar kas.');
+        }
+
+        $akun_ka->delete();
+
+        return redirect()->route('finance.akun-kas.index')
+            ->with('success', 'Akun kas berhasil dihapus.');
     }
 
     public function mutasi(Request $request, AkunKasBank $akunKasBank)

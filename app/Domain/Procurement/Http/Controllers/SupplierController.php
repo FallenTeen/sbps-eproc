@@ -26,6 +26,22 @@ class SupplierController extends Controller
         ]);
     }
 
+    public function show(Supplier $supplier)
+    {
+        $this->authorize('view', $supplier);
+
+        $purchaseOrders = $supplier->purchaseOrders()
+            ->with(['proyek', 'titik', 'items.bahanBaku'])
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('Procurement/Suppliers/Show', [
+            'supplier' => $supplier,
+            'purchaseOrders' => $purchaseOrders,
+        ]);
+    }
+
     public function create()
     {
         $this->authorize('create', Supplier::class);
