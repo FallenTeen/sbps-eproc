@@ -210,13 +210,14 @@ export default function Index({ auth, karyawans, filters }) {
                             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                                 <div className="flex flex-wrap -mb-1">
                                     {karyawans.links.map((link, k) => (
-                                        <Link
+                                        <button
                                             key={k}
-                                            href={link.url}
+                                            onClick={() => link.url && router.get(link.url)}
+                                            disabled={!link.url}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
                                             className={`mr-1 mb-1 px-4 py-3 text-sm leading-4 border rounded hover:bg-white focus:border-indigo-500 focus:text-indigo-500 ${
                                                 link.active ? 'bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white'
                                             } ${!link.url ? 'text-gray-400 hover:bg-transparent border-transparent' : ''}`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
                                         />
                                     ))}
                                 </div>

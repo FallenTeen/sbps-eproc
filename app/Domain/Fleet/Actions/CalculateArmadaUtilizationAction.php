@@ -18,14 +18,26 @@ use Illuminate\Support\Collection;
  * - total jam aktif (alat berat: jam_selesai_operasi - jam_mulai_operasi;
  *   armada jalan: durasi antar check-in/out — saat ini memakai baris checklist
  *   yang punya jam operasi, sisanya dihitung lewat hari operasi + ODO).
- * - HM/Jam: rasio pemakaian HM (hm_odo) terhadap jam kalender aktif.
+ * - HM/Jam (khusus alat_berat): rasio pemakaian HM (hm_odo) terhadap jam aktif.
+ * - jam/rit (khusus armada_jalan): rata-rata jam aktif per ritase — metrik ini
+ *   dipakai karena HM/Jam sering kosong untuk armada_jalan (jarang isi jam
+ *   mulai/selesai operasi di checklist).
  * - rekap durasi per tanggal (mirror "REKAP HARIAN PERALATAN").
+ * - breakdown per unit bisnis (ringkasan agregat, untuk bandingkan performa
+ *   antar unit bisnis dalam satu layar).
+ * - deteksi unit idle: unit berstatus aktif tapi tidak ada aktivitas
+ *   (checklist/ritase/sewa) selama > IDLE_THRESHOLD_HARI hari.
  *
  * Dipakai oleh Dashboard Armada web dan endpoint mobile
  * `dashboard/armada-status` / `dashboard/armada-monitoring`.
  */
 class CalculateArmadaUtilizationAction
 {
+    /**
+     * Ambang hari tanpa aktivitas sebelum unit aktif dianggap idle.
+     */
+    private const IDLE_THRESHOLD_HARI = 3;
+
     /**
      * @param  string|null  $dari  tanggal awal (Y-m-d, default 30 hari ke belakang)
      * @param  string|null  $sampai  tanggal akhir (Y-m-d, default hari ini)
@@ -47,8 +59,104 @@ class CalculateArmadaUtilizationAction
             'tanggal_dari' => $dari->toDateString(),
             'tanggal_sampai' => $sampai->toDateString(),
             'ringkasan' => $this->ringkasan($armadas, $perUnit),
+            'per_unit_bisnis' => $this->perUnitBisnis($perUnit),
             'rekap_per_tanggal' => $this->rekapPerTanggal($armadas, $dari, $sampai),
             'per_unit' => $perUnit,
+        ];
+    }
+
+    /**
+     * Riwayat detail satu armada untuk panel drill-down — checklist harian,
+     * ritase, sewa jam, downtime, dan pengajuan servis dalam satu rentang,
+     * digabung jadi satu timeline terurut tanggal terbaru dahulu.
+     */
+    public function detail(Armada $armada, ?string $dari = null, ?string $sampai = null): array
+    {
+        $dari = $dari ? Carbon::parse($dari) : now()->subDays(29)->startOfDay();
+        $sampai = ($sampai ? Carbon::parse($sampai) : now())->endOfDay();
+
+        $checklists = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+            ->where('checkable_id', $armada->id)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        $ritases = Ritase::where('armada_id', $armada->id)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        $sewas = SewaAlatJam::where('armada_id', $armada->id)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        $downtimes = DowntimeLog::where('serviceable_type', Armada::class)
+            ->where('serviceable_id', $armada->id)
+            ->orderByDesc('mulai')
+            ->limit(20)
+            ->get();
+
+        $servis = PengajuanServisArmada::where('armada_id', $armada->id)
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        $timeline = collect();
+
+        foreach ($checklists as $row) {
+            $timeline->push([
+                'tanggal' => $row->tanggal->toDateString(),
+                'tipe' => 'checklist',
+                'label' => $row->kondisi_baik ? 'Checklist — kondisi baik' : 'Checklist — '.($row->item_bermasalah ?: 'bermasalah'),
+                'jam_aktif' => $this->durasiJam((string) $row->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
+                'hm' => (float) ($row->hm_odo ?? 0),
+                'odo_km' => $this->odoDelta($row->odo_pagi, $row->odo_sore),
+                'solar_liter' => (float) ($row->solar_liter ?? 0),
+                'kondisi_baik' => (bool) $row->kondisi_baik,
+            ]);
+        }
+
+        foreach ($ritases as $row) {
+            $timeline->push([
+                'tanggal' => $row->tanggal->toDateString(),
+                'tipe' => 'ritase',
+                'label' => "Ritase — {$row->jumlah_rit} rit",
+                'jumlah_rit' => (int) $row->jumlah_rit,
+            ]);
+        }
+
+        foreach ($sewas as $row) {
+            $timeline->push([
+                'tanggal' => $row->tanggal->toDateString(),
+                'tipe' => 'sewa',
+                'label' => "Sewa alat — {$row->jumlah_jam} jam",
+                'sewa_jam' => (float) $row->jumlah_jam,
+            ]);
+        }
+
+        return [
+            'armada' => [
+                'id' => $armada->id,
+                'kode_unit' => $armada->kode_unit,
+                'plat_nomor' => $armada->plat_nomor,
+                'jenis' => $armada->jenis,
+                'tipe_unit' => $armada->tipe_unit,
+                'status' => $armada->status,
+                'unit_bisnis' => $armada->unitBisnis?->nama,
+            ],
+            'timeline' => $timeline->sortByDesc('tanggal')->values()->all(),
+            'downtime' => $downtimes->map(fn ($d) => [
+                'mulai' => optional($d->mulai)->toDateTimeString(),
+                'selesai' => optional($d->selesai)->toDateTimeString(),
+                'keterangan' => $d->keterangan,
+                'aktif' => is_null($d->selesai),
+            ])->all(),
+            'servis' => $servis->map(fn ($s) => [
+                'tanggal' => optional($s->created_at)->toDateString(),
+                'status' => $s->status,
+                'keterangan' => $s->keterangan ?? null,
+            ])->all(),
         ];
     }
 
@@ -77,7 +185,36 @@ class CalculateArmadaUtilizationAction
             'belum_checklist_hari_ini' => collect($perUnit)->filter(fn ($u) => $u['aktif'] && ! $u['checklist_hari_ini'])->count(),
             'downtime_aktif' => collect($perUnit)->filter(fn ($u) => $u['downtime_aktif'])->count(),
             'servis_menunggu' => collect($perUnit)->filter(fn ($u) => $u['servis_menunggu'])->count(),
+            'unit_idle' => collect($perUnit)->filter(fn ($u) => $u['idle'])->count(),
         ];
+    }
+
+    /**
+     * Breakdown ringkasan per unit bisnis — supaya bisa bandingkan performa
+     * antar unit bisnis (mis. GCS vs CBP vs AMP) dalam satu layar.
+     */
+    private function perUnitBisnis(array $perUnit): array
+    {
+        return collect($perUnit)
+            ->groupBy(fn ($u) => $u['unit_bisnis_kode'] ?? '—')
+            ->map(function (Collection $rows, string $kode) {
+                return [
+                    'unit_bisnis_kode' => $kode,
+                    'unit_bisnis' => $rows->first()['unit_bisnis'] ?? $kode,
+                    'total_armada' => $rows->count(),
+                    'total_jam_aktif' => round($rows->sum('total_jam_aktif'), 2),
+                    'total_hm' => round($rows->sum('total_hm'), 2),
+                    'total_odo_km' => round($rows->sum('total_odo_km'), 2),
+                    'total_solar_liter' => round($rows->sum('total_solar_liter'), 2),
+                    'total_ritase' => (int) $rows->sum('jumlah_rit'),
+                    'total_sewa_jam' => round($rows->sum('total_sewa_jam'), 2),
+                    'unit_bermasalah' => $rows->filter(fn ($u) => $u['kondisi_terakhir'] && ! $u['kondisi_terakhir']['kondisi_baik'])->count(),
+                    'unit_idle' => $rows->filter(fn ($u) => $u['idle'])->count(),
+                ];
+            })
+            ->sortByDesc('total_jam_aktif')
+            ->values()
+            ->all();
     }
 
     /**
@@ -117,9 +254,13 @@ class CalculateArmadaUtilizationAction
             ->whereDate('tanggal', now()->toDateString())
             ->pluck('checkable_id');
 
+        // Aktivitas terakhir (checklist/ritase/sewa) TANPA batas rentang tanggal filter,
+        // supaya deteksi idle tidak bias oleh filter "dari/sampai" yang sedang dipakai.
+        $aktivitasTerakhir = $this->aktivitasTerakhirMap($ids);
+
         return $armadas->map(function (Armada $armada) use (
             $checklists, $ritases, $sewas,
-            $downtimeAktifIds, $servisMenungguIds, $checklistHariIniIds,
+            $downtimeAktifIds, $servisMenungguIds, $checklistHariIniIds, $aktivitasTerakhir,
         ) {
             $rows = $checklists->get($armada->id, collect());
             $ritaseRows = $ritases->get($armada->id, collect());
@@ -148,6 +289,14 @@ class CalculateArmadaUtilizationAction
             }
 
             $kondisiTerakhir = $rows->last();
+            $jumlahRit = (int) $ritaseRows->sum('jumlah_rit');
+
+            $tglAktivitasTerakhir = $aktivitasTerakhir[$armada->id] ?? null;
+            $hariSejakAktivitas = $tglAktivitasTerakhir
+                ? Carbon::parse($tglAktivitasTerakhir)->diffInDays(now())
+                : null;
+            $aktif = $armada->status === 'aktif';
+            $idle = $aktif && ($hariSejakAktivitas === null || $hariSejakAktivitas > self::IDLE_THRESHOLD_HARI);
 
             return [
                 'id' => $armada->id,
@@ -157,16 +306,24 @@ class CalculateArmadaUtilizationAction
                 'tipe_unit' => $armada->tipe_unit,
                 'model_tarif' => $armada->model_tarif,
                 'status' => $armada->status,
-                'aktif' => $armada->status === 'aktif',
+                'aktif' => $aktif,
                 'unit_bisnis' => $armada->unitBisnis?->nama,
                 'unit_bisnis_kode' => $armada->unitBisnis?->kode,
                 'jumlah_hari_operasi' => $tanggalOperasi->unique()->count(),
                 'total_jam_aktif' => round($totaljam, 2),
                 'total_hm' => round($totalHm, 2),
-                'rasio_hm_jam' => $totaljam > 0 ? round($totalHm / $totaljam, 2) : null,
+                // HM/Jam paling relevan untuk alat_berat (bahan bakar/perawatan berbasis HM).
+                'rasio_hm_jam' => $armada->tipe_unit === 'alat_berat' && $totaljam > 0
+                    ? round($totalHm / $totaljam, 2)
+                    : null,
+                // Jam aktif per ritase paling relevan untuk armada_jalan, karena banyak
+                // baris checklist armada_jalan tidak mengisi jam_mulai/selesai operasi.
+                'jam_per_rit' => $armada->tipe_unit === 'armada_jalan' && $jumlahRit > 0
+                    ? round($totaljam / $jumlahRit, 2)
+                    : null,
                 'total_odo_km' => round($totalOdo, 2),
                 'total_solar_liter' => round($totalSolar, 2),
-                'jumlah_rit' => $ritaseRows->sum('jumlah_rit'),
+                'jumlah_rit' => $jumlahRit,
                 'total_sewa_jam' => round($sewaRows->sum('jumlah_jam'), 2),
                 'kondisi_terakhir' => $kondisiTerakhir ? [
                     'tanggal' => $kondisiTerakhir->tanggal?->toDateString(),
@@ -176,8 +333,49 @@ class CalculateArmadaUtilizationAction
                 'checklist_hari_ini' => $checklistHariIniIds->contains($armada->id),
                 'downtime_aktif' => $downtimeAktifIds->contains($armada->id),
                 'servis_menunggu' => $servisMenungguIds->contains($armada->id),
+                'tanggal_aktivitas_terakhir' => $tglAktivitasTerakhir,
+                'hari_sejak_aktivitas' => $hariSejakAktivitas,
+                'idle' => $idle,
             ];
         })->values()->all();
+    }
+
+    /**
+     * Tanggal aktivitas (checklist/ritase/sewa) paling baru per armada,
+     * dilihat 90 hari ke belakang dari hari ini — dipakai untuk deteksi idle
+     * agar tidak tergantung pada rentang filter "dari/sampai" yang aktif.
+     */
+    private function aktivitasTerakhirMap(Collection $ids): array
+    {
+        $sejak = now()->subDays(90)->toDateString();
+        $map = [];
+
+        $update = function ($armadaId, ?string $tanggal) use (&$map) {
+            if (! $tanggal) {
+                return;
+            }
+            if (! isset($map[$armadaId]) || $tanggal > $map[$armadaId]) {
+                $map[$armadaId] = $tanggal;
+            }
+        };
+
+        ArmadaChecklistHarian::where('checkable_type', Armada::class)
+            ->whereIn('checkable_id', $ids)
+            ->where('tanggal', '>=', $sejak)
+            ->get(['checkable_id', 'tanggal'])
+            ->each(fn ($r) => $update($r->checkable_id, $r->tanggal?->toDateString()));
+
+        Ritase::whereIn('armada_id', $ids)
+            ->where('tanggal', '>=', $sejak)
+            ->get(['armada_id', 'tanggal'])
+            ->each(fn ($r) => $update($r->armada_id, $r->tanggal?->toDateString()));
+
+        SewaAlatJam::whereIn('armada_id', $ids)
+            ->where('tanggal', '>=', $sejak)
+            ->get(['armada_id', 'tanggal'])
+            ->each(fn ($r) => $update($r->armada_id, $r->tanggal?->toDateString()));
+
+        return $map;
     }
 
     /**

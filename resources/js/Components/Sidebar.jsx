@@ -182,14 +182,6 @@ export default function Sidebar({ isOpen, onClose }) {
     const isAdminKeuangan = roles.includes('Admin Keuangan');
 
     const roleExtraMenus = [];
-    if (isOwner) {
-        roleExtraMenus.push({
-            title: 'Audit Log',
-            icon: ShieldCheck,
-            href: safeRoute('audit.logs', {}, '/audit/logs'),
-            routeName: 'audit.*',
-        });
-    }
     if (isOwner || isAdminKeuangan) {
         roleExtraMenus.push({
             title: 'Manajemen User',

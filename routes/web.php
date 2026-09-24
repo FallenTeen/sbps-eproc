@@ -250,6 +250,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // v6 (21.11) — Monitoring Armada (metrik utilisasi & kondisi armada)
         Route::get('monitoring-armada', [MonitoringArmadaController::class, 'index'])->name('monitoring-armada.index');
+        Route::get('monitoring-armada/export', [MonitoringArmadaController::class, 'export'])->name('monitoring-armada.export');
+        Route::get('monitoring-armada/{armada}/detail', [MonitoringArmadaController::class, 'detail'])->name('monitoring-armada.detail');
     });
 
     // v6 (21.8) — Sistem Servis Armada (multi-bagian: ajuan → approval →
@@ -516,4 +518,4 @@ Route::middleware('guest')->group(function () {
 });
 
 // Auth routes (disediakan oleh Breeze)
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
