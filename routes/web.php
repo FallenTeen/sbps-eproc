@@ -3,6 +3,7 @@
 use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
 use App\Domain\Attendance\Http\Controllers\PresensiController;
 use App\Domain\Core\Http\Controllers\LokasiController;
+use App\Domain\Core\Http\Controllers\KomunikasiController;
 use App\Domain\Core\Http\Controllers\ProyekController;
 use App\Domain\Core\Http\Controllers\RabController;
 // Core Controllers
@@ -123,6 +124,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('proyek/{proyek}/rab', [RabController::class, 'index'])->name('rab.index');
         Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
         Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
+    });
+
+    // ============================================================
+    // KOMUNIKASI PROYEK (sisi KANTOR — thread kantor↔kontraktor)
+    // ============================================================
+    Route::prefix('komunikasi')->name('komunikasi.')->middleware(['permission:manage proyek|view proyek'])->group(function () {
+        Route::get('/', [KomunikasiController::class, 'index'])->name('index');
+        Route::get('/proyek/{proyek}', [KomunikasiController::class, 'show'])->name('show');
+        Route::post('/proyek/{proyek}', [KomunikasiController::class, 'sendMessage'])->name('send');
     });
 
     // ============================================================

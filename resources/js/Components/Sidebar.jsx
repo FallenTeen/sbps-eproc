@@ -32,7 +32,11 @@ function safeRoute(name, params = {}, fallback = '/dashboard') {
 /**
  * All possible menu items with required permission(s).
  * permission: string | string[]  — user must have AT LEAST ONE of these.
- * If omitted, item is always shown (e.g. Dashboard).
+ * excludeRoles: string[]         — item HIDDEN for these roles regardless of permission
+ *                                  (mis. role eksternal Kontraktor vs menu core).
+ * roles: string[]                — item ONLY shown if user has ANY of these roles
+ *                                  (mis. "Portal Kontraktor" yang rutenya role:Kontraktor).
+ * If permission & roles omitted, item is always shown (e.g. Dashboard).
  */
 function getAllMenus() {
     return [
@@ -48,6 +52,7 @@ function getAllMenus() {
             href: safeRoute('core.proyek.index', {}, '/core/proyek'),
             routeName: 'core.proyek.*',
             permission: ['manage proyek', 'view proyek'],
+            excludeRoles: ['Kontraktor'],
         },
         {
             title: 'Procurement',
@@ -142,7 +147,10 @@ function getAllMenus() {
         {
             title: 'Portal Kontraktor',
             icon: ClipboardList,
-            permission: ['manage kontraktor', 'view kontraktor'],
+            // Route-nya dibatasi middleware `role:Kontraktor` — jadi menu HANYA
+            // untuk role Kontraktor. Internal (Owner/Admin dll) yang melewati
+            // cek permission TIDAK boleh melihatnya (kalau diklik → 403).
+            roles: ['Kontraktor'],
             href: safeRoute('kontraktor.dashboard', {}, '/kontraktor/dashboard'),
             routeName: 'kontraktor.*',
         },
@@ -155,13 +163,28 @@ function hasPermission(userPermissions, required) {
     return list.some((p) => userPermissions.includes(p));
 }
 
-function filterMenuByPermissions(menus, userPermissions) {
+function isExcludedByRole(userRoles, excludeRoles) {
+    if (!excludeRoles || excludeRoles.length === 0) return false;
+    return excludeRoles.some((role) => userRoles.includes(role));
+}
+
+function isAllowedByRoles(userRoles, roles) {
+    if (!roles || roles.length === 0) return true;
+    return roles.some((role) => userRoles.includes(role));
+}
+
+function filterMenuByPermissions(menus, userPermissions, userRoles = []) {
     return menus
+        .filter((item) => !isExcludedByRole(userRoles, item.excludeRoles))
+        .filter((item) => isAllowedByRoles(userRoles, item.roles))
         .filter((item) => hasPermission(userPermissions, item.permission))
         .map((item) => {
             if (!item.items) return item;
-            const filteredItems = item.items.filter((sub) =>
-                hasPermission(userPermissions, sub.permission)
+            const filteredItems = item.items.filter(
+                (sub) =>
+                    !isExcludedByRole(userRoles, sub.excludeRoles) &&
+                    isAllowedByRoles(userRoles, sub.roles) &&
+                    hasPermission(userPermissions, sub.permission)
             );
             return { ...item, items: filteredItems };
         })
@@ -176,7 +199,7 @@ export default function Sidebar({ isOpen, onClose }) {
     const userPermissions = auth?.permissions || [];
 
     const allMenus = getAllMenus();
-    const menuList = filterMenuByPermissions(allMenus, userPermissions);
+    const menuList = filterMenuByPermissions(allMenus, userPermissions, roles);
 
     const isOwner = roles.includes('Owner');
     const isAdminKeuangan = roles.includes('Admin Keuangan');

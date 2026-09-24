@@ -30,6 +30,15 @@ beforeEach(function () {
         'created_by' => $this->owner->id,
     ]);
 
+    // Object-level scoping: user kontraktor HANYA melihat proyek yang
+    // ditautkan di pivot proyek_user. Proyek kontrak_klien lain tetap
+    // ada di DB tetapi TIDAK boleh terlihat/diakses olehnya.
+    $this->proyekKontrak->users()->sync([$this->kontraktor->id]);
+    $this->proyekKontraklain = Proyek::factory()->for($this->unit)->kontrakKlien()->create([
+        'created_by' => $this->owner->id,
+        'client' => 'PT Rahasia Lain',
+    ]);
+
     $this->titik = Titik::factory()->create(['proyek_id' => $this->proyekKontrak->id]);
 
     $produk = Produk::factory()->split()->create();
@@ -83,13 +92,21 @@ beforeEach(function () {
     ]);
 });
 
-test('proyek list hanya menampilkan proyek kontrak klien', function () {
+test('proyek list hanya menampilkan proyek miliknya (pivot proyek_user)', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->getJson('/api/mobile/kontraktor/proyek')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $this->proyekKontrak->id);
+});
+
+test('proyek list TIDAK membocorkan proyek kontrak klien milik kontraktor lain', function () {
+    $this->withToken($this->token)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson('/api/mobile/kontraktor/proyek')
+        ->assertOk()
+        ->assertDontSee('PT Rahasia Lain');
 });
 
 test('proyek detail mengembalikan ringkasan produksi, RAB, invoice, komunikasi', function () {
@@ -113,6 +130,13 @@ test('proyek detail menolak proyek internal', function () {
     $this->withToken($this->token)
         ->withHeaders(mobileAuthHeaders())
         ->getJson("/api/mobile/kontraktor/proyek/{$this->proyekInternal->id}")
+        ->assertStatus(403);
+});
+
+test('proyek detail menolak proyek kontrak klien yang TIDAK ditautkan ke user', function () {
+    $this->withToken($this->token)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson("/api/mobile/kontraktor/proyek/{$this->proyekKontraklain->id}")
         ->assertStatus(403);
 });
 

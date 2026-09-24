@@ -180,8 +180,10 @@ class RoleMatrix
             'view production', 'start session', 'end session', 'manage qc',
             'manage presensi', 'manage formulir lapangan',
         ],
+        // Eksternal: HANYA portal per-proyek (pivot proyek_user). Tanpa 'view proyek'
+        // supaya tidak bisa akses menu/route core "Proyek & RAB" milik kontraktor lain.
         'Kontraktor' => [
-            'view proyek', 'view kontraktor',
+            'view kontraktor',
         ],
 
         // ─── Ketua Divisi ──────────────────────────────────────────────

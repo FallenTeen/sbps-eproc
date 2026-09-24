@@ -2,6 +2,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Components/Sidebar';
 import NotificationBell from '@/Components/NotificationBell';
+import KomunikasiButton from '@/Components/KomunikasiButton';
 import Breadcrumb from '@/Components/Breadcrumb';
 import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -76,6 +77,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             </div>
                         )}
 
+                        <KomunikasiButton />
                         <NotificationBell />
 
                         <Dropdown>

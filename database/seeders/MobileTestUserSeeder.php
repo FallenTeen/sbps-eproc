@@ -294,6 +294,31 @@ class MobileTestUserSeeder extends Seeder
             }
         }
 
+        // ════════ USER: TEST KONTRAKTOR → PROYEK MILIKNYA (pivot) ═════════
+        // Role eksternal Kontraktor discoping object-level via pivot proyek_user:
+        // user hanya boleh melihat proyek yang ditautkan ke-nya. Buat proyek
+        // kontrak_klien khusus untuk demo mobile supaya portal kontraktor punya
+        // data dan sekaligus menunjukkan ia TIDAK melihat proyek klien lainnya.
+        $testKontraktor = User::where('email', 'test.kontraktor@dummy.com')->first();
+        if ($testKontraktor) {
+            $proyekKtr = Proyek::updateOrCreate(
+                ['kode_proyek' => 'PRJ-TEST-KTR'],
+                [
+                    'unit_bisnis_id' => $gcs?->id,
+                    'nama' => 'Proyek Kontrak Test Kontraktor',
+                    'tipe_proyek' => 'kontrak_klien',
+                    'client' => 'Client Uji Coba',
+                    'lokasi' => 'Cikarang, Jawa Barat',
+                    'tanggal_mulai' => now()->startOfMonth()->toDateString(),
+                    'tanggal_selesai_rencana' => now()->addMonths(6)->toDateString(),
+                    'status' => 'aktif',
+                    'catatan' => 'Proyek kontrak khusus demo portal kontraktor mobile.',
+                    'created_by' => $owner?->id,
+                ]
+            );
+            $proyekKtr->users()->syncWithoutDetaching([$testKontraktor->id]);
+        }
+
         // ══════════════════ USER: OPERATOR MESIN & DRIVER ARMADA ═════════════
         // "Mengampu" sebuah unit kerja (mesin produksi / armada). Untuk mesin
         // tidak ada tabel assignment permanen → dibuatkan sesi produksi aktif

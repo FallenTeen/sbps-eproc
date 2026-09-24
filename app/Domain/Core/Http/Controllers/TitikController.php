@@ -13,6 +13,7 @@ class TitikController extends Controller
     public function index(Request $request, Proyek $proyek)
     {
         $this->authorize('viewAny', Titik::class);
+        $this->authorize('view', $proyek);
 
         $query = Titik::with(['proyek'])->where('proyek_id', $proyek->id);
 
@@ -38,7 +39,7 @@ class TitikController extends Controller
     {
         $this->authorize('create', Titik::class);
 
-        $proyeksQuery = Proyek::where('status', 'aktif');
+        $proyeksQuery = Proyek::where('status', 'aktif')->visibleFor($request->user());
         if ($request->user()->unit_bisnis_id) {
             $proyeksQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
         }
@@ -85,7 +86,7 @@ class TitikController extends Controller
     {
         $this->authorize('update', $titik);
 
-        $proyeksQuery = Proyek::where('status', 'aktif');
+        $proyeksQuery = Proyek::where('status', 'aktif')->visibleFor(auth()->user());
         if (auth()->user()->unit_bisnis_id) {
             $proyeksQuery->where('unit_bisnis_id', auth()->user()->unit_bisnis_id);
         }

@@ -17,10 +17,12 @@ class KontraktorController extends Controller
 
     /**
      * GET /api/mobile/kontraktor/proyek
+     * DISCALING ke proyek milik user (pivot proyek_user).
      */
     public function proyekList(Request $request)
     {
         $proyeks = Proyek::kontrakKlien()
+            ->visibleFor($request->user())
             ->with('unitBisnis:id,nama')
             ->orderByDesc('created_at')
             ->get()
@@ -47,6 +49,11 @@ class KontraktorController extends Controller
 
         if ($proyek->tipe_proyek !== 'kontrak_klien') {
             return $this->error('Bukan proyek kontrak klien.', 403);
+        }
+
+        // Object-level scoping: hanya proyek milik kontraktor tsb.
+        if (! Proyek::visibleFor($request->user())->whereKey($proyek->id)->exists()) {
+            return $this->error('Akses ditolak: bukan proyek Anda.', 403);
         }
 
         // 1. Progress produksi
@@ -137,10 +144,13 @@ class KontraktorController extends Controller
 
     /**
      * GET /api/mobile/kontraktor/invoice
+     * DISCALING ke proyek milik user.
      */
     public function invoiceList(Request $request)
     {
-        $proyekIds = Proyek::kontrakKlien()->pluck('id');
+        $proyekIds = Proyek::visibleFor($request->user())
+            ->kontrakKlien()
+            ->pluck('id');
 
         $invoices = Invoice::whereIn('proyek_id', $proyekIds)
             ->with(['proyek:id,nama', 'items', 'pembayaranKlien'])
@@ -177,13 +187,18 @@ class KontraktorController extends Controller
             'pesan' => 'required|string|max:1000',
         ]);
 
+        $user = $request->user();
         $proyek = Proyek::findOrFail($validated['proyek_id']);
 
         if ($proyek->tipe_proyek !== 'kontrak_klien') {
             return $this->error('Bukan proyek kontrak klien.', 403);
         }
 
-        $user = $request->user();
+        // Object-level scoping: hanya proyek yang ditautkan ke kontraktor tsb.
+        if (! Proyek::visibleFor($user)->whereKey($proyek->id)->exists()) {
+            return $this->error('Akses ditolak: bukan proyek Anda.', 403);
+        }
+
         $role = $user->hasRole('Kontraktor') ? 'kontraktor' : 'kantor';
 
         $log = KomunikasiLog::create([

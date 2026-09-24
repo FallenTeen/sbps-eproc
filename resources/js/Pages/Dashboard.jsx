@@ -102,46 +102,60 @@ function StatCard({ icon: Icon, label, value, suffix, color, href, hrefLabel }) 
 
 // ── Portal-specific dashboard sections ────────────────────────────
 
-function AdminDashboard({ ownerData }) {
+function AdminDashboard({
+    ownerData,
+    canManageUsers,
+    canViewAudit,
+    canViewFinance,
+    canViewProcurement,
+}) {
     const summaryToday = ownerData?.summary_today || {};
 
     return (
         <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <StatCard
-                    icon={Users}
-                    label="Total User Aktif"
-                    value={summaryToday.total_users || '—'}
-                    color="red"
-                    suffix="System"
-                    href="/users"
-                    hrefLabel="Manajemen User"
-                />
-                <StatCard
-                    icon={ClipboardList}
-                    label="PO Menunggu Approval"
-                    value={summaryToday.po_pending_approval || 0}
-                    suffix="Pending"
-                    color="amber"
-                    href="/procurement/purchase-orders"
-                    hrefLabel="Review PO"
-                />
-                <StatCard
-                    icon={DollarSign}
-                    label="Pengeluaran Hari Ini"
-                    value={`Rp ${Number(summaryToday.pengeluaran || 0).toLocaleString('id-ID')}`}
-                    color="red"
-                    href="/finance/akun-kas"
-                    hrefLabel="Kas & Bank"
-                />
-                <StatCard
-                    icon={ShieldCheck}
-                    label="Audit Log"
-                    value={summaryToday.audit_log_count || '—'}
-                    color="purple"
-                    href="/audit/logs"
-                    hrefLabel="Lihat Audit Log"
-                />
+                {canManageUsers && (
+                    <StatCard
+                        icon={Users}
+                        label="Total User Aktif"
+                        value={summaryToday.total_users ?? '—'}
+                        color="red"
+                        suffix="System"
+                        href="/users"
+                        hrefLabel="Manajemen User"
+                    />
+                )}
+                {canViewProcurement && (
+                    <StatCard
+                        icon={ClipboardList}
+                        label="PO Menunggu Approval"
+                        value={summaryToday.po_pending_approval ?? 0}
+                        suffix="Pending"
+                        color="amber"
+                        href="/procurement/purchase-orders"
+                        hrefLabel="Review PO"
+                    />
+                )}
+                {canViewFinance && (
+                    <StatCard
+                        icon={DollarSign}
+                        label="Pengeluaran Hari Ini"
+                        value={`Rp ${Number(summaryToday.pengeluaran || 0).toLocaleString('id-ID')}`}
+                        color="red"
+                        href="/finance/akun-kas"
+                        hrefLabel="Kas & Bank"
+                    />
+                )}
+                {canViewAudit && (
+                    <StatCard
+                        icon={ShieldCheck}
+                        label="Audit Log"
+                        value={summaryToday.audit_log_count ?? '—'}
+                        color="purple"
+                        href="/audit/logs"
+                        hrefLabel="Lihat Audit Log"
+                    />
+                )}
             </div>
         </>
     );
@@ -323,13 +337,16 @@ function SDMDashboard({ ownerData }) {
     );
 }
 
-function KontraktorDashboard() {
+function KontraktorDashboard({ ownerData }) {
+    const summaryToday = ownerData?.summary_today || {};
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
                 icon={Building2}
                 label="Proyek Aktif"
-                value="—"
+                value={summaryToday.proyek_aktif ?? '—'}
+                suffix="Proyek"
                 color="teal"
                 href="/kontraktor/dashboard"
                 hrefLabel="Portal Kontraktor"
@@ -337,14 +354,21 @@ function KontraktorDashboard() {
             <StatCard
                 icon={ClipboardList}
                 label="Invoice"
-                value="—"
+                value={summaryToday.invoice_count ?? '—'}
+                suffix="Unit"
                 color="teal"
+                href="/kontraktor/dashboard"
+                hrefLabel="Daftar Invoice"
             />
             <StatCard
                 icon={DollarSign}
                 label="Tagihan Outstanding"
-                value="—"
+                value={summaryToday.piutang_outstanding != null
+                    ? `Rp ${Number(summaryToday.piutang_outstanding).toLocaleString('id-ID')}`
+                    : '—'}
                 color="amber"
+                href="/kontraktor/dashboard"
+                hrefLabel="Detail Tagihan"
             />
         </div>
     );
@@ -356,19 +380,34 @@ export default function Dashboard({ auth, ownerData = {} }) {
     const portal = auth?.portal;
     const activeRole = auth?.active_role;
     const permissions = auth?.permissions || [];
-    const summaryToday = ownerData?.summary_today || {};
     const rabSummary = ownerData?.rab_summary || {};
     const trenBulanan = ownerData?.tren_bulanan || [];
     const petaTitik = ownerData?.peta_titik || [];
     const proyekList = ownerData?.proyek_list || [];
+    const access = ownerData?.access || {};
 
-    // Role yang memiliki privilege untuk mengatur atau melihat proyek
+    // Izin menghadirkan kartu yang menuju halaman terbatas — data sudah
+    // dibatasi server-side (OwnerDashboardAggregatorService). Card dengan
+    // akses yang tidak dimiliki TIDAK dirender (menghindari link 403).
+    const canManageUsers = access.can_manage_users;
+    const canViewAudit = access.can_view_audit;
+    const canViewFinance = access.can_view_finance;
+    const canViewProcurement =
+        permissions.includes('manage procurement') ||
+        permissions.includes('view procurement') ||
+        permissions.includes('approve procurement') ||
+        permissions.includes('pay procurement') ||
+        access.can_view_finance;
+
+    // Role yang memiliki privilege untuk mengatur/melihat proyek LINTAS UNIT.
+    // PENTING: role eksternal Kontraktor (dan pemegang 'view proyek' saja)
+    // TIDAK termasuk di sini — mereka tidak boleh menerima peta & daftar
+    // proyek seluruh perusahaan. Portal kontraktor punya halaman sendiri
+    // (Kontraktor/Index) yang discoping ke proyek miliknya saja.
     const canManageOrViewProyek =
-        permissions.includes('manage proyek') ||
-        permissions.includes('view proyek') ||
+        (permissions.includes('manage proyek') && portal !== 'kontraktor') ||
         permissions.includes('view owner dashboard') ||
-        ['Owner', 'Superadmin', 'Admin', 'Mandor Proyek', 'Ketua Divisi Kontraktor', 'Admin Keuangan'].includes(activeRole) ||
-        ['admin', 'produksi', 'kontraktor'].includes(portal);
+        ['Owner', 'Superadmin', 'Admin', 'Mandor Proyek', 'Mandor Titik', 'Ketua Divisi Kontraktor', 'Admin Keuangan'].includes(activeRole);
 
     const config = portalConfig[portal] || {
         title: 'Dashboard',
@@ -379,7 +418,15 @@ export default function Dashboard({ auth, ownerData = {} }) {
     const renderPortalDashboard = () => {
         switch (portal) {
             case 'admin':
-                return <AdminDashboard ownerData={ownerData} />;
+                return (
+                    <AdminDashboard
+                        ownerData={ownerData}
+                        canManageUsers={canManageUsers}
+                        canViewAudit={canViewAudit}
+                        canViewFinance={canViewFinance}
+                        canViewProcurement={canViewProcurement}
+                    />
+                );
             case 'armada':
                 return <ArmadaDashboard ownerData={ownerData} />;
             case 'produksi':
@@ -389,9 +436,17 @@ export default function Dashboard({ auth, ownerData = {} }) {
             case 'sdm':
                 return <SDMDashboard ownerData={ownerData} />;
             case 'kontraktor':
-                return <KontraktorDashboard />;
+                return <KontraktorDashboard ownerData={ownerData} />;
             default:
-                return <AdminDashboard ownerData={ownerData} />;
+                return (
+                    <AdminDashboard
+                        ownerData={ownerData}
+                        canManageUsers={canManageUsers}
+                        canViewAudit={canViewAudit}
+                        canViewFinance={canViewFinance}
+                        canViewProcurement={canViewProcurement}
+                    />
+                );
         }
     };
 
@@ -426,8 +481,8 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         />
                     )}
 
-                    {/* RAB Summary — visible for admin, produksi, keuangan */}
-                    {['admin', 'produksi', 'keuangan'].includes(portal) && (
+                    {/* RAB Summary — hanya untuk yang bisa akses laporan keuangan (menghindari link 403) */}
+                    {canViewFinance && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between space-y-4">
                                 <div>
@@ -476,8 +531,8 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </div>
                     )}
 
-                    {/* Tren Grafik — visible for admin & keuangan */}
-                    {['admin', 'keuangan'].includes(portal) && trenBulanan.length > 0 && (
+                    {/* Tren Grafik — hanya untuk yang bisa akses laporan keuangan */}
+                    {canViewFinance && trenBulanan.length > 0 && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
                             <div className="flex justify-between items-center border-b pb-3">
                                 <div>

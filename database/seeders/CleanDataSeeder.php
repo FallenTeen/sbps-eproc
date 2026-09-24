@@ -83,6 +83,7 @@ class CleanDataSeeder extends Seeder
         'komunikasi_logs',
         'rabs',
         'titiks',
+        'proyek_user',
         'proyeks',
         'dokumens',
 

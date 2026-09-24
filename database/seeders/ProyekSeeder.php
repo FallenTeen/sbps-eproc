@@ -110,7 +110,15 @@ class ProyekSeeder extends Seeder
         ];
 
         foreach ($proyeks as $data) {
-            Proyek::updateOrCreate(['kode_proyek' => $data['kode_proyek']], $data);
+            $proyek = Proyek::updateOrCreate(['kode_proyek' => $data['kode_proyek']], $data);
+
+            // Hubungkan user kontraktor (eksternal) HANYA ke proyek kontrak_klien
+            // miliknya (pivot proyek_user) untuk object-level scoping. Kontraktor
+            // ini menangani PRJ-GCS-002 saja — proyek milik klien/unit lain TIDAK
+            // boleh terlihat olehnya walau juga bertipe kontrak_klien.
+            if ($data['kode_proyek'] === 'PRJ-GCS-002') {
+                $proyek->users()->syncWithoutDetaching([$kontraktor->id]);
+            }
         }
 
         // ─────────────────────────── TITIK ───────────────────────────

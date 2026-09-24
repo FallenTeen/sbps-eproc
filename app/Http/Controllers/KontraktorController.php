@@ -15,8 +15,10 @@ class KontraktorController extends Controller
 {
     public function dashboard()
     {
-        // Hanya proyek dengan tipe kontrak_klien
+        // Hanya proyek dengan tipe kontrak_klien, DISCALING ke proyek milik
+        // kontraktor tsb (pivot proyek_user) — bukan seluruh proyek perusahaan.
         $proyekList = Proyek::kontrakKlien()
+            ->visibleFor(Auth::user())
             ->with(['unitBisnis:id,nama'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -28,13 +30,14 @@ class KontraktorController extends Controller
 
     public function proyekDetail(Proyek $proyek)
     {
-        // Pastikan hanya proyek tipe kontrak_klien
-        if ($proyek->tipe_proyek !== 'kontrak_klien') {
-            abort(403, 'Akses khusus untuk proyek kontrak klien.');
-        }
+        // PENTING: object-level scoping — user Kontraktor TIDAK BOLEH melihat
+        // proyek/klien milik kontraktor lain walau lewat manipulasi URL.
+        $this->authorizeProyek($proyek);
 
         // 1. Progres Produksi (Ringkasan Output saja, Tanpa detail biaya)
-        $sessions = ProductionSession::where('proyek_id', $proyek->id)
+        // Catatan: production_sessions tidak punya kolom proyek_id — sesi
+        // menempel di titik, jadi ditarik via titik-titik yang ada di proyek ini.
+        $sessions = ProductionSession::whereHas('titik', fn ($q) => $q->where('proyek_id', $proyek->id))
             ->with('produk:id,nama,satuan_output')
             ->get();
 
@@ -125,16 +128,22 @@ class KontraktorController extends Controller
 
     public function produksi(Proyek $proyek)
     {
+        $this->authorizeProyek($proyek);
+
         return redirect()->route('kontraktor.proyek.detail', $proyek->id);
     }
 
     public function invoice(Proyek $proyek)
     {
+        $this->authorizeProyek($proyek);
+
         return redirect()->route('kontraktor.proyek.detail', $proyek->id);
     }
 
     public function sendMessage(Request $request, Proyek $proyek)
     {
+        $this->authorizeProyek($proyek);
+
         $validated = $request->validate([
             'pesan' => 'required|string|max:1000',
         ]);
@@ -150,5 +159,26 @@ class KontraktorController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Pesan berhasil terkirim.');
+    }
+
+    /**
+     * Object-level scoping: proyek harus tipe kontrak_klien DAN masuk daftar
+     * proyek yang ditautkan (pivot proyek_user) ke user ini.
+     */
+    protected function authorizeProyek(Proyek $proyek): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($proyek->tipe_proyek !== 'kontrak_klien') {
+            abort(403, 'Akses khusus untuk proyek kontrak klien.');
+        }
+
+        if (! Proyek::visibleFor($user)->whereKey($proyek->id)->exists()) {
+            abort(403, 'Akses ditolak: bukan proyek Anda.');
+        }
     }
 }

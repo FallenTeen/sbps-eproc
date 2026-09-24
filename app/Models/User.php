@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -52,6 +53,14 @@ class User extends Authenticatable
     public function karyawan()
     {
         return $this->hasOne(Karyawan::class, 'user_id');
+    }
+
+    /**
+     * Proyek yang diizinkan dilihat user tertentu (pivot proyek_user).
+     */
+    public function proyeks()
+    {
+        return $this->belongsToMany(Proyek::class, 'proyek_user');
     }
 
     public function isOwner(): bool

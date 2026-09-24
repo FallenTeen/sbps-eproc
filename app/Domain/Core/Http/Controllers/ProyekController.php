@@ -22,6 +22,9 @@ class ProyekController extends Controller
 
         $query = Proyek::with(['unitBisnis', 'titik', 'rab']);
 
+        // Defense-in-depth: scoping object-level (pivot proyek_user / unit bisnis).
+        $query->visibleFor($request->user());
+
         if ($request->user()->unit_bisnis_id) {
             $query->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
         }
