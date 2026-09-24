@@ -3,111 +3,118 @@ import { Head, Link } from "@inertiajs/react";
 import { MapPin, Phone, Mail, Sun, Moon, ExternalLink } from "lucide-react";
 
 /**
- * Landing page — profil perusahaan (PT Satria Buana Pamula Sakti / SBPS).
+ * Landing page - company profile (PT Satria Buana Pamula Sakti / SBPS).
  *
- * Halaman publik company profile, bukan pemasaran sistem internal — tidak
- * menjelaskan modul/fitur software. Merah adalah warna dominan (identitas
- * perusahaan). Mendukung dark mode via toggle di header.
+ * Halaman publik untuk calon klien jasa konstruksi/material (kontraktor utama,
+ * developer, dinas terkait). Fokus: perusahaan B2B industri - bukan pemasaran
+ * software, sehingga tidak ada penjelasan modul/fitur sistem.
  *
- * PENTING — placeholder yang wajib diganti sebelum publikasi:
+ * Arah visual: editorial industrial company profile - typography besar,
+ * grid edific, fotografi, spacing. Tiga lini usaha (GCS/CBP/AMP) adalah
+ * struktur bisnis riil perusahaan.
+ *
+ * Spatial system: "wide canvas, controlled content" - container utama fluid
+ * (min(92vw, 1580px)), kolom teks dibatasi untuk readability, area gambar
+ * diizinkan lebih lebar, dan beberapa section full-bleed.
+ *
+ * PENTING - wajib dilengkapi/diverifikasi sebelum publikasi:
  * - Nomor telepon (`phone` prop) masih dummy.
- * - Milestone di bagian "Tentang Kami" ditulis tanpa tahun spesifik karena
- *   tahun berdiri & riwayat perusahaan belum diberikan — lengkapi dengan
- *   tanggal/tahun asli jika ada.
- * - Nomor legalitas (NIB/izin usaha) di bagian "Legalitas" masih kosong.
- * - Wilayah layanan (Banyumas, Purbalingga, dst.) adalah asumsi berdasarkan
- *   lokasi kantor di Patikraja, Banyumas — sesuaikan dengan cakupan nyata.
+ * - Sengaja TIDAK mencantumkan kapasitas produksi, jumlah armada, jumlah
+ *   proyek, sertifikasi, atau klaim kualitatif karena belum ada data resmi.
+ * - Foto masih placeholder (Unsplash) - ganti dengan dokumentasi proyek
+ *   milik perusahaan bila tersedia.
  */
 
-const MILESTONE = [
-    {
-        tahap: "Fondasi",
-        judul: "Berawal dari armada dan alat berat",
-        desk: "SBPS memulai operasinya dengan layanan pengangkutan material dan pengoperasian alat berat untuk mendukung kebutuhan proyek infrastruktur di wilayah Banyumas dan sekitarnya.",
-    },
-    {
-        tahap: "Perluasan",
-        judul: "Menambah dua lini produksi",
-        desk: "Untuk memperpendek rantai pasok, SBPS membangun lini produksi beton siap pakai (batching plant) dan aspal hotmix (asphalt mixing plant) — material tidak lagi bergantung sepenuhnya pada pemasok luar.",
-    },
-    {
-        tahap: "Hari ini",
-        judul: "Empat lini usaha, satu kendali",
-        desk: "Armada, batching plant, asphalt mixing plant, dan pelaksanaan proyek berjalan sebagai satu rantai pasok internal — dari titik quarry sampai pekerjaan selesai di lapangan.",
-    },
-];
+const IMG = {
+    hero: "https://images.unsplash.com/photo-1772852325224-f3caade1a5b5?auto=format&fit=crop&w=1800&q=80",
+    gcs: "https://images.unsplash.com/photo-1751054631354-a42bd7609d75?auto=format&fit=crop&w=1400&q=80",
+    cbp: "https://images.unsplash.com/photo-1530139675202-8c52bb810762?auto=format&fit=crop&w=1400&q=80",
+    amp: "https://images.unsplash.com/photo-1774274951965-3828c5cea7c9?auto=format&fit=crop&w=1400&q=80",
+    large: "https://images.unsplash.com/photo-1760708626681-59a5373819a6?auto=format&fit=crop&w=2000&q=80",
+};
 
-const RANTAI_USAHA = [
+const BISNIS = [
     {
         nomor: "01",
-        judul: "Armada & Alat Berat",
-        desk: "Pengangkutan material dari titik quarry serta pengoperasian alat berat (excavator, dump truck, wheel loader) untuk mendukung produksi dan pekerjaan lapangan. Kondisi armada dipantau harian sebelum unit dioperasikan.",
+        kode: "GCS",
+        jenis: "General Contractor & Supplier",
+        desk: "Pengangkutan material dan pekerjaan lapangan menggunakan armada serta alat berat milik sendiri, termasuk pelaksanaan pekerjaan sebagai kontraktor umum.",
+        list: ["Dump truck transportation", "Heavy equipment rental", "Material supply"],
+        img: IMG.gcs,
+        flip: false,
     },
     {
         nomor: "02",
-        judul: "Batching Plant Beton",
-        desk: "Produksi beton siap pakai (ready mix) dengan takaran campuran yang diukur di setiap batch — bukan hanya di awal produksi — untuk menjaga mutu tetap konsisten dari batch pertama sampai terakhir.",
+        kode: "CBP",
+        jenis: "Concrete Batching Plant",
+        desk: "Produksi beton ready-mix dengan campuran yang disesuaikan dengan kebutuhan dan mutu proyek, hingga pengiriman ke titik pekerjaan.",
+        list: ["Ready-mix concrete production", "Concrete delivery"],
+        img: IMG.cbp,
+        flip: true,
     },
     {
         nomor: "03",
-        judul: "Asphalt Mixing Plant",
-        desk: "Produksi aspal hotmix untuk pekerjaan jalan, mulai dari pemanasan dan pencampuran agregat dengan aspal, hingga pengiriman dalam kondisi suhu yang sesuai untuk dihampar di titik pekerjaan.",
-    },
-    {
-        nomor: "04",
-        judul: "Pelaksanaan Proyek",
-        desk: "Eksekusi pekerjaan infrastruktur di lapangan — jalan, struktur, dan pekerjaan pendukungnya — didukung penuh oleh tiga lini di atas tanpa perlu menunggu pasokan dari pihak ketiga.",
+        kode: "AMP",
+        jenis: "Asphalt Mixing Plant",
+        desk: "Produksi hotmix, termasuk HRS dan AC-BC, dari pencampuran agregat dan aspal hingga pengiriman dalam suhu yang sesuai untuk dihampar.",
+        list: ["Hotmix asphalt production", "HRS", "AC-BC"],
+        img: IMG.amp,
+        flip: false,
     },
 ];
 
-const PROSES_LAYANAN = [
+const KAPABILITAS = [
     {
-        nomor: "1",
-        judul: "Konsultasi kebutuhan",
-        desk: "Diskusi awal mengenai spesifikasi material, volume pekerjaan, dan jadwal proyek Anda.",
+        nomor: "01",
+        judul: "Angkutan",
+        desk: "Dump truck untuk kebutuhan pengangkutan proyek.",
     },
     {
-        nomor: "2",
-        judul: "Survei & penawaran",
-        desk: "Peninjauan lokasi bila diperlukan, dilanjutkan penyusunan penawaran teknis dan komersial.",
+        nomor: "02",
+        judul: "Alat berat",
+        desk: "Penyewaan alat berat dengan skema sewa jam.",
     },
     {
-        nomor: "3",
-        judul: "Produksi & mobilisasi",
-        desk: "Proses produksi beton atau aspal, atau mobilisasi armada dan alat berat, dijadwalkan sesuai kebutuhan proyek.",
+        nomor: "03",
+        judul: "Material",
+        desk: "Supply material untuk kebutuhan proyek.",
     },
     {
-        nomor: "4",
-        judul: "Pengiriman & kontrol mutu",
-        desk: "Pengiriman ke titik proyek dengan pengecekan mutu di setiap tahap, bukan hanya sebelum keberangkatan.",
+        nomor: "04",
+        judul: "Beton",
+        desk: "Produksi dan pengiriman ready-mix concrete.",
     },
     {
-        nomor: "5",
-        judul: "Layanan purna pengiriman",
-        desk: "Dukungan lanjutan selama masa pelaksanaan proyek berlangsung, termasuk penyesuaian jadwal bila diperlukan.",
+        nomor: "05",
+        judul: "Aspal",
+        desk: "Produksi hotmix asphalt, termasuk HRS dan AC-BC.",
+    },
+];
+
+const LANGKAH = [
+    {
+        nomor: "01",
+        judul: "Diskusikan kebutuhan proyek",
+        desk: "Spesifikasi kebutuhan, volume, dan target jadwal proyek Anda disampaikan di awal.",
+    },
+    {
+        nomor: "02",
+        judul: "Tentukan layanan yang dibutuhkan",
+        desk: "Layanan disesuaikan dengan kebutuhan: material, armada, alat berat, atau produksi.",
+    },
+    {
+        nomor: "03",
+        judul: "Produksi, armada, material disiapkan",
+        desk: "Produksi di plant atau mobilisasi armada dijadwalkan mengikuti kebutuhan lapangan.",
+    },
+    {
+        nomor: "04",
+        judul: "Pengiriman dan pelaksanaan",
+        desk: "Material dikirim dan pekerjaan berjalan di lokasi proyek.",
     },
 ];
 
 const WILAYAH = ["Banyumas", "Purbalingga", "Banjarnegara", "Cilacap", "Kebumen"];
-
-const NILAI = [
-    {
-        judul: "Keselamatan kerja",
-        desk: "Prosedur K3 diterapkan di seluruh lini — dari operator alat berat di lapangan sampai kru produksi di batching plant dan AMP. Unit yang tidak lolos pemeriksaan harian tidak dioperasikan.",
-    },
-    {
-        judul: "Mutu yang diukur, bukan diasumsikan",
-        desk: "Setiap batch beton dan aspal melalui pengecekan, bukan hanya sampel di awal produksi. Penyimpangan mutu ditangani sebelum material dikirim, bukan setelah sampai di lokasi proyek.",
-    },
-    {
-        judul: "Ketepatan waktu",
-        desk: "Jadwal produksi dan pengiriman disusun berdasarkan kebutuhan proyek riil, dengan armada dan alat berat milik sendiri — tidak bergantung pada ketersediaan pihak ketiga.",
-    },
-    {
-        judul: "Tanggung jawab lingkungan",
-        desk: "Pengelolaan titik quarry dan lokasi produksi memperhatikan dampak terhadap lingkungan sekitar, sesuai kaidah operasional pertambangan dan produksi material yang bertanggung jawab.",
-    },
-];
 
 function ThemeToggle({ theme, onToggle }) {
     const isDark = theme === "dark";
@@ -117,10 +124,20 @@ function ThemeToggle({ theme, onToggle }) {
             onClick={onToggle}
             aria-label={isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
             aria-pressed={isDark}
-            className="w-9 h-9 flex items-center justify-center border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shrink-0"
+            className="w-9 h-9 flex items-center justify-center border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
+    );
+}
+
+function SectionLabel({ children, nomor }) {
+    return (
+        <span className="inline-flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] uppercase text-[var(--accent)]">
+            <span className="inline-block w-2 h-2 bg-[var(--accent)]" aria-hidden="true" />
+            {children}
+            {nomor ? <span className="text-[var(--text-muted)]">/ {nomor}</span> : null}
+        </span>
     );
 }
 
@@ -133,12 +150,12 @@ export default function Welcome({
     email = "sistemsbps@gmail.com",
     phone = "+62 xxx-xxxx-xxxx",
 }) {
-    const [theme, setTheme] = useState("light");
+    const [theme, setTheme] = useState("dark");
 
     useEffect(() => {
         const saved = window.localStorage.getItem("theme");
-        const preferred = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        setTheme(saved || preferred);
+        if (saved === "light" || saved === "dark") setTheme(saved);
+        else setTheme("dark");
     }, []);
 
     const toggleTheme = () => {
@@ -151,372 +168,499 @@ export default function Welcome({
 
     const mapsQuery = encodeURIComponent(`${plusCode} ${address}`);
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
     return (
         <>
-            <Head title={`${companyName} — Profil Perusahaan`}>
+            <Head title={`${companyName} - Kontraktor, Beton & Aspal di Banyumas`}>
+                <meta
+                    name="description"
+                    content={`${companyName} (${shortName}) mengoperasikan armada & alat berat, batching plant beton, dan asphalt mixing plant sendiri di Kabupaten Banyumas untuk kebutuhan material dan pelaksanaan proyek infrastruktur.`}
+                />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+                    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
                     rel="stylesheet"
                 />
             </Head>
 
             <style>{`
                 :root {
-                    --bg: #E4E1D8;
-                    --bg-panel: #F7F5F0;
-                    --bg-invert: #201F1C;
-                    --text: #201F1C;
-                    --text-invert: #F7F5F0;
-                    --text-muted: rgba(32, 31, 28, 0.7);
-                    --line: rgba(32, 31, 28, 0.14);
-                    --accent: #C6281D;
-                    --steel: #5B6472;
+                    --bg: #EEEBE4;
+                    --bg-panel: #E4E0D6;
+                    --bg-invert: #16130F;
+                    --text: #17130F;
+                    --text-invert: #F2EEE6;
+                    --text-muted: rgba(23, 19, 15, 0.64);
+                    --line: rgba(23, 19, 15, 0.18);
+                    --line-invert: rgba(242, 238, 230, 0.2);
+                    --accent: #D81E05;
+                    --accent-deep: #A81502;
+                    --steel: #6B7075;
+                    --ink-dark: #16130F;
                 }
                 .theme-dark {
-                    --bg: #1B1A18;
-                    --bg-panel: #242220;
-                    --bg-invert: #F2EFE9;
-                    --text: #EDEAE2;
-                    --text-invert: #1B1A18;
-                    --text-muted: rgba(237, 234, 226, 0.65);
-                    --line: rgba(237, 234, 226, 0.16);
-                    --accent: #E4453A;
-                    --steel: #8B96A3;
+                    --bg: #141210;
+                    --bg-panel: #1A1713;
+                    --bg-invert: #F2EEE6;
+                    --text: #EFEBE3;
+                    --text-invert: #17130F;
+                    --text-muted: rgba(239, 235, 227, 0.6);
+                    --line: rgba(239, 235, 227, 0.16);
+                    --line-invert: rgba(23, 19, 15, 0.2);
+                    --accent: #FF4D33;
+                    --accent-deep: #FF6B4A;
+                    --steel: #9AA0A4;
+                    --ink-dark: #141210;
                 }
 
-                .font-head { font-family: 'Oswald', sans-serif; }
+                .font-head { font-family: 'Big Shoulders Display', sans-serif; letter-spacing: -0.01em; }
                 .font-body { font-family: 'IBM Plex Sans', sans-serif; }
 
-                @keyframes riseIn {
-                    from { opacity: 0; transform: translateY(14px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .rise-in { animation: riseIn 0.7s ease-out both; }
-                .rise-in-delay { animation: riseIn 0.7s ease-out 0.15s both; }
-                @media (prefers-reduced-motion: reduce) {
-                    .rise-in, .rise-in-delay { animation: none; }
+                /* Wide canvas, controlled content */
+                .container-wide {
+                    width: min(92vw, 1580px);
+                    margin-inline: auto;
+                    padding-inline: clamp(1.25rem, 3vw, 3.5rem);
                 }
 
-                .strata-clip {
-                    clip-path: polygon(18% 0%, 100% 0%, 100% 100%, 0% 100%);
+                html { scroll-behavior: smooth; }
+                section[id], footer[id] { scroll-margin-top: 4.5rem; }
+
+                @keyframes heroRise {
+                    from { opacity: 0; transform: translateY(16px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .hero-rise { animation: heroRise 0.8s ease-out both; }
+                .hero-rise-delay { animation: heroRise 0.8s ease-out 0.15s both; }
+                .hero-rise-later { animation: heroRise 0.8s ease-out 0.3s both; }
+                @media (prefers-reduced-motion: reduce) {
+                    .hero-rise, .hero-rise-delay, .hero-rise-later { animation: none; }
+                    html { scroll-behavior: auto; }
                 }
             `}</style>
 
             <div className={`min-h-screen bg-[var(--bg)] font-body text-[var(--text)] antialiased transition-colors ${theme === "dark" ? "theme-dark" : ""}`}>
                 {/* ─── HEADER ───────────────────────────────────────── */}
-                <header className="border-b border-[var(--line)]">
-                    <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-9 h-9 bg-[var(--accent)] text-[#F7F5F0] font-head font-semibold text-base flex items-center justify-center shrink-0">
+                <header className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--line)]">
+                    <div className="container-wide h-16 flex items-center justify-between gap-4">
+                        <a href="#top" className={`flex items-center gap-3 min-w-0 shrink-0 ${focusRing}`}>
+                            <span className="w-9 h-9 bg-[var(--accent)] text-white font-head font-extrabold text-lg flex items-center justify-center">
                                 {shortName.charAt(0)}
                             </span>
-                            <div className="leading-tight min-w-0">
-                                <p className="font-head font-semibold text-lg tracking-tight">{shortName}</p>
-                                <p className="hidden sm:block text-[11px] text-[var(--text-muted)] truncate">{companyName}</p>
-                            </div>
-                        </div>
+                            <span className="leading-tight min-w-0">
+                                <span className="block font-head font-bold text-lg tracking-tight">{shortName}</span>
+                                <span className="hidden sm:block text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)] truncate">
+                                    {companyName}
+                                </span>
+                            </span>
+                        </a>
 
-                        <nav className="hidden lg:flex items-center gap-7 text-sm shrink-0">
-                            <a href="#tentang" className="hover:text-[var(--accent)] transition-colors">Tentang Kami</a>
-                            <a href="#usaha" className="hover:text-[var(--accent)] transition-colors">Lini Usaha</a>
-                            <a href="#proses" className="hover:text-[var(--accent)] transition-colors">Proses Layanan</a>
-                            <a href="#wilayah" className="hover:text-[var(--accent)] transition-colors">Wilayah</a>
-                            <a href="#kontak" className="hover:text-[var(--accent)] transition-colors">Kontak</a>
+                        <nav className="hidden lg:flex items-center gap-8 text-sm shrink-0">
+                            <a href="#tentang" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Tentang Kami</a>
+                            <a href="#usaha" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Lini Usaha</a>
+                            <a href="#proses" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Cara Kerja</a>
+                            <a href="#wilayah" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Wilayah</a>
+                            <a href="#kontak" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Kontak</a>
                         </nav>
 
-                        <div className="flex items-center gap-3 text-sm shrink-0">
+                        {/* <div className="flex items-center gap-3 text-sm shrink-0">
                             {auth?.user ? (
                                 <Link
                                     href={route("dashboard")}
-                                    className="border-b border-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5 hidden sm:inline"
+                                    className={`border-b border-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5 hidden sm:inline ${focusRing}`}
                                 >
                                     Dashboard
                                 </Link>
                             ) : (
                                 <Link
                                     href={route("login")}
-                                    className="border-b border-[var(--text)]/30 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5 hidden sm:inline"
+                                    className={`border-b border-[var(--text)]/30 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5 hidden sm:inline ${focusRing}`}
                                 >
                                     Portal internal
                                 </Link>
                             )}
-                            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-                        </div>
+
+                        </div> */}
+                        <ThemeToggle theme={theme} onToggle={toggleTheme} />
                     </div>
                 </header>
 
                 {/* ─── HERO ─────────────────────────────────────────── */}
-                <section className="max-w-6xl mx-auto px-6 pt-16 pb-14 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-                    <div className="rise-in">
-                        <h1 className="font-head font-semibold text-[2.5rem] sm:text-[3.3rem] leading-[1.06] tracking-tight max-w-xl">
-                            Dari titik quarry sampai ke permukaan jalan yang jadi.
-                        </h1>
-                        <p className="mt-6 font-body text-[1.05rem] leading-relaxed text-[var(--text-muted)] max-w-md">
-                            {companyName} mengelola rantai material dan alat berat sendiri —
-                            armada, produksi beton, dan aspal hotmix — untuk mendukung
-                            pekerjaan infrastruktur secara menyeluruh, bukan sepotong-sepotong.
-                        </p>
-                        <div className="mt-9 flex flex-wrap items-center gap-6 text-sm">
-                            <a
-                                href="#kontak"
-                                className="px-5 py-2.5 bg-[var(--accent)] text-[#F7F5F0] hover:opacity-90 transition-opacity"
-                            >
-                                Hubungi kami
-                            </a>
-                            <a
-                                href="#usaha"
-                                className="border-b border-[var(--text)]/40 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5"
-                            >
-                                Lihat lini usaha
-                            </a>
-                        </div>
-                        <p className="mt-8 text-xs text-[var(--text-muted)] max-w-sm">
-                            Berbasis di Kabupaten Banyumas, melayani kebutuhan material dan
-                            pekerjaan infrastruktur di Banyumas Raya dan sekitarnya.
-                        </p>
-                    </div>
-
-                    <div className="rise-in-delay relative h-72 sm:h-96 lg:h-[26rem]">
-                        <svg
-                            viewBox="0 0 480 560"
-                            className="w-full h-full strata-clip"
-                            preserveAspectRatio="xMidYMid slice"
-                            role="img"
-                            aria-label="Ilustrasi lapisan material dan jalan"
-                        >
-                            <rect width="480" height="560" fill="var(--accent)" />
-                            <polygon points="0,560 480,340 480,560" fill="var(--bg-invert)" opacity="0.85" />
-                            <polygon points="0,560 480,420 480,560 0,470" fill="var(--bg-invert)" opacity="0.5" />
-                            <polygon points="0,220 480,60 480,180 0,340" fill="var(--steel)" opacity="0.35" />
-                            <line x1="0" y1="345" x2="480" y2="185" stroke="var(--bg-panel)" strokeWidth="4" strokeDasharray="18 14" opacity="0.85" />
-                        </svg>
-                    </div>
-                </section>
-
-                {/* ─── TENTANG KAMI ─────────────────────────────────── */}
-                <section id="tentang" className="border-t border-[var(--line)] bg-[var(--bg-panel)]">
-                    <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-12">
-                        <div>
-                            <h2 className="font-head font-semibold text-3xl leading-tight max-w-xs">
-                                Satu perusahaan, satu rantai pasok.
-                            </h2>
-                            <p className="mt-4 text-[var(--text-muted)] text-sm leading-relaxed max-w-xs">
-                                {shortName} tumbuh dari layanan armada menjadi perusahaan yang
-                                mengelola produksi material dan pelaksanaan proyek sekaligus —
-                                supaya setiap tahap pekerjaan tetap dalam satu kendali.
-                            </p>
+                <section id="top" className="border-b border-[var(--line)]">
+                    <div className="container-wide pt-6">
+                        <div className="hero-rise flex items-center justify-between gap-4 border-b border-[var(--line)] pb-4 text-[10px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
+                            <p>{companyName}</p>
+                            <p className="text-right">Berbasis di Banyumas</p>
                         </div>
 
-                        <div className="space-y-8">
-                            {MILESTONE.map((m, i) => (
-                                <div key={m.tahap} className="relative pl-8">
-                                    {i !== MILESTONE.length - 1 && (
-                                        <span className="absolute left-[5px] top-5 bottom-[-2rem] w-px bg-[var(--line)]" aria-hidden="true" />
-                                    )}
-                                    <span className="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
-                                    <p className="text-xs font-medium text-[var(--accent)] mb-1">{m.tahap}</p>
-                                    <h3 className="font-head font-medium text-xl">{m.judul}</h3>
-                                    <p className="mt-1.5 text-sm text-[var(--text-muted)] leading-relaxed max-w-lg">
-                                        {m.desk}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ─── LINI USAHA (rantai proses) ───────────────────── */}
-                <section id="usaha" className="bg-[var(--bg-invert)] text-[var(--text-invert)]">
-                    <div className="max-w-6xl mx-auto px-6 py-20">
-                        <h2 className="font-head font-semibold text-3xl sm:text-4xl max-w-lg leading-tight">
-                            Empat lini usaha, satu rantai pasok.
-                        </h2>
-                        <p className="mt-4 max-w-md opacity-65">
-                            Setiap lini menyuplai lini berikutnya — material tidak perlu
-                            melewati banyak pihak luar sebelum menjadi jalan atau struktur jadi.
-                        </p>
-
-                        <div className="mt-14 divide-y divide-[var(--text-invert)]/15">
-                            {RANTAI_USAHA.map((item) => (
-                                <div
-                                    key={item.nomor}
-                                    className="py-7 grid grid-cols-[auto_1fr] sm:grid-cols-[5rem_1fr_1.3fr] gap-x-6 gap-y-2 items-baseline"
-                                >
-                                    <span className="font-head text-2xl text-[var(--accent)]">{item.nomor}</span>
-                                    <h3 className="font-head font-medium text-xl sm:text-2xl">{item.judul}</h3>
-                                    <p className="text-sm leading-relaxed sm:col-start-3 opacity-65">
-                                        {item.desk}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ─── PROSES LAYANAN ───────────────────────────────── */}
-                <section id="proses" className="max-w-6xl mx-auto px-6 py-20">
-                    <div className="max-w-lg mb-14">
-                        <h2 className="font-head font-semibold text-3xl sm:text-4xl leading-tight">
-                            Bagaimana kami bekerja sama dengan Anda.
-                        </h2>
-                        <p className="mt-4 text-[var(--text-muted)] text-sm leading-relaxed">
-                            Dari permintaan awal sampai pekerjaan berjalan di lapangan,
-                            berikut tahapan yang biasa kami lalui bersama klien.
-                        </p>
-                    </div>
-
-                    <div className="space-y-0">
-                        {PROSES_LAYANAN.map((p, i) => (
-                            <div
-                                key={p.nomor}
-                                className={`grid grid-cols-1 sm:grid-cols-[3rem_1fr] gap-x-6 gap-y-1 py-6 border-t border-[var(--line)] ${
-                                    i === PROSES_LAYANAN.length - 1 ? "border-b" : ""
-                                } ${i % 2 === 1 ? "sm:pl-16" : ""}`}
-                            >
-                                <span className="font-head text-3xl text-[var(--accent)]">{p.nomor}</span>
-                                <div className="max-w-lg">
-                                    <h3 className="font-head font-medium text-lg">{p.judul}</h3>
-                                    <p className="mt-1 text-sm text-[var(--text-muted)] leading-relaxed">{p.desk}</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.08fr] gap-12 lg:gap-16 items-end mt-10 lg:mt-16 pb-16">
+                            <div className="hero-rise-delay">
+                                <h1 className="font-head font-extrabold uppercase leading-[0.9] tracking-tight text-[clamp(2.8rem,7.2vw,6.6rem)]">
+                                    Material, armada,
+                                    <br />
+                                    dan produksi
+                                    <br />
+                                    untuk proyek
+                                    <br />
+                                    <span className="text-[var(--accent)]">konstruksi.</span>
+                                </h1>
+                                <p className="mt-8 text-[15px] leading-relaxed text-[var(--text-muted)] max-w-md">
+                                    {companyName} menyediakan kebutuhan proyek melalui layanan General
+                                    Contractor &amp; Supplier, produksi beton ready-mix, dan asphalt
+                                    mixing plant.
+                                </p>
+                                <div className="mt-9 flex flex-wrap items-center gap-7 text-sm">
+                                    <a
+                                        href="#kontak"
+                                        className={`px-6 py-3 bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-deep)] transition-colors ${focusRing}`}
+                                    >
+                                        Bahas kebutuhan proyek
+                                    </a>
+                                    <a
+                                        href="#usaha"
+                                        className={`border-b border-[var(--text)]/30 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors pb-0.5 ${focusRing}`}
+                                    >
+                                        Lihat lini usaha
+                                    </a>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </section>
 
-                {/* ─── WILAYAH LAYANAN ──────────────────────────────── */}
-                <section id="wilayah" className="border-y border-[var(--line)] bg-[var(--bg-panel)]">
-                    <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-12 items-start">
-                        <div>
-                            <h2 className="font-head font-semibold text-3xl leading-tight max-w-sm">
-                                Beroperasi dari Banyumas, melayani sekitarnya.
-                            </h2>
-                            <p className="mt-4 text-[var(--text-muted)] text-sm leading-relaxed max-w-sm">
-                                Kantor dan fasilitas produksi kami berada di Kecamatan
-                                Patikraja, Kabupaten Banyumas — posisi yang memudahkan
-                                pengiriman material ke kabupaten-kabupaten sekitarnya tanpa
-                                jarak tempuh yang berlebihan.
-                            </p>
+                            <figure className="hero-rise-later max-lg:mt-2">
+                                <div className="aspect-[16/10] overflow-hidden border border-[var(--line)]">
+                                    <img
+                                        src={IMG.hero}
+                                        alt="Foto dokumentasi lokasi pekerjaan konstruksi"
+                                        loading="eager"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <figcaption className="mt-3 flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
+                                    <span>Lokasi pekerjaan proyek</span>
+                                    <span className="h-px flex-1 bg-[var(--line)] max-w-[4rem]" aria-hidden="true" />
+                                    <span>Banyumas, Jawa Tengah</span>
+                                </figcaption>
+                            </figure>
                         </div>
-                        <div className="flex flex-wrap gap-2.5 content-start">
-                            {WILAYAH.map((w) => (
-                                <span
-                                    key={w}
-                                    className="px-4 py-2 border border-[var(--line)] text-sm hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                    </div>
+
+                    {/* business index */}
+                    <div className="border-t border-[var(--line)]">
+                        <div className="container-wide grid grid-cols-1 sm:grid-cols-3">
+                            {BISNIS.map((b) => (
+                                <div
+                                    key={b.kode}
+                                    className={`py-6 sm:px-5 first:pl-0 last:pr-0 border-b sm:border-b-0 sm:border-r last:border-r-0 border-[var(--line)] flex flex-col gap-1`}
                                 >
-                                    {w}
-                                </span>
+                                    <p className="font-head text-sm font-bold text-[var(--accent)]">{b.nomor}</p>
+                                    <p className="font-head font-extrabold text-3xl tracking-tight">{b.kode}</p>
+                                    <p className="text-xs text-[var(--text-muted)]">{b.jenis}</p>
+                                </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* ─── NILAI / KOMITMEN ─────────────────────────────── */}
-                <section className="max-w-6xl mx-auto px-6 py-20">
-                    <h2 className="font-head font-semibold text-3xl sm:text-4xl max-w-lg leading-tight mb-14">
-                        Yang kami pegang di setiap pekerjaan.
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-                        {NILAI.map((n, i) => (
-                            <div
-                                key={n.judul}
-                                className={`border-l-2 border-[var(--accent)] pl-5 ${i % 2 === 1 ? "md:mt-10" : ""}`}
-                            >
-                                <h3 className="font-head font-medium text-xl">{n.judul}</h3>
-                                <p className="mt-2 text-sm text-[var(--text-muted)] leading-relaxed max-w-sm">
-                                    {n.desk}
+                {/* ─── TENTANG SBPS / 01 ────────────────────────────── */}
+                <section id="tentang" className="border-b border-[var(--line)] bg-[var(--bg-panel)]">
+                    <div className="container-wide py-20 md:py-28">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                            <div className="lg:col-span-2">
+                                <SectionLabel nomor="01">Tentang SBPS</SectionLabel>
+                            </div>
+                            <div className="lg:col-span-10">
+                                <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] max-w-4xl">
+                                    Satu perusahaan untuk kebutuhan material, armada, dan produksi proyek.
+                                </h2>
+                                <p className="mt-9 text-[15px] leading-relaxed text-[var(--text-muted)] max-w-xl">
+                                    {companyName} menjalankan tiga lini usaha secara langsung: angkutan
+                                    dan alat berat sebagai kontraktor &amp; supplier, produksi beton
+                                    ready-mix di batching plant, dan produksi hotmix di asphalt mixing
+                                    plant. Pengadaan agregat, pencampuran, dan pengiriman ditangani satu
+                                    perusahaan - bukan beberapa pemasok dengan jadwal dan standar masing-masing.
                                 </p>
                             </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ─── LEGALITAS & KARIER ───────────────────────────── */}
-                <section className="border-t border-[var(--line)] bg-[var(--bg-panel)]">
-                    <div className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div>
-                            <h3 className="font-head font-semibold text-xl">Legalitas</h3>
-                            <p className="mt-2 text-sm text-[var(--text-muted)] leading-relaxed max-w-sm">
-                                {shortName} beroperasi sebagai badan hukum Perseroan Terbatas
-                                dengan legalitas usaha yang lengkap. Detail nomor NIB dan izin
-                                usaha dapat dicantumkan di sini sesuai dokumen resmi perusahaan.
-                            </p>
                         </div>
-                        <div>
-                            <h3 className="font-head font-semibold text-xl">Karier</h3>
-                            <p className="mt-2 text-sm text-[var(--text-muted)] leading-relaxed max-w-sm">
-                                Tertarik bergabung dengan tim kami — baik di lapangan maupun
-                                produksi? Kirimkan CV dan portofolio Anda melalui email kontak
-                                di bawah, dengan subjek sesuai posisi yang diminati.
-                            </p>
+
+                        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-[var(--line)]">
+                            <div className="p-6 lg:p-8 border-r border-b border-[var(--line)]">
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">Basis operasional</p>
+                                <p className="font-head font-bold text-2xl mt-2">Banyumas</p>
+                            </div>
+                            <div className="p-6 lg:p-8 border-r border-b sm:border-r-0 lg:border-r border-[var(--line)]">
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">GCS</p>
+                                <p className="font-head font-bold text-2xl mt-2">General Contractor &amp; Supplier</p>
+                            </div>
+                            <div className="p-6 lg:p-8 border-r border-b sm:border-r-0 lg:border-r border-[var(--line)]">
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">CBP</p>
+                                <p className="font-head font-bold text-2xl mt-2">Concrete Batching Plant</p>
+                            </div>
+                            <div className="p-6 lg:p-8 border-b lg:border-b-0 border-[var(--line)]">
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">AMP</p>
+                                <p className="font-head font-bold text-2xl mt-2">Asphalt Mixing Plant</p>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                {/* ─── KONTAK ───────────────────────────────────────── */}
-                <section id="kontak" className="bg-[var(--bg-invert)] text-[var(--text-invert)]">
-                    <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-12">
+                {/* ─── LINI USAHA / 02 ──────────────────────────────── */}
+                <section id="usaha" className="border-b border-[var(--line)]">
+                    <div className="container-wide py-20 md:py-28">
+                        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                            <div>
+                                <SectionLabel nomor="02">Lini Usaha</SectionLabel>
+                                <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] mt-6 max-w-2xl">
+                                    Tiga lini usaha untuk kebutuhan proyek.
+                                </h2>
+                            </div>
+                            <p className="text-sm leading-relaxed text-[var(--text-muted)] max-w-xs lg:pb-2">
+                                Masing-masing dikelola langsung oleh {shortName} sebagai satu perusahaan.
+                            </p>
+                        </div>
+
+                        <div className="mt-14 flex flex-col">
+                            {BISNIS.map((b) => (
+                                <article key={b.kode} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center py-16 lg:py-20 border-t border-[var(--line)]">
+                                    <div className={`${b.flip ? "lg:order-2" : ""}`}>
+                                        <div className="flex items-baseline gap-4">
+                                            <span className="font-head font-bold text-xl text-[var(--accent)]">{b.nomor} —</span>
+                                            <span className="font-head font-extrabold text-5xl sm:text-6xl tracking-tight">{b.kode}</span>
+                                        </div>
+                                        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
+                                            {b.jenis}
+                                        </p>
+                                        <p className="mt-7 text-[15px] leading-relaxed text-[var(--text-muted)] max-w-lg">
+                                            {b.desk}
+                                        </p>
+                                        <ul className="mt-8 space-y-3">
+                                            {b.list.map((li) => (
+                                                <li key={li} className="flex items-center gap-3 text-[15px]">
+                                                    <span className="h-px w-4 bg-[var(--accent)] shrink-0" aria-hidden="true" />
+                                                    {li}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <figure className={`${b.flip ? "lg:order-1" : ""}`}>
+                                        <div className="aspect-[4/3] overflow-hidden border border-[var(--line)]">
+                                            <img
+                                                src={b.img}
+                                                alt={`Foto dokumentasi lini usaha ${b.kode} - ${b.jenis}`}
+                                                loading="lazy"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <figcaption className="mt-3 flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
+                                            <span>{b.kode} — {b.jenis}</span>
+                                            <span className="h-px flex-1 bg-[var(--line)] max-w-[4rem]" aria-hidden="true" />
+                                            <span>{b.nomor}</span>
+                                        </figcaption>
+                                    </figure>
+                                </article>
+                            ))}
+                            <div className="border-t border-[var(--line)]" aria-hidden="true" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─── KAPABILITAS / 03 ─────────────────────────────── */}
+                <section className="border-b border-[var(--line)] bg-[var(--bg-invert)] text-[var(--text-invert)]">
+                    <div className="container-wide py-20 md:py-28">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-end">
+                            <div className="lg:col-span-2">
+                                <SectionLabel nomor="03">Kapabilitas</SectionLabel>
+                            </div>
+                            <div className="lg:col-span-10">
+                                <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] max-w-4xl">
+                                    Kebutuhan proyek, dilihat dari pekerjaannya.
+                                </h2>
+                            </div>
+                        </div>
+
+                        <div className="mt-14 lg:mt-20">
+                            {KAPABILITAS.map((k) => (
+                                <div
+                                    key={k.nomor}
+                                    className="group grid grid-cols-[3rem_1fr] md:grid-cols-12 items-baseline gap-x-6 gap-y-2 border-t border-[var(--line-invert)] py-7 md:py-8"
+                                >
+                                    <span className="md:col-span-1 font-head text-lg font-bold text-[var(--accent)]">
+                                        {k.nomor}
+                                    </span>
+                                    <h3 className="md:col-span-7 font-head font-bold uppercase tracking-tight text-3xl sm:text-4xl lg:text-5xl group-hover:translate-x-2 group-hover:text-[var(--accent)] transition-all duration-200">
+                                        {k.judul}
+                                    </h3>
+                                    <p className="md:col-span-4 md:text-right text-sm text-[var(--text-invert)]/60 col-start-2">
+                                        {k.desk}
+                                    </p>
+                                </div>
+                            ))}
+                            <div className="border-t border-[var(--line-invert)]" aria-hidden="true" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─── CARA KERJA / 04 ──────────────────────────────── */}
+                <section id="proses" className="border-b border-[var(--line)]">
+                    <div className="container-wide py-20 md:py-28">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                            <div className="lg:col-span-2">
+                                <SectionLabel nomor="04">Cara Kerja</SectionLabel>
+                            </div>
+                            <div className="lg:col-span-10">
+                                <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] max-w-3xl">
+                                    Mulai dari kebutuhan proyek.
+                                </h2>
+                            </div>
+                        </div>
+
+                        <ol className="mt-14 lg:mt-20 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 border-t border-[var(--line)]">
+                            {LANGKAH.map((s) => (
+                                <li
+                                    key={s.nomor}
+                                    className="relative pt-10 pr-6 lg:pr-10 pb-2 border-b md:border-b xl:border-b-0 xl:border-r last:border-r-0 border-[var(--line)]"
+                                >
+                                    <span className="absolute top-0 left-0 h-[3px] w-10 bg-[var(--accent)]" aria-hidden="true" />
+                                    <p className="font-head text-sm font-bold text-[var(--accent)]">{s.nomor}</p>
+                                    <h3 className="font-head font-bold text-xl mt-4 lg:text-2xl pr-2 lg:max-w-[20ch]">{s.judul}</h3>
+                                    <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] lg:max-w-[34ch]">{s.desk}</p>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                </section>
+
+                {/* ─── BESAR GAMBAR INDUSTRI ────────────────────────── */}
+                <section className="relative w-full min-h-[82vh] md:min-h-[100vh] overflow-hidden border-b border-[var(--line)]">
+                    <img
+                        src={IMG.large}
+                        alt="Dokumentasi area pekerjaan konstruksi"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-black/40" aria-hidden="true" />
+                    <div className="relative container-wide min-h-[82vh] md:min-h-[100vh] flex flex-col justify-end pb-14">
+                        <p className="text-[11px] uppercase tracking-[0.28em] text-white/75">Banyumas, Jawa Tengah</p>
+                        <p className="font-head font-extrabold uppercase tracking-tight text-[clamp(3.5rem,10vw,8rem)] leading-none text-white mt-3">
+                            {shortName}
+                        </p>
+                        <p className="mt-4 text-[11px] uppercase tracking-[0.32em] text-white/80">
+                            Construction&ensp;·&ensp;Material&ensp;·&ensp;Production
+                        </p>
+                    </div>
+                </section>
+
+                {/* ─── WILAYAH / 05 ─────────────────────────────────── */}
+                <section id="wilayah" className="border-b border-[var(--line)]">
+                    <div className="container-wide py-20 md:py-28">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                            <div className="lg:col-span-2">
+                                <SectionLabel nomor="05">Wilayah</SectionLabel>
+                            </div>
+                            <div className="lg:col-span-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-start">
+                                    <div>
+                                        <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] max-w-xl">
+                                            Berbasis di Kabupaten Banyumas.
+                                        </h2>
+                                        <p className="mt-7 text-[15px] leading-relaxed text-[var(--text-muted)] max-w-md">
+                                            Melayani kebutuhan material dan pekerjaan infrastruktur di Banyumas
+                                            Raya dan sekitarnya.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap lg:justify-end border-t border-[var(--line)] lg:self-end">
+                                        {WILAYAH.map((w, i) => (
+                                            <span
+                                                key={w}
+                                                className={`font-head font-bold text-xl lg:text-2xl py-4 pr-6 mr-6 sm:mr-8 tracking-tight ${
+                                                    i < WILAYAH.length - 1 ? "border-r border-[var(--line)]" : ""
+                                                }`}
+                                            >
+                                                {w}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─── KONTAK / CTA ─────────────────────────────────── */}
+                <section id="kontak" className="border-b border-[var(--line)] bg-[var(--bg-invert)] text-[var(--text-invert)]">
+                    <div className="container-wide py-20 md:py-28 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-24">
                         <div>
-                            <h2 className="font-head font-semibold text-2xl sm:text-3xl max-w-sm">
-                                Diskusikan kebutuhan proyek Anda.
+                            <SectionLabel nomor="06">Kontak</SectionLabel>
+                            <h2 className="font-head font-bold uppercase leading-[0.95] tracking-tight text-[clamp(1.9rem,4.2vw,3.6rem)] mt-6 max-w-2xl">
+                                Punya kebutuhan untuk proyek berikutnya?
                             </h2>
-                            <p className="mt-3 opacity-65 max-w-sm text-sm leading-relaxed">
-                                Untuk kerja sama pengadaan material, sewa alat, atau
-                                pelaksanaan proyek, hubungi kami melalui kontak berikut.
+                            <p className="mt-6 text-[15px] leading-relaxed text-[var(--text-invert)]/65 max-w-md">
+                                Bahas kebutuhan material, armada, atau produksi bersama {shortName}.
                             </p>
+                            <a
+                                href={`mailto:${email}`}
+                                className={`inline-block mt-10 px-7 py-3.5 bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-deep)] transition-colors ${focusRing}`}
+                            >
+                                Hubungi {shortName}
+                            </a>
                         </div>
-                        <div className="space-y-5 text-sm">
-                            <div className="flex items-start gap-3">
-                                <MapPin className="w-4 h-4 mt-0.5 text-[var(--accent)] shrink-0" />
+
+                        <div className="lg:justify-self-end lg:w-full lg:max-w-xl border-t border-[var(--line-invert)]">
+                            <div className="py-7 border-b border-[var(--line-invert)] flex gap-5">
+                                <MapPin className="w-4 h-4 mt-1 text-[var(--accent)] shrink-0" aria-hidden="true" />
                                 <div>
-                                    <p>{address}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-invert)]/50">Alamat</p>
+                                    <p className="mt-2 text-sm leading-relaxed max-w-md">{address}</p>
                                     <a
                                         href={mapsUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="inline-flex items-center gap-1 mt-1 text-xs opacity-65 hover:opacity-100 hover:text-[var(--accent)] transition-colors"
+                                        className={`inline-flex items-center gap-1.5 mt-3 text-xs text-[var(--text-invert)]/60 hover:text-[var(--accent)] transition-colors ${focusRing}`}
                                     >
                                         Buka di Google Maps <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-4 h-4 mt-0.5 text-[var(--accent)] shrink-0" />
-                                <span>{phone}</span>
+                            <div className="py-7 border-b border-[var(--line-invert)] flex gap-5">
+                                <Phone className="w-4 h-4 mt-1 text-[var(--accent)] shrink-0" aria-hidden="true" />
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-invert)]/50">Telepon</p>
+                                    <p className="mt-2 text-sm">{phone}</p>
+                                </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-4 h-4 mt-0.5 text-[var(--accent)] shrink-0" />
-                                <a href={`mailto:${email}`} className="hover:text-[var(--accent)] transition-colors">
-                                    {email}
-                                </a>
+                            <div className="py-7 border-b border-[var(--line-invert)] flex gap-5">
+                                <Mail className="w-4 h-4 mt-1 text-[var(--accent)] shrink-0" aria-hidden="true" />
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-invert)]/50">Email</p>
+                                    <a href={`mailto:${email}`} className={`mt-2 block text-sm hover:text-[var(--accent)] transition-colors ${focusRing}`}>
+                                        {email}
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 {/* ─── FOOTER ───────────────────────────────────────── */}
-                <footer className="border-t border-[var(--line)]">
-                    <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr] gap-8 text-sm">
+                <footer>
+                    <div className="container-wide py-12 flex flex-col md:flex-row md:items-end justify-between gap-10">
                         <div>
-                            <p className="font-head font-semibold">{shortName}</p>
+                            <p className="font-head font-extrabold text-2xl tracking-tight">{shortName}</p>
                             <p className="mt-1 text-xs text-[var(--text-muted)] max-w-[26ch]">{companyName}</p>
                         </div>
-                        <div className="space-y-1.5 text-[var(--text-muted)]">
-                            <a href="#tentang" className="block hover:text-[var(--accent)] transition-colors">Tentang Kami</a>
-                            <a href="#usaha" className="block hover:text-[var(--accent)] transition-colors">Lini Usaha</a>
-                            <a href="#proses" className="block hover:text-[var(--accent)] transition-colors">Proses Layanan</a>
-                        </div>
-                        <div className="space-y-1.5 text-[var(--text-muted)]">
-                            <a href="#wilayah" className="block hover:text-[var(--accent)] transition-colors">Wilayah Layanan</a>
-                            <a href="#kontak" className="block hover:text-[var(--accent)] transition-colors">Kontak</a>
-                            <a href={`mailto:${email}`} className="block hover:text-[var(--accent)] transition-colors">{email}</a>
-                        </div>
+                        <nav className="grid grid-cols-2 sm:grid-cols-3 gap-x-12 gap-y-2.5 text-sm text-[var(--text-muted)]">
+                            <a href="#tentang" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Tentang Kami</a>
+                            <a href="#usaha" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Lini Usaha</a>
+                            <a href="#proses" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Cara Kerja</a>
+                            <a href="#wilayah" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Wilayah</a>
+                            <a href="#kontak" className={`hover:text-[var(--accent)] transition-colors ${focusRing}`}>Kontak</a>
+                            <a href={`mailto:${email}`} className={`hover:text-[var(--accent)] transition-colors truncate ${focusRing}`}>{email}</a>
+                        </nav>
                     </div>
                     <div className="border-t border-[var(--line)]">
-                        <div className="max-w-6xl mx-auto px-6 py-4 text-xs text-[var(--text-muted)]">
-                            © {new Date().getFullYear()} {companyName} — seluruh hak cipta dilindungi.
+                        <div className="container-wide py-4 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
+                            <span>© {new Date().getFullYear()} {companyName} - seluruh hak cipta dilindungi.</span>
+                            <span className="uppercase tracking-[0.18em]">Banyumas, Jawa Tengah</span>
                         </div>
                     </div>
                 </footer>
