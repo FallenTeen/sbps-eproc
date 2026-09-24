@@ -3,6 +3,13 @@
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\BbmLog;
+use App\Domain\Fleet\Models\Ritase;
+use App\Domain\Fleet\Models\RuteTarif;
+use App\Domain\HR\Models\Karyawan;
+use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;

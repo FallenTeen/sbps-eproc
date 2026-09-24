@@ -5,7 +5,9 @@ namespace App\Domain\Core\Services;
 use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
+use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Finance\Models\AkunKasBank;
@@ -20,6 +22,7 @@ use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
+use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
 use App\Models\User;
 use Carbon\Carbon;
@@ -139,6 +142,7 @@ class OwnerDashboardAggregatorService
                 'persentase' => $persentaseRab,
             ],
             'tren_bulanan' => $trenBulanan,
+            'widgets' => $this->buildWidgets($user, $visibleProyekIds, $visibleTitikIds),
             'access' => [
                 'can_manage_users' => $this->can($user, ['manage role'], ['Owner', 'Admin Keuangan']),
                 'can_view_audit' => $user?->hasRole('Owner') ?? false,
@@ -320,6 +324,410 @@ class OwnerDashboardAggregatorService
         }
 
         return $tren;
+    }
+
+    /**
+     * Widget panel antar modul untuk sub-dashboard Frontend (Armada, Admin, Produksi).
+     * Setiap widget hanya dibuat bila modul-nya boleh dilihat user.
+     */
+    protected function buildWidgets(?User $user, ?array $visibleProyekIds, ?array $visibleTitikIds): array
+    {
+        $widgets = [];
+
+        if ($this->can($user, ['manage fleet', 'view fleet'])) {
+            $widgets['armada'] = $this->buildArmadaWidgets($user);
+        }
+
+        $admin = [];
+        if ($this->can($user, ['view procurement', 'approve procurement', 'manage procurement'])) {
+            $admin['po_pending_list'] = $this->buildPoPendingList($visibleProyekIds);
+        }
+        if ($this->canSeeProyekInsights($user)) {
+            $admin['unit_summary'] = $this->buildUnitSummary($user, $visibleProyekIds);
+            $admin['deadline_list'] = $this->buildDeadlineList($visibleProyekIds);
+        }
+        if ($user?->hasRole('Owner')) {
+            $admin['audit_list'] = $this->buildAuditList();
+        }
+        if ($admin !== []) {
+            $widgets['admin'] = $admin;
+        }
+
+        if ($this->can($user, ['manage production', 'view production', 'manage production cbp', 'manage production amp'])) {
+            $widgets['produksi'] = $this->buildProduksiWidgets($visibleTitikIds);
+        }
+
+        return $widgets;
+    }
+
+    protected function canSeeProyekInsights(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->can($user, ['manage proyek', 'view proyek', 'view owner dashboard'], ['Owner', 'Superadmin', 'Admin']);
+    }
+
+    /**
+     * Widget Armada: armada aktif, servis jatuh tempo, ritase hari ini,
+     * downtime berlangsung, grafik BBM hari ini & distribusi status.
+     * Armada bersifat global dan dipersempit ke unit bila user bounded-unit.
+     */
+    protected function buildArmadaWidgets(?User $user): array
+    {
+        $today = Carbon::today();
+        $unitBisnisId = $user?->unit_bisnis_id;
+        $armadaScopeIds = $unitBisnisId ? Armada::byUnit($unitBisnisId)->pluck('id')->all() : null;
+
+        $aktifList = Armada::with(['unitBisnis:id,nama', 'titik:id,nama', 'penanggungJawabs.karyawan:id,nama'])
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->aktif()
+            ->orderBy('kode_unit')
+            ->limit(6)
+            ->get()
+            ->map(function (Armada $a) {
+                $pic = $a->penanggungJawabs
+                    ->filter(fn ($pj) => $pj->sampai === null)
+                    ->sortByDesc('mulai_dari')
+                    ->first(fn ($pj) => $pj->peran === 'utama');
+                $pic = $pic ?: $a->penanggungJawabs
+                    ->filter(fn ($pj) => $pj->sampai === null)
+                    ->sortByDesc('mulai_dari')
+                    ->first(fn ($pj) => $pj->peran === 'cadangan');
+
+                return [
+                    'id' => $a->id,
+                    'kode_unit' => $a->kode_unit,
+                    'plat_nomor' => $a->plat_nomor,
+                    'jenis' => str_replace('_', ' ', $a->jenis ?? ''),
+                    'status' => $a->status,
+                    'unit_bisnis' => $a->unitBisnis?->nama,
+                    'titik' => $a->titik?->nama,
+                    'pic' => $pic?->karyawan?->nama,
+                    'tahun' => $a->tahun,
+                ];
+            })
+            ->all();
+
+        // Servis jatuh tempo — heuristik sama dgn NotificationController (90 hari).
+        $servisDue = Armada::query()
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->where('status', 'aktif')
+            ->whereNotNull('tanggal_servis_terakhir')
+            ->orderBy('tanggal_servis_terakhir')
+            ->get()
+            ->filter(fn ($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->startOfDay()->isBefore(Carbon::today()->startOfDay()))
+            ->take(6)
+            ->values()
+            ->map(function ($a) use ($today) {
+                $tenggat = Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->startOfDay();
+                $sisaHari = (int) round(($tenggat->getTimestamp() - $today->copy()->startOfDay()->getTimestamp()) / 86400);
+
+                return [
+                    'id' => $a->id,
+                    'kode_unit' => $a->kode_unit,
+                    'plat_nomor' => $a->plat_nomor,
+                    'tanggal_servis_terakhir' => $a->tanggal_servis_terakhir?->format('Y-m-d'),
+                    'sisa_hari' => $sisaHari,
+                ];
+            })
+            ->all();
+
+        $ritaseList = Ritase::with(['armada:id,kode_unit,plat_nomor', 'titik:id,nama', 'ruteTarif:id,lokasi_asal,lokasi_tujuan', 'proyek:id,nama', 'driver:id,nama'])
+            ->whereDate('tanggal', $today)
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('armada_id', $armadaScopeIds))
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(function ($r) {
+                $rute = $r->ruteTarif
+                    ? $r->ruteTarif->lokasi_asal.' → '.$r->ruteTarif->lokasi_tujuan
+                    : ($r->titik?->nama ?: ($r->proyek?->nama ?: $r->customer));
+
+                return [
+                    'id' => $r->id,
+                    'armada_id' => $r->armada_id,
+                    'armada' => trim(($r->armada?->kode_unit ?? '').' '.($r->armada?->plat_nomor ?? '')),
+                    'rute' => $rute,
+                    'driver' => $r->driver?->nama,
+                    'jumlah_rit' => (float) $r->jumlah_rit,
+                    'jumlah_volume' => (float) $r->jumlah_volume,
+                    'satuan_volume' => $r->satuan_volume,
+                    'status' => $r->status,
+                    'nominal' => (float) $r->nominal,
+                ];
+            })
+            ->all();
+
+        $downtimeList = DowntimeLog::with(['serviceable:id,kode_unit,plat_nomor'])
+            ->aktif()
+            ->where('serviceable_type', Armada::class)
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
+            ->latest('mulai')
+            ->limit(6)
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'armada_id' => $d->serviceable_id,
+                    'armada' => trim(($d->serviceable?->kode_unit ?? '').' '.($d->serviceable?->plat_nomor ?? '')),
+                    'penyebab' => $d->penyebab,
+                    'kategori' => $d->kategori,
+                    'mulai' => $d->mulai?->toIso8601String(),
+                    'durasi_menit' => $d->mulai ? (int) $d->mulai->diffInMinutes(now()) : 0,
+                ];
+            })
+            ->all();
+
+        $bbmById = BbmLog::where('serviceable_type', Armada::class)
+            ->whereDate('tanggal', $today)
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
+            ->get(['serviceable_id', 'liter', 'biaya'])
+            ->groupBy('serviceable_id')
+            ->map(fn ($logs) => [
+                'liter' => round((float) $logs->sum('liter'), 2),
+                'biaya' => (float) $logs->sum('biaya'),
+            ]);
+        $bbmNames = $bbmById->isNotEmpty()
+            ? Armada::whereIn('id', $bbmById->keys())->pluck('kode_unit', 'id')
+            : collect();
+        $bbmChart = $bbmById
+            ->map(fn ($agg, $armadaId) => [
+                'armada' => $bbmNames[$armadaId] ?? 'Unit '.substr((string) $armadaId, 0, 8),
+                'liter' => $agg['liter'],
+                'biaya' => $agg['biaya'],
+            ])
+            ->sortByDesc('liter')
+            ->take(8)
+            ->values()
+            ->all();
+
+        $statusDist = Armada::query()
+            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->get()
+            ->map(fn ($row) => ['status' => $row->status, 'total' => (int) $row->total])
+            ->all();
+
+        return [
+            'total_armada' => (int) Armada::query()->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))->count(),
+            'aktif_list' => $aktifList,
+            'servis_due_list' => $servisDue,
+            'ritase_today_list' => $ritaseList,
+            'downtime_list' => $downtimeList,
+            'bbm_today_chart' => $bbmChart,
+            'status_distribution' => $statusDist,
+        ];
+    }
+
+    /**
+     * Widget Admin: PO butuh approval, ringkasan per unit bisnis,
+     * proyek mendekati deadline, & jejak audit (Owner).
+     */
+    protected function buildPoPendingList(?array $visibleProyekIds): array
+    {
+        $statusLabels = [
+            'menunggu_approval_finance' => 'Menunggu Approval Finance',
+            'menunggu_approval_owner' => 'Menunggu Approval Owner',
+        ];
+
+        return PurchaseOrder::with(['proyek:id,nama,kode_proyek', 'supplier:id,nama'])
+            ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+            ->whereIn('status', ['menunggu_approval_finance', 'menunggu_approval_owner'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($po) use ($statusLabels) {
+                $raw = $po->getRawOriginal('status');
+
+                return [
+                    'id' => $po->id,
+                    'kode_po' => $po->kode_po,
+                    'proyek' => $po->proyek?->nama,
+                    'supplier' => $po->supplier?->nama,
+                    'total' => (float) $po->total,
+                    'status' => $raw,
+                    'status_label' => $statusLabels[$raw] ?? $raw,
+                    'created_at' => $po->created_at?->toIso8601String(),
+                ];
+            })
+            ->all();
+    }
+
+    protected function buildUnitSummary(?User $user, ?array $visibleProyekIds): array
+    {
+        $unitBisnisId = $user?->unit_bisnis_id;
+        $units = UnitBisnis::when($unitBisnisId, fn ($q) => $q->where('id', $unitBisnisId))
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
+
+        return $units
+            ->map(function (UnitBisnis $u) use ($visibleProyekIds) {
+                $proyekIds = Proyek::where('unit_bisnis_id', $u->id)
+                    ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('id', $visibleProyekIds))
+                    ->pluck('id');
+
+                return [
+                    'unit' => $u->nama,
+                    'proyek_aktif' => (int) $proyekIds->count(),
+                    'titik_aktif' => (int) Titik::where('status', 'aktif')->whereIn('proyek_id', $proyekIds)->count(),
+                    'armada_aktif' => (int) Armada::where('unit_bisnis_id', $u->id)->where('status', 'aktif')->count(),
+                    'pengguna' => (int) User::where('unit_bisnis_id', $u->id)->count(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    protected function buildDeadlineList(?array $visibleProyekIds): array
+    {
+        $today = Carbon::today()->startOfDay();
+
+        return Proyek::with('unitBisnis:id,nama')
+            ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('id', $visibleProyekIds))
+            ->where('status', 'aktif')
+            ->whereNotNull('tanggal_selesai_rencana')
+            ->whereDate('tanggal_selesai_rencana', '>=', $today->format('Y-m-d'))
+            ->whereDate('tanggal_selesai_rencana', '<=', $today->copy()->addDays(30)->format('Y-m-d'))
+            ->orderBy('tanggal_selesai_rencana')
+            ->limit(5)
+            ->get()
+            ->map(function ($p) use ($today) {
+                $tenggat = Carbon::parse($p->tanggal_selesai_rencana)->startOfDay();
+                $sisaHari = (int) round(($tenggat->getTimestamp() - $today->getTimestamp()) / 86400);
+
+                return [
+                    'id' => $p->id,
+                    'nama' => $p->nama,
+                    'client' => $p->client,
+                    'unit' => $p->unitBisnis?->nama,
+                    'tanggal_selesai_rencana' => $p->tanggal_selesai_rencana?->format('Y-m-d'),
+                    'sisa_hari' => $sisaHari,
+                ];
+            })
+            ->all();
+    }
+
+    protected function buildAuditList(): array
+    {
+        return Activity::with(['causer:id,name,nama_lengkap'])
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn ($log) => [
+                'id' => $log->id,
+                'description' => $log->description,
+                'causer' => $log->causer?->nama_lengkap ?? $log->causer?->name,
+                'event' => $log->event,
+                'created_at' => $log->created_at?->diffForHumans(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Widget Produksi: sesi berjalan, QC menunggu uji tekan, pengiriman
+     * hari ini, output per produk & tren 7 hari. Dipersempit via titik.
+     */
+    protected function buildProduksiWidgets(?array $visibleTitikIds): array
+    {
+        $today = Carbon::today();
+
+        $sesiList = ProductionSession::with(['produk:id,nama,satuan_output', 'mesin:id,nama', 'titik:id,nama'])
+            ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+            ->berjalan()
+            ->latest('mulai')
+            ->limit(5)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'produk' => $s->produk?->nama,
+                'mesin' => $s->mesin?->nama,
+                'titik' => $s->titik?->nama,
+                'mulai' => $s->mulai?->toIso8601String(),
+                'satuan' => $s->produk?->satuan_output,
+            ])
+            ->all();
+
+        $qcList = QCSample::with(['session:id,titik_id,produk_id,mulai', 'session.produk:id,nama', 'session.titik:id,nama'])
+            ->where('jenis_uji', 'uji_tekan')
+            ->whereNull('hasil_uji_tekan')
+            ->when($visibleTitikIds !== null, fn ($q) => $q->whereHas('session', fn ($s) => $s->whereIn('titik_id', $visibleTitikIds)))
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn ($q) => [
+                'id' => $q->id,
+                'session_id' => $q->production_session_id,
+                'produk' => $q->session?->produk?->nama,
+                'titik' => $q->session?->titik?->nama,
+                'rencana_uji_tekan' => $q->tanggal_uji_tekan_rencana?->format('d/m/Y'),
+                'status' => $q->status,
+            ])
+            ->all();
+
+        $pengirimanList = Pengiriman::with(['session.produk:id,nama', 'session.titik:id,nama', 'armada:id,kode_unit,plat_nomor', 'driver:id,nama'])
+            ->whereDate('waktu_muat', $today)
+            ->when($visibleTitikIds !== null, fn ($q) => $q->whereHas('session', fn ($s) => $s->whereIn('titik_id', $visibleTitikIds)))
+            ->latest('waktu_muat')
+            ->limit(5)
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'produk' => $p->session?->produk?->nama,
+                'titik' => $p->session?->titik?->nama,
+                'tujuan' => $p->tujuan_alamat,
+                'armada' => trim(($p->armada?->kode_unit ?? '').' '.($p->armada?->plat_nomor ?? '')),
+                'driver' => $p->driver?->nama,
+                'status' => $p->status,
+                'waktu_muat' => $p->waktu_muat?->toIso8601String(),
+            ])
+            ->all();
+
+        $outputByProduk = ProductionSession::query()
+            ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+            ->whereDate('mulai', $today)
+            ->selectRaw('produk_id, SUM(hasil_output) as total')
+            ->groupBy('produk_id')
+            ->get();
+        $produkNama = $outputByProduk->isNotEmpty()
+            ? Produk::whereIn('id', $outputByProduk->pluck('produk_id'))->get(['id', 'nama', 'satuan_output'])
+            : collect();
+        $produkNamaBy = $produkNama->keyBy('id');
+        $outputPerProduk = $outputByProduk
+            ->map(function ($row) use ($produkNamaBy) {
+                $p = $produkNamaBy[$row->produk_id] ?? null;
+
+                return [
+                    'produk' => $p?->nama ?? '-',
+                    'output' => (float) $row->total,
+                    'satuan' => $p?->satuan_output,
+                ];
+            })
+            ->sortByDesc('output')
+            ->values()
+            ->all();
+
+        $trenHari = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = $today->copy()->subDays($i);
+            $trenHari[] = [
+                'tanggal' => $date->format('Y-m-d'),
+                'output' => (float) ProductionSession::query()
+                    ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+                    ->whereDate('mulai', $date)
+                    ->sum('hasil_output'),
+            ];
+        }
+
+        return [
+            'sesi_berjalan_list' => $sesiList,
+            'qc_pending_list' => $qcList,
+            'pengiriman_today_list' => $pengirimanList,
+            'output_per_produk' => $outputPerProduk,
+            'tren_7_hari' => $trenHari,
+        ];
     }
 
     /**

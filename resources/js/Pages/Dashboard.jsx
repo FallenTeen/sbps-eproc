@@ -4,10 +4,12 @@ import { Head, Link } from '@inertiajs/react';
 import {
     Factory, DollarSign, Clock, Wrench, MapPin, TrendingUp,
     BarChart3, ArrowRight, ShieldCheck, Users, Truck, Building2,
-    ClipboardList, Wallet, Eye,
+    ClipboardList, Wallet, Eye, Fuel, Activity, FlaskConical, Package,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import DashboardPetaProyek from '@/Components/DashboardPetaProyek';
+import DashboardPanel from '@/Components/DashboardPanel';
+import DashboardRowList from '@/Components/DashboardRowList';
 
 const portalConfig = {
     admin: {
@@ -102,6 +104,13 @@ function StatCard({ icon: Icon, label, value, suffix, color, href, hrefLabel }) 
 
 // ── Portal-specific dashboard sections ────────────────────────────
 
+function formatHariSisa(value) {
+    if (value == null) return '—';
+    if (value < 0) return `${Math.abs(value)} hr lewat`;
+    if (value === 0) return 'Hari ini';
+    return `${value} hr`;
+}
+
 function AdminDashboard({
     ownerData,
     canManageUsers,
@@ -110,6 +119,36 @@ function AdminDashboard({
     canViewProcurement,
 }) {
     const summaryToday = ownerData?.summary_today || {};
+    const widgets = ownerData?.widgets?.admin || {};
+
+    const poRows = (widgets.po_pending_list || []).map((po) => ({
+        id: po.id,
+        primary: po.kode_po,
+        secondary: `${po.supplier || 'Supplier'}`,
+        badge: `Rp ${Number(po.total || 0).toLocaleString('id-ID')}`,
+        badgeClass: 'bg-amber-100 text-amber-800',
+        meta: po.proyek || '',
+    }));
+
+    const unitSummary = widgets.unit_summary || [];
+
+    const deadlineRows = (widgets.deadline_list || []).map((p) => ({
+        id: p.id,
+        primary: p.nama,
+        secondary: `${p.client || '-'} • ${p.unit || '-'}`,
+        badge: formatHariSisa(p.sisa_hari),
+        badgeClass: p.sisa_hari <= 7 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800',
+        meta: p.tanggal_selesai_rencana,
+    }));
+
+    const auditRows = (widgets.audit_list || []).map((a) => ({
+        id: a.id,
+        primary: a.description,
+        secondary: a.causer || '-',
+        badge: a.event || '',
+        badgeClass: 'bg-purple-100 text-purple-800',
+        meta: a.created_at,
+    }));
 
     return (
         <>
@@ -157,97 +196,463 @@ function AdminDashboard({
                     />
                 )}
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {poRows.length > 0 && (
+                    <DashboardPanel
+                        icon={ClipboardList}
+                        title="PO Menunggu Approval"
+                        subtitle="Perlu review Finance/Owner"
+                        accent="amber"
+                        badge={poRows.length}
+                        href="/procurement/purchase-orders"
+                    >
+                        <DashboardRowList
+                            rows={poRows}
+                            getHref={(row) => route('procurement.purchase-orders.show', { purchaseOrder: row.id })}
+                            empty="Tidak ada PO pending"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {deadlineRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Clock}
+                        title="Proyek Mendekati Deadline"
+                        subtitle="30 hari ke depan"
+                        accent="red"
+                        badge={deadlineRows.length}
+                        href="/proyek"
+                    >
+                        <DashboardRowList
+                            rows={deadlineRows}
+                            getHref={(row) => route('core.proyek.show', { proyek: row.id })}
+                            empty="Tidak ada proyek mendekati deadline"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {auditRows.length > 0 && (
+                    <DashboardPanel
+                        icon={ShieldCheck}
+                        title="Aktivitas Sistem Terbaru"
+                        subtitle="Audit log"
+                        accent="purple"
+                        badge={auditRows.length}
+                        href="/audit/logs"
+                    >
+                        <DashboardRowList
+                            rows={auditRows}
+                            getHref={(row) => route('audit.logs.show', { log: row.id })}
+                            empty="Belum ada aktivitas"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+            </div>
+
+            {unitSummary.length > 0 && (
+                <DashboardPanel
+                    icon={Building2}
+                    title="Ringkasan Per Unit Bisnis"
+                    subtitle="Proyek, titik & armada aktif"
+                    accent="indigo"
+                >
+                    <div className="h-64 w-full pt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={unitSummary} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="unit" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="proyek_aktif" name="Proyek" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="titik_aktif" name="Titik" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="armada_aktif" name="Armada" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </DashboardPanel>
+            )}
         </>
     );
 }
 
 function ArmadaDashboard({ ownerData }) {
     const summaryToday = ownerData?.summary_today || {};
+    const widgets = ownerData?.widgets?.armada || {};
+
+    const aktifRows = (widgets.aktif_list || []).map((a) => ({
+        id: a.id,
+        primary: a.kode_unit,
+        secondary: `${a.plat_nomor || '-'} • ${a.titik || '-'}`,
+        badge: a.pic || 'Tanpa PIC',
+        badgeClass: 'bg-blue-100 text-blue-800',
+        meta: a.status,
+    }));
+
+    const servisRows = (widgets.servis_due_list || []).map((a) => ({
+        id: a.id,
+        primary: a.kode_unit,
+        secondary: `Servis terakhir ${a.tanggal_servis_terakhir || '-'}`,
+        badge: formatHariSisa(a.sisa_hari),
+        badgeClass: a.sisa_hari < 0 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800',
+    }));
+
+    const ritaseRows = (widgets.ritase_today_list || []).map((r) => ({
+        id: r.id,
+        primary: r.armada,
+        secondary: r.rute || '-',
+        badge: `${Number(r.jumlah_rit || 0).toLocaleString('id-ID')} rit`,
+        badgeClass: 'bg-green-100 text-green-800',
+        meta: r.status,
+    }));
+
+    const downtimeRows = (widgets.downtime_list || []).map((d) => ({
+        id: d.id,
+        primary: d.armada,
+        secondary: `${d.kategori || '-'}: ${d.penyebab || '-'}`,
+        badge: `${d.durasi_menit} mnt`,
+        badgeClass: 'bg-red-100 text-red-800',
+        meta: d.mulai ? new Date(d.mulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '',
+    }));
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-                icon={Truck}
-                label="Armada Aktif"
-                value={summaryToday.armada_aktif || 0}
-                suffix="Unit"
-                color="blue"
-                href="/fleet/armada"
-                hrefLabel="Detail Armada"
-            />
-            <StatCard
-                icon={MapPin}
-                label="Ritase Hari Ini"
-                value={summaryToday.ritase_today || 0}
-                suffix="Trip"
-                color="blue"
-                href="/fleet/ritase"
-                hrefLabel="Log Ritase"
-            />
-            <StatCard
-                icon={Wrench}
-                label="Servis Jatuh Tempo"
-                value={summaryToday.unit_servis_jatuh_tempo || 0}
-                suffix="Unit"
-                color="purple"
-                href="/fleet/armada"
-                hrefLabel="Detail Servis"
-            />
-            <StatCard
-                icon={Clock}
-                label="Downtime Aktif"
-                value={summaryToday.downtime_aktif || 0}
-                suffix="Unit"
-                color="red"
-                href="/fleet/downtime/active"
-                hrefLabel="Downtime Log"
-            />
-        </div>
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <StatCard
+                    icon={Truck}
+                    label="Armada Aktif"
+                    value={summaryToday.armada_aktif || 0}
+                    suffix="Unit"
+                    color="blue"
+                    href="/fleet/armada"
+                    hrefLabel="Detail Armada"
+                />
+                <StatCard
+                    icon={MapPin}
+                    label="Ritase Hari Ini"
+                    value={summaryToday.ritase_today || 0}
+                    suffix="Trip"
+                    color="blue"
+                    href="/fleet/ritase"
+                    hrefLabel="Log Ritase"
+                />
+                <StatCard
+                    icon={Wrench}
+                    label="Servis Jatuh Tempo"
+                    value={summaryToday.unit_servis_jatuh_tempo || 0}
+                    suffix="Unit"
+                    color="purple"
+                    href="/fleet/armada"
+                    hrefLabel="Detail Servis"
+                />
+                <StatCard
+                    icon={Clock}
+                    label="Downtime Aktif"
+                    value={summaryToday.downtime_aktif || 0}
+                    suffix="Unit"
+                    color="red"
+                    href="/fleet/downtime/active"
+                    hrefLabel="Downtime Log"
+                />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {ritaseRows.length > 0 && (
+                    <DashboardPanel
+                        icon={MapPin}
+                        title="Ritase Hari Ini"
+                        subtitle="Aktivitas pengiriman terbaru"
+                        accent="blue"
+                        badge={ritaseRows.length}
+                        href="/fleet/ritase"
+                    >
+                        <DashboardRowList
+                            rows={ritaseRows}
+                            getHref={(row) => route('fleet.ritase.show', { ritase: row.id })}
+                            empty="Belum ada ritase hari ini"
+                            max={6}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {downtimeRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Activity}
+                        title="Downtime Berlangsung"
+                        subtitle="Kendaraan tidak beroperasi"
+                        accent="red"
+                        badge={downtimeRows.length}
+                        href="/fleet/downtime/active"
+                    >
+                        <DashboardRowList
+                            rows={downtimeRows}
+                            getHref={(row) => route('fleet.armada.show', { armada: row.armada_id })}
+                            empty="Tidak ada downtime berlangsung"
+                            max={6}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {aktifRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Truck}
+                        title="Armada Aktif"
+                        subtitle="Unit beroperasi & PIC"
+                        accent="blue"
+                        badge={widgets.total_armada || aktifRows.length}
+                        href="/fleet/armada"
+                    >
+                        <DashboardRowList
+                            rows={aktifRows}
+                            getHref={(row) => route('fleet.armada.show', { armada: row.id })}
+                            empty="Tidak ada armada aktif"
+                            max={6}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {servisRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Wrench}
+                        title="Servis Jatuh Tempo"
+                        subtitle="Jadwal servis berkala"
+                        accent="purple"
+                        badge={servisRows.length}
+                        href="/fleet/armada"
+                    >
+                        <DashboardRowList
+                            rows={servisRows}
+                            getHref={(row) => route('fleet.armada.show', { armada: row.id })}
+                            empty="Semua armada bebas servis"
+                            max={6}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {(widgets.bbm_today_chart || []).length > 0 && (
+                    <DashboardPanel
+                        icon={Fuel}
+                        title="Konsumsi BBM Hari Ini"
+                        subtitle="Liter per armada"
+                        accent="green"
+                        href="/fleet/bbm"
+                    >
+                        <div className="h-56 w-full pt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={widgets.bbm_today_chart} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="armada" fontSize={10} />
+                                    <YAxis fontSize={10} />
+                                    <Tooltip />
+                                    <Bar dataKey="liter" name="Liter" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DashboardPanel>
+                )}
+
+                {(widgets.status_distribution || []).length > 0 && (
+                    <DashboardPanel
+                        icon={BarChart3}
+                        title="Distribusi Status Armada"
+                        subtitle="Aktif, servis & nonaktif"
+                        accent="indigo"
+                        href="/fleet/armada"
+                    >
+                        <div className="h-56 w-full pt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={widgets.status_distribution} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="status" fontSize={10} />
+                                    <YAxis allowDecimals={false} fontSize={10} />
+                                    <Tooltip />
+                                    <Bar dataKey="total" name="Unit" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DashboardPanel>
+                )}
+            </div>
+        </>
     );
 }
 
 function ProduksiDashboard({ ownerData }) {
     const summaryToday = ownerData?.summary_today || {};
+    const widgets = ownerData?.widgets?.produksi || {};
+
+    const sesiRows = (widgets.sesi_berjalan_list || []).map((s) => ({
+        id: s.id,
+        primary: s.produk || '-',
+        secondary: `${s.mesin || '-'} • ${s.titik || '-'}`,
+        badge: s.mulai ? new Date(s.mulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '',
+        badgeClass: 'bg-green-100 text-green-800',
+        meta: s.satuan || '',
+    }));
+
+    const qcRows = (widgets.qc_pending_list || []).map((q) => ({
+        id: q.id,
+        primary: q.produk || '-',
+        secondary: `${q.titik || '-'} • rencana uji ${q.rencana_uji_tekan || '-'}`,
+        badge: q.status || 'menunggu',
+        badgeClass: 'bg-amber-100 text-amber-800',
+    }));
+
+    const pengirimanRows = (widgets.pengiriman_today_list || []).map((p) => ({
+        id: p.id,
+        primary: p.armada || 'Tanpa armada',
+        secondary: `${p.tujuan || '-'}`,
+        badge: p.status || '',
+        badgeClass: p.status === 'dalam_perjalanan' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800',
+        meta: p.driver || '',
+    }));
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-                icon={Factory}
-                label="Output Produksi"
-                value={`${Number(summaryToday.produksi_output || 0).toLocaleString('id-ID')} unit`}
-                color="green"
-                suffix="Hari Ini"
-                href="/production/dashboard"
-                hrefLabel="Dashboard Produksi"
-            />
-            <StatCard
-                icon={Wrench}
-                label="Mesin Aktif"
-                value={summaryToday.mesin_aktif || 0}
-                suffix="Unit"
-                color="green"
-                href="/production/mesin"
-                hrefLabel="Mesin Produksi"
-            />
-            <StatCard
-                icon={ClipboardList}
-                label="QC Pending"
-                value={summaryToday.qc_pending || 0}
-                suffix="Sample"
-                color="amber"
-                href="/production/qc"
-                hrefLabel="QC Samples"
-            />
-            <StatCard
-                icon={Truck}
-                label="Pengiriman Hari Ini"
-                value={summaryToday.pengiriman_today || 0}
-                suffix="Unit"
-                color="blue"
-                href="/production/pengiriman"
-                hrefLabel="Pengiriman"
-            />
-        </div>
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <StatCard
+                    icon={Factory}
+                    label="Output Produksi"
+                    value={`${Number(summaryToday.produksi_output || 0).toLocaleString('id-ID')} unit`}
+                    color="green"
+                    suffix="Hari Ini"
+                    href="/production/dashboard"
+                    hrefLabel="Dashboard Produksi"
+                />
+                <StatCard
+                    icon={Wrench}
+                    label="Mesin Aktif"
+                    value={summaryToday.mesin_aktif || 0}
+                    suffix="Unit"
+                    color="green"
+                    href="/production/mesin"
+                    hrefLabel="Mesin Produksi"
+                />
+                <StatCard
+                    icon={ClipboardList}
+                    label="QC Pending"
+                    value={summaryToday.qc_pending || 0}
+                    suffix="Sample"
+                    color="amber"
+                    href="/production/qc"
+                    hrefLabel="QC Samples"
+                />
+                <StatCard
+                    icon={Truck}
+                    label="Pengiriman Hari Ini"
+                    value={summaryToday.pengiriman_today || 0}
+                    suffix="Unit"
+                    color="blue"
+                    href="/production/pengiriman"
+                    hrefLabel="Pengiriman"
+                />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {sesiRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Factory}
+                        title="Sesi Produksi Berjalan"
+                        subtitle="Aktivitas mesin saat ini"
+                        accent="green"
+                        badge={sesiRows.length}
+                        href="/production/sessions"
+                    >
+                        <DashboardRowList
+                            rows={sesiRows}
+                            getHref={(row) => route('production.sessions.show', { session: row.id })}
+                            empty="Tidak ada sesi berjalan"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {qcRows.length > 0 && (
+                    <DashboardPanel
+                        icon={FlaskConical}
+                        title="QC Menunggu Uji Tekan"
+                        subtitle="Sampel uji tekan beton"
+                        accent="amber"
+                        badge={qcRows.length}
+                        href="/production/qc"
+                    >
+                        <DashboardRowList
+                            rows={qcRows}
+                            getHref={(row) => route('production.qc.pending')}
+                            empty="Tidak ada QC pending"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+
+                {pengirimanRows.length > 0 && (
+                    <DashboardPanel
+                        icon={Package}
+                        title="Pengiriman Hari Ini"
+                        subtitle="Pengiriman beton/jarak"
+                        accent="blue"
+                        badge={pengirimanRows.length}
+                        href="/production/pengiriman"
+                    >
+                        <DashboardRowList
+                            rows={pengirimanRows}
+                            getHref={(row) => route('production.pengiriman.show', { pengiriman: row.id })}
+                            empty="Tidak ada pengiriman hari ini"
+                            max={5}
+                        />
+                    </DashboardPanel>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {(widgets.output_per_produk || []).length > 0 && (
+                    <DashboardPanel
+                        icon={BarChart3}
+                        title="Output per Produk (Hari Ini)"
+                        subtitle="Total output produksi"
+                        accent="green"
+                        href="/production/dashboard"
+                    >
+                        <div className="h-56 w-full pt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={widgets.output_per_produk} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="produk" fontSize={10} />
+                                    <YAxis fontSize={10} />
+                                    <Tooltip />
+                                    <Bar dataKey="output" name="Output" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DashboardPanel>
+                )}
+
+                {(widgets.tren_7_hari || []).length > 0 && (
+                    <DashboardPanel
+                        icon={TrendingUp}
+                        title="Tren Output 7 Hari"
+                        subtitle="Histori produksi harian"
+                        accent="indigo"
+                    >
+                        <div className="h-56 w-full pt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={widgets.tren_7_hari} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="tanggal" fontSize={10} />
+                                    <YAxis fontSize={10} />
+                                    <Tooltip />
+                                    <Bar dataKey="output" name="Output" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DashboardPanel>
+                )}
+            </div>
+        </>
     );
 }
 
