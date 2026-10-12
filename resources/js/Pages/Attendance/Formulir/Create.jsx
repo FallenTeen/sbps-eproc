@@ -54,7 +54,7 @@ export default function Create({ presensis }) {
                         <option value="">Pilih Presensi</option>
                         {presensis.map((p) => (
                             <option key={p.id} value={p.id}>
-                                {p.karyawan?.nama} — {new Date(p.check_in).toLocaleString("id-ID")}
+                                {p.karyawan?.nama} — {new Date(p.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                             </option>
                         ))}
                     </select>

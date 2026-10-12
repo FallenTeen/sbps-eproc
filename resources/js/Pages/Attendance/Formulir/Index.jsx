@@ -73,7 +73,7 @@ export default function Index({ formulirs, filters }) {
                                         {f.presensi?.karyawan?.nama}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {f.presensi?.check_in ? new Date(f.presensi.check_in).toLocaleDateString("id-ID") : "-"}
+                                        {f.presensi?.check_in ? new Date(f.presensi.check_in).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) : "-"}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{f.aktivitas_dilakukan}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{f.kondisi_area || "-"}</td>

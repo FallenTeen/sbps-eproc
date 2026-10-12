@@ -79,7 +79,7 @@ function getAllMenus() {
             icon: Truck,
             permission: ['manage fleet', 'view fleet'],
             items: [
-                { title: 'Armada (GCS)', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Unit Armada', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
@@ -88,7 +88,6 @@ function getAllMenus() {
                 { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Monitoring Armada', href: safeRoute('fleet.monitoring-armada.index', {}, '/fleet/monitoring-armada'), routeName: 'fleet.monitoring-armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
-                { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
             ],
         },
         {
@@ -108,6 +107,7 @@ function getAllMenus() {
             permission: ['manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc'],
             items: [
                 { title: 'Dashboard Produksi', href: safeRoute('production.dashboard', {}, '/production/dashboard'), routeName: 'production.dashboard', permission: ['manage production cbp', 'manage production amp', 'view production'] },
+                { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*', permission: ['manage production cbp', 'manage production amp', 'view production', 'start session'] },
                 { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Pengiriman Armada Transportasi', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },

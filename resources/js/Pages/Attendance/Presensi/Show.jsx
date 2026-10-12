@@ -2,12 +2,40 @@ import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import StatusBadge from "@/Components/StatusBadge";
-import { ArrowLeft, Clock, LogOut, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Camera, Clock, ImageOff, LogOut, MapPin, ShieldCheck, X } from "lucide-react";
 
 export default function Show({ presensi }) {
     const [checkout, setCheckout] = useState({ check_out_lat: "", check_out_lng: "" });
     const [review, setReview] = useState({ status_validasi: presensi.status_validasi, catatan_override: presensi.catatan_override || "" });
     const [processing, setProcessing] = useState(false);
+    const [zoom, setZoom] = useState(null);
+
+    const photoMeta = (meta) => {
+        if (!meta) return null;
+        const lat = meta.latitude ?? meta.lat;
+        const lng = meta.longitude ?? meta.lng;
+        return lat != null && lng != null ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}` : null;
+    };
+
+    const PhotoCard = ({ label, url, meta }) => (
+        <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <p className="px-3 py-2 text-sm font-medium text-gray-900 bg-gray-50 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-gray-400" />
+                {label}
+            </p>
+            {url ? (
+                <button type="button" onClick={() => setZoom(url)} className="block w-full group">
+                    <img src={url} alt={label} className="w-full h-56 object-cover group-hover:opacity-90 transition" />
+                    {meta && <p className="px-3 py-1.5 text-xs text-gray-500 bg-gray-50">{meta}</p>}
+                </button>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-56 bg-gray-50 text-gray-400">
+                    <ImageOff className="w-8 h-8 mb-2" />
+                    <p className="text-xs">Tidak ada foto</p>
+                </div>
+            )}
+        </div>
+    );
 
     const doCheckout = () => {
         if (!navigator.geolocation) {
@@ -67,7 +95,7 @@ export default function Show({ presensi }) {
                             <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                             <div>
                                 <p className="text-sm font-medium text-gray-900">Check-In</p>
-                                <p className="text-sm text-gray-600">{new Date(presensi.check_in).toLocaleString("id-ID")}</p>
+                                <p className="text-sm text-gray-600">{new Date(presensi.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</p>
                                 {presensi.check_in_lat && (
                                     <p className="text-xs text-gray-500">{presensi.check_in_lat}, {presensi.check_in_lng}</p>
                                 )}
@@ -78,7 +106,7 @@ export default function Show({ presensi }) {
                             <div>
                                 <p className="text-sm font-medium text-gray-900">Check-Out</p>
                                 <p className="text-sm text-gray-600">
-                                    {presensi.check_out ? new Date(presensi.check_out).toLocaleString("id-ID") : "Belum check-out"}
+                                    {presensi.check_out ? new Date(presensi.check_out).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "Belum check-out"}
                                 </p>
                                 {presensi.check_out_lat && (
                                     <p className="text-xs text-gray-500">{presensi.check_out_lat}, {presensi.check_out_lng}</p>
@@ -92,6 +120,26 @@ export default function Show({ presensi }) {
                         <div>
                             <p className="text-sm font-medium text-gray-900">Titik</p>
                             <p className="text-sm text-gray-600">{presensi.titik?.nama || "Tidak ada titik"}</p>
+                        </div>
+                    </div>
+
+                    {/* Foto Bukti Presensi — untuk verifikasi */}
+                    <div className="border-t border-gray-100 pt-4">
+                        <p className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <Camera className="w-4 h-4 text-gray-400" />
+                            Foto Bukti Presensi
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <PhotoCard
+                                label="Foto Check-In"
+                                url={presensi.check_in_photo_url}
+                                meta={photoMeta(presensi.check_in_photo_metadata)}
+                            />
+                            <PhotoCard
+                                label="Foto Check-Out"
+                                url={presensi.check_out_photo_url}
+                                meta={photoMeta(presensi.check_out_photo_metadata)}
+                            />
                         </div>
                     </div>
 
@@ -174,6 +222,28 @@ export default function Show({ presensi }) {
                     </form>
                 </div>
             </div>
+
+            {/* Lightbox zoom foto */}
+            {zoom && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setZoom(null)}
+                >
+                    <button
+                        type="button"
+                        className="absolute top-4 right-4 inline-flex items-center gap-2 text-white hover:text-gray-300 text-sm"
+                    >
+                        <X className="w-5 h-5" />
+                        Tutup
+                    </button>
+                    <img
+                        src={zoom}
+                        alt="Foto presensi"
+                        className="max-w-full max-h-full rounded-lg shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }

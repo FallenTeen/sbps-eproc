@@ -23,7 +23,7 @@ export default function Show({ formulir }) {
                     <div>
                         <p className="text-sm font-medium text-gray-900">Presensi Terkait</p>
                         <p className="text-sm text-gray-600">
-                            {formulir.presensi?.karyawan?.nama} — {new Date(formulir.presensi?.check_in).toLocaleString("id-ID")}
+                            {formulir.presensi?.karyawan?.nama} — {new Date(formulir.presensi?.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                         </p>
                         <p className="text-xs text-gray-500">Titik: {formulir.presensi?.titik?.nama || "-"}</p>
                     </div>

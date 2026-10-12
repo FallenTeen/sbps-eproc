@@ -13,6 +13,7 @@ use App\Domain\Production\Models\QCSample;
 use App\Models\User;
 use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Data demo untuk pengujian aplikasi mobile di staging.
@@ -202,15 +203,23 @@ class MobileDemoDataSeeder extends Seeder
                 $checkOut = $date->copy()->addHours(16)->addMinutes(15);
             }
 
-            Presensi::firstOrCreate(
+            // Foto demo agar menu "Foto Bukti Presensi" di web bisa dites.
+            $checkInPhoto = $this->demoPhoto('check-in', $i, $lat, $lng);
+            $checkOutPhoto = $this->demoPhoto('check-out', $i, $lat, $lng);
+
+            Presensi::updateOrCreate(
                 ['karyawan_id' => $karyawanId, 'check_in' => $checkIn],
                 [
                     'titik_id' => $titikId,
                     'check_in_lat' => $lat,
                     'check_in_lng' => $lng,
+                    'check_in_photo' => $checkInPhoto,
+                    'check_in_photo_metadata' => ['latitude' => $lat, 'longitude' => $lng],
                     'check_out' => $checkOut,
                     'check_out_lat' => $lat,
                     'check_out_lng' => $lng,
+                    'check_out_photo' => $checkOutPhoto,
+                    'check_out_photo_metadata' => ['latitude' => $lat, 'longitude' => $lng],
                     'status_validasi' => 'valid',
                     'catatan_override' => null,
                     'device_id' => 'demo-device',
@@ -237,7 +246,7 @@ class MobileDemoDataSeeder extends Seeder
             'check_in' => now()->startOfDay()->addHours(6)->addMinutes(45),
             'check_in_lat' => $lat,
             'check_in_lng' => $lng,
-            'check_in_photo' => null,
+            'check_in_photo' => $this->demoPhoto('check-in', 'today', $lat, $lng),
             'check_in_photo_metadata' => ['latitude' => $lat, 'longitude' => $lng],
             'check_out' => null,
             'check_out_lat' => null,
@@ -248,6 +257,31 @@ class MobileDemoDataSeeder extends Seeder
             'catatan_override' => null,
             'device_id' => 'demo-device',
         ]);
+    }
+
+    /**
+     * Tulis file foto demo (SVG sederhana) sekali ke disk 'public' dan
+     * kembalikan path relatifnya — dipakai agar menu "Foto Bukti Presensi"
+     * di web dapat dites tanpa harus upload foto asli dari perangkat.
+     */
+    private function demoPhoto(string $dir, string|int $key, float $lat, float $lng): string
+    {
+        $path = "presensi/{$dir}/demo-{$key}.svg";
+
+        if (! Storage::disk('public')->exists($path)) {
+            $label = $dir === 'check-in' ? 'Foto Check-In' : 'Foto Check-Out';
+            Storage::disk('public')->put($path, <<<SVG
+            <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480">
+              <rect width="100%" height="100%" fill="#e5e7eb"/>
+              <rect x="16" y="16" width="608" height="448" fill="none" stroke="#9ca3af" stroke-width="4" rx="12"/>
+              <text x="320" y="200" font-size="34" text-anchor="middle" fill="#374151" font-family="sans-serif">{$label}</text>
+              <text x="320" y="260" font-size="22" text-anchor="middle" fill="#6b7280" font-family="sans-serif">{$lat}, {$lng}</text>
+              <text x="320" y="320" font-size="18" text-anchor="middle" fill="#9ca3af" font-family="sans-serif">Foto demo seeder (staging)</text>
+            </svg>
+            SVG);
+        }
+
+        return $path;
     }
 
     private function seedFormulir(?Presensi $presensi, array $data): void

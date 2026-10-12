@@ -43,6 +43,23 @@ class Presensi extends Model
         'check_out_photo_metadata' => 'array',
     ];
 
+    protected $appends = [
+        'check_in_photo_url',
+        'check_out_photo_url',
+    ];
+
+    /// URL lengkap foto check-in untuk verifikasi (null jika tidak ada foto).
+    public function getCheckInPhotoUrlAttribute(): ?string
+    {
+        return $this->check_in_photo ? asset('storage/' . $this->check_in_photo) : null;
+    }
+
+    /// URL lengkap foto check-out (null jika tidak ada foto / belum check-out).
+    public function getCheckOutPhotoUrlAttribute(): ?string
+    {
+        return $this->check_out_photo ? asset('storage/' . $this->check_out_photo) : null;
+    }
+
     // Relasi
     public function karyawan()
     {

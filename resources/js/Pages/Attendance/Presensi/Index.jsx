@@ -4,7 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import StatusBadge from "@/Components/StatusBadge";
 import {
     Plus, Search, Eye, MapPin, Clock, ClipboardList, Users,
-    CheckCircle2, AlertTriangle, XCircle, ChevronRight,
+    CheckCircle2, AlertTriangle, XCircle, ChevronRight, Camera, ImageOff,
 } from "lucide-react";
 
 const GROUP_OPTIONS = [
@@ -348,6 +348,7 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-In</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-Out</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Foto</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Formulir</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">Aksi</th>
                                 </tr>
@@ -355,7 +356,7 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {presensis.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
+                                        <td colSpan="8" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
                                     </tr>
                                 ) : (
                                     presensis.data.map((p) => (
@@ -370,13 +371,13 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                                                 ) : "-"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {p.check_in ? new Date(p.check_in).toLocaleString("id-ID") : "-"}
+                                                {p.check_in ? new Date(p.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "-"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {p.check_out ? (
                                                     <span className="inline-flex items-center gap-1">
                                                         <Clock className="w-3 h-3 text-gray-400" />
-                                                        {new Date(p.check_out).toLocaleString("id-ID")}
+                                                        {new Date(p.check_out).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                                                     </span>
                                                 ) : "-"}
                                             </td>
@@ -385,6 +386,34 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                                                 {p.catatan_override && (
                                                     <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-3">
+                                                    <Link
+                                                        href={route("attendance.presensi.show", p.id)}
+                                                        title="Lihat foto check-in"
+                                                    >
+                                                        {p.check_in_photo ? (
+                                                            <img src={p.check_in_photo_url || "/storage/" + p.check_in_photo} alt="Check-in" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
+                                                        ) : (
+                                                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-in">
+                                                                <ImageOff className="w-4 h-4" />
+                                                            </span>
+                                                        )}
+                                                    </Link>
+                                                    <Link
+                                                        href={route("attendance.presensi.show", p.id)}
+                                                        title="Lihat foto check-out"
+                                                    >
+                                                        {p.check_out_photo ? (
+                                                            <img src={p.check_out_photo_url || "/storage/" + p.check_out_photo} alt="Check-out" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
+                                                        ) : (
+                                                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-out">
+                                                                <Camera className="w-4 h-4" />
+                                                            </span>
+                                                        )}
+                                                    </Link>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {p.formulir ? "Terkirim" : "-"}

@@ -9,6 +9,8 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Procurement\Models\PurchaseOrder;
+use App\Domain\Production\Models\MesinProduksi;
+use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ProductionSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -162,4 +164,173 @@ test('user internal ber-unit hanya melihat proyek unitnya sendiri', function () 
     expect(count($ids))->toBe(3)
         ->and($ids)->not->toContain($this->proyekUnitB->id)
         ->and($ids)->toContain($this->proyekMilik->id);
+});
+
+// ── Phase 1: Widget antar modul (list clickable + chart) ──────────────
+
+test('owner menerima widget armada (list + chart) dengan data lintas unit', function () {
+    $armadaUnitA = Armada::factory()->for($this->unit)->create();
+    $armadaUnitB = Armada::factory()->for($this->unitB)->create();
+    $kendaraan = Armada::factory()->for($this->unit)->truckMolen()->create();
+
+    $rute = RuteTarif::factory()->create();
+    $driver = Karyawan::factory()->create();
+    Ritase::factory()->create([
+        'armada_id' => $armadaUnitA->id,
+        'driver_karyawan_id' => $driver->id,
+        'rute_tarif_id' => $rute->id,
+        'tanggal' => now()->toDateString(),
+        'proyek_id' => $this->proyekMilik->id,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->has('ownerData.widgets.armada.aktif_list', 3)
+            ->has('ownerData.widgets.armada.ritase_today_list', 1)
+            ->where('ownerData.widgets.armada.ritase_today_list.0.armada_id', $armadaUnitA->id)
+            ->has('ownerData.widgets.armada.total_armada')
+            ->has('ownerData.widgets.armada.status_distribution')
+            ->has('ownerData.widgets.armada.bbm_today_chart')
+        );
+});
+
+test('armada widget DISCALING lingkup unit untuk user ber-unit (bukan kebocoran global)', function () {
+    $armadaUnitA = Armada::factory()->for($this->unit)->create();
+    $armadaUnitB = Armada::factory()->for($this->unitB)->create();
+
+    $user = User::factory()->create(['unit_bisnis_id' => $this->unit->id]);
+    $user->assignRole('Koordinator GCS');
+
+    $response = $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk();
+
+    $assert = Assert::fromTestResponse($response);
+    $widgets = $assert->toArray()['props']['ownerData']['widgets']['armada'] ?? null;
+
+    expect($widgets)->not->toBeNull()
+        ->and($widgets['total_armada'])->toBe(1)
+        ->and($widgets['aktif_list'])->toHaveCount(1)
+        ->and($widgets['aktif_list'][0]['id'])->toBe($armadaUnitA->id);
+
+    $allIds = array_column($widgets['aktif_list'], 'id');
+    expect($allIds)->not->toContain($armadaUnitB->id);
+});
+
+test('owner menerima widget admin: PO pending, unit summary, audit & deadline', function () {
+    PurchaseOrder::factory()
+        ->for($this->proyekMilik)
+        ->create(['status' => 'menunggu_approval_finance']);
+    PurchaseOrder::factory()
+        ->for($this->proyekMilik)
+        ->create(['status' => 'menunggu_approval_owner']);
+
+    $this->actingAs($this->owner)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->has('ownerData.widgets.admin.po_pending_list', 2)
+            ->where('ownerData.widgets.admin.po_pending_list.0.status', 'menunggu_approval_finance')
+            ->where('ownerData.widgets.admin.po_pending_list.0.status_label', 'Menunggu Approval Finance')
+            ->has('ownerData.widgets.admin.unit_summary', 2)
+            ->has('ownerData.widgets.admin.deadline_list')
+            ->has('ownerData.widgets.admin.audit_list')
+        );
+});
+
+test('unit summary berisi volume per unit bisnis (proyek/titik/armada) dengan total konsisten', function () {
+    Armada::factory()->for($this->unit)->create();
+
+    $response = $this->actingAs($this->owner)
+        ->get(route('dashboard'))
+        ->assertOk();
+
+    $assert = Assert::fromTestResponse($response);
+    $unitSummary = $assert->toArray()['props']['ownerData']['widgets']['admin']['unit_summary'] ?? [];
+
+    expect(count($unitSummary))->toBe(2);
+
+    // Unit pertama 3 proyek (milik+orang+internal), unit kedua 1 proyek.
+    $byProyek = collect($unitSummary)
+        ->map(fn ($u) => $u['proyek_aktif'])
+        ->sort()
+        ->values()
+        ->all();
+    expect($byProyek)->toBe([1, 3]);
+
+    // Armada aktif di unit pertama (unit milik) = 1.
+    $byArmada = collect($unitSummary)
+        ->map(fn ($u) => $u['armada_aktif'])
+        ->sum();
+    expect($byArmada)->toBe(1);
+
+    // Titik aktif: hanya titik dari proyek unit pertama.
+    $byTitik = collect($unitSummary)
+        ->map(fn ($u) => $u['titik_aktif'])
+        ->sum();
+    expect($byTitik)->toBe(2);
+});
+
+test('kontraktor TIDAK menerima widget antar modul (armada/admin/produksi)', function () {
+    Armada::factory()->for($this->unit)->create();
+    PurchaseOrder::factory()->for($this->proyekMilik)->create(['status' => 'menunggu_approval_finance']);
+
+    $kontraktor = User::factory()->create();
+    $kontraktor->assignRole('Kontraktor');
+    $this->proyekMilik->users()->sync([$kontraktor->id]);
+
+    $this->actingAs($kontraktor)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->missing('ownerData.widgets.armada')
+            ->missing('ownerData.widgets.admin')
+            ->missing('ownerData.widgets.produksi')
+        );
+});
+
+test('koordinator produksi menerima widget produksi (sesi jalan, QC, pengiriman, tren)', function () {
+    $mesin = MesinProduksi::create([
+        'unit_bisnis_id' => $this->unit->id,
+        'nama' => 'AMP 1',
+        'jenis' => 'mixer_aspal',
+        'kapasitas' => '60 tph',
+        'status' => 'aktif',
+        'titik_id' => $this->titikMilik->id,
+    ]);
+    $produk = Produk::factory()->for($this->unit)->create();
+    $operator = Karyawan::factory()->create();
+
+    ProductionSession::create([
+        'mesin_id' => $mesin->id,
+        'titik_id' => $this->titikMilik->id,
+        'produk_id' => $produk->id,
+        'operator_karyawan_id' => $operator->id,
+        'mulai' => now()->subHour(),
+        'status' => 'berjalan',
+        'hasil_output' => 0,
+    ]);
+
+    $produksi = User::factory()->create();
+    $produksi->assignRole('Koordinator CBP');
+
+    $this->actingAs($produksi)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->has('ownerData.widgets.produksi.sesi_berjalan_list', 1)
+            ->where('ownerData.widgets.produksi.sesi_berjalan_list.0.produk', $produk->nama)
+            ->where('ownerData.widgets.produksi.sesi_berjalan_list.0.titik', $this->titikMilik->nama)
+            ->has('ownerData.widgets.produksi.qc_pending_list')
+            ->has('ownerData.widgets.produksi.pengiriman_today_list')
+            ->has('ownerData.widgets.produksi.output_per_produk')
+            ->has('ownerData.widgets.produksi.tren_7_hari', 7)
+            ->missing('ownerData.widgets.armada')
+        );
 });

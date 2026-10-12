@@ -31,6 +31,9 @@ use Illuminate\Support\Facades\Hash;
  *   ------------------------  ---------------------  -------------------  ------------------
  *   Mandor Titik              Presensi + Proyek      produksi, qc,        ya
  *                                                     tracking, dashboard
+ *   Mandor Proyek             Presensi + Proyek      produksi, qc         ya
+ *   Koordinator CBP / AMP     Presensi + Proyek      produksi, qc         ya
+ *   Ketua Divisi Produksi     Presensi + Proyek      produksi, qc         tidak
  *   SDM Lapangan Kondisional  Presensi               (tidak ada)          ya
  *   Kontraktor                Proyek                 dashboard            tidak
  *   Owner                     Proyek                 produksi, qc,        tidak
@@ -237,6 +240,67 @@ class MobileTestUserSeeder extends Seeder
                 'tipe' => 'tetap',
                 'rate_harian' => 0,
                 'tugas' => false,
+            ],
+            // ─── Role Divisi Produksi (CBP/AMP) — terpisah dari tim Armada ───
+            [
+                'email' => 'test.koordinator.cbp@dummy.com',
+                'name' => 'Test Koordinator CBP',
+                'nama_lengkap' => 'Sigit Koordinator CBP',
+                'jabatan' => 'Koordinator CBP',
+                'role' => 'Koordinator CBP',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Sigit Koordinator CBP',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => true,
+            ],
+            [
+                'email' => 'test.koordinator.amp@dummy.com',
+                'name' => 'Test Koordinator AMP',
+                'nama_lengkap' => 'Rina Koordinator AMP',
+                'jabatan' => 'Koordinator AMP',
+                'role' => 'Koordinator AMP',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Rina Koordinator AMP',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => true,
+            ],
+            [
+                'email' => 'test.ketua.produksi.cbp@dummy.com',
+                'name' => 'Test Ketua Divisi Produksi CBP',
+                'nama_lengkap' => 'Ahmad Ketua Divisi Produksi CBP',
+                'jabatan' => 'Ketua Divisi Produksi',
+                'role' => 'Ketua Divisi Produksi CBP',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Ahmad Ketua Divisi Produksi CBP',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.ketua.produksi.amp@dummy.com',
+                'name' => 'Test Ketua Divisi Produksi AMP',
+                'nama_lengkap' => 'Yuni Ketua Divisi Produksi AMP',
+                'jabatan' => 'Ketua Divisi Produksi',
+                'role' => 'Ketua Divisi Produksi AMP',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Yuni Ketua Divisi Produksi AMP',
+                'tipe' => 'tetap',
+                'rate_harian' => 0,
+                'tugas' => false,
+            ],
+            [
+                'email' => 'test.mandor.proyek@dummy.com',
+                'name' => 'Test Mandor Proyek',
+                'nama_lengkap' => 'Rizky Mandor Proyek',
+                'jabatan' => 'Mandor Proyek',
+                'role' => 'Mandor Proyek',
+                'divisi' => 'Produksi',
+                'karyawan_nama' => 'Rizky Mandor Proyek',
+                'tipe' => 'harian',
+                'rate_harian' => 185_000,
+                'tugas' => true,
             ],
         ];
 
