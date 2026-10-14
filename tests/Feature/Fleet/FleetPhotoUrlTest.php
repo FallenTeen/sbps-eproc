@@ -59,10 +59,10 @@ test('pengisian solar menyertakan url foto odo & nota saat diserialisasi', funct
         ->toHaveKey('foto_odo_url')
         ->toHaveKey('foto_nota_url')
         ->and($array['foto_odo_url'])
-        ->toBe(Storage::disk('public')->url('armada/checklist/2026/10/odo.jpg'))
+        ->toBe(Storage::disk('public')->url('armada/solar/2026/10/odo.jpg'))
         ->and($array['foto_nota_url'])
-        ->toBe(Storage::disk('public')->url('armada/checklist/2026/10/solar.jpg'));
-})->skip('placeholder');
+        ->toBe(Storage::disk('public')->url('armada/solar/2026/10/nota.jpg'));
+});
 
 test('presensi helper menyertakan url foto check-in & check-out', function () {
     $presensi = new PresensiHelper([
