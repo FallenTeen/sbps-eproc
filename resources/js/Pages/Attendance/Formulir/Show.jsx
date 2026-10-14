@@ -54,7 +54,21 @@ export default function Show({ formulir }) {
                             <Camera className="w-4 h-4 text-gray-400" />
                             Foto
                         </p>
-                        <img src={formulir.foto} alt="Formulir" className="rounded-lg border border-gray-200 max-h-80" />
+                        <div className="flex flex-wrap gap-3">
+                            {formulir.foto
+                                .split(",")
+                                .map((f) => f.trim())
+                                .filter(Boolean)
+                                .map((f) => (
+                                    <a key={f} href={`/storage/${f}`} target="_blank" rel="noreferrer">
+                                        <img
+                                            src={`/storage/${f}`}
+                                            alt="Formulir"
+                                            className="rounded-lg border border-gray-200 max-h-80 hover:opacity-90"
+                                        />
+                                    </a>
+                                ))}
+                        </div>
                     </div>
                 )}
             </div>

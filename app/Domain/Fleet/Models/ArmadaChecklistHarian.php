@@ -46,6 +46,9 @@ class ArmadaChecklistHarian extends Model
         'hm_odo' => 'float',
     ];
 
+    /** URL foto ikut terkirim ke web tanpa perlu dipanggil manual. */
+    protected $appends = ['foto_odo_pagi_url', 'foto_stok_solar_url'];
+
     protected static function newFactory()
     {
         return ArmadaChecklistHarianFactory::new();

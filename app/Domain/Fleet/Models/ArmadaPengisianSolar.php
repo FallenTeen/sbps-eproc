@@ -47,6 +47,9 @@ class ArmadaPengisianSolar extends Model
         'harga_per_liter' => 'float',
     ];
 
+    /** URL foto ikut terkirim ke web tanpa perlu dipanggil manual. */
+    protected $appends = ['foto_odo_url', 'foto_nota_url'];
+
     public function armada()
     {
         return $this->belongsTo(Armada::class);

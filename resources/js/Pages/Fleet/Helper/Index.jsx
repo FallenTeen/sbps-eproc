@@ -360,11 +360,41 @@ function HelperRow({ helper, armadas, statuses }) {
                     {presensis.length === 0 ? (
                         "-"
                     ) : (
-                        <ul className="space-y-0.5">
+                        <ul className="space-y-1">
                             {presensis.map((p) => (
-                                <li key={p.id}>
-                                    {formatTanggal(p.tanggal)} · {p.check_in ? "in" : "-"}
-                                    {p.check_out ? " / out" : ""}
+                                <li key={p.id} className="flex items-center gap-2">
+                                    <span>
+                                        {formatTanggal(p.tanggal)} · {p.check_in ? "in" : "-"}
+                                        {p.check_out ? " / out" : ""}
+                                    </span>
+                                    {p.foto_check_in_url && (
+                                        <a
+                                            href={p.foto_check_in_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title="Foto check-in"
+                                        >
+                                            <img
+                                                src={p.foto_check_in_url}
+                                                alt="Check-in"
+                                                className="w-8 h-8 rounded object-cover border border-gray-200"
+                                            />
+                                        </a>
+                                    )}
+                                    {p.foto_check_out_url && (
+                                        <a
+                                            href={p.foto_check_out_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title="Foto check-out"
+                                        >
+                                            <img
+                                                src={p.foto_check_out_url}
+                                                alt="Check-out"
+                                                className="w-8 h-8 rounded object-cover border border-gray-200"
+                                            />
+                                        </a>
+                                    )}
                                 </li>
                             ))}
                         </ul>

@@ -50,6 +50,9 @@ class ArmadaChecklistAkhir extends Model
         'odo_anomali' => 'boolean',
     ];
 
+    /** URL foto ikut terkirim ke web tanpa perlu dipanggil manual. */
+    protected $appends = ['foto_odo_akhir_url', 'foto_stok_solar_url'];
+
     public function armada()
     {
         return $this->belongsTo(Armada::class);
