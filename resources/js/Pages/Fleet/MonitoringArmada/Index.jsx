@@ -47,6 +47,15 @@ const STATUS = {
     nonaktif: "bg-red-200 text-red-800",
 };
 
+const STOK_SOLAR = {
+    hampir_habis: "Hampir Habis",
+    seperempat: "1/4",
+    setengah: "1/2",
+    tiga_perempat: "3/4",
+    hampir_penuh: "Hampir Penuh",
+    penuh: "Penuh",
+};
+
 function KpiCard({ title, value, icon, colorClass, note }) {
     return (
         <div className={`rounded-xl shadow-sm border p-4 ${colorClass}`}>
@@ -629,6 +638,7 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                                     {th("Jam Aktif", "total_jam_aktif")}
                                     {th("HM/Jam · Jam/Rit", "rasio_hm_jam")}
                                     {th("ODO (km)", "total_odo_km")}
+                                    <th className="py-2 pr-4 text-left">Stok Solar</th>
                                     {th("Ritase", "jumlah_rit")}
                                     {th("Idle (hari)", "hari_sejak_aktivitas")}
                                     <th className="py-2 text-left">Keterangan</th>
@@ -690,6 +700,13 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                                                 : (u.jam_per_rit == null ? "-" : `${fmtNum(u.jam_per_rit)} j/rit`)}
                                         </td>
                                         <td className="py-2 pr-4 text-right tabular-nums">{fmtNum(u.total_odo_km)}</td>
+                                        <td className="py-2 pr-4">
+                                            {u.stok_solar_terakhir ? (
+                                                <span className="text-xs">{STOK_SOLAR[u.stok_solar_terakhir] || u.stok_solar_terakhir}</span>
+                                            ) : (
+                                                <span className="text-gray-300 text-xs">—</span>
+                                            )}
+                                        </td>
                                         <td className="py-2 pr-4 text-right tabular-nums">{u.jumlah_rit}</td>
                                         <td className="py-2 pr-4 text-right tabular-nums">
                                             {u.aktif ? (

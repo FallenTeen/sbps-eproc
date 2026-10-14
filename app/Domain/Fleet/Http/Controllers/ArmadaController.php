@@ -8,8 +8,10 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\AssignDriverToArmadaAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
 use App\Domain\Fleet\Actions\RecordBBMAction;
+use App\Domain\Fleet\Actions\RecordChecklistAkhirAction;
 use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
+use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
 use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
 use App\Domain\Fleet\Actions\StartDowntimeAction;
@@ -115,7 +117,9 @@ class ArmadaController extends Controller
             'unitBisnis',
             'titik',
             'serviceHistories',
-            'checklists' => fn ($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
+            'checklists' => fn ($q) => $q->with(['dicatatOleh', 'akhir'])->latest('tanggal')->limit(30),
+            'checklistAkhirs' => fn ($q) => $q->with(['dicatatOleh', 'awal'])->latest('tanggal')->limit(30),
+            'pengisianSolars' => fn ($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
             'bbmLogs' => fn ($q) => $q->latest('tanggal')->limit(30),
             'downtimes' => fn ($q) => $q->latest('mulai')->limit(10),
             'ritases' => fn ($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
@@ -146,6 +150,7 @@ class ArmadaController extends Controller
                 'proyeks' => $proyeksQuery->get(['id', 'nama', 'kode_proyek']),
                 'ruteTarifs' => RuteTarif::aktif()->get(['id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit']),
                 'titiks' => $titiksQuery->get(['id', 'nama']),
+                'stokSolarOptions' => StokSolar::options(),
             ],
             'can' => [
                 'recordRitase' => $canRecordRitase,
@@ -291,26 +296,72 @@ class ArmadaController extends Controller
     {
         $this->authorize('recordChecklist', $armada);
 
-        $data = $request->validate([
-            'tanggal' => 'required|date',
-            'kondisi_baik' => 'required|boolean',
-            'item_bermasalah' => 'nullable|string',
-            'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
-            'status' => 'nullable|in:berjalan,selesai',
-            'solar_liter' => 'nullable|numeric|min:0',
-            'solar_harga_rp' => 'nullable|numeric|min:0',
-            'odo_pagi' => 'nullable|numeric|min:0',
-            'foto_odo_pagi' => 'nullable|string',
-            'odo_sore' => 'nullable|numeric|min:0',
-            'foto_odo_sore' => 'nullable|string',
-            'jam_mulai_operasi' => 'nullable|date_format:H:i',
-            'jam_selesai_operasi' => 'nullable|date_format:H:i',
-            'hm_odo' => 'nullable|numeric|min:0',
-            'client_uuid' => 'nullable|string|max:36',
-        ]);
+        $data = $request->validate($this->checklistAwalRules());
+
         (new RecordChecklistAwalAction)->execute($armada, $data);
 
-        return back()->with('success', 'Checklist harian dicatat.');
+        return back()->with('success', 'Checklist awal dicatat.');
+    }
+
+    public function recordChecklistAkhir(Request $request, Armada $armada)
+    {
+        $this->authorize('recordChecklist', $armada);
+
+        $data = $request->validate($this->checklistAkhirRules());
+
+        (new RecordChecklistAkhirAction)->execute($armada, $data);
+
+        return back()->with('success', 'Checklist akhir dicatat.');
+    }
+
+    /** Aturan validasi checklist awal (dipakai web; mobile punya validasi sendiri). */
+    private function checklistAwalRules(): array
+    {
+        return [
+            'tanggal' => 'required|date',
+            'kondisi_baik' => 'nullable|boolean',
+            'item_bermasalah' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.bagian' => 'required_with:items|string|max:100',
+            'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable|string',
+            'foto_stok_solar_metadata' => 'nullable|array',
+            'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'foto_odo_pagi_metadata' => 'nullable|array',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
+        ];
+    }
+
+    /** Aturan validasi checklist akhir (final). */
+    private function checklistAkhirRules(): array
+    {
+        return [
+            'tanggal' => 'required|date',
+            'kondisi_baik' => 'nullable|boolean',
+            'item_bermasalah' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.bagian' => 'required_with:items|string|max:100',
+            'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable|string',
+            'foto_stok_solar_metadata' => 'nullable|array',
+            'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
+            'odo_akhir' => 'nullable|numeric|min:0',
+            'foto_odo_akhir' => 'nullable|string',
+            'foto_odo_akhir_metadata' => 'nullable|array',
+            'jam_selesai_operasi' => 'nullable|date_format:H:i',
+            'hm_akhir' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
+        ];
     }
 
     public function recordBbm(Request $request, Armada $armada)

@@ -944,97 +944,222 @@ function BbmSection({ armada, options }) {
     );
 }
 
-function ChecklistSection({ armada, options }) {
+const BAGIAN_DEFAULT = [
+    "Ban",
+    "Rem",
+    "Lampu",
+    "Oli mesin",
+    "Air radiator",
+    "Body",
+    "Kabin",
+];
+
+const KONDISI_OPTIONS = [
+    { value: "baik", label: "Baik" },
+    { value: "perlu_perhatian", label: "Perlu Perhatian" },
+    { value: "rusak", label: "Rusak" },
+];
+
+const KONDISI_BADGE = {
+    baik: "bg-green-200 text-green-800",
+    perlu_perhatian: "bg-amber-200 text-amber-800",
+    rusak: "bg-red-200 text-red-800",
+};
+
+function KondisiBadge({ baik }) {
+    return (
+        <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${baik ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}
+        >
+            {baik ? "Baik" : "Masalah"}
+        </span>
+    );
+}
+
+function ItemEditor({ items, setItems }) {
+    const update = (idx, key, value) =>
+        setItems(items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)));
+
+    return (
+        <div className="space-y-2">
+            {items.map((it, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={it.bagian}
+                        onChange={(e) => update(idx, "bagian", e.target.value)}
+                        placeholder="Bagian"
+                        className={inputClass + " flex-1"}
+                    />
+                    <select
+                        value={it.kondisi}
+                        onChange={(e) => update(idx, "kondisi", e.target.value)}
+                        className={inputClass + " w-40"}
+                    >
+                        {KONDISI_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
+                        ))}
+                    </select>
+                    <input
+                        type="text"
+                        value={it.catatan}
+                        onChange={(e) => update(idx, "catatan", e.target.value)}
+                        placeholder="Catatan"
+                        className={inputClass + " flex-1"}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-700"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            ))}
+            <button
+                type="button"
+                onClick={() => setItems([...items, { bagian: "", kondisi: "baik", catatan: "" }])}
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+                <Plus className="w-4 h-4" /> Tambah bagian
+            </button>
+        </div>
+    );
+}
+
+function ChecklistForm({ armada, options, tipe }) {
+    const isAkhir = tipe === "akhir";
+    const isAlatBerat = armada.tipe_unit === "alat_berat";
+    const odoKey = isAlatBerat
+        ? isAkhir
+            ? "hm_akhir"
+            : "hm_odo"
+        : isAkhir
+          ? "odo_akhir"
+          : "odo_pagi";
+    const jamKey = isAkhir ? "jam_selesai_operasi" : "jam_mulai_operasi";
+
     const { data, setData, post, processing, errors } = useForm({
         tanggal: new Date().toISOString().split("T")[0],
-        kondisi_baik: true,
-        item_bermasalah: "",
+        stok_solar: "",
+        [odoKey]: "",
+        [jamKey]: "",
+        items: BAGIAN_DEFAULT.map((b) => ({
+            bagian: b,
+            kondisi: "baik",
+            catatan: "",
+        })),
         dicatat_oleh_karyawan_id: "",
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("fleet.armada.record-checklist", armada.id), {
-            preserveScroll: true,
-        });
+        post(
+            route(
+                isAkhir
+                    ? "fleet.armada.record-checklist-akhir"
+                    : "fleet.armada.record-checklist",
+                armada.id,
+            ),
+            { preserveScroll: true },
+        );
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <ClipboardCheck className="w-4 h-4 text-blue-600" />{" "}
-                    Checklist Harian
-                </h3>
-                <form onSubmit={submit} className="space-y-4">
-                    <Field label="Tanggal *" error={errors.tanggal}>
-                        <input
-                            type="date"
-                            value={data.tanggal}
-                            onChange={(e) =>
-                                setData("tanggal", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Kondisi Baik *">
+        <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-blue-600" />
+                {isAkhir ? "Checklist Akhir" : "Checklist Awal"}
+            </h3>
+            <form onSubmit={submit} className="space-y-4">
+                <Field label="Tanggal *" error={errors.tanggal}>
+                    <input
+                        type="date"
+                        value={data.tanggal}
+                        onChange={(e) => setData("tanggal", e.target.value)}
+                        className={inputClass}
+                    />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                    <Field label="Stok Solar">
                         <select
-                            value={data.kondisi_baik ? "1" : "0"}
-                            onChange={(e) =>
-                                setData(
-                                    "kondisi_baik",
-                                    e.target.value === "1",
-                                )
-                            }
+                            value={data.stok_solar}
+                            onChange={(e) => setData("stok_solar", e.target.value)}
                             className={inputClass}
                         >
-                            <option value="1">Baik</option>
-                            <option value="0">Ada Masalah</option>
-                        </select>
-                    </Field>
-                    <Field label="Item Bermasalah">
-                        <textarea
-                            rows="2"
-                            value={data.item_bermasalah}
-                            onChange={(e) =>
-                                setData("item_bermasalah", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field
-                        label="Dicatat Oleh *"
-                        error={errors.dicatat_oleh_karyawan_id}
-                    >
-                        <select
-                            value={data.dicatat_oleh_karyawan_id}
-                            onChange={(e) =>
-                                setData(
-                                    "dicatat_oleh_karyawan_id",
-                                    e.target.value,
-                                )
-                            }
-                            className={inputClass}
-                        >
-                            <option value="">Pilih Petugas</option>
-                            {options.drivers.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                    {d.nama}
+                            <option value="">-</option>
+                            {(options.stokSolarOptions || []).map((o) => (
+                                <option key={o.value} value={o.value}>
+                                    {o.label}
                                 </option>
                             ))}
                         </select>
                     </Field>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className={btnPrimary + " w-full"}
+                    <Field label={isAlatBerat ? "HM" : "ODO"}>
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={data[odoKey]}
+                            onChange={(e) => setData(odoKey, e.target.value)}
+                            className={inputClass}
+                        />
+                    </Field>
+                </div>
+                <Field label={isAkhir ? "Jam Selesai Operasi" : "Jam Mulai Operasi"}>
+                    <input
+                        type="time"
+                        value={data[jamKey]}
+                        onChange={(e) => setData(jamKey, e.target.value)}
+                        className={inputClass}
+                    />
+                </Field>
+                <Field label="Kondisi per Bagian">
+                    <ItemEditor
+                        items={data.items}
+                        setItems={(v) => setData("items", v)}
+                    />
+                </Field>
+                <Field label="Dicatat Oleh *" error={errors.dicatat_oleh_karyawan_id}>
+                    <select
+                        value={data.dicatat_oleh_karyawan_id}
+                        onChange={(e) => setData("dicatat_oleh_karyawan_id", e.target.value)}
+                        className={inputClass}
                     >
-                        {processing ? "Menyimpan..." : "Simpan Checklist"}
-                    </button>
-                </form>
+                        <option value="">Pilih Petugas</option>
+                        {options.drivers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                                {d.nama}
+                            </option>
+                        ))}
+                    </select>
+                </Field>
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className={btnPrimary + " w-full"}
+                >
+                    {processing
+                        ? "Menyimpan..."
+                        : isAkhir
+                          ? "Simpan Checklist Akhir"
+                          : "Simpan Checklist Awal"}
+                </button>
+            </form>
+        </div>
+    );
+}
+
+function ChecklistSection({ armada, options }) {
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChecklistForm armada={armada} options={options} tipe="awal" />
+                <ChecklistForm armada={armada} options={options} tipe="akhir" />
             </div>
 
-            <div className="lg:col-span-2 bg-white rounded-lg shadow p-6 overflow-x-auto">
+            <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
                 <h3 className="font-semibold mb-4">Riwayat Checklist</h3>
                 {armada.checklists.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
@@ -1048,10 +1173,13 @@ function ChecklistSection({ armada, options }) {
                                     Tanggal
                                 </th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Kondisi
+                                    Awal
                                 </th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Item Bermasalah
+                                    Akhir
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Status
                                 </th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                     Dicatat Oleh
@@ -1061,22 +1189,32 @@ function ChecklistSection({ armada, options }) {
                         <tbody className="divide-y divide-gray-200">
                             {armada.checklists.map((c) => (
                                 <tr key={c.id}>
-                                    <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            c.tanggal,
-                                        ).toLocaleDateString("id-ID")}
+                                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                                        {new Date(c.tanggal).toLocaleDateString("id-ID")}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
-                                        <span
-                                            className={`px-2 py-1 rounded-full text-xs font-semibold ${c.kondisi_baik ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}
-                                        >
-                                            {c.kondisi_baik
-                                                ? "Baik"
-                                                : "Masalah"}
-                                        </span>
+                                        <KondisiBadge baik={c.kondisi_baik} />
                                     </td>
                                     <td className="px-4 py-2 text-sm">
-                                        {c.item_bermasalah || "-"}
+                                        {c.akhir ? (
+                                            <KondisiBadge baik={c.akhir.kondisi_baik} />
+                                        ) : (
+                                            <span className="text-gray-400">-</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm">
+                                        <div className="flex flex-col gap-1">
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-semibold w-fit ${c.akhir ? "bg-blue-200 text-blue-800" : "bg-gray-200 text-gray-700"}`}
+                                            >
+                                                {c.akhir ? "Selesai" : "Berjalan"}
+                                            </span>
+                                            {c.akhir?.odo_anomali && (
+                                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800 w-fit">
+                                                    ODO Anomali
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {c.dicatat_oleh?.nama || "-"}
@@ -1087,6 +1225,98 @@ function ChecklistSection({ armada, options }) {
                     </table>
                 )}
             </div>
+        </div>
+    );
+}
+
+function PengisianSolarSection({ armada }) {
+    const rows = armada.pengisian_solars || [];
+
+    return (
+        <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Fuel className="w-4 h-4 text-blue-600" /> Riwayat Pengisian Solar
+            </h3>
+            {rows.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                    Belum ada pengisian solar
+                </p>
+            ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            {[
+                                "Tanggal",
+                                "Waktu",
+                                "ODO/HM",
+                                "Liter",
+                                "Nominal",
+                                "Rp/L",
+                                "Foto",
+                                "Driver",
+                            ].map((h) => (
+                                <th
+                                    key={h}
+                                    className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                >
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {rows.map((p) => (
+                            <tr key={p.id}>
+                                <td className="px-4 py-2 text-sm whitespace-nowrap">
+                                    {new Date(p.tanggal).toLocaleDateString("id-ID")}
+                                </td>
+                                <td className="px-4 py-2 text-sm">{p.waktu || "-"}</td>
+                                <td className="px-4 py-2 text-sm">
+                                    {p.odo_atau_hm != null
+                                        ? Number(p.odo_atau_hm).toLocaleString("id-ID")
+                                        : "-"}
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                    {Number(p.liter).toLocaleString("id-ID")} L
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                    Rp {Number(p.nominal_rp).toLocaleString("id-ID")}
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                    Rp {Number(p.harga_per_liter).toLocaleString("id-ID")}
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                    <div className="flex gap-2">
+                                        {p.foto_odo_url && (
+                                            <a
+                                                href={p.foto_odo_url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-blue-600 hover:underline"
+                                            >
+                                                ODO
+                                            </a>
+                                        )}
+                                        {p.foto_nota_url && (
+                                            <a
+                                                href={p.foto_nota_url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-blue-600 hover:underline"
+                                            >
+                                                Nota
+                                            </a>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                    {p.dicatat_oleh?.nama || p.karyawan?.nama || "-"}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </div>
     );
 }
@@ -1578,6 +1808,7 @@ export default function Show({ armada, options, can }) {
         { key: "service", label: "Servis", icon: <Wrench className="w-4 h-4" /> },
         { key: "bbm", label: "BBM", icon: <Fuel className="w-4 h-4" /> },
         { key: "checklist", label: "Checklist", icon: <ClipboardCheck className="w-4 h-4" /> },
+        { key: "pengisian_solar", label: "Pengisian Solar", icon: <Fuel className="w-4 h-4" /> },
         { key: "downtime", label: "Downtime", icon: <Play className="w-4 h-4" /> },
         { key: "driver", label: "Driver", icon: <UserPlus className="w-4 h-4" /> },
         ...(can.helper
@@ -1688,6 +1919,7 @@ export default function Show({ armada, options, can }) {
             {tab === "checklist" && (
                 <ChecklistSection armada={armada} options={options} />
             )}
+            {tab === "pengisian_solar" && <PengisianSolarSection armada={armada} />}
             {tab === "downtime" && <DowntimeSection armada={armada} />}
             {tab === "driver" && (
                 <DriverSection armada={armada} options={options} />

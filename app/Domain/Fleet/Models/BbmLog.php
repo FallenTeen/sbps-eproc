@@ -53,4 +53,10 @@ class BbmLog extends Model
     {
         return $this->belongsTo(User::class, 'dicatat_oleh');
     }
+
+    /** Bila baris BBM ini berasal dari pengisian solar driver. */
+    public function pengisianSolar()
+    {
+        return $this->hasOne(ArmadaPengisianSolar::class, 'bbm_log_id');
+    }
 }

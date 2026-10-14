@@ -3,7 +3,9 @@
 namespace App\Domain\Fleet\Actions;
 
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\Ritase;
@@ -75,8 +77,19 @@ class CalculateArmadaUtilizationAction
         $dari = $dari ? Carbon::parse($dari) : now()->subDays(29)->startOfDay();
         $sampai = ($sampai ? Carbon::parse($sampai) : now())->endOfDay();
 
-        $checklists = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+        $awals = ArmadaChecklistHarian::where('checkable_type', Armada::class)
             ->where('checkable_id', $armada->id)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        $akhirs = ArmadaChecklistAkhir::with('awal')
+            ->where('armada_id', $armada->id)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        $solars = ArmadaPengisianSolar::where('armada_id', $armada->id)
             ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
             ->orderByDesc('tanggal')
             ->get();
@@ -104,16 +117,44 @@ class CalculateArmadaUtilizationAction
 
         $timeline = collect();
 
-        foreach ($checklists as $row) {
+        foreach ($awals as $row) {
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
-                'tipe' => 'checklist',
-                'label' => $row->kondisi_baik ? 'Checklist — kondisi baik' : 'Checklist — '.($row->item_bermasalah ?: 'bermasalah'),
-                'jam_aktif' => $this->durasiJam((string) $row->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
+                'tipe' => 'checklist_awal',
+                'label' => $row->kondisi_baik ? 'Checklist awal — kondisi baik' : 'Checklist awal — '.($row->item_bermasalah ?: 'bermasalah'),
+                'jam_aktif' => 0.0,
                 'hm' => (float) ($row->hm_odo ?? 0),
-                'odo_km' => $this->odoDelta($row->odo_pagi, $row->odo_sore),
-                'solar_liter' => (float) ($row->solar_liter ?? 0),
+                'odo_km' => 0.0,
+                'solar_liter' => 0.0,
                 'kondisi_baik' => (bool) $row->kondisi_baik,
+            ]);
+        }
+
+        foreach ($akhirs as $row) {
+            $awal = $row->awal;
+            $timeline->push([
+                'tanggal' => $row->tanggal->toDateString(),
+                'tipe' => 'checklist_akhir',
+                'label' => ($row->kondisi_baik ? 'Checklist akhir — kondisi baik' : 'Checklist akhir — '.($row->item_bermasalah ?: 'bermasalah'))
+                    .($row->odo_anomali ? ' (anomali ODO)' : ''),
+                'jam_aktif' => $this->durasiJam((string) $awal?->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
+                'hm' => (float) ($row->hm_akhir ?? 0),
+                'odo_km' => $this->odoDelta($awal?->odo_pagi, $row->odo_akhir),
+                'solar_liter' => 0.0,
+                'kondisi_baik' => (bool) $row->kondisi_baik,
+            ]);
+        }
+
+        foreach ($solars as $row) {
+            $timeline->push([
+                'tanggal' => $row->tanggal->toDateString(),
+                'tipe' => 'solar',
+                'label' => 'Pengisian solar — '.number_format((float) $row->liter, 2, ',', '.').' L',
+                'jam_aktif' => 0.0,
+                'hm' => 0.0,
+                'odo_km' => 0.0,
+                'solar_liter' => (float) $row->liter,
+                'kondisi_baik' => true,
             ]);
         }
 
@@ -224,11 +265,22 @@ class CalculateArmadaUtilizationAction
     {
         $ids = $armadas->pluck('id');
 
-        $checklists = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+        $awals = ArmadaChecklistHarian::where('checkable_type', Armada::class)
             ->whereIn('checkable_id', $ids)
             ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
             ->get()
             ->groupBy('checkable_id');
+
+        $akhirs = ArmadaChecklistAkhir::with('awal')
+            ->whereIn('armada_id', $ids)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->get()
+            ->groupBy('armada_id');
+
+        $solars = ArmadaPengisianSolar::whereIn('armada_id', $ids)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->get()
+            ->groupBy('armada_id');
 
         $ritases = Ritase::whereIn('armada_id', $ids)
             ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
@@ -259,28 +311,34 @@ class CalculateArmadaUtilizationAction
         $aktivitasTerakhir = $this->aktivitasTerakhirMap($ids);
 
         return $armadas->map(function (Armada $armada) use (
-            $checklists, $ritases, $sewas,
+            $awals, $akhirs, $solars, $ritases, $sewas,
             $downtimeAktifIds, $servisMenungguIds, $checklistHariIniIds, $aktivitasTerakhir,
         ) {
-            $rows = $checklists->get($armada->id, collect());
+            $awalRows = $awals->get($armada->id, collect());
+            $akhirRows = $akhirs->get($armada->id, collect());
+            $solarRows = $solars->get($armada->id, collect());
             $ritaseRows = $ritases->get($armada->id, collect());
             $sewaRows = $sewas->get($armada->id, collect());
 
             $totaljam = 0.0;
             $totalHm = 0.0;
             $totalOdo = 0.0;
-            $totalSolar = 0.0;
             $tanggalOperasi = collect();
 
-            foreach ($rows as $row) {
-                $jam = $this->durasiJam((string) $row->jam_mulai_operasi, (string) $row->jam_selesai_operasi);
-                $totaljam += $jam;
-                $totalHm += (float) ($row->hm_odo ?? 0);
-                $totalOdo += $this->odoDelta($row->odo_pagi, $row->odo_sore);
-                $totalSolar += (float) ($row->solar_liter ?? 0);
+            foreach ($akhirRows as $row) {
+                $awal = $row->awal;
+                $totaljam += $this->durasiJam((string) $awal?->jam_mulai_operasi, (string) $row->jam_selesai_operasi);
+                $totalHm += (float) ($row->hm_akhir ?? 0);
+                $totalOdo += $this->odoDelta($awal?->odo_pagi, $row->odo_akhir);
                 $tanggalOperasi->push($row->tanggal->toDateString());
             }
 
+            foreach ($awalRows as $row) {
+                $tanggalOperasi->push($row->tanggal->toDateString());
+            }
+            foreach ($solarRows as $row) {
+                $tanggalOperasi->push($row->tanggal->toDateString());
+            }
             foreach ($ritaseRows as $r) {
                 $tanggalOperasi->push($r->tanggal->toDateString());
             }
@@ -288,7 +346,13 @@ class CalculateArmadaUtilizationAction
                 $tanggalOperasi->push($s->tanggal->toDateString());
             }
 
-            $kondisiTerakhir = $rows->last();
+            $totalSolar = (float) $solarRows->sum('liter');
+
+            // Kondisi terakhir diambil dari baris terbaru antara checklist awal & akhir.
+            $kondisiTerakhir = $awalRows->concat($akhirRows)
+                ->sortByDesc(fn ($r) => $r->tanggal?->toDateString().' '.$r->created_at)
+                ->first();
+
             $jumlahRit = (int) $ritaseRows->sum('jumlah_rit');
 
             $tglAktivitasTerakhir = $aktivitasTerakhir[$armada->id] ?? null;
@@ -330,6 +394,7 @@ class CalculateArmadaUtilizationAction
                     'kondisi_baik' => (bool) $kondisiTerakhir->kondisi_baik,
                     'item_bermasalah' => $kondisiTerakhir->item_bermasalah,
                 ] : null,
+                'stok_solar_terakhir' => $kondisiTerakhir?->stok_solar?->value,
                 'checklist_hari_ini' => $checklistHariIniIds->contains($armada->id),
                 'downtime_aktif' => $downtimeAktifIds->contains($armada->id),
                 'servis_menunggu' => $servisMenungguIds->contains($armada->id),
@@ -411,19 +476,37 @@ class CalculateArmadaUtilizationAction
             $map[$key]['total_sewa_jam'] += $value['sewa_jam'];
         };
 
-        ArmadaChecklistHarian::where('checkable_type', Armada::class)
-            ->whereIn('checkable_id', $ids)
+        ArmadaChecklistAkhir::with('awal')
+            ->whereIn('armada_id', $ids)
+            ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
+            ->orderBy('tanggal')
+            ->get()
+            ->each(function ($row) use (&$byDate, $handle) {
+                $awal = $row->awal;
+                $handle([
+                    'tanggal' => $row->tanggal->toDateString(),
+                    'armada_id' => $row->armada_id,
+                    'jam_aktif' => $this->durasiJam((string) $awal?->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
+                    'hm' => (float) ($row->hm_akhir ?? 0),
+                    'odo_km' => $this->odoDelta($awal?->odo_pagi, $row->odo_akhir),
+                    'solar_liter' => 0.0,
+                    'jumlah_rit' => 0,
+                    'sewa_jam' => 0.0,
+                ], $byDate);
+            });
+
+        ArmadaPengisianSolar::whereIn('armada_id', $ids)
             ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
             ->orderBy('tanggal')
             ->get()
             ->each(function ($row) use (&$byDate, $handle) {
                 $handle([
                     'tanggal' => $row->tanggal->toDateString(),
-                    'armada_id' => $row->checkable_id,
-                    'jam_aktif' => $this->durasiJam((string) $row->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
-                    'hm' => (float) ($row->hm_odo ?? 0),
-                    'odo_km' => $this->odoDelta($row->odo_pagi, $row->odo_sore),
-                    'solar_liter' => (float) ($row->solar_liter ?? 0),
+                    'armada_id' => $row->armada_id,
+                    'jam_aktif' => 0.0,
+                    'hm' => 0.0,
+                    'odo_km' => 0.0,
+                    'solar_liter' => (float) $row->liter,
                     'jumlah_rit' => 0,
                     'sewa_jam' => 0.0,
                 ], $byDate);

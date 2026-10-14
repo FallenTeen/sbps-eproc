@@ -111,13 +111,14 @@ export default function Index({ bbmLogs, filters }) {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Liter</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Biaya</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sumber</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {bbmLogs.data?.length === 0 ? (
-                            <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>
+                            <tr><td colSpan="7" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>
                         ) : (
                             bbmLogs.data?.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50">
@@ -132,6 +133,25 @@ export default function Index({ bbmLogs, filters }) {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
                                         {formatCurrency(item.biaya)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        {item.pengisian_solar ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-medium text-blue-700">Pengisian Solar Driver</span>
+                                                {item.pengisian_solar.foto_nota_url && (
+                                                    <a
+                                                        href={item.pengisian_solar.foto_nota_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-xs text-blue-600 hover:underline"
+                                                    >
+                                                        Lihat nota
+                                                    </a>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-500">Input Manual</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {isAnomaly(item) ? (

@@ -110,7 +110,17 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('armada/ritase/input', [ArmadaController::class, 'storeRitase'])
             ->name('armada.ritase.input')->middleware('idempotency');
         Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
-        Route::post('armada/checklist', [ArmadaController::class, 'submitChecklist'])->name('armada.checklist');
+        Route::post('armada/checklist/awal', [ArmadaController::class, 'submitChecklistAwal'])
+            ->name('armada.checklist.awal')->middleware('idempotency');
+        Route::post('armada/checklist/akhir', [ArmadaController::class, 'submitChecklistAkhir'])
+            ->name('armada.checklist.akhir')->middleware('idempotency');
+        Route::get('armada/pengisian-solar', [ArmadaController::class, 'indexPengisianSolar'])->name('armada.pengisian-solar.index');
+        Route::post('armada/pengisian-solar', [ArmadaController::class, 'storePengisianSolar'])
+            ->name('armada.pengisian-solar.store')->middleware('idempotency');
+        Route::post('armada/pengisian-solar/{pengisianSolar}', [ArmadaController::class, 'updatePengisianSolar'])
+            ->name('armada.pengisian-solar.update')->middleware('idempotency');
+        Route::delete('armada/pengisian-solar/{pengisianSolar}', [ArmadaController::class, 'deletePengisianSolar'])
+            ->name('armada.pengisian-solar.destroy');
         Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
             ->name('armada.odo-awal-proyek')->middleware('idempotency');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');

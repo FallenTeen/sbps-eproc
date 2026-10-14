@@ -11,6 +11,7 @@ use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
+use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\ChecklistSerahTerimaDetail;
 use App\Domain\Fleet\Models\HelperArmada;
@@ -274,6 +275,20 @@ class MobileArmadaDemoSeeder extends Seeder
                 'hm_akhir' => 8.5,
             ]
         );
+
+        if (! ArmadaPengisianSolar::where('armada_id', $armada->id)->whereDate('tanggal', $tanggal)->exists()) {
+            app(\App\Domain\Fleet\Actions\RecordPengisianSolarAction::class)->execute($armada, [
+                'client_uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'tanggal' => $tanggal,
+                'odo_atau_hm' => 12470.0,
+                'liter' => 40.0,
+                'nominal_rp' => 600000.0,
+                'foto_odo' => 'armada/solar/demo/odo.jpg',
+                'foto_nota' => 'armada/solar/demo/nota.jpg',
+                'karyawan_id' => $driver?->id,
+                'dicatat_oleh' => $driver?->user_id,
+            ]);
+        }
     }
 
     // ────────────────────────── ODO AWAL PROYEK ──────────────────────────

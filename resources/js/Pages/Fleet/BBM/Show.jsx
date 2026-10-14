@@ -55,6 +55,25 @@ export default function Show({ bbmLog }) {
                         <p className="text-sm text-gray-500">Dicatat Oleh</p>
                         <p className="text-sm font-medium text-gray-900">{bbmLog.dicatat_oleh?.name || "-"}</p>
                     </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Sumber</p>
+                        <p className="text-sm font-medium text-gray-900">
+                            {bbmLog.pengisian_solar ? "Pengisian Solar Driver" : "Input Manual"}
+                        </p>
+                    </div>
+                    {bbmLog.pengisian_solar?.foto_nota_url && (
+                        <div>
+                            <p className="text-sm text-gray-500">Foto Nota</p>
+                            <a
+                                href={bbmLog.pengisian_solar.foto_nota_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-medium text-blue-600 hover:underline"
+                            >
+                                Lihat Nota
+                            </a>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

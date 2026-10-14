@@ -66,6 +66,7 @@ export default function Index({ checklists, filters }) {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kondisi</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dicatat Oleh</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
@@ -74,7 +75,7 @@ export default function Index({ checklists, filters }) {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {checklists.data?.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
+                                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
                             </tr>
                         ) : (
                             checklists.data?.map((item) => (
@@ -89,6 +90,20 @@ export default function Index({ checklists, filters }) {
                                         {getStatusBadge(item.kondisi_baik)}
                                         {!item.kondisi_baik && item.item_bermasalah && (
                                             <span className="ml-2 text-xs text-gray-500">({item.item_bermasalah})</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {item.akhir ? (
+                                            <div className="flex flex-col gap-1">
+                                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-200 text-blue-800 inline-flex items-center gap-1 w-fit">
+                                                    <Check className="w-3 h-3" /> Selesai
+                                                </span>
+                                                {item.akhir.odo_anomali && (
+                                                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800 w-fit">ODO Anomali</span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">Berjalan</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

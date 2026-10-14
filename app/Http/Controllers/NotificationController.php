@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
@@ -70,22 +71,35 @@ class NotificationController extends Controller
                 ->whereDate('tanggal', '>=', now()->subDay())
                 ->orderByDesc('tanggal')
                 ->take(5)
-                ->get();
-
-            foreach ($kondisiBuruk as $checklist) {
-                $namaCheckable = $checklist->checkable->plat_nomor
-                    ?? $checklist->checkable->nama
-                    ?? '-';
-
-                $notifications[] = [
+                ->get()
+                ->map(fn ($checklist) => [
                     'id' => 'checklist_'.$checklist->id,
                     'type' => 'checklist_kondisi_buruk',
-                    'title' => 'Checklist: Kondisi Tidak Baik',
-                    'body' => "{$namaCheckable} — {$checklist->item_bermasalah}",
+                    'title' => 'Checklist Awal: Kondisi Tidak Baik',
+                    'body' => ($checklist->checkable->plat_nomor ?? $checklist->checkable->nama ?? '-')." — {$checklist->item_bermasalah}",
                     'action_url' => "/fleet/checklist-harian/{$checklist->id}",
                     'is_read' => false,
                     'time_ago' => Carbon::parse($checklist->tanggal)->diffForHumans(),
-                ];
+                ]);
+
+            $kondisiBurukAkhir = ArmadaChecklistAkhir::with('armada')
+                ->where('kondisi_baik', false)
+                ->whereDate('tanggal', '>=', now()->subDay())
+                ->orderByDesc('tanggal')
+                ->take(5)
+                ->get()
+                ->map(fn ($checklist) => [
+                    'id' => 'checklist_akhir_'.$checklist->id,
+                    'type' => 'checklist_kondisi_buruk',
+                    'title' => 'Checklist Akhir: Kondisi Tidak Baik',
+                    'body' => ($checklist->armada?->plat_nomor ?? $checklist->armada?->kode_unit ?? '-')." — {$checklist->item_bermasalah}",
+                    'action_url' => "/fleet/armada/{$checklist->armada_id}",
+                    'is_read' => false,
+                    'time_ago' => Carbon::parse($checklist->tanggal)->diffForHumans(),
+                ]);
+
+            foreach ($kondisiBuruk->concat($kondisiBurukAkhir) as $notification) {
+                $notifications[] = $notification;
             }
         }
 

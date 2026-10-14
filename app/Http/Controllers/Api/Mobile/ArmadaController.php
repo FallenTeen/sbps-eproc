@@ -2,21 +2,28 @@
 
 namespace App\Http\Controllers\Api\Mobile;
 
+use App\Domain\Fleet\Actions\RecordChecklistAkhirAction;
 use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordChecklistSerahTerimaAction;
 use App\Domain\Fleet\Actions\RecordHelperPresensiAction;
 use App\Domain\Fleet\Actions\RecordOdoAwalProyekAction;
+use App\Domain\Fleet\Actions\RecordPengisianSolarAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
+use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
+use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\SewaAlatJam;
+use App\Domain\Fleet\Services\ChecklistLockService;
 use App\Domain\Core\Models\Proyek;
+use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -32,6 +39,9 @@ use Illuminate\Validation\ValidationException;
 class ArmadaController extends Controller
 {
     use ApiResponse;
+
+    /** Daftar bagian default checklist (web & mobile sama). */
+    public const BAGIAN_DEFAULT = ['Ban', 'Rem', 'Lampu', 'Oli mesin', 'Air radiator', 'Body', 'Kabin'];
 
     /**
      * Karyawan yang terhubung ke user saat ini, atau null.
@@ -70,35 +80,62 @@ class ArmadaController extends Controller
 
         $latestChecklists = collect();
         $latestOdoAwals = collect();
+        $latestAkhirs = collect();
+        $latestPengisians = collect();
 
         if (! empty($armadaIds)) {
-            // Bulk query checklist harian TERBARU per armada (anti N+1)
-            $checklistRows = ArmadaChecklistHarian::where('checkable_type', Armada::class)
+            // Bulk query checklist awal TERBARU per armada (anti N+1)
+            $latestChecklists = ArmadaChecklistHarian::where('checkable_type', Armada::class)
                 ->whereIn('checkable_id', $armadaIds)
                 ->orderByDesc('tanggal')
                 ->orderByDesc('created_at')
                 ->get()
                 ->keyBy('checkable_id');
 
-            $latestChecklists = $checklistRows;
-
-            // Bulk query ODO awal proyek TERBARU per armada
-            $odoAwalRows = ArmadaOdoAwalProyek::whereIn('armada_id', $armadaIds)
+            // Checklist akhir TERBARU per armada
+            $latestAkhirs = ArmadaChecklistAkhir::whereIn('armada_id', $armadaIds)
                 ->orderByDesc('tanggal')
                 ->orderByDesc('created_at')
                 ->get()
                 ->keyBy('armada_id');
 
-            $latestOdoAwals = $odoAwalRows;
+            // Pengisian solar TERBARU per armada
+            $latestPengisians = ArmadaPengisianSolar::whereIn('armada_id', $armadaIds)
+                ->orderByDesc('tanggal')
+                ->orderByDesc('created_at')
+                ->get()
+                ->keyBy('armada_id');
+
+            // Bulk query ODO awal proyek TERBARU per armada
+            $latestOdoAwals = ArmadaOdoAwalProyek::whereIn('armada_id', $armadaIds)
+                ->orderByDesc('tanggal')
+                ->orderByDesc('created_at')
+                ->get()
+                ->keyBy('armada_id');
         }
 
-        $items = $armadas->map(function (Armada $a) use ($latestChecklists, $latestOdoAwals) {
+        $items = $armadas->map(function (Armada $a) use ($latestChecklists, $latestOdoAwals, $latestAkhirs, $latestPengisians) {
             $latestChecklist = $latestChecklists->get($a->id);
-            $latestOdo = $latestChecklist ? ($latestChecklist->odo_sore ?? $latestChecklist->odo_pagi) : null;
-            if ($latestOdo === null) {
+            $akhir = $latestAkhirs->get($a->id);
+            $pengisian = $latestPengisians->get($a->id);
+
+            // Prioritas ODO terkini: akhir.odo_akhir → pengisian terbaru → awal.odo_pagi → ODO awal proyek.
+            $latestOdo = null;
+            if ($akhir?->odo_akhir !== null) {
+                $latestOdo = (float) $akhir->odo_akhir;
+            } elseif ($pengisian?->odo_atau_hm !== null) {
+                $latestOdo = (float) $pengisian->odo_atau_hm;
+            } elseif ($latestChecklist?->odo_pagi !== null) {
+                $latestOdo = (float) $latestChecklist->odo_pagi;
+            } else {
                 $odoAwal = $latestOdoAwals->get($a->id);
                 $latestOdo = $odoAwal ? (float) $odoAwal->odo_awal : null;
             }
+
+            // Jam operasional terkini: akhir.hm_akhir → awal.hm_odo.
+            $latestJam = $akhir?->hm_akhir !== null
+                ? (float) $akhir->hm_akhir
+                : ($latestChecklist?->hm_odo !== null ? (float) $latestChecklist->hm_odo : null);
 
             return [
                 'id' => $a->id,
@@ -117,7 +154,7 @@ class ArmadaController extends Controller
                     'proyek_id' => $a->titik->proyek_id,
                 ] : null,
                 'odo_terkini' => $latestOdo,
-                'jam_operasional_terkini' => $latestChecklist ? (float) $latestChecklist->hm_odo : null,
+                'jam_operasional_terkini' => $latestJam,
             ];
         });
 
@@ -257,20 +294,57 @@ class ArmadaController extends Controller
             ? Armada::with(['unitBisnis', 'titik'])->where('status', '!=', 'nonaktif')->get()
             : $this->activeArmadas($request);
 
-        $items = $armadas->map(function (Armada $a) use ($today) {
-            $checklist = ArmadaChecklistHarian::where('checkable_type', Armada::class)
-                ->where('checkable_id', $a->id)
-                ->whereDate('tanggal', $today)
-                ->first();
+        $ids = $armadas->pluck('id')->all();
 
-            return $this->checklistPayload($a, $today, $checklist);
-        })->values();
+        // Batch semua query (anti N+1).
+        $awals = empty($ids) ? collect() : ArmadaChecklistHarian::where('checkable_type', Armada::class)
+            ->whereIn('checkable_id', $ids)
+            ->whereDate('tanggal', $today)
+            ->get()
+            ->keyBy('checkable_id');
+
+        $akhirs = empty($ids) ? collect() : ArmadaChecklistAkhir::whereIn('armada_id', $ids)
+            ->whereDate('tanggal', $today)
+            ->get()
+            ->keyBy('armada_id');
+
+        $pengisians = empty($ids) ? collect() : ArmadaPengisianSolar::with('karyawan')
+            ->whereIn('armada_id', $ids)
+            ->whereDate('tanggal', $today)
+            ->orderBy('waktu')
+            ->get()
+            ->groupBy('armada_id');
+
+        $karyawan = $this->currentKaryawan($request);
+
+        $items = $armadas->map(fn (Armada $a) => $this->checklistItemPayload(
+            $a,
+            $today,
+            $awals->get($a->id),
+            $akhirs->get($a->id),
+            $pengisians->get($a->id) ?? collect(),
+            $karyawan,
+        ))->values();
 
         return $this->success(['items' => $items], 'Checklist harian armada.');
     }
 
-    private function checklistPayload(Armada $a, string $tanggal, ?ArmadaChecklistHarian $checklist): array
-    {
+    /**
+     * Bentuk payload checklist satu armada: awal + akhir + pengisian solar +
+     * opsi dropdown. Dipakai GET checklist-hari-ini dan respons POST.
+     */
+    private function checklistItemPayload(
+        Armada $a,
+        string $tanggal,
+        ?ArmadaChecklistHarian $awal,
+        ?ArmadaChecklistAkhir $akhir,
+        $pengisians,
+        ?Karyawan $karyawan,
+    ): array {
+        $lock = $awal
+            ? app(ChecklistLockService::class)->isAwalLocked($awal, $karyawan)
+            : ['locked' => false, 'alasan' => null];
+
         return [
             'armada_id' => $a->id,
             'plat_nomor' => $a->plat_nomor,
@@ -278,63 +352,97 @@ class ArmadaController extends Controller
             'jenis' => $a->jenis,
             'tipe_unit' => $a->tipe_unit,
             'tanggal' => $tanggal,
-            'sudah_isi' => $checklist !== null,
-            'checklist_id' => $checklist?->id,
-            'status' => $checklist?->status ?? 'berjalan',
-            'kondisi_baik' => $checklist?->kondisi_baik,
-            'item_bermasalah' => $checklist?->item_bermasalah,
-            'solar_liter' => $checklist ? (float) $checklist->solar_liter : null,
-            'solar_harga_rp' => $checklist ? (float) $checklist->solar_harga_rp : null,
-            'odo_pagi' => $checklist ? (float) $checklist->odo_pagi : null,
-            'foto_odo_pagi' => $checklist?->foto_odo_pagi,
-            'odo_sore' => $checklist ? (float) $checklist->odo_sore : null,
-            'foto_odo_sore' => $checklist?->foto_odo_sore,
-            'jam_mulai_operasi' => $checklist?->jam_mulai_operasi,
-            'jam_selesai_operasi' => $checklist?->jam_selesai_operasi,
-            'hm_odo' => $checklist ? (float) $checklist->hm_odo : null,
-            'odo_km' => $checklist ? (float) ($checklist->odo_sore ?? $checklist->odo_pagi) : null,
-            'jam_operasional' => $checklist ? (float) $checklist->hm_odo : null,
-            'odo_anomali' => (bool) ($checklist?->odo_anomali ?? false),
+            'sudah_isi' => $awal !== null,
+            'status' => $akhir !== null ? 'selesai' : 'berjalan',
+            'awal' => $awal ? $this->awalPayload($awal, $lock) : null,
+            'akhir' => $akhir ? $this->akhirPayload($akhir) : null,
+            'pengisian_solar' => $pengisians->map(fn (ArmadaPengisianSolar $p) => $this->pengisianPayload($p))->values(),
+            'opsi_stok_solar' => StokSolar::options(),
+            'bagian_default' => self::BAGIAN_DEFAULT,
+        ];
+    }
+
+    private function awalPayload(ArmadaChecklistHarian $awal, array $lock): array
+    {
+        return [
+            'checklist_id' => $awal->id,
+            'kondisi_baik' => $awal->kondisi_baik,
+            'item_bermasalah' => $awal->item_bermasalah,
+            'items' => $awal->items,
+            'stok_solar' => $awal->stok_solar?->value,
+            'stok_solar_label' => $awal->stok_solar?->label(),
+            'foto_stok_solar' => $awal->foto_stok_solar,
+            'foto_stok_solar_url' => $awal->foto_stok_solar_url,
+            'odo_pagi' => $awal->odo_pagi,
+            'foto_odo_pagi' => $awal->foto_odo_pagi,
+            'foto_odo_pagi_url' => $awal->foto_odo_pagi_url,
+            'jam_mulai_operasi' => $awal->jam_mulai_operasi,
+            'hm_odo' => $awal->hm_odo,
+            'bisa_diedit' => ! $lock['locked'],
+            'alasan_terkunci' => $lock['alasan'],
+        ];
+    }
+
+    private function akhirPayload(ArmadaChecklistAkhir $akhir): array
+    {
+        return [
+            'checklist_akhir_id' => $akhir->id,
+            'kondisi_baik' => $akhir->kondisi_baik,
+            'item_bermasalah' => $akhir->item_bermasalah,
+            'items' => $akhir->items,
+            'stok_solar' => $akhir->stok_solar?->value,
+            'stok_solar_label' => $akhir->stok_solar?->label(),
+            'foto_stok_solar' => $akhir->foto_stok_solar,
+            'foto_stok_solar_url' => $akhir->foto_stok_solar_url,
+            'odo_akhir' => $akhir->odo_akhir,
+            'foto_odo_akhir' => $akhir->foto_odo_akhir,
+            'foto_odo_akhir_url' => $akhir->foto_odo_akhir_url,
+            'jam_selesai_operasi' => $akhir->jam_selesai_operasi,
+            'hm_akhir' => $akhir->hm_akhir,
+            'odo_anomali' => $akhir->odo_anomali,
+        ];
+    }
+
+    private function pengisianPayload(ArmadaPengisianSolar $p): array
+    {
+        return [
+            'id' => $p->id,
+            'waktu' => $p->waktu,
+            'tanggal' => $p->tanggal?->toDateString(),
+            'odo_atau_hm' => $p->odo_atau_hm,
+            'liter' => $p->liter,
+            'nominal_rp' => $p->nominal_rp,
+            'harga_per_liter' => $p->harga_per_liter,
+            'foto_odo_url' => $p->foto_odo_url,
+            'foto_nota_url' => $p->foto_nota_url,
+            'catatan' => $p->catatan,
+            'driver' => $p->karyawan?->nama,
         ];
     }
 
     /**
-     * POST /api/mobile/armada/checklist
-     * Mencatat (create/update) checklist satu armada untuk hari ini (2-stage:
-     * pagi = odo_pagi/jam_mulai; sore = odo_sore/jam_selesai). Idempoten via
-     * (armada_id, tanggal) dan option client_uuid.
+     * POST /api/mobile/armada/checklist/awal (multipart, idempotency).
+     * Wajib: armada_id, items, stok_solar, foto_stok_solar (create), ODO/HM + foto.
      */
-    public function submitChecklist(Request $request)
+    public function submitChecklistAwal(Request $request)
     {
         $validated = $request->validate([
             'armada_id' => 'required|string|exists:armadas,id',
-            'kondisi_baik' => 'nullable|boolean',
-            'item_bermasalah' => 'nullable|string|max:1000',
-            'status' => 'nullable|in:berjalan,selesai',
-            'solar_liter' => 'nullable|numeric|min:0',
-            'solar_harga_rp' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.bagian' => 'required|string|max:100',
+            'items.*.kondisi' => 'required|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable',
+            'foto_stok_solar_metadata' => 'nullable',
             'odo_pagi' => 'nullable|numeric|min:0',
             'foto_odo_pagi' => 'nullable',
-            'odo_sore' => 'nullable|numeric|min:0',
-            'foto_odo_sore' => 'nullable',
+            'foto_odo_pagi_metadata' => 'nullable',
             'jam_mulai_operasi' => 'nullable|date_format:H:i',
-            'jam_selesai_operasi' => 'nullable|date_format:H:i',
             'hm_odo' => 'nullable|numeric|min:0',
             'client_uuid' => 'nullable|string|max:36',
         ]);
-
-        // Idempotency by client_uuid
-        if (! empty($validated['client_uuid'])) {
-            $existingByUuid = ArmadaChecklistHarian::where('client_uuid', $validated['client_uuid'])->first();
-            if ($existingByUuid) {
-                return $this->success([
-                    'checklist_id' => $existingByUuid->id,
-                    'armada_id' => $existingByUuid->checkable_id,
-                    'tanggal' => $existingByUuid->tanggal->toDateString(),
-                    'sudah_ada' => true,
-                ], 'Checklist sudah pernah dikirim.');
-            }
-        }
 
         $karyawan = $this->currentKaryawan($request);
         if (! $karyawan) {
@@ -343,40 +451,314 @@ class ArmadaController extends Controller
 
         $armada = Armada::where('id', $validated['armada_id'])->firstOrFail();
 
-        // Pastikan armada benar-benar dipegang driver saat ini.
-        $held = ArmadaDriver::where('armada_id', $validated['armada_id'])
-            ->where('karyawan_id', $karyawan->id)
-            ->where('status', 'aktif')
-            ->exists();
-
-        if (! $held) {
+        if (! $this->driverHolds($armada->id, $karyawan->id)) {
             return $this->error('Armada bukan milik driver ini.', 403);
         }
 
         $today = now()->toDateString();
+        $existing = $armada->checklists()->whereDate('tanggal', $today)->first();
 
-        $checklist = app(RecordChecklistAwalAction::class)->execute($armada, [
-            'tanggal' => $today,
-            'kondisi_baik' => array_key_exists('kondisi_baik', $validated) && $validated['kondisi_baik'] !== null
-                ? (bool) $validated['kondisi_baik']
-                : null,
-            'item_bermasalah' => $validated['item_bermasalah'] ?? null,
-            'dicatat_oleh_karyawan_id' => $karyawan->id,
-            'dicatat_oleh' => $request->user()->id,
-            'status' => $validated['status'] ?? null,
-            'solar_liter' => $validated['solar_liter'] ?? null,
-            'solar_harga_rp' => $validated['solar_harga_rp'] ?? null,
-            'odo_pagi' => $validated['odo_pagi'] ?? null,
-            'foto_odo_pagi' => $this->storeFoto($request->file('foto_odo_pagi') ?? $validated['foto_odo_pagi'] ?? null),
-            'odo_sore' => $validated['odo_sore'] ?? null,
-            'foto_odo_sore' => $this->storeFoto($request->file('foto_odo_sore') ?? $validated['foto_odo_sore'] ?? null),
-            'jam_mulai_operasi' => $validated['jam_mulai_operasi'] ?? null,
-            'jam_selesai_operasi' => $validated['jam_selesai_operasi'] ?? null,
-            'hm_odo' => $validated['hm_odo'] ?? null,
-            'client_uuid' => $validated['client_uuid'] ?? null,
+        // Idempotency retry dengan client_uuid yang sama.
+        if ($existing && ! empty($validated['client_uuid']) && $validated['client_uuid'] === $existing->client_uuid) {
+            return $this->success(
+                $this->checklistItemPayload($armada, $today, $existing, $armada->checklistAkhirs()->whereDate('tanggal', $today)->first(), collect(), $karyawan),
+                'Checklist awal sudah pernah dikirim.'
+            );
+        }
+
+        $fotoStok = $this->storeFoto($request->file('foto_stok_solar') ?? $validated['foto_stok_solar'] ?? null, 'armada/checklist');
+        $fotoOdo = $this->storeFoto($request->file('foto_odo_pagi') ?? $validated['foto_odo_pagi'] ?? null, 'armada/checklist');
+
+        if (! $existing) {
+            if (! $fotoStok) {
+                return $this->error('Foto indikator stok solar wajib diisi.', 422);
+            }
+            if (! $fotoOdo) {
+                return $this->error($armada->tipe_unit === 'alat_berat' ? 'Foto HM wajib diisi.' : 'Foto ODO wajib diisi.', 422);
+            }
+        }
+
+        try {
+            $checklist = app(RecordChecklistAwalAction::class)->execute($armada, [
+                'tanggal' => $today,
+                'items' => $validated['items'],
+                'stok_solar' => $validated['stok_solar'],
+                'foto_stok_solar' => $fotoStok,
+                'foto_stok_solar_metadata' => $this->decodeMetadata($validated['foto_stok_solar_metadata'] ?? null),
+                'odo_pagi' => $validated['odo_pagi'] ?? null,
+                'foto_odo_pagi' => $fotoOdo,
+                'foto_odo_pagi_metadata' => $this->decodeMetadata($validated['foto_odo_pagi_metadata'] ?? null),
+                'jam_mulai_operasi' => $validated['jam_mulai_operasi'] ?? null,
+                'hm_odo' => $validated['hm_odo'] ?? null,
+                'dicatat_oleh_karyawan_id' => $karyawan->id,
+                'client_uuid' => $validated['client_uuid'] ?? null,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 423, $e->errors());
+        }
+
+        $akhir = $armada->checklistAkhirs()->whereDate('tanggal', $today)->first();
+
+        return $this->success(
+            $this->checklistItemPayload($armada, $today, $checklist, $akhir, collect(), $karyawan),
+            'Checklist awal tersimpan.'
+        );
+    }
+
+    /**
+     * POST /api/mobile/armada/checklist/akhir (multipart). Final: submit kedua → 422.
+     */
+    public function submitChecklistAkhir(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|string|exists:armadas,id',
+            'items' => 'required|array|min:1',
+            'items.*.bagian' => 'required|string|max:100',
+            'items.*.kondisi' => 'required|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable',
+            'foto_stok_solar_metadata' => 'nullable',
+            'odo_akhir' => 'nullable|numeric|min:0',
+            'foto_odo_akhir' => 'nullable',
+            'foto_odo_akhir_metadata' => 'nullable',
+            'jam_selesai_operasi' => 'nullable|date_format:H:i',
+            'hm_akhir' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
         ]);
 
-        return $this->success($this->checklistPayload($armada, $today, $checklist), 'Checklist harian tersimpan.');
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->error('Akun tidak terhubung ke data karyawan.', 403);
+        }
+
+        $armada = Armada::where('id', $validated['armada_id'])->firstOrFail();
+
+        if (! $this->driverHolds($armada->id, $karyawan->id)) {
+            return $this->error('Armada bukan milik driver ini.', 403);
+        }
+
+        $fotoStok = $this->storeFoto($request->file('foto_stok_solar') ?? $validated['foto_stok_solar'] ?? null, 'armada/checklist');
+        $fotoOdo = $this->storeFoto($request->file('foto_odo_akhir') ?? $validated['foto_odo_akhir'] ?? null, 'armada/checklist');
+
+        if (! $fotoStok) {
+            return $this->error('Foto indikator stok solar wajib diisi.', 422);
+        }
+        if (! $fotoOdo) {
+            return $this->error($armada->tipe_unit === 'alat_berat' ? 'Foto HM wajib diisi.' : 'Foto ODO wajib diisi.', 422);
+        }
+
+        try {
+            $akhir = app(RecordChecklistAkhirAction::class)->execute($armada, [
+                'tanggal' => now()->toDateString(),
+                'items' => $validated['items'],
+                'stok_solar' => $validated['stok_solar'],
+                'foto_stok_solar' => $fotoStok,
+                'foto_stok_solar_metadata' => $this->decodeMetadata($validated['foto_stok_solar_metadata'] ?? null),
+                'odo_akhir' => $validated['odo_akhir'] ?? null,
+                'foto_odo_akhir' => $fotoOdo,
+                'foto_odo_akhir_metadata' => $this->decodeMetadata($validated['foto_odo_akhir_metadata'] ?? null),
+                'jam_selesai_operasi' => $validated['jam_selesai_operasi'] ?? null,
+                'hm_akhir' => $validated['hm_akhir'] ?? null,
+                'dicatat_oleh_karyawan_id' => $karyawan->id,
+                'client_uuid' => $validated['client_uuid'] ?? null,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->errors());
+        }
+
+        $awal = $armada->checklists()->whereDate('tanggal', now()->toDateString())->first();
+
+        return $this->success(
+            $this->checklistItemPayload($armada, now()->toDateString(), $awal, $akhir, collect(), $karyawan),
+            'Checklist akhir tersimpan.'
+        );
+    }
+
+    /**
+     * GET /api/mobile/armada/pengisian-solar?armada_id=&tanggal=
+     */
+    public function indexPengisianSolar(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'nullable|string|exists:armadas,id',
+            'tanggal' => 'nullable|date',
+        ]);
+
+        $armadaIds = $this->activeArmadas($request)->pluck('id')->all();
+
+        $query = ArmadaPengisianSolar::with('karyawan')->whereIn('armada_id', $armadaIds);
+
+        if (! empty($validated['armada_id'])) {
+            $query->where('armada_id', $validated['armada_id']);
+        }
+        if (! empty($validated['tanggal'])) {
+            $query->whereDate('tanggal', $validated['tanggal']);
+        }
+
+        $items = $query->orderByDesc('tanggal')->orderByDesc('waktu')
+            ->get()
+            ->map(fn (ArmadaPengisianSolar $p) => $this->pengisianPayload($p))
+            ->values();
+
+        return $this->success(['items' => $items], 'Riwayat pengisian solar.');
+    }
+
+    /**
+     * POST /api/mobile/armada/pengisian-solar (multipart, idempotency).
+     */
+    public function storePengisianSolar(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|string|exists:armadas,id',
+            'tanggal' => 'nullable|date|before_or_equal:today',
+            'odo_atau_hm' => 'required|numeric|min:0',
+            'liter' => 'required|numeric|min:0.01',
+            'nominal_rp' => 'required|numeric|min:0.01',
+            'foto_odo' => 'nullable',
+            'foto_odo_metadata' => 'nullable',
+            'foto_nota' => 'nullable',
+            'foto_nota_metadata' => 'nullable',
+            'catatan' => 'nullable|string|max:1000',
+            'client_uuid' => 'required|string|max:36',
+        ]);
+
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->error('Akun tidak terhubung ke data karyawan.', 403);
+        }
+
+        $armada = Armada::where('id', $validated['armada_id'])->firstOrFail();
+
+        if (! $this->driverHolds($armada->id, $karyawan->id)) {
+            return $this->error('Armada bukan milik driver ini.', 403);
+        }
+
+        // Idempotency.
+        if ($existing = ArmadaPengisianSolar::where('client_uuid', $validated['client_uuid'])->first()) {
+            return $this->success($this->pengisianPayload($existing), 'Pengisian solar sudah pernah dikirim.');
+        }
+
+        $fotoOdo = $this->storeFoto($request->file('foto_odo') ?? $validated['foto_odo'] ?? null, 'armada/solar');
+        $fotoNota = $this->storeFoto($request->file('foto_nota') ?? $validated['foto_nota'] ?? null, 'armada/solar');
+
+        if (! $fotoOdo) {
+            return $this->error('Foto ODO saat isi wajib diisi.', 422);
+        }
+        if (! $fotoNota) {
+            return $this->error('Foto nota wajib diisi.', 422);
+        }
+
+        $pengisian = app(RecordPengisianSolarAction::class)->execute($armada, [
+            'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
+            'odo_atau_hm' => $validated['odo_atau_hm'],
+            'liter' => $validated['liter'],
+            'nominal_rp' => $validated['nominal_rp'],
+            'foto_odo' => $fotoOdo,
+            'foto_odo_metadata' => $this->decodeMetadata($validated['foto_odo_metadata'] ?? null),
+            'foto_nota' => $fotoNota,
+            'foto_nota_metadata' => $this->decodeMetadata($validated['foto_nota_metadata'] ?? null),
+            'catatan' => $validated['catatan'] ?? null,
+            'karyawan_id' => $karyawan->id,
+            'dicatat_oleh' => $request->user()->id,
+            'client_uuid' => $validated['client_uuid'],
+        ]);
+
+        return $this->success(
+            array_merge($this->pengisianPayload($pengisian), [
+                'peringatan' => $this->odoAwalWarning($armada, (float) $validated['odo_atau_hm']),
+            ]),
+            'Pengisian solar tersimpan.'
+        );
+    }
+
+    /**
+     * POST /api/mobile/armada/pengisian-solar/{pengisianSolar} (update).
+     */
+    public function updatePengisianSolar(Request $request, ArmadaPengisianSolar $pengisianSolar)
+    {
+        $validated = $request->validate([
+            'tanggal' => 'nullable|date|before_or_equal:today',
+            'odo_atau_hm' => 'nullable|numeric|min:0',
+            'liter' => 'nullable|numeric|min:0.01',
+            'nominal_rp' => 'nullable|numeric|min:0.01',
+            'foto_odo' => 'nullable',
+            'foto_odo_metadata' => 'nullable',
+            'foto_nota' => 'nullable',
+            'foto_nota_metadata' => 'nullable',
+            'catatan' => 'nullable|string|max:1000',
+            'client_uuid' => 'required|string|max:36',
+        ]);
+
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->error('Akun tidak terhubung ke data karyawan.', 403);
+        }
+
+        if (! $this->driverHolds($pengisianSolar->armada_id, $karyawan->id)) {
+            return $this->error('Armada bukan milik driver ini.', 403);
+        }
+
+        $fotoOdo = $this->storeFoto($request->file('foto_odo') ?? $validated['foto_odo'] ?? null, 'armada/solar');
+        $fotoNota = $this->storeFoto($request->file('foto_nota') ?? $validated['foto_nota'] ?? null, 'armada/solar');
+
+        $pengisian = app(RecordPengisianSolarAction::class)->update($pengisianSolar, [
+            'tanggal' => $validated['tanggal'] ?? null,
+            'odo_atau_hm' => $validated['odo_atau_hm'] ?? null,
+            'liter' => $validated['liter'] ?? null,
+            'nominal_rp' => $validated['nominal_rp'] ?? null,
+            'foto_odo' => $fotoOdo,
+            'foto_odo_metadata' => $this->decodeMetadata($validated['foto_odo_metadata'] ?? null),
+            'foto_nota' => $fotoNota,
+            'foto_nota_metadata' => $this->decodeMetadata($validated['foto_nota_metadata'] ?? null),
+            'catatan' => $validated['catatan'] ?? null,
+            'client_uuid' => $validated['client_uuid'],
+        ]);
+
+        return $this->success($this->pengisianPayload($pengisian), 'Pengisian solar diperbarui.');
+    }
+
+    /**
+     * DELETE /api/mobile/armada/pengisian-solar/{pengisianSolar}
+     */
+    public function deletePengisianSolar(Request $request, ArmadaPengisianSolar $pengisianSolar)
+    {
+        $karyawan = $this->currentKaryawan($request);
+        if (! $karyawan) {
+            return $this->error('Akun tidak terhubung ke data karyawan.', 403);
+        }
+
+        if (! $this->driverHolds($pengisianSolar->armada_id, $karyawan->id)) {
+            return $this->error('Armada bukan milik driver ini.', 403);
+        }
+
+        app(RecordPengisianSolarAction::class)->delete($pengisianSolar);
+
+        return $this->success(['id' => $pengisianSolar->id], 'Pengisian solar dihapus.');
+    }
+
+    /**
+     * Peringatan non-blocking bila ODO pengisian lebih kecil dari ODO awal hari itu.
+     */
+    private function odoAwalWarning(Armada $armada, float $odo): ?string
+    {
+        $awal = $armada->checklists()->whereDate('tanggal', now()->toDateString())->first();
+        $pembanding = $awal?->odo_pagi ?? $awal?->hm_odo;
+
+        if ($pembanding !== null && $odo < (float) $pembanding) {
+            return 'ODO/HM pengisian lebih kecil dari ODO awal hari ini.';
+        }
+
+        return null;
+    }
+
+    private function driverHolds(string $armadaId, string $karyawanId): bool
+    {
+        return ArmadaDriver::where('armada_id', $armadaId)
+            ->where('karyawan_id', $karyawanId)
+            ->where('status', 'aktif')
+            ->exists();
     }
 
     /**
@@ -680,14 +1062,32 @@ class ArmadaController extends Controller
         ], 'Checklist major serah terima berhasil disimpan.');
     }
 
-    private function storeFoto($file): ?string
+    private function storeFoto($file, string $prefix = 'foto/checklist'): ?string
     {
         if (is_string($file) && $file !== '') {
             return $file;
         }
 
         if ($file !== null && method_exists($file, 'store')) {
-            return $file->store('foto/checklist/'.now()->format('Y/m'), 'public');
+            return $file->store($prefix.'/'.now()->format('Y/m'), 'public');
+        }
+
+        return null;
+    }
+
+    /**
+     * Terima metadata foto sebagai array atau JSON string (multipart).
+     */
+    private function decodeMetadata($value): ?array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? $decoded : null;
         }
 
         return null;

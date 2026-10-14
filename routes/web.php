@@ -200,6 +200,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('armada/{armada}/record-sewa', [ArmadaController::class, 'recordSewa'])->name('armada.record-sewa');
         Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');
         Route::post('armada/{armada}/record-checklist', [ArmadaController::class, 'recordChecklist'])->name('armada.record-checklist');
+        Route::post('armada/{armada}/record-checklist-akhir', [ArmadaController::class, 'recordChecklistAkhir'])->name('armada.record-checklist-akhir');
         Route::post('armada/{armada}/record-bbm', [ArmadaController::class, 'recordBbm'])->name('armada.record-bbm');
         Route::post('armada/{armada}/start-downtime', [ArmadaController::class, 'startDowntime'])->name('armada.start-downtime');
         Route::post('armada/{armada}/downtime/{downtime}/end', [ArmadaController::class, 'endDowntime'])->name('armada.end-downtime');

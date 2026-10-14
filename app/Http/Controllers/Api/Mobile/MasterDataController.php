@@ -115,24 +115,47 @@ class MasterDataController extends Controller
 
     private function latestOdo(\App\Domain\Fleet\Models\Armada $a): ?float
     {
-        $checklist = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
+        $akhir = \App\Domain\Fleet\Models\ArmadaChecklistAkhir::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($akhir?->odo_akhir !== null) {
+            return (float) $akhir->odo_akhir;
+        }
+
+        $pengisian = \App\Domain\Fleet\Models\ArmadaPengisianSolar::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($pengisian?->odo_atau_hm !== null) {
+            return (float) $pengisian->odo_atau_hm;
+        }
+
+        $awal = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
             ->where('checkable_id', $a->id)
             ->latest('tanggal')
             ->first();
-        $odo = $checklist ? ($checklist->odo_sore ?? $checklist->odo_pagi) : null;
-        if ($odo === null) {
-            $odoAwal = \App\Domain\Fleet\Models\ArmadaOdoAwalProyek::where('armada_id', $a->id)->latest('tanggal')->first();
-            $odo = $odoAwal ? (float) $odoAwal->odo_awal : null;
+        if ($awal?->odo_pagi !== null) {
+            return (float) $awal->odo_pagi;
         }
-        return $odo ? (float) $odo : null;
+
+        $odoAwal = \App\Domain\Fleet\Models\ArmadaOdoAwalProyek::where('armada_id', $a->id)->latest('tanggal')->first();
+
+        return $odoAwal ? (float) $odoAwal->odo_awal : null;
     }
 
     private function latestHm(\App\Domain\Fleet\Models\Armada $a): ?float
     {
-        $checklist = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
+        $akhir = \App\Domain\Fleet\Models\ArmadaChecklistAkhir::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($akhir?->hm_akhir !== null) {
+            return (float) $akhir->hm_akhir;
+        }
+
+        $awal = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
             ->where('checkable_id', $a->id)
             ->latest('tanggal')
             ->first();
-        return $checklist ? (float) $checklist->hm_odo : null;
+
+        return $awal?->hm_odo !== null ? (float) $awal->hm_odo : null;
     }
 }

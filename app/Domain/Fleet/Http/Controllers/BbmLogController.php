@@ -40,7 +40,7 @@ class BbmLogController extends Controller
     {
         $this->authorize('viewAny', BbmLog::class);
 
-        $query = BbmLog::with(['serviceable', 'dicatatOleh', 'purchaseOrder']);
+        $query = BbmLog::with(['serviceable', 'dicatatOleh', 'purchaseOrder', 'pengisianSolar']);
 
         if ($request->filled('tipe')) {
             $modelClass = self::SERVICEABLE_MAP[$request->tipe] ?? null;
@@ -164,7 +164,7 @@ class BbmLogController extends Controller
     {
         $this->authorize('view', $bbm);
 
-        $bbm->load(['serviceable', 'dicatatOleh', 'purchaseOrder']);
+        $bbm->load(['serviceable', 'dicatatOleh', 'purchaseOrder', 'pengisianSolar']);
 
         return Inertia::render('Fleet/BBM/Show', [
             'bbmLog' => $bbm,

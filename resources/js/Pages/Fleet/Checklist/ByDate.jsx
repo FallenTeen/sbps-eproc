@@ -26,13 +26,14 @@ export default function ByDate({ tanggal, checklists }) {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Unit</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Tipe</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Kondisi</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Item Bermasalah</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {checklists.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
                                     Tidak ada checklist pada tanggal ini
                                 </td>
                             </tr>
@@ -49,6 +50,16 @@ export default function ByDate({ tanggal, checklists }) {
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${c.kondisi_baik ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
                                             {c.kondisi_baik ? "Baik" : "Masalah"}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex flex-col gap-1">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold w-fit ${c.akhir ? "bg-blue-200 text-blue-800" : "bg-gray-200 text-gray-700"}`}>
+                                                {c.akhir ? "Selesai" : "Berjalan"}
+                                            </span>
+                                            {c.akhir?.odo_anomali && (
+                                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800 w-fit">ODO Anomali</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
                                         {c.item_bermasalah || "-"}
