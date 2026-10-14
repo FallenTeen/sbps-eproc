@@ -17,6 +17,7 @@ uses(TestCase::class, DatabaseTransactions::class);
 
 beforeEach(function () {
     Permission::findOrCreate('manage fleet');
+    Permission::findOrCreate('manage helper armada');
     Role::findOrCreate('Driver Armada', 'web');
 
     $this->unit = UnitBisnis::factory()->create(['kode' => 'U-'.((string) Illuminate\Support\Str::uuid())]);
@@ -39,6 +40,12 @@ beforeEach(function () {
     $this->nonPic = User::factory()->create(['is_active' => true]);
     $this->nonPic->givePermissionTo('manage fleet');
     $this->nonPicKaryawan = Karyawan::factory()->create(['user_id' => $this->nonPic->id]);
+
+    // Manager (Ketua Armada / HR): pemegang manage helper armada.
+    // TIDAK punya manage fleet — sengaja, seperti Koordinator SDM.
+    $this->manager = User::factory()->create(['is_active' => true]);
+    $this->manager->givePermissionTo('manage helper armada');
+    $this->managerKaryawan = Karyawan::factory()->create(['user_id' => $this->manager->id]);
 });
 
 function makeHelper($pic): HelperArmada
@@ -55,12 +62,13 @@ function makeHelper($pic): HelperArmada
     ]);
 }
 
-// ========== WEB: CRUD + VISIBILITY ==========
+// ========== WEB: CRUD + VISIBILITY (manager-only) ==========
 
-test('PIC dapat membuat helper armada via web', function () {
-    $this->actingAs($this->pic)
-        ->from(route('fleet.armada.index'))
-        ->post(route('fleet.armada.helper.store', $this->armada->id), [
+test('manager dengan manage helper armada dapat membuat helper via web', function () {
+    $this->actingAs($this->manager)
+        ->from(route('fleet.helper.index'))
+        ->post(route('fleet.helper.store'), [
+            'armada_id' => $this->armada->id,
             'nama' => 'Budi Serabutan',
             'no_hp' => '081234567890',
             'honor' => 150000,
@@ -73,16 +81,16 @@ test('PIC dapat membuat helper armada via web', function () {
         'armada_id' => $this->armada->id,
         'nama' => 'Budi Serabutan',
         'honor' => 150000,
-        'created_by' => $this->pic->id,
+        'created_by' => $this->manager->id,
     ]);
 });
 
-test('PIC dapat memperbarui helper armada via web', function () {
+test('manager dapat memperbarui helper armada via web', function () {
     $helper = makeHelper($this);
 
-    $this->actingAs($this->pic)
-        ->from(route('fleet.armada.index'))
-        ->put(route('fleet.armada.helper.update', [$this->armada->id, $helper->id]), [
+    $this->actingAs($this->manager)
+        ->from(route('fleet.helper.index'))
+        ->put(route('fleet.helper.update', $helper->id), [
             'nama' => 'Budi Updated',
             'honor' => 200000,
             'durasi_mulai' => now()->toDateString(),
@@ -97,10 +105,22 @@ test('PIC dapat memperbarui helper armada via web', function () {
     ]);
 });
 
-test('non-PIC tidak dapat membuat helper (isolasi object-level, bukan role)', function () {
+test('manager dapat membuka fleet/helper; tanpa permission ditolak 403', function () {
+    $this->actingAs($this->manager)
+        ->get(route('fleet.helper.index'))
+        ->assertOk();
+
+    // Non-PIC cuma punya manage fleet, tidak punya manage helper armada.
+    $this->actingAs($this->nonPic)
+        ->get(route('fleet.helper.index'))
+        ->assertForbidden();
+});
+
+test('tanpa manage helper armada tidak dapat membuat helper (bukan PIC lagi yang menentukan)', function () {
     $this->actingAs($this->nonPic)
         ->from(route('fleet.armada.index'))
-        ->post(route('fleet.armada.helper.store', $this->armada->id), [
+        ->post(route('fleet.helper.store'), [
+            'armada_id' => $this->armada->id,
             'nama' => 'Coba Curi',
             'honor' => 100000,
             'durasi_mulai' => now()->toDateString(),
@@ -110,16 +130,23 @@ test('non-PIC tidak dapat membuat helper (isolasi object-level, bukan role)', fu
     $this->assertDatabaseCount('helper_armadas', 0);
 });
 
-test('creator helper tetap boleh kelola walau bukan PIC saat ini', function () {
+test('PIC aktif boleh lihat helper tapi TIDAK boleh kelola (kelola khusus manager)', function () {
     $helper = makeHelper($this);
 
-    // PIC utama dinon-aktifkan (mis. rotasi) -> bukan lag PIC aktif
+    // PIC aktif armada: boleh lihat, tapi tanpa manage helper armada -> tidak boleh edit/hapus.
+    expect($this->pic->can('view', $helper))->toBeTrue()
+        ->and($this->pic->can('update', $helper))->toBeFalse()
+        ->and($this->pic->can('delete', $helper))->toBeFalse();
+
+    // Manager (punya manage helper armada) tetap boleh kelola.
+    expect($this->manager->can('update', $helper))->toBeTrue();
+
+    // Setelah PIC dicopot, akses lihat ikut hilang (created_by bukan lagi penentu).
     ArmadaPenanggungJawab::where('armada_id', $this->armada->id)
         ->whereNull('sampai')
         ->update(['sampai' => now()->toDateString()]);
 
-    $this->assertTrue($this->pic->can('update', $helper));
-    $this->assertTrue($this->pic->can('view', $helper));
+    expect($this->pic->can('view', $helper))->toBeFalse();
 });
 
 test('non-PIC tidak bisa melihat helper via policy', function () {
@@ -129,12 +156,12 @@ test('non-PIC tidak bisa melihat helper via policy', function () {
     expect($this->nonPic->can('update', $helper))->toBeFalse();
 });
 
-test('non-PIC tidak dapat menghapus helper', function () {
+test('tanpa manage helper armada tidak dapat menghapus helper', function () {
     $helper = makeHelper($this);
 
     $this->actingAs($this->nonPic)
-        ->from(route('fleet.armada.index'))
-        ->delete(route('fleet.armada.helper.destroy', [$this->armada->id, $helper->id]))
+        ->from(route('fleet.helper.index'))
+        ->delete(route('fleet.helper.destroy', $helper->id))
         ->assertForbidden();
 
     $this->assertDatabaseHas('helper_armadas', ['id' => $helper->id]);

@@ -91,6 +91,14 @@ function getAllMenus() {
             ],
         },
         {
+            title: 'Helper Armada',
+            icon: Users,
+            permission: ['manage helper armada'],
+            items: [
+                { title: 'Kelola Helper', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
+            ],
+        },
+        {
             title: 'Workshop',
             icon: Wrench,
             permission: ['view fleet service', 'manage fleet service', 'manage sparepart', 'view sparepart'],

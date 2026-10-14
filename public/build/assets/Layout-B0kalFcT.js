@@ -1,1 +1,0 @@
-import{n as e}from"./app-EZxDe09F.js";import{t}from"./AuthenticatedLayout-ZQ12DJtk.js";var n=e();function r({header:e,children:r}){return(0,n.jsx)(t,{header:e,children:r})}export{r as t};

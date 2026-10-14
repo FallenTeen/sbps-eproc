@@ -191,11 +191,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'store'])->name('armada.penanggung-jawab.store');
         Route::post('armada/{armada}/penanggung-jawab/cadangan', [ArmadaPenanggungJawabController::class, 'activateCadangan'])->name('armada.penanggung-jawab.cadangan');
 
-        // v6 (21.6) — Helper Armada (visibility object-level: hanya PIC armada)
-        Route::post('armada/{armada}/helper', [HelperArmadaController::class, 'store'])->name('armada.helper.store');
-        Route::put('armada/{armada}/helper/{helper}', [HelperArmadaController::class, 'update'])->name('armada.helper.update');
-        Route::delete('armada/{armada}/helper/{helper}', [HelperArmadaController::class, 'destroy'])->name('armada.helper.destroy');
-
         Route::post('armada/{armada}/record-ritase', [ArmadaController::class, 'recordRitase'])->name('armada.record-ritase');
         Route::post('armada/{armada}/record-sewa', [ArmadaController::class, 'recordSewa'])->name('armada.record-sewa');
         Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');
@@ -263,6 +258,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('monitoring-armada', [MonitoringArmadaController::class, 'index'])->name('monitoring-armada.index');
         Route::get('monitoring-armada/export', [MonitoringArmadaController::class, 'export'])->name('monitoring-armada.export');
         Route::get('monitoring-armada/{armada}/detail', [MonitoringArmadaController::class, 'detail'])->name('monitoring-armada.detail');
+    });
+
+    // v7 (21.6) — Helper Armada (diinput Ketua Armada / HR / Owner).
+    // Grup sendiri (di luar permission fleet) supaya Koordinator SDM ikut akses.
+    Route::prefix('fleet/helper')->name('fleet.helper.')->middleware('permission:manage helper armada')->group(function () {
+        Route::get('/', [HelperArmadaController::class, 'index'])->name('index');
+        Route::post('/', [HelperArmadaController::class, 'store'])->name('store');
+        Route::put('{helper}', [HelperArmadaController::class, 'update'])->name('update');
+        Route::delete('{helper}', [HelperArmadaController::class, 'destroy'])->name('destroy');
     });
 
     // v6 (21.8) — Sistem Servis Armada (multi-bagian: ajuan → approval →

@@ -1609,7 +1609,8 @@ function DriverSection({ armada, options }) {
 }
 
 function HelperSection({ armada }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
+        armada_id: armada.id,
         nama: "",
         no_hp: "",
         honor: "",
@@ -1619,7 +1620,7 @@ function HelperSection({ armada }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("fleet.armada.helper.store", armada.id), {
+        post(route("fleet.helper.store"), {
             preserveScroll: true,
             onSuccess: () => reset(),
         });
@@ -1715,6 +1716,7 @@ function HelperSection({ armada }) {
 function HelperRow({ armada, helper }) {
     const [editing, setEditing] = useState(false);
     const { data, setData, put, delete: destroy, processing } = useForm({
+        armada_id: armada.id,
         nama: helper.nama,
         no_hp: helper.no_hp || "",
         honor: helper.honor,
@@ -1725,7 +1727,7 @@ function HelperRow({ armada, helper }) {
 
     const save = (e) => {
         e.preventDefault();
-        put(route("fleet.armada.helper.update", [armada.id, helper.id]), {
+        put(route("fleet.helper.update", helper.id), {
             preserveScroll: true,
             onSuccess: () => setEditing(false),
         });
@@ -1789,7 +1791,7 @@ function HelperRow({ armada, helper }) {
                     {editing ? "Batal" : "Edit"}
                 </button>
                 <button
-                    onClick={() => destroy(route("fleet.armada.helper.destroy", [armada.id, helper.id]))}
+                    onClick={() => destroy(route("fleet.helper.destroy", helper.id))}
                     className="text-red-600 hover:underline"
                 >
                     Hapus

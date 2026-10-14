@@ -2,49 +2,71 @@
 
 namespace App\Policies;
 
+use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Models\User;
 
 /**
- * Helper Armada — visibility OBJECT-LEVEL (Bagian 21.6), bukan role-based generik.
+ * Helper Armada (Bagian 21.6 / v7).
  *
- * Hanya PIC yang membuat helper (created_by) atau PIC aktif armada yang boleh
- * melihat/mengelola helper & presensinya. Management (Owner/Koordinator GCS)
- * secara sengaja TIDAK diberi akses — sesuai keputusan rapat.
+ * Pengelolaan (create/update/delete) kini HANYA untuk pemegang permission
+ * `manage helper armada` (Ketua Armada / HR / Owner). Driver mengajukan helper
+ * di luar aplikasi, jadi tidak lagi boleh create.
+ *
+ * Melihat & mengabsen helper (view/presensi) tetap boleh: pemegang
+ * `manage helper armada` ATAU PIC/driver aktif armada terkait.
  */
 class HelperArmadaPolicy
 {
-    public function viewAny(User $user, $armada): bool
+    public function viewAny(User $user, ?Armada $armada = null): bool
     {
-        return $armada->isActivePicFor($user->karyawan);
+        return $user->can('manage helper armada') || ($armada && $this->holdsArmada($user, $armada));
     }
 
     public function view(User $user, HelperArmada $helper): bool
     {
-        return $this->owns($user, $helper);
+        return $user->can('manage helper armada') || $this->holdsArmada($user, $helper->armada);
     }
 
-    public function create(User $user, $armada): bool
+    /**
+     * Mengabsenkan helper (check-in/out). Boleh manajer atau PIC/driver pemegang armada.
+     */
+    public function presensi(User $user, HelperArmada $helper): bool
     {
-        return $armada->isActivePicFor($user->karyawan);
+        return $user->can('manage helper armada') || $this->holdsArmada($user, $helper->armada);
+    }
+
+    public function create(User $user, Armada $armada): bool
+    {
+        return $user->can('manage helper armada');
     }
 
     public function update(User $user, HelperArmada $helper): bool
     {
-        return $this->owns($user, $helper);
+        return $user->can('manage helper armada');
     }
 
     public function delete(User $user, HelperArmada $helper): bool
     {
-        return $this->owns($user, $helper);
+        return $user->can('manage helper armada');
     }
 
     /**
-     * Creator helper boleh terus kelola, atau PIC aktif armada saat ini.
+     * PIC aktif armada, atau driver aktif yang memegang armada tersebut.
      */
-    protected function owns(User $user, HelperArmada $helper): bool
+    protected function holdsArmada(User $user, ?Armada $armada): bool
     {
-        return $helper->created_by === $user->id
-            || $helper->armada->isActivePicFor($user->karyawan);
+        if (! $armada || ! $user->karyawan) {
+            return false;
+        }
+
+        if ($armada->isActivePicFor($user->karyawan)) {
+            return true;
+        }
+
+        return $armada->driverAssignments()
+            ->where('karyawan_id', $user->karyawan->id)
+            ->where('status', 'aktif')
+            ->exists();
     }
 }

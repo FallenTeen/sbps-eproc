@@ -82,8 +82,19 @@ class ArmadaController extends Controller
         $latestOdoAwals = collect();
         $latestAkhirs = collect();
         $latestPengisians = collect();
+        $helperCounts = collect();
 
         if (! empty($armadaIds)) {
+            $today = now()->toDateString();
+
+            // Helper aktif hari ini per armada (untuk badge menu Presensi Helper).
+            $helperCounts = HelperArmada::whereIn('armada_id', $armadaIds)
+                ->where('status', 'aktif')
+                ->whereDate('durasi_mulai', '<=', $today)
+                ->where(fn ($q) => $q->whereNull('durasi_selesai')->orWhereDate('durasi_selesai', '>=', $today))
+                ->selectRaw('armada_id, count(*) as total')
+                ->groupBy('armada_id')
+                ->pluck('total', 'armada_id');
             // Bulk query checklist awal TERBARU per armada (anti N+1)
             $latestChecklists = ArmadaChecklistHarian::where('checkable_type', Armada::class)
                 ->whereIn('checkable_id', $armadaIds)
@@ -114,7 +125,7 @@ class ArmadaController extends Controller
                 ->keyBy('armada_id');
         }
 
-        $items = $armadas->map(function (Armada $a) use ($latestChecklists, $latestOdoAwals, $latestAkhirs, $latestPengisians) {
+        $items = $armadas->map(function (Armada $a) use ($latestChecklists, $latestOdoAwals, $latestAkhirs, $latestPengisians, $helperCounts) {
             $latestChecklist = $latestChecklists->get($a->id);
             $akhir = $latestAkhirs->get($a->id);
             $pengisian = $latestPengisians->get($a->id);
@@ -155,6 +166,7 @@ class ArmadaController extends Controller
                 ] : null,
                 'odo_terkini' => $latestOdo,
                 'jam_operasional_terkini' => $latestJam,
+                'helper_aktif_count' => (int) ($helperCounts[$a->id] ?? 0),
             ];
         });
 
@@ -884,14 +896,25 @@ class ArmadaController extends Controller
             ->whereNull('sampai')
             ->pluck('armada_id');
 
+        $driverArmadaIds = ArmadaDriver::where('karyawan_id', $karyawan->id)
+            ->where('status', 'aktif')
+            ->pluck('armada_id');
+
+        $heldArmadaIds = $picArmadaIds->merge($driverArmadaIds)->unique()->values();
+
         $today = now()->toDateString();
 
         $helpers = HelperArmada::with([
             'armada',
             'presensis' => fn ($q) => $q->whereDate('tanggal', $today),
         ])
-            ->whereIn('armada_id', $picArmadaIds)
-            ->orWhere('created_by', $request->user()->id)
+            ->where('status', 'aktif')
+            ->whereDate('durasi_mulai', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('durasi_selesai')->orWhereDate('durasi_selesai', '>=', $today))
+            ->where(function ($q) use ($heldArmadaIds, $request) {
+                $q->whereIn('armada_id', $heldArmadaIds)
+                    ->orWhere('created_by', $request->user()->id);
+            })
             ->latest('durasi_mulai')
             ->get();
 
@@ -924,6 +947,8 @@ class ArmadaController extends Controller
      */
     public function storeHelperPresensi(Request $request, HelperArmada $helper)
     {
+        $this->authorize('presensi', $helper);
+
         $validated = $request->validate([
             'tipe' => 'required|in:check_in,check_out',
             'tanggal' => 'nullable|date|before_or_equal:today',

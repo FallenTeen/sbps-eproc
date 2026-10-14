@@ -54,6 +54,7 @@ class RoleMatrix
         'view fleet',
         'record ritase',
         'record sewa',
+        'manage helper armada',
 
         // Fleet Service (Sistem Servis Armada, 21.8)
         'view fleet service',
@@ -122,6 +123,7 @@ class RoleMatrix
             'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
             'manage inventory', 'view inventory', 'manage stok opname', 'view stok opname',
             'manage fleet', 'view fleet', 'record ritase', 'record sewa',
+            'manage helper armada',
             'view fleet service', 'manage fleet service', 'approve fleet service', 'submit fleet service', 'manage sparepart', 'view sparepart',
             'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
             'manage hr', 'view hr', 'manage payroll', 'view payroll',
@@ -174,6 +176,7 @@ class RoleMatrix
         ],
         'Koordinator SDM' => [
             'manage hr', 'view hr', 'manage payroll', 'view payroll', 'manage presensi', 'view proyek',
+            'manage helper armada',
         ],
         'Mandor Proyek' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab',
@@ -202,16 +205,19 @@ class RoleMatrix
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
+            'manage helper armada',
         ],
         'Kepala Divisi Armada' => [
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
+            'manage helper armada',
         ],
         'Ketua Armada' => [
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
+            'manage helper armada',
         ],
         'Ketua Divisi Produksi CBP' => [
             'manage production', 'manage production cbp', 'view production',
