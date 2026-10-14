@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  *   - Pengiriman (delivery) yang memakai armada.
  *   - Armada uji coba/dummy (GCS-TEST-*, CBP-TEST-*) beserta penugasan driver.
  *   - Invoice + item + pembayaran + mutasi kas yang merujuk ritase/sewa fleet.
+ *   - Presensi (absensi) seluruh karyawan + formulir lapangan terkait, agar
+ *     sesi uji coba presensi user asli besok dimulai dari nol.
  *
  * Master yang DIPERTAHANKAN: tabel `armadas` (asli), `armada_drivers`,
  * `armada_penanggung_jawabs`, `rute_tarifs` — agar driver asli mengenali unit
@@ -71,8 +73,9 @@ class StagingTest1Seeder extends Seeder
         ]);
 
         $this->purgeFleetTransactions();
+        $this->purgeAttendance();
 
-        $this->command?->info('[StagingTest1] Selesai. Data transaksional Fleet KOSONG; driver asli siap diuji.');
+        $this->command?->info('[StagingTest1] Selesai. Data transaksional Fleet & presensi KOSONG; driver asli siap diuji.');
     }
 
     /**
@@ -128,6 +131,20 @@ class StagingTest1Seeder extends Seeder
             DB::table('armada_penanggung_jawabs')->whereIn('armada_id', $demoArmadaIds)->delete();
             DB::table('armadas')->whereIn('id', $demoArmadaIds)->delete();
         }
+    }
+
+    /**
+     * Kosongkan seluruh presensi (absensi) karyawan dan formulir lapangan yang
+     * merujuk padanya, agar sesi uji coba presensi user asli besok mulai nol.
+     *
+     * `formulir_lapangans` dihapus lebih dulu (anak), lalu `presensis`.
+     * `mobile_tracking_locations.presensi_id` (FK `on delete set null`) ikut
+     * menjadi NULL otomatis — titik tracking itu sendiri tidak dihapus.
+     */
+    private function purgeAttendance(): void
+    {
+        DB::table('formulir_lapangans')->delete();
+        DB::table('presensis')->delete();
     }
 
     /**
