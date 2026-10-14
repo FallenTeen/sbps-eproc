@@ -88,7 +88,7 @@ class RecordPengisianSolarAction
             'foto_nota' => $data['foto_nota'] ?? $pengisian->foto_nota,
             'foto_nota_metadata' => $data['foto_nota_metadata'] ?? $pengisian->foto_nota_metadata,
             'catatan' => $data['catatan'] ?? $pengisian->catatan,
-            'client_uuid' => $data['client_uuid'],
+            'client_uuid' => $data['client_uuid'] ?? $pengisian->client_uuid,
         ]);
 
         $pengisian->save();
