@@ -4,6 +4,7 @@ namespace App\Domain\Attendance\Http\Controllers;
 
 use App\Domain\Attendance\Actions\ValidateLocationCheckInAction;
 use App\Domain\Attendance\Models\Presensi;
+use App\Domain\Attendance\Services\TrackingTimelineService;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
@@ -238,13 +239,20 @@ class PresensiController extends Controller
             ->with('success', 'Presensi check-in berhasil dicatat.');
     }
 
-    public function show(Presensi $presensi)
+    public function show(Presensi $presensi, TrackingTimelineService $trackingService)
     {
         $this->authorize('view', $presensi);
 
-        return Inertia::render('Attendance/Presensi/Show', [
+        $props = [
             'presensi' => $presensi->load(['karyawan', 'titik', 'formulir']),
-        ]);
+        ];
+
+        // Linimasa tracking HANYA untuk Owner (jangan hanya disembunyikan di frontend).
+        if (auth()->user()->hasRole('Owner')) {
+            $props['tracking'] = $trackingService->forPresensi($presensi);
+        }
+
+        return Inertia::render('Attendance/Presensi/Show', $props);
     }
 
     public function checkOut(Request $request, Presensi $presensi)

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import StatusBadge from "@/Components/StatusBadge";
 import {
     Plus, Search, Eye, MapPin, Clock, ClipboardList, Users,
-    CheckCircle2, AlertTriangle, XCircle, ChevronRight, Camera, ImageOff,
+    CheckCircle2, AlertTriangle, XCircle, ChevronRight, Camera, ImageOff, Navigation,
 } from "lucide-react";
 
 const GROUP_OPTIONS = [
@@ -18,6 +18,7 @@ const GROUP_OPTIONS = [
 
 export default function Index({ mode, summary, groups, presensis, karyawan, titiks, filters }) {
     const isGrouped = mode === "grouped";
+    const isOwner = (usePage().props.auth?.roles || []).includes("Owner");
 
     const [groupBy, setGroupBy] = useState(filters.group_by || "");
     const [tanggal, setTanggal] = useState(filters.tanggal || "");
@@ -103,13 +104,24 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                             : "Rekap check-in / check-out karyawan di lapangan"}
                     </p>
                 </div>
-                <Link
-                    href={route("attendance.presensi.create")}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
-                >
-                    <Plus className="w-4 h-4" />
-                    Catat Presensi
-                </Link>
+                <div className="flex items-center gap-2">
+                    <Link
+                        href={route("attendance.presensi.create")}
+                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Catat Presensi
+                    </Link>
+                    {isOwner && (
+                        <Link
+                            href={route("attendance.tracking.index")}
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            <Navigation className="w-4 h-4" />
+                            Tracking Linimasa
+                        </Link>
+                    )}
+                </div>
             </div>
 
             {/* Statistik — tampil di mode grouped maupun individual */}

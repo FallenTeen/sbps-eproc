@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import StatusBadge from "@/Components/StatusBadge";
+import TrackingTimelineMap from "@/Components/TrackingTimelineMap";
 import { ArrowLeft, Camera, Clock, ImageOff, LogOut, MapPin, ShieldCheck, X } from "lucide-react";
 
-export default function Show({ presensi }) {
+export default function Show({ presensi, tracking }) {
     const [checkout, setCheckout] = useState({ check_out_lat: "", check_out_lng: "" });
     const [review, setReview] = useState({ status_validasi: presensi.status_validasi, catatan_override: presensi.catatan_override || "" });
     const [processing, setProcessing] = useState(false);
@@ -142,6 +143,17 @@ export default function Show({ presensi }) {
                             />
                         </div>
                     </div>
+
+                    {/* Tracking Lokasi — linimasa GPS, khusus Owner */}
+                    {tracking && (
+                        <div className="border-t border-gray-100 pt-4">
+                            <p className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-gray-400" />
+                                Tracking Lokasi
+                            </p>
+                            <TrackingTimelineMap tracking={tracking} titik={presensi.titik} />
+                        </div>
+                    )}
 
                     {presensi.catatan_override && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">

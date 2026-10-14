@@ -16,6 +16,7 @@ import {
     ShieldCheck,
     MapPin,
     Wrench,
+    Navigation,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -219,6 +220,14 @@ export default function Sidebar({ isOpen, onClose }) {
             icon: Users,
             href: safeRoute('users.index', {}, '/users'),
             routeName: 'users.*',
+        });
+    }
+    if (isOwner) {
+        roleExtraMenus.push({
+            title: 'Tracking Linimasa',
+            icon: Navigation,
+            href: safeRoute('attendance.tracking.index', {}, '/attendance/tracking'),
+            routeName: 'attendance.tracking.*',
         });
     }
 

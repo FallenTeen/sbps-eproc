@@ -2,6 +2,7 @@
 
 use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
 use App\Domain\Attendance\Http\Controllers\PresensiController;
+use App\Domain\Attendance\Http\Controllers\TrackingTimelineController;
 use App\Domain\Core\Http\Controllers\LokasiController;
 use App\Domain\Core\Http\Controllers\KomunikasiController;
 use App\Domain\Core\Http\Controllers\ProyekController;
@@ -422,6 +423,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/', [FormulirLapanganController::class, 'store'])->name('store');
             Route::get('/{formulir}', [FormulirLapanganController::class, 'show'])->name('show');
         });
+    });
+
+    // Tracking Linimasa (web, KHUSUS Owner) — di luar group permission HR di atas.
+    Route::prefix('attendance')->name('attendance.')->middleware(['role:Owner'])->group(function () {
+        Route::get('/tracking', [TrackingTimelineController::class, 'index'])->name('tracking.index');
     });
 
     // ============================================================
