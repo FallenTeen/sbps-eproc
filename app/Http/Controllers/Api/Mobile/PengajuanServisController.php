@@ -9,11 +9,11 @@ use App\Domain\Fleet\Actions\RejectPengajuanServisAction;
 use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
-use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Support\ArmadaOwnership;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,28 +28,28 @@ class PengajuanServisController extends Controller
 {
     use ApiResponse;
 
-    private function activeArmadaIds(Request $request): array
-    {
-        $karyawan = $request->user()?->karyawan;
-        if (! $karyawan) {
-            return [];
-        }
-
-        return ArmadaPenanggungJawab::where('karyawan_id', $karyawan->id)
-            ->whereNull('sampai')
-            ->pluck('armada_id')
-            ->all();
-    }
-
     /**
      * GET /api/mobile/servis-armada
-     * Riwayat seluruh pengajuan servis armada (paginasi & filter status).
+     * Riwayat pengajuan servis armada (paginasi & filter status).
+     *
+     * Non-manajer hanya melihat ajuan miliknya sendiri atau untuk armada yang
+     * diampu (PIC/driver). Manajer melihat semua.
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+
         $query = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh'])
             ->latest('tanggal_ajuan')
             ->latest('created_at');
+
+        if (! ArmadaOwnership::isManager($user)) {
+            $heldIds = ArmadaOwnership::heldIds($user);
+            $query->where(function ($q) use ($user, $heldIds) {
+                $q->where('diajukan_oleh', $user->id)
+                    ->orWhereIn('armada_id', $heldIds);
+            });
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
@@ -63,15 +63,18 @@ class PengajuanServisController extends Controller
 
     /**
      * GET /api/mobile/servis-armada/saya
-     * Servis yang diampu user (diajukannya sendiri atau armada yang di-PIC-kan).
+     * Servis yang diampu user (diajukannya sendiri atau armada yang diampu).
      */
     public function saya(Request $request)
     {
-        $ids = $this->activeArmadaIds($request);
+        $user = $request->user();
+        $heldIds = ArmadaOwnership::heldIds($user);
 
         $servis = PengajuanServisArmada::with(['armada'])
-            ->where('diajukan_oleh', $request->user()->id)
-            ->orWhereIn('armada_id', $ids)
+            ->where(function ($q) use ($user, $heldIds) {
+                $q->where('diajukan_oleh', $user->id)
+                    ->orWhereIn('armada_id', $heldIds);
+            })
             ->latest('tanggal_ajuan')
             ->latest('created_at')
             ->get();
@@ -100,27 +103,11 @@ class PengajuanServisController extends Controller
         }
 
         $user = $request->user();
-        $allowedRoles = [
-            'Owner',
-            'Admin Keuangan',
-            'Kepala Divisi Armada',
-            'Ketua Divisi Armada',
-            'Ketua Armada',
-        ];
 
-        $isRoleAllowed = $user && $user->hasAnyRole($allowedRoles);
-        $isPic = in_array($validated['armada_id'], $this->activeArmadaIds($request), true);
-        $isDriver = false;
+        $isManager = ArmadaOwnership::isManager($user);
+        $isHolder = ArmadaOwnership::holds($user, $validated['armada_id']);
 
-        $karyawan = $user?->karyawan;
-        if ($karyawan) {
-            $isDriver = \App\Domain\Fleet\Models\ArmadaDriver::where('armada_id', $validated['armada_id'])
-                ->where('karyawan_id', $karyawan->id)
-                ->where('status', 'aktif')
-                ->exists();
-        }
-
-        if (! $isRoleAllowed && ! $isPic && ! $isDriver) {
+        if (! $isManager && ! $isHolder) {
             return $this->error('Anda tidak berhak mengajukan servis untuk armada ini.', 403);
         }
 
@@ -136,6 +123,14 @@ class PengajuanServisController extends Controller
     {
         $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts', 'workshopTodos'])
             ->findOrFail($id);
+
+        $user = $request->user();
+
+        if (! ArmadaOwnership::isManager($user)
+            && $pengajuan->diajukan_oleh !== $user->id
+            && ! ArmadaOwnership::holds($user, $pengajuan->armada_id)) {
+            return $this->error('Anda tidak berhak melihat pengajuan servis ini.', 403);
+        }
 
         $payload = $pengajuan->toArray();
         $payload['todos'] = $pengajuan->workshopTodos
@@ -209,6 +204,10 @@ class PengajuanServisController extends Controller
      */
     public function approve(Request $request, $id)
     {
+        if (! ArmadaOwnership::isManager($request->user())) {
+            return $this->error('Anda tidak berhak menyetujui pengajuan servis.', 403);
+        }
+
         $validated = $request->validate([
             'catatan' => 'nullable|string|max:1000',
         ]);
@@ -230,6 +229,10 @@ class PengajuanServisController extends Controller
      */
     public function tolak(Request $request, $id)
     {
+        if (! ArmadaOwnership::isManager($request->user())) {
+            return $this->error('Anda tidak berhak menolak pengajuan servis.', 403);
+        }
+
         $validated = $request->validate([
             'alasan' => 'required|string|max:1000',
         ]);

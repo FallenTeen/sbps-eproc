@@ -16,7 +16,6 @@ use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
 use App\Domain\Fleet\Models\ArmadaPengisianSolar;
-use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
 use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\Ritase;
@@ -446,10 +445,10 @@ class ArmadaController extends Controller
             'items.*.catatan' => 'nullable|string',
             'items.*.foto' => 'nullable|string',
             'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
-            'foto_stok_solar' => 'nullable',
+            'foto_stok_solar' => 'nullable|image|max:5120',
             'foto_stok_solar_metadata' => 'nullable',
             'odo_pagi' => 'nullable|numeric|min:0',
-            'foto_odo_pagi' => 'nullable',
+            'foto_odo_pagi' => 'nullable|image|max:5120',
             'foto_odo_pagi_metadata' => 'nullable',
             'jam_mulai_operasi' => 'nullable|date_format:H:i',
             'hm_odo' => 'nullable|numeric|min:0',
@@ -530,10 +529,10 @@ class ArmadaController extends Controller
             'items.*.catatan' => 'nullable|string',
             'items.*.foto' => 'nullable|string',
             'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
-            'foto_stok_solar' => 'nullable',
+            'foto_stok_solar' => 'nullable|image|max:5120',
             'foto_stok_solar_metadata' => 'nullable',
             'odo_akhir' => 'nullable|numeric|min:0',
-            'foto_odo_akhir' => 'nullable',
+            'foto_odo_akhir' => 'nullable|image|max:5120',
             'foto_odo_akhir_metadata' => 'nullable',
             'jam_selesai_operasi' => 'nullable|date_format:H:i',
             'hm_akhir' => 'nullable|numeric|min:0',
@@ -628,9 +627,9 @@ class ArmadaController extends Controller
             'odo_atau_hm' => 'required|numeric|min:0',
             'liter' => 'required|numeric|min:0.01',
             'nominal_rp' => 'required|numeric|min:0.01',
-            'foto_odo' => 'nullable',
+            'foto_odo' => 'nullable|image|max:5120',
             'foto_odo_metadata' => 'nullable',
-            'foto_nota' => 'nullable',
+            'foto_nota' => 'nullable|image|max:5120',
             'foto_nota_metadata' => 'nullable',
             'catatan' => 'nullable|string|max:1000',
             'client_uuid' => 'required|string|max:36',
@@ -695,9 +694,9 @@ class ArmadaController extends Controller
             'odo_atau_hm' => 'nullable|numeric|min:0',
             'liter' => 'nullable|numeric|min:0.01',
             'nominal_rp' => 'nullable|numeric|min:0.01',
-            'foto_odo' => 'nullable',
+            'foto_odo' => 'nullable|image|max:5120',
             'foto_odo_metadata' => 'nullable',
-            'foto_nota' => 'nullable',
+            'foto_nota' => 'nullable|image|max:5120',
             'foto_nota_metadata' => 'nullable',
             'catatan' => 'nullable|string|max:1000',
             'client_uuid' => 'required|string|max:36',
@@ -892,15 +891,7 @@ class ArmadaController extends Controller
             return $this->success(['items' => []]);
         }
 
-        $picArmadaIds = ArmadaPenanggungJawab::where('karyawan_id', $karyawan->id)
-            ->whereNull('sampai')
-            ->pluck('armada_id');
-
-        $driverArmadaIds = ArmadaDriver::where('karyawan_id', $karyawan->id)
-            ->where('status', 'aktif')
-            ->pluck('armada_id');
-
-        $heldArmadaIds = $picArmadaIds->merge($driverArmadaIds)->unique()->values();
+        $heldArmadaIds = collect(\App\Support\ArmadaOwnership::heldIds($request->user()));
 
         $today = now()->toDateString();
 
@@ -952,7 +943,7 @@ class ArmadaController extends Controller
         $validated = $request->validate([
             'tipe' => 'required|in:check_in,check_out',
             'tanggal' => 'nullable|date|before_or_equal:today',
-            'foto' => 'required',
+            'foto' => 'required|image|max:5120',
         ]);
 
         $foto = $this->storeFoto($request->file('foto') ?? $validated['foto'] ?? null);
@@ -1087,12 +1078,12 @@ class ArmadaController extends Controller
         ], 'Checklist major serah terima berhasil disimpan.');
     }
 
+    /**
+     * Simpan foto dari upload file (multipart). Path string TIDAK lagi
+     * diterima — semua foto armada wajib berupa upload file (Bagian 4).
+     */
     private function storeFoto($file, string $prefix = 'foto/checklist'): ?string
     {
-        if (is_string($file) && $file !== '') {
-            return $file;
-        }
-
         if ($file !== null && method_exists($file, 'store')) {
             return $file->store($prefix.'/'.now()->format('Y/m'), 'public');
         }

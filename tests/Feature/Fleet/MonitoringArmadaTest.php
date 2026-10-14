@@ -3,13 +3,16 @@
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\CalculateArmadaUtilizationAction;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -45,21 +48,61 @@ beforeEach(function () {
     $this->karyawan = Karyawan::factory()->create();
 });
 
-function monitoringChecklist(Armada $armada, Karyawan $karyawan, array $overrides = []): ArmadaChecklistHarian
+/**
+ * Buat checklist awal + akhir (+ pengisian solar) sehari untuk satu armada.
+ * Mengembalikan baris checklist akhir. Parameter dipertahankan kompatibel
+ * dengan helper lama (jam_mulai/selesai, odo_pagi/odo_sore, solar_liter).
+ */
+function monitoringChecklist(Armada $armada, Karyawan $karyawan, array $overrides = []): ArmadaChecklistAkhir
 {
-    return ArmadaChecklistHarian::factory()->create(array_merge([
+    $jamMulai = $overrides['jam_mulai_operasi'] ?? '07:00';
+    $jamSelesai = $overrides['jam_selesai_operasi'] ?? '15:00';
+    $odoPagi = $overrides['odo_pagi'] ?? 1000;
+    $odoSore = $overrides['odo_sore'] ?? 1160;
+    $solar = $overrides['solar_liter'] ?? 80;
+    $kondisiBaik = $overrides['kondisi_baik'] ?? true;
+    $itemBermasalah = $overrides['item_bermasalah'] ?? null;
+    $tanggal = $overrides['tanggal'] ?? now()->toDateString();
+
+    $awal = ArmadaChecklistHarian::create([
         'checkable_type' => Armada::class,
         'checkable_id' => $armada->id,
-        'tanggal' => now()->toDateString(),
-        'jam_mulai_operasi' => '07:00',
-        'jam_selesai_operasi' => '15:00',
-        'odo_pagi' => 1000,
-        'odo_sore' => 1160,
-        'solar_liter' => 80,
-        'kondisi_baik' => true,
-        'item_bermasalah' => null,
+        'tanggal' => $tanggal,
+        'jam_mulai_operasi' => $jamMulai,
+        'odo_pagi' => $odoPagi,
+        'kondisi_baik' => $kondisiBaik,
+        'item_bermasalah' => $itemBermasalah,
         'dicatat_oleh_karyawan_id' => $karyawan->id,
-    ], $overrides));
+    ]);
+
+    $akhir = ArmadaChecklistAkhir::create([
+        'armada_id' => $armada->id,
+        'checklist_awal_id' => $awal->id,
+        'tanggal' => $tanggal,
+        'jam_selesai_operasi' => $jamSelesai,
+        'odo_akhir' => $odoSore,
+        'kondisi_baik' => $kondisiBaik,
+        'item_bermasalah' => $itemBermasalah,
+        'dicatat_oleh_karyawan_id' => $karyawan->id,
+    ]);
+
+    if ($solar > 0) {
+        ArmadaPengisianSolar::create([
+            'armada_id' => $armada->id,
+            'karyawan_id' => $karyawan->id,
+            'tanggal' => $tanggal,
+            'waktu' => '12:00',
+            'odo_atau_hm' => $odoSore,
+            'liter' => $solar,
+            'nominal_rp' => $solar * 10000,
+            'harga_per_liter' => 10000,
+            'foto_odo' => 'foto/solar/odo.jpg',
+            'foto_nota' => 'foto/solar/nota.jpg',
+            'client_uuid' => (string) Str::uuid(),
+        ]);
+    }
+
+    return $akhir;
 }
 
 test('user tanpa permission manage fleet ditolak 403', function () {

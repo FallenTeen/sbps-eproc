@@ -68,6 +68,34 @@ test('checklist akhir final, menolak submit kedua, dan idempotent', function () 
     expect($again->id)->toBe($akhir->id);
 });
 
+test('checklist akhir ditolak bila belum ada checklist awal', function () {
+    expect(fn () => (new RecordChecklistAkhirAction)->execute($this->armada, [
+        'tanggal' => '2026-02-01',
+        'odo_akhir' => 1100,
+    ]))->toThrow(ValidationException::class);
+});
+
+test('checklist awal terkunci setelah checklist akhir disubmit', function () {
+    $awal = (new RecordChecklistAwalAction)->execute($this->armada, [
+        'tanggal' => '2026-02-01',
+        'odo_pagi' => 1000,
+        'dicatat_oleh_karyawan_id' => $this->driver->id,
+    ]);
+
+    (new RecordChecklistAkhirAction)->execute($this->armada, [
+        'tanggal' => '2026-02-01',
+        'odo_akhir' => 1100,
+    ]);
+
+    expect((new ChecklistLockService)->isAwalLocked($awal->fresh(), $this->driver)['locked'])->toBeTrue();
+
+    expect(fn () => (new RecordChecklistAwalAction)->execute($this->armada, [
+        'tanggal' => '2026-02-01',
+        'odo_pagi' => 1200,
+        'dicatat_oleh_karyawan_id' => $this->driver->id,
+    ]))->toThrow(ValidationException::class);
+});
+
 test('checklist awal terkunci setelah presensi check-out', function () {
     $awal = (new RecordChecklistAwalAction)->execute($this->armada, [
         'tanggal' => '2026-02-01',

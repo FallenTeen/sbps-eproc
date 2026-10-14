@@ -9,6 +9,9 @@ use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -262,35 +265,30 @@ test('GET mobile armada/helper tidak bocor ke non-PIC', function () {
 });
 
 test('POST mobile presensi helper: check-in lalu check-out oleh PIC', function () {
+    Storage::fake('public');
     $helper = makeHelper($this);
     $this->pic->assignRole('Driver Armada');
     $token = $this->pic->createToken('mobile-test')->plainTextToken;
 
     $this->withToken($token)
-        ->withHeaders(mobileIdemHeaders())
-        ->postJson("/api/mobile/armada/helper/{$helper->id}/presensi", [
+        ->post("/api/mobile/armada/helper/{$helper->id}/presensi", [
             'tipe' => 'check_in',
-            'foto' => 'foto/presensi-helper/mobile-in.jpg',
-        ])
-        ->assertOk()
-        ->assertJsonPath('data.foto_check_in', 'foto/presensi-helper/mobile-in.jpg');
+            'foto' => UploadedFile::fake()->image('mobile-in.jpg'),
+        ], mobileIdemHeaders())
+        ->assertOk();
 
     $this->withToken($token)
-        ->withHeaders(mobileIdemHeaders())
-        ->postJson("/api/mobile/armada/helper/{$helper->id}/presensi", [
+        ->post("/api/mobile/armada/helper/{$helper->id}/presensi", [
             'tipe' => 'check_out',
-            'foto' => 'foto/presensi-helper/mobile-out.jpg',
-        ])
-        ->assertOk()
-        ->assertJsonPath('data.foto_check_out', 'foto/presensi-helper/mobile-out.jpg');
+            'foto' => UploadedFile::fake()->image('mobile-out.jpg'),
+        ], mobileIdemHeaders())
+        ->assertOk();
 
     $this->assertDatabaseCount('presensi_helpers', 1);
-    $this->assertDatabaseHas('presensi_helpers', [
-        'helper_armada_id' => $helper->id,
-        'foto_check_in' => 'foto/presensi-helper/mobile-in.jpg',
-        'foto_check_out' => 'foto/presensi-helper/mobile-out.jpg',
-        'dicatat_oleh' => $this->pic->id,
-    ]);
+
+    $row = DB::table('presensi_helpers')->first();
+    expect($row->foto_check_in)->not->toBeNull();
+    expect($row->foto_check_out)->not->toBeNull();
 });
 
 test('POST mobile presensi oleh non-PIC ditolak 422', function () {

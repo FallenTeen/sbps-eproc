@@ -8,6 +8,7 @@ use App\Domain\Fleet\Actions\RejectPengajuanServisAction;
 use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\PengajuanServisSparepart;
 use App\Domain\Fleet\Models\ServiceHistory;
@@ -18,6 +19,7 @@ use App\Domain\Fleet\States\Diajukan;
 use App\Domain\Fleet\States\MenungguSparepart;
 use App\Domain\Fleet\States\Selesai;
 use App\Domain\Fleet\States\SparepartTersedia;
+use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
@@ -38,6 +40,7 @@ beforeEach(function () {
     Role::findOrCreate('Ketua Divisi Armada', 'web');
     Role::findOrCreate('Workshop', 'web');
     Role::findOrCreate('Inventory', 'web');
+    Role::findOrCreate('Driver Armada', 'web');
 
     $this->armada = Armada::factory()->create(['status' => 'aktif']);
 
@@ -208,4 +211,63 @@ test('role Workshop bisa menyelesaikan servis via web (complete)', function () {
         ->assertSessionHas('success');
 
     expect($pengajuan->fresh()->status)->toBeInstanceOf(Selesai::class);
+});
+
+// ========== MOBILE: SCOPE PER PENGGUNA ==========
+
+test('driver hanya melihat servis armada yang diampu via mobile', function () {
+    $driverUser = User::factory()->create(['is_active' => true]);
+    $driverUser->assignRole('Driver Armada');
+    $driverKaryawan = Karyawan::factory()->create(['user_id' => $driverUser->id]);
+
+    ArmadaDriver::create([
+        'armada_id' => $this->armada->id,
+        'karyawan_id' => $driverKaryawan->id,
+        'tanggal_mulai' => now()->toDateString(),
+        'status' => 'aktif',
+    ]);
+
+    $otherArmada = Armada::factory()->create(['status' => 'aktif']);
+
+    $own = (new SubmitPengajuanServisAction)->execute($this->pic, ['armada_id' => $this->armada->id]);
+    $other = (new SubmitPengajuanServisAction)->execute($this->pic, ['armada_id' => $otherArmada->id]);
+
+    $token = $driverUser->createToken('mobile-test')->plainTextToken;
+
+    $response = $this->withToken($token)
+        ->withHeaders(mobileAuthHeaders())
+        ->getJson('/api/mobile/servis-armada/saya')
+        ->assertOk();
+
+    $ids = collect($response->json('data'))->pluck('id')->all();
+    expect($ids)->toContain($own->id)
+        ->not->toContain($other->id);
+});
+
+test('non-manajer ditolak menyetujui servis via mobile', function () {
+    $pengajuan = (new SubmitPengajuanServisAction)->execute($this->pic, ['armada_id' => $this->armada->id]);
+
+    $driverUser = User::factory()->create(['is_active' => true]);
+    $driverUser->assignRole('Driver Armada');
+    Karyawan::factory()->create(['user_id' => $driverUser->id]);
+
+    $token = $driverUser->createToken('mobile-test')->plainTextToken;
+
+    $this->withToken($token)
+        ->withHeaders(mobileIdemHeaders())
+        ->postJson("/api/mobile/servis-armada/{$pengajuan->id}/approve", ['catatan' => 'ok'])
+        ->assertStatus(403);
+});
+
+test('manajer dapat menyetujui servis via mobile', function () {
+    $pengajuan = (new SubmitPengajuanServisAction)->execute($this->pic, ['armada_id' => $this->armada->id]);
+
+    $token = $this->approver->createToken('mobile-test')->plainTextToken;
+
+    $this->withToken($token)
+        ->withHeaders(mobileIdemHeaders())
+        ->postJson("/api/mobile/servis-armada/{$pengajuan->id}/approve", ['catatan' => 'acc'])
+        ->assertOk();
+
+    expect($pengajuan->fresh()->status)->toBeInstanceOf(Disetujui::class);
 });
