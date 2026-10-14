@@ -2,7 +2,7 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
@@ -146,7 +146,7 @@ class ChecklistHarianController extends Controller
             'client_uuid' => $validated['client_uuid'] ?? null,
         ];
 
-        $checklist = app(RecordChecklistHarianAction::class)->execute($checkable, $data);
+        $checklist = app(RecordChecklistAwalAction::class)->execute($checkable, $data);
 
         return back()->with('success', $existing
             ? 'Checklist hari ini berhasil diperbarui.'
@@ -300,7 +300,7 @@ class ChecklistHarianController extends Controller
             if ($existing) {
                 $existing->update($data);
             } else {
-                app(RecordChecklistHarianAction::class)->execute($checkable, $data);
+                app(RecordChecklistAwalAction::class)->execute($checkable, $data);
             }
             $saved++;
         }

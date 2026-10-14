@@ -63,6 +63,16 @@ class Armada extends Model
         return $this->morphMany(ArmadaChecklistHarian::class, 'checkable');
     }
 
+    public function checklistAkhirs()
+    {
+        return $this->hasMany(ArmadaChecklistAkhir::class);
+    }
+
+    public function pengisianSolars()
+    {
+        return $this->hasMany(ArmadaPengisianSolar::class);
+    }
+
     public function odoAwalProyeks()
     {
         return $this->hasMany(ArmadaOdoAwalProyek::class);

@@ -8,7 +8,7 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\AssignDriverToArmadaAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
 use App\Domain\Fleet\Actions\RecordBBMAction;
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
 use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
@@ -308,7 +308,7 @@ class ArmadaController extends Controller
             'hm_odo' => 'nullable|numeric|min:0',
             'client_uuid' => 'nullable|string|max:36',
         ]);
-        (new RecordChecklistHarianAction)->execute($armada, $data);
+        (new RecordChecklistAwalAction)->execute($armada, $data);
 
         return back()->with('success', 'Checklist harian dicatat.');
     }

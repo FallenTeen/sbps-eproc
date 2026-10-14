@@ -2,11 +2,13 @@
 
 namespace App\Domain\Fleet\Models;
 
+use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\HR\Models\Karyawan;
 use Database\Factories\Domain\Fleet\Models\ArmadaChecklistHarianFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class ArmadaChecklistHarian extends Model
 {
@@ -20,30 +22,28 @@ class ArmadaChecklistHarian extends Model
         'tanggal',
         'kondisi_baik',
         'item_bermasalah',
+        'items',
+        'stok_solar',
+        'foto_stok_solar',
+        'foto_stok_solar_metadata',
         'dicatat_oleh_karyawan_id',
-        'status',
-        'solar_liter',
-        'solar_harga_rp',
         'odo_pagi',
         'foto_odo_pagi',
-        'odo_sore',
-        'foto_odo_sore',
+        'foto_odo_pagi_metadata',
         'jam_mulai_operasi',
-        'jam_selesai_operasi',
         'hm_odo',
-        'odo_anomali',
         'client_uuid',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'kondisi_baik' => 'boolean',
-        'solar_liter' => 'float',
-        'solar_harga_rp' => 'float',
+        'items' => 'array',
+        'stok_solar' => StokSolar::class,
+        'foto_stok_solar_metadata' => 'array',
+        'foto_odo_pagi_metadata' => 'array',
         'odo_pagi' => 'float',
-        'odo_sore' => 'float',
         'hm_odo' => 'float',
-        'odo_anomali' => 'boolean',
     ];
 
     protected static function newFactory()
@@ -60,6 +60,28 @@ class ArmadaChecklistHarian extends Model
     public function dicatatOleh()
     {
         return $this->belongsTo(Karyawan::class, 'dicatat_oleh_karyawan_id');
+    }
+
+    /** Checklist akhir hari itu (1:1). */
+    public function akhir()
+    {
+        return $this->hasOne(ArmadaChecklistAkhir::class, 'checklist_awal_id');
+    }
+
+    /** Status turunan: `selesai` bila checklist akhir sudah ada. */
+    public function getStatusAttribute(): string
+    {
+        return $this->akhir ? 'selesai' : 'berjalan';
+    }
+
+    public function getFotoOdoPagiUrlAttribute(): ?string
+    {
+        return $this->foto_odo_pagi ? Storage::disk('public')->url($this->foto_odo_pagi) : null;
+    }
+
+    public function getFotoStokSolarUrlAttribute(): ?string
+    {
+        return $this->foto_stok_solar ? Storage::disk('public')->url($this->foto_stok_solar) : null;
     }
 
     // Scope

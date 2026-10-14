@@ -26,6 +26,7 @@ class CleanDataSeeder extends Seeder
 
         // Procurement (referensi ke purchase_orders)
         'pembayarans',
+        'armada_pengisian_solars',
         'bbm_logs',
         'service_history',
         'purchase_order_approvals',
@@ -60,6 +61,7 @@ class CleanDataSeeder extends Seeder
         'ritase_biaya_lains',
         'ritases',
         'sewa_alat_jams',
+        'armada_checklist_akhirs',
         'armada_checklist_harians',
         'downtime_logs',
         'service_intervals',

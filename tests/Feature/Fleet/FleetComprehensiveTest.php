@@ -7,7 +7,7 @@ use App\Domain\Fleet\Actions\CalculateNextServiceDateAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
 use App\Domain\Fleet\Actions\EstimateBBMFromJarakAction;
 use App\Domain\Fleet\Actions\RecordBBMAction;
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Actions\RecordServiceHistoryAction;
 use App\Domain\Fleet\Actions\RecordSewaAlatJamAction;
@@ -232,7 +232,7 @@ describe('Checklist Kondisi Alat Harian', function () {
     test('record checklist kondisi baik tersimpan dengan benar', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action = new RecordChecklistHarianAction;
+        $action = new RecordChecklistAwalAction;
         $checklist = $action->execute($armada, [
             'tanggal' => now()->toDateString(),
             'kondisi_baik' => true,
@@ -247,7 +247,7 @@ describe('Checklist Kondisi Alat Harian', function () {
     test('record checklist kondisi tidak baik menyimpan item bermasalah', function () {
         $armada = Armada::factory()->for($this->unit)->create();
 
-        $action = new RecordChecklistHarianAction;
+        $action = new RecordChecklistAwalAction;
         $checklist = $action->execute($armada, [
             'tanggal' => now()->toDateString(),
             'kondisi_baik' => false,

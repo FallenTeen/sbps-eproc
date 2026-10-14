@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
 use App\Domain\Fleet\Models\ArmadaOdoAwalProyek;
@@ -204,52 +206,74 @@ class MobileArmadaDemoSeeder extends Seeder
         $today = now()->toDateString();
 
         // Checklist hari ini (kondisi baik)
-        ArmadaChecklistHarian::firstOrCreate(
-            [
-                'checkable_type' => Armada::class,
-                'checkable_id' => $armada->id,
-                'tanggal' => $today,
-            ],
-            [
-                'kondisi_baik' => true,
-                'item_bermasalah' => null,
-                'dicatat_oleh_karyawan_id' => $driver?->id,
-                'status' => 'selesai',
-                'solar_liter' => 45.5,
-                'solar_harga_rp' => 309_400,
-                'odo_pagi' => 12450.0,
-                'odo_sore' => 12530.0,
-                'jam_mulai_operasi' => '07:00',
-                'jam_selesai_operasi' => '16:00',
-                'hm_odo' => 8.0,
-            ]
-        );
+        $this->makeChecklistHari($armada, $driver, $today, true, null, StokSolar::Setengah->value);
 
         // Riwayat checklist 3 hari terakhir
         for ($i = 1; $i <= 3; $i++) {
             $date = now()->subDays($i)->toDateString();
 
-            ArmadaChecklistHarian::firstOrCreate(
-                [
-                    'checkable_type' => Armada::class,
-                    'checkable_id' => $armada->id,
-                    'tanggal' => $date,
-                ],
-                [
-                    'kondisi_baik' => $i !== 2, // Hari ke-2 ada masalah
-                    'item_bermasalah' => $i === 2 ? 'Radiator bocor, mesin cepat panas.' : null,
-                    'dicatat_oleh_karyawan_id' => $driver?->id,
-                    'status' => 'selesai',
-                    'solar_liter' => 40 + $i * 2,
-                    'solar_harga_rp' => (40 + $i * 2) * 6800,
-                    'odo_pagi' => 12400 + $i * 15,
-                    'odo_sore' => 12400 + $i * 15 + 85,
-                    'jam_mulai_operasi' => '06:'.str_pad((string) (45 + $i), 2, '0', STR_PAD_LEFT),
-                    'jam_selesai_operasi' => '16:10',
-                    'hm_odo' => 8.5,
-                ]
+            $this->makeChecklistHari(
+                $armada,
+                $driver,
+                $date,
+                $i !== 2, // Hari ke-2 ada masalah
+                $i === 2 ? 'Radiator bocor, mesin cepat panas.' : null,
+                StokSolar::cases()[$i]->value,
             );
         }
+    }
+
+    private function makeChecklistHari(
+        Armada $armada,
+        ?Karyawan $driver,
+        string $tanggal,
+        bool $baik,
+        ?string $masalah,
+        string $stok,
+    ): void {
+        $bagian = ['Ban', 'Rem', 'Lampu', 'Oli mesin', 'Air radiator', 'Body', 'Kabin'];
+        $items = array_map(
+            fn (string $b) => ['bagian' => $b, 'kondisi' => 'baik', 'catatan' => null, 'foto' => null],
+            $bagian,
+        );
+        if (! $baik) {
+            $items[5]['kondisi'] = 'rusak';
+            $items[5]['catatan'] = $masalah;
+        }
+
+        $awal = ArmadaChecklistHarian::firstOrCreate(
+            [
+                'checkable_type' => Armada::class,
+                'checkable_id' => $armada->id,
+                'tanggal' => $tanggal,
+            ],
+            [
+                'kondisi_baik' => $baik,
+                'item_bermasalah' => $masalah,
+                'items' => $items,
+                'stok_solar' => $stok,
+                'dicatat_oleh_karyawan_id' => $driver?->id,
+                'odo_pagi' => 12450.0,
+                'jam_mulai_operasi' => '07:00',
+                'hm_odo' => 8.0,
+            ]
+        );
+
+        ArmadaChecklistAkhir::firstOrCreate(
+            ['checklist_awal_id' => $awal->id],
+            [
+                'armada_id' => $armada->id,
+                'tanggal' => $tanggal,
+                'items' => $items,
+                'kondisi_baik' => $baik,
+                'item_bermasalah' => $masalah,
+                'stok_solar' => $stok,
+                'dicatat_oleh_karyawan_id' => $driver?->id,
+                'odo_akhir' => 12530.0,
+                'jam_selesai_operasi' => '16:00',
+                'hm_akhir' => 8.5,
+            ]
+        );
     }
 
     // ────────────────────────── ODO AWAL PROYEK ──────────────────────────

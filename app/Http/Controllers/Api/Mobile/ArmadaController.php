@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Mobile;
 
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordChecklistSerahTerimaAction;
 use App\Domain\Fleet\Actions\RecordHelperPresensiAction;
 use App\Domain\Fleet\Actions\RecordOdoAwalProyekAction;
@@ -355,7 +355,7 @@ class ArmadaController extends Controller
 
         $today = now()->toDateString();
 
-        $checklist = app(RecordChecklistHarianAction::class)->execute($armada, [
+        $checklist = app(RecordChecklistAwalAction::class)->execute($armada, [
             'tanggal' => $today,
             'kondisi_baik' => array_key_exists('kondisi_baik', $validated) && $validated['kondisi_baik'] !== null
                 ? (bool) $validated['kondisi_baik']
