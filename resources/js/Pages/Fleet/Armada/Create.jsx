@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm, Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ClipboardList, MapPin, Truck } from "lucide-react";
 
 export default function Create({ unitBisnis, titiks, drivers }) {
     const { data, setData, post, errors, processing } = useForm({
@@ -41,10 +41,14 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                 {/* Kategori 1: Informasi Unit */}
                 <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <div className="mb-5">
-                        <h2 className="text-lg font-semibold text-slate-800">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100">
+                                <Truck className="h-5 w-5 text-blue-600" />
+                            </span>
                             Informasi Unit
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">
+
+                        <p className="mt-2 text-sm text-slate-500">
                             Informasi dasar dan klasifikasi armada.
                         </p>
                     </div>
@@ -52,7 +56,8 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Unit Bisnis <span className="text-red-500">*</span>
+                                Unit Bisnis{" "}
+                                <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={data.unit_bisnis_id}
@@ -77,7 +82,8 @@ export default function Create({ unitBisnis, titiks, drivers }) {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Kode Unit <span className="text-red-500">*</span>
+                                Kode Unit{" "}
+                                <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -131,7 +137,8 @@ export default function Create({ unitBisnis, titiks, drivers }) {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tipe Unit <span className="text-red-500">*</span>
+                                Tipe Unit{" "}
+                                <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={data.tipe_unit}
@@ -157,14 +164,17 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                 {/* Kategori 2: Identitas dan Spesifikasi */}
                 <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <div className="mb-5">
-                        <h2 className="text-lg font-semibold text-slate-800">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-100">
+                                <MapPin className="h-5 w-5 text-green-600" />
+                            </span>
                             Identitas & Spesifikasi
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">
+
+                        <p className="mt-2 text-sm text-slate-500">
                             Data identitas, tahun, dan kapasitas unit.
                         </p>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -234,10 +244,14 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                 {/* Kategori 3: Operasional */}
                 <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <div className="mb-5">
-                        <h2 className="text-lg font-semibold text-slate-800">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100">
+                                <ClipboardList className="h-5 w-5 text-amber-600" />
+                            </span>
                             Informasi Operasional
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">
+
+                        <p className="mt-2 text-sm text-slate-500">
                             Pengaturan tarif dan lokasi operasional unit.
                         </p>
                     </div>
@@ -245,7 +259,8 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Model Tarif <span className="text-red-500">*</span>
+                                Model Tarif{" "}
+                                <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={data.model_tarif}
