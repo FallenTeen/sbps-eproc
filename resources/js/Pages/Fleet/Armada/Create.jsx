@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm, Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
-import { ArrowLeft, ClipboardList, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, ClipboardList, MapPin, Save, Truck } from "lucide-react";
 
 export default function Create({ unitBisnis, titiks, drivers }) {
     const { data, setData, post, errors, processing } = useForm({
@@ -332,15 +332,16 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                 <div className="flex justify-end gap-3">
                     <Link
                         href={route("fleet.armada.index")}
-                        className="px-4 py-2 border-2 border-black-300 rounded-md hover:bg-gray-50"
+                        className="rounded-lg border-2 border-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         disabled={processing}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
+                        <Save className="w-4 h-4" />
                         {processing ? "Menyimpan..." : "Simpan Armada"}
                     </button>
                 </div>
