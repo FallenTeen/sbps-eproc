@@ -8,6 +8,7 @@ import {
     Calendar,
     User,
     DollarSign,
+    FileText,
 } from "lucide-react";
 
 function Field({ label, error, required, help, children }) {
@@ -223,16 +224,21 @@ export default function SewaAlatCreate({
                 </div>
 
                 {/* HM & Tarif */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                    <div className="flex items-center gap-2 mb-5">
-                        <div className="p-2 bg-emerald-50 rounded-lg">
-                            <DollarSign className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <h3 className="text-base font-semibold text-slate-800">
+                <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-5">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100">
+                                <DollarSign className="h-5 w-5 text-emerald-600" />
+                            </span>
                             HM & Tarif
-                        </h3>
+                        </h2>
+                        <p className="mt-2 text-sm text-slate-500">
+                            Informasi jam mesin, tarif sewa, dan uang muka.
+                        </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        {/* HM Awal - Kiri */}
                         <Field
                             label="HM Awal (Jam Mesin Mulai)"
                             error={errors.hm_awal}
@@ -250,6 +256,8 @@ export default function SewaAlatCreate({
                                 required
                             />
                         </Field>
+
+                        {/* HM Akhir - Kanan */}
                         <Field
                             label="HM Akhir (Jam Mesin Selesai)"
                             error={errors.hm_akhir}
@@ -266,13 +274,15 @@ export default function SewaAlatCreate({
                                 className={inputClass}
                             />
                         </Field>
+
+                        {/* Tarif per HM - Kiri bawah HM Awal */}
                         <Field
                             label="Tarif per HM (Rp)"
                             error={errors.tarif_per_jam}
                             required
                         >
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-sm text-slate-400">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
                                     Rp
                                 </span>
                                 <input
@@ -288,50 +298,15 @@ export default function SewaAlatCreate({
                                 />
                             </div>
                         </Field>
-                    </div>
 
-                    {/* Estimasi */}
-                    {estimasiPendapatan > 0 && (
-                        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                                <p className="text-xs text-slate-500 mb-1">
-                                    Total HM
-                                </p>
-                                <p className="text-xl font-bold text-slate-800">
-                                    {totalHm} HM
-                                </p>
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                                <p className="text-xs text-slate-500 mb-1">
-                                    Tarif / HM
-                                </p>
-                                <p className="text-xl font-bold text-slate-800">
-                                    Rp{" "}
-                                    {Number(
-                                        data.tarif_per_jam || 0,
-                                    ).toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
-                                <p className="text-xs text-emerald-600 font-semibold mb-1">
-                                    Estimasi Pendapatan
-                                </p>
-                                <p className="text-xl font-bold text-emerald-700">
-                                    Rp{" "}
-                                    {estimasiPendapatan.toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* Uang Muka - Kanan bawah HM Akhir */}
                         <Field
                             label="Uang Muka (Rp)"
                             error={errors.uang_muka}
                             help="Opsional"
                         >
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-sm text-slate-400">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
                                     Rp
                                 </span>
                                 <input
@@ -346,32 +321,81 @@ export default function SewaAlatCreate({
                                 />
                             </div>
                         </Field>
-                        <Field label="Catatan" error={errors.catatan}>
-                            <textarea
-                                value={data.catatan}
-                                onChange={(e) =>
-                                    setData("catatan", e.target.value)
-                                }
-                                rows={2}
-                                placeholder="Kondisi alat, operator, dll."
-                                className={inputClass}
-                            />
-                        </Field>
                     </div>
-                </div>
 
+                    {/* Estimasi Pendapatan */}
+                    {estimasiPendapatan > 0 && (
+                        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                                <p className="mb-1 text-xs text-slate-500">
+                                    Total HM
+                                </p>
+                                <p className="text-xl font-bold text-slate-800">
+                                    {totalHm} HM
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                                <p className="mb-1 text-xs text-slate-500">
+                                    Tarif / HM
+                                </p>
+                                <p className="text-xl font-bold text-slate-800">
+                                    Rp{" "}
+                                    {Number(
+                                        data.tarif_per_jam || 0,
+                                    ).toLocaleString("id-ID")}
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+                                <p className="mb-1 text-xs font-semibold text-emerald-600">
+                                    Estimasi Pendapatan
+                                </p>
+                                <p className="text-xl font-bold text-emerald-700">
+                                    Rp{" "}
+                                    {estimasiPendapatan.toLocaleString("id-ID")}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </section>
+
+                {/* Section: Catatan */}
+                <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-5">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100">
+                                <FileText className="h-5 w-5 text-amber-600" />
+                            </span>
+                            Catatan
+                        </h2>
+                        <p className="mt-2 text-sm text-slate-500">
+                            Tambahkan keterangan terkait penyewaan alat.
+                        </p>
+                    </div>
+
+                    <Field label="Catatan Tambahan" error={errors.catatan}>
+                        <textarea
+                            value={data.catatan}
+                            onChange={(e) => setData("catatan", e.target.value)}
+                            rows={3}
+                            placeholder="Contoh: kondisi alat, operator, atau keterangan lainnya."
+                            className={inputClass}
+                        />
+                    </Field>
+                </section>
                 {/* Actions */}
                 <div className="flex items-center justify-end gap-3 pb-6">
                     <Link
                         href={route("fleet.sewa-alat.index")}
-                        className="px-5 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                        className="rounded-lg border-2 border-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                     >
                         Batal
                     </Link>
                     <button
                         type="submit"
                         disabled={processing}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
                         {processing ? "Menyimpan..." : "Simpan Sewa Alat"}
