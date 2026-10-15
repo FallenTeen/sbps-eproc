@@ -9,12 +9,15 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RitaseController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Ritase::class);
@@ -27,23 +30,21 @@ class RitaseController extends Controller
             });
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('driver', fn ($d) => $d->where('nama', 'like', "%{$search}%"))
-                    ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
-            });
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'armada' => ['relation' => 'armada', 'column' => 'id', 'type' => 'exact'],
+            'driver' => ['relation' => 'driver', 'column' => 'nama', 'type' => 'like'],
+            'rute' => ['relation' => 'ruteTarif', 'column' => 'lokasi_asal', 'type' => 'like'],
+            'jumlah_rit' => ['searchable' => false],
+            'jumlah_volume' => ['searchable' => false],
+            'tarif_per_rit_snapshot' => ['searchable' => false],
+            'total_upah_rit' => ['searchable' => false],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('armada_id')) {
-            $query->where('armada_id', $request->armada_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
-        }
-
-        $ritase = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $ritase = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $today = Carbon::today();
         $baseStatsQuery = Ritase::query();
@@ -70,7 +71,9 @@ class RitaseController extends Controller
 
         return Inertia::render('Fleet/Ritase/Index', [
             'ritase' => $ritase,
-            'filters' => $request->only(['search', 'armada_id', 'tanggal']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'armadaList' => $armadaList,
             'stats' => [
                 'total_trip_today' => $totalTripToday,

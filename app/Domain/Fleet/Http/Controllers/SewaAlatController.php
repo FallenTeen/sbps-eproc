@@ -6,12 +6,15 @@ use App\Domain\Core\Models\Proyek;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SewaAlatController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', SewaAlatJam::class);
@@ -24,23 +27,20 @@ class SewaAlatController extends Controller
             });
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('penyewa_eksternal', 'like', "%{$search}%")
-                    ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
-            });
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'armada' => ['relation' => 'armada', 'column' => 'id', 'type' => 'exact'],
+            'pelanggan' => ['column' => 'penyewa_nama', 'type' => 'like'],
+            'hm_awal' => ['searchable' => false],
+            'hm_akhir' => ['searchable' => false],
+            'jumlah_jam' => ['searchable' => false],
+            'harga_per_jam_snapshot' => ['searchable' => false],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('armada_id')) {
-            $query->where('armada_id', $request->armada_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $sewaList = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $sewaList = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $baseStatsQuery = SewaAlatJam::query();
         if ($request->user()->unit_bisnis_id) {
@@ -65,7 +65,9 @@ class SewaAlatController extends Controller
 
         return Inertia::render('Fleet/SewaAlat/Index', [
             'sewaList' => $sewaList,
-            'filters' => $request->only(['search', 'armada_id', 'status']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'armadaList' => $armadaList,
             'stats' => [
                 'total_aktif' => $totalAktif,

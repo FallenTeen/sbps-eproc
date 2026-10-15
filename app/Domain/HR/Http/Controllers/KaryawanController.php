@@ -5,6 +5,7 @@ namespace App\Domain\HR\Http\Controllers;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,8 @@ use Inertia\Inertia;
 
 class KaryawanController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Karyawan::class);
@@ -20,20 +23,16 @@ class KaryawanController extends Controller
             $q->where('status', 'aktif')->with('titik');
         }]);
 
-        if ($request->filled('tipe')) {
-            $query->where('tipe', $request->tipe);
-        }
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'jabatan' => ['type' => 'like'],
+            'tipe' => ['type' => 'exact'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, 'nama');
 
-        if ($request->filled('search')) {
-            $query->where('nama', 'like', '%'.$request->search.'%')
-                ->orWhere('jabatan', 'like', '%'.$request->search.'%');
-        }
-
-        $karyawans = $query->orderBy('nama')->paginate(15)->withQueryString();
+        $karyawans = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $user = $request->user();
         $canManageHr = $user && ($user->hasRole(['Owner', 'Koordinator SDM']) || $user->hasPermissionTo('manage hr'));
@@ -49,7 +48,9 @@ class KaryawanController extends Controller
 
         return Inertia::render('HR/Karyawan/Index', [
             'karyawans' => $karyawans,
-            'filters' => $request->only(['tipe', 'status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

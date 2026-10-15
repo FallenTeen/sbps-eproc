@@ -9,6 +9,7 @@ use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,6 +18,8 @@ use Spatie\Permission\Models\Role;
 
 class PresensiController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Presensi::class);
@@ -33,24 +36,25 @@ class PresensiController extends Controller
         // Mode individual: daftar presensi per-baris.
         $query = Presensi::with(['karyawan', 'titik', 'formulir']);
 
-        if ($request->filled('tanggal')) {
-            $query->byTanggal($request->tanggal);
-        }
+        $columns = [
+            'karyawan' => ['relation' => 'karyawan', 'column' => 'nama', 'type' => 'like'],
+            'titik' => ['relation' => 'titik', 'column' => 'id', 'type' => 'exact'],
+            'check_in' => ['type' => 'date'],
+            'check_out' => ['type' => 'date', 'searchable' => false],
+            'status_validasi' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('karyawan_id')) {
-            $query->byKaryawan($request->karyawan_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['check_in' => 'desc']);
 
-        if ($request->filled('status_validasi')) {
-            $query->where('status_validasi', $request->status_validasi);
-        }
-
-        $presensis = $query->orderByDesc('check_in')->paginate(15)->withQueryString();
+        $presensis = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Attendance/Presensi/Index', [
             'presensis' => $presensis,
             'karyawan' => Karyawan::aktif()->get(['id', 'nama']),
-            'filters' => $request->only(['tanggal', 'karyawan_id', 'status_validasi']),
+            'titiks' => Titik::aktif()->orderBy('nama')->get(['id', 'nama']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

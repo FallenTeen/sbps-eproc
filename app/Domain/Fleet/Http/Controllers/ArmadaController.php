@@ -21,45 +21,60 @@ use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ArmadaController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Armada::class);
 
+        $user = $request->user();
         $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan']);
 
-        if (! $request->user()->hasRole('Owner')) {
+        if (! $user->hasRole('Owner')) {
             $gcs = UnitBisnis::where('kode', 'GCS')->first();
-            $unitId = $request->user()->unit_bisnis_id ?? $gcs?->id;
+            $unitId = $user->unit_bisnis_id ?? $gcs?->id;
             if ($unitId) {
                 $query->where('unit_bisnis_id', $unitId);
             }
         }
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'kode_unit' => ['type' => 'like'],
+            'plat_nomor' => ['type' => 'like'],
+            'jenis' => ['type' => 'exact'],
+            'model_tarif' => ['type' => 'exact'],
+            'unit_bisnis' => ['relation' => 'unitBisnis', 'column' => 'id', 'type' => 'exact'],
+            'titik' => ['relation' => 'titik', 'column' => 'id', 'type' => 'exact'],
+            'driver' => ['relation' => 'currentDriver.karyawan', 'column' => 'nama', 'type' => 'like'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->has('jenis') && $request->jenis) {
-            $query->where('jenis', $request->jenis);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, 'kode_unit');
 
-        if ($request->has('search') && $request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('kode_unit', 'like', '%'.$request->search.'%')
-                    ->orWhere('plat_nomor', 'like', '%'.$request->search.'%');
-            });
-        }
+        $armadas = $query->paginate($this->tablePerPage($request))->withQueryString();
 
-        $armadas = $query->paginate(15)->withQueryString();
+        $unitBisnisQuery = UnitBisnis::aktif();
+        if ($user->unit_bisnis_id) {
+            $unitBisnisQuery->where('id', $user->unit_bisnis_id);
+        }
+        $titiksQuery = Titik::aktif();
+        if ($user->unit_bisnis_id) {
+            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+        }
 
         return Inertia::render('Fleet/Armada/Index', [
             'armadas' => $armadas,
-            'filters' => $request->only(['status', 'jenis', 'search']),
+            'unitBisnis' => $unitBisnisQuery->get(['id', 'nama']),
+            'titiks' => $titiksQuery->get(['id', 'nama']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

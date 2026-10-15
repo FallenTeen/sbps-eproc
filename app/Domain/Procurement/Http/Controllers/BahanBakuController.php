@@ -7,11 +7,14 @@ use App\Domain\Procurement\Actions\SetHargaBeliAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Supplier;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BahanBakuController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', BahanBaku::class);
@@ -22,16 +25,23 @@ class BahanBakuController extends Controller
             },
         ]);
 
-        if ($request->has('search')) {
-            $query->where('nama', 'like', '%'.$request->search.'%')
-                ->orWhere('kode', 'like', '%'.$request->search.'%');
-        }
+        $columns = [
+            'kode' => ['type' => 'like'],
+            'nama' => ['type' => 'like'],
+            'kategori' => ['type' => 'exact'],
+            'satuan' => ['type' => 'like'],
+            'aktif' => ['type' => 'boolean'],
+        ];
 
-        $bahanBakus = $query->orderBy('nama')->paginate(10)->withQueryString();
+        $sort = $this->applyTableQuery($query, $request, $columns, 'nama');
+
+        $bahanBakus = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Procurement/BahanBaku/Index', [
             'bahanBakus' => $bahanBakus,
-            'filters' => $request->only('search'),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

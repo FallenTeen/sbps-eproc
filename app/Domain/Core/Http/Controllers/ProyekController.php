@@ -7,12 +7,15 @@ use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ProyekController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Display a listing of proyek.
      */
@@ -29,24 +32,19 @@ class ProyekController extends Controller
             $query->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
         }
 
-        if ($request->has('unit_bisnis_id') && $request->unit_bisnis_id) {
-            $query->where('unit_bisnis_id', $request->unit_bisnis_id);
-        }
+        $columns = [
+            'kode_proyek' => ['type' => 'like'],
+            'nama' => ['type' => 'like'],
+            'unit_bisnis' => ['type' => 'exact', 'column' => 'unit_bisnis_id'],
+            'tipe_proyek' => ['type' => 'exact'],
+            'client' => ['type' => 'like'],
+            'status' => ['type' => 'exact'],
+            'tanggal_mulai' => ['type' => 'date'],
+        ];
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('kode_proyek', 'like', "%{$search}%")
-                    ->orWhere('nama', 'like', "%{$search}%")
-                    ->orWhere('client', 'like', "%{$search}%");
-            });
-        }
-
-        $proyeks = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $proyeks = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::where('aktif', true);
         if ($request->user()->unit_bisnis_id) {
@@ -57,7 +55,9 @@ class ProyekController extends Controller
         return Inertia::render('Core/Proyek/Index', [
             'proyeks' => $proyeks,
             'unitBisnis' => $unitBisnis,
-            'filters' => $request->only(['unit_bisnis_id', 'status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

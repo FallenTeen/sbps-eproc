@@ -6,11 +6,14 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\GetCurrentRuteTarifAction;
 use App\Domain\Fleet\Models\RuteTarif;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RuteTarifController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Display a listing of rute tarif.
      */
@@ -24,19 +27,19 @@ class RuteTarifController extends Controller
             $query->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('lokasi_asal', 'like', "%{$search}%")
-                    ->orWhere('lokasi_tujuan', 'like', "%{$search}%");
-            });
-        }
+        $columns = [
+            'lokasi_asal' => ['type' => 'like'],
+            'lokasi_tujuan' => ['type' => 'like'],
+            'jarak_km' => ['searchable' => false],
+            'tarif_per_rit' => ['searchable' => false],
+            'unit_bisnis' => ['relation' => 'unitBisnis', 'column' => 'id', 'type' => 'exact'],
+            'berlaku_dari' => ['type' => 'date'],
+            'berlaku_sampai' => ['type' => 'date'],
+        ];
 
-        if ($request->filled('unit_bisnis_id')) {
-            $query->where('unit_bisnis_id', $request->unit_bisnis_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['lokasi_asal' => 'asc', 'lokasi_tujuan' => 'asc']);
 
-        $ruteTarifs = $query->orderBy('lokasi_asal')->orderBy('lokasi_tujuan')->paginate(15)->withQueryString();
+        $ruteTarifs = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::where('aktif', true);
         if ($request->user()->unit_bisnis_id) {
@@ -47,7 +50,9 @@ class RuteTarifController extends Controller
         return Inertia::render('Fleet/RuteTarif/Index', [
             'ruteTarifs' => $ruteTarifs,
             'unitBisnis' => $unitBisnis,
-            'filters' => $request->only(['search', 'unit_bisnis_id']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

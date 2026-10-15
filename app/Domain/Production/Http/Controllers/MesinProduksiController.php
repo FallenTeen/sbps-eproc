@@ -7,12 +7,15 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\Produk;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MesinProduksiController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', MesinProduksi::class);
@@ -24,25 +27,16 @@ class MesinProduksiController extends Controller
             $query->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
 
-        $mesin = $query
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama', 'like', "%{$search}%")
-                        ->orWhere('jenis', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->status, function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->when($request->jenis, function ($query, $jenis) {
-                $query->where('jenis', $jenis);
-            })
-            ->when($request->unit_bisnis_id, function ($query, $unitBisnisId) {
-                $query->where('unit_bisnis_id', $unitBisnisId);
-            })
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'jenis' => ['type' => 'exact'],
+            'unit_bisnis' => ['relation' => 'unitBisnis', 'column' => 'id', 'type' => 'exact'],
+            'status' => ['type' => 'exact'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
+
+        $mesin = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::aktif();
         if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
@@ -51,7 +45,9 @@ class MesinProduksiController extends Controller
 
         return Inertia::render('Production/Mesin/Index', [
             'mesin' => $mesin,
-            'filters' => $request->only(['search', 'status', 'jenis', 'unit_bisnis_id']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'unitBisnis' => $unitBisnisQuery->get(),
             'jenisOptions' => MesinProduksi::select('jenis')->distinct()->pluck('jenis'),
         ]);

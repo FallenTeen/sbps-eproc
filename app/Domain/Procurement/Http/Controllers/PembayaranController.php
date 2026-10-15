@@ -4,6 +4,7 @@ namespace App\Domain\Procurement\Http\Controllers;
 
 use App\Domain\Procurement\Models\Pembayaran;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,6 +24,8 @@ use Inertia\Inertia;
  */
 class PembayaranController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Display a listing of all pembayaran with filters.
      */
@@ -38,34 +41,23 @@ class PembayaranController extends Controller
             });
         }
 
-        if ($request->filled('purchase_order_id')) {
-            $query->where('purchase_order_id', $request->purchase_order_id);
-        }
+        $columns = [
+            'po' => ['relation' => 'purchaseOrder', 'column' => 'kode_po', 'type' => 'like'],
+            'jumlah' => ['type' => 'exact', 'searchable' => false],
+            'metode' => ['type' => 'exact'],
+            'akun_kas' => ['relation' => 'akunKasBank', 'column' => 'nama', 'type' => 'like'],
+            'tanggal' => ['type' => 'date'],
+        ];
 
-        if ($request->filled('metode')) {
-            $query->where('metode', $request->metode);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc']);
 
-        if ($request->filled('tanggal_dari')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_dari);
-        }
-
-        if ($request->filled('tanggal_sampai')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_sampai);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('purchaseOrder', function ($q) use ($search) {
-                $q->where('kode_po', 'like', "%{$search}%");
-            });
-        }
-
-        $pembayarans = $query->orderBy('tanggal', 'desc')->paginate(15)->withQueryString();
+        $pembayarans = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Procurement/Pembayaran/Index', [
             'pembayarans' => $pembayarans,
-            'filters' => $request->only(['purchase_order_id', 'metode', 'tanggal_dari', 'tanggal_sampai', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

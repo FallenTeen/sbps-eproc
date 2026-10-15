@@ -6,26 +6,37 @@ use App\Domain\Attendance\Actions\SubmitFieldFormAction;
 use App\Domain\Attendance\Models\FormulirLapangan;
 use App\Domain\Attendance\Models\Presensi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class FormulirLapanganController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', FormulirLapangan::class);
 
         $query = FormulirLapangan::with('presensi.karyawan');
 
-        if ($request->filled('tanggal')) {
-            $query->whereHas('presensi', fn ($q) => $q->whereDate('check_in', $request->tanggal));
-        }
+        $columns = [
+            'karyawan' => ['relation' => 'presensi.karyawan', 'column' => 'nama', 'type' => 'like'],
+            'tanggal' => ['relation' => 'presensi', 'column' => 'check_in', 'type' => 'date'],
+            'aktivitas' => ['column' => 'aktivitas_dilakukan', 'type' => 'like'],
+            'kondisi_area' => ['type' => 'like'],
+            'kendala' => ['type' => 'like'],
+        ];
 
-        $formulirs = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
+
+        $formulirs = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Attendance/Formulir/Index', [
             'formulirs' => $formulirs,
-            'filters' => $request->only(['tanggal']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

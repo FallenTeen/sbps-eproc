@@ -12,12 +12,15 @@ use App\Domain\Procurement\States\Diterima;
 use App\Domain\Procurement\States\Lunas;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class BbmLogController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Map tipe serviceable dari URL (string pendek) ke Eloquent class.
      */
@@ -42,27 +45,9 @@ class BbmLogController extends Controller
 
         $query = BbmLog::with(['serviceable', 'dicatatOleh', 'purchaseOrder', 'pengisianSolar']);
 
-        if ($request->filled('tipe')) {
-            $modelClass = self::SERVICEABLE_MAP[$request->tipe] ?? null;
-            if ($modelClass) {
-                $query->where('serviceable_type', $modelClass);
-            }
-        }
-
-        if ($request->filled('serviceable_id')) {
-            $query->where('serviceable_id', $request->serviceable_id);
-        }
-
-        if ($request->filled('tanggal_dari')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_dari);
-        }
-
-        if ($request->filled('tanggal_sampai')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_sampai);
-        }
-
-        if ($request->filled('bulan') && $request->filled('tahun')) {
-            $query->whereMonth('tanggal', $request->bulan)->whereYear('tanggal', $request->tahun);
+        $tipe = $request->input('filters.tipe');
+        if ($tipe && isset(self::SERVICEABLE_MAP[$tipe])) {
+            $query->where('serviceable_type', self::SERVICEABLE_MAP[$tipe]);
         }
 
         if ($request->user()->unit_bisnis_id) {
@@ -72,11 +57,21 @@ class BbmLogController extends Controller
             });
         }
 
-        $bbmLogs = $query->orderBy('tanggal', 'desc')->paginate(20)->withQueryString();
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'liter' => ['searchable' => false],
+            'biaya' => ['searchable' => false],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc']);
+
+        $bbmLogs = $query->paginate($this->tablePerPage($request, 20))->withQueryString();
 
         return Inertia::render('Fleet/BBM/Index', [
             'bbmLogs' => $bbmLogs,
-            'filters' => $request->only(['tipe', 'serviceable_id', 'tanggal_dari', 'tanggal_sampai', 'bulan', 'tahun']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

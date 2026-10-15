@@ -8,36 +8,41 @@ use App\Domain\Inventory\Models\StokOpname;
 use App\Domain\Procurement\Actions\GetStokSaldoAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class StokOpnameController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', StokOpname::class);
 
         $query = StokOpname::with(['bahanBaku', 'titik', 'dicatatOleh']);
-        $filters = $request->only(['tanggal', 'titik_id', 'kategori']);
 
-        if (! empty($filters['tanggal'])) {
-            $query->whereDate('tanggal', $filters['tanggal']);
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'item' => ['relation' => 'bahanBaku', 'column' => 'nama', 'type' => 'like'],
+            'kategori' => ['relation' => 'bahanBaku', 'column' => 'kategori', 'type' => 'exact'],
+            'titik' => ['relation' => 'titik', 'column' => 'id', 'type' => 'exact'],
+            'saldo_sistem' => ['column' => 'saldo_sistem', 'searchable' => false],
+            'saldo_fisik' => ['column' => 'saldo_fisik', 'searchable' => false],
+            'selisih' => ['column' => 'selisih', 'searchable' => false],
+            'dicatat_oleh' => ['relation' => 'dicatatOleh', 'column' => 'name', 'type' => 'like'],
+        ];
 
-        if (! empty($filters['titik_id'])) {
-            $query->where('titik_id', $filters['titik_id']);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if (! empty($filters['kategori'])) {
-            $query->whereHas('bahanBaku', fn ($q) => $q->where('kategori', $filters['kategori']));
-        }
-
-        $opnames = $query->latest('tanggal')->latest('created_at')->paginate(15)->withQueryString();
+        $opnames = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Inventory/StokOpname/Index', [
             'opnames' => $opnames,
             'titiks' => Titik::aktif()->orderBy('nama')->get(),
-            'filters' => $filters,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

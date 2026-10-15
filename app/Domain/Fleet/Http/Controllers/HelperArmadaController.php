@@ -6,6 +6,7 @@ use App\Domain\Fleet\Actions\StoreHelperArmadaAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,27 +20,31 @@ use Inertia\Inertia;
  */
 class HelperArmadaController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', HelperArmada::class);
 
-        $query = HelperArmada::with(['armada', 'presensis' => fn ($q) => $q->orderByDesc('tanggal')->limit(5)])
-            ->latest('durasi_mulai');
-
-        if ($request->filled('armada_id')) {
-            $query->where('armada_id', $request->armada_id);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $query = HelperArmada::with(['armada', 'presensis' => fn ($q) => $q->orderByDesc('tanggal')->limit(5)]);
 
         if ($request->user()->unit_bisnis_id) {
             $unitId = $request->user()->unit_bisnis_id;
             $query->whereHas('armada', fn ($q) => $q->where('unit_bisnis_id', $unitId));
         }
 
-        $helpers = $query->paginate(20)->withQueryString();
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'armada' => ['relation' => 'armada', 'column' => 'id', 'type' => 'exact'],
+            'no_hp' => ['searchable' => false],
+            'honor' => ['searchable' => false],
+            'durasi_mulai' => ['type' => 'date'],
+            'status' => ['type' => 'exact'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['durasi_mulai' => 'desc']);
+
+        $helpers = $query->paginate($this->tablePerPage($request, 20))->withQueryString();
 
         return Inertia::render('Fleet/Helper/Index', [
             'helpers' => $helpers,
@@ -58,7 +63,9 @@ class HelperArmadaController extends Controller
                     ['value' => 'selesai', 'label' => 'Selesai'],
                 ],
             ],
-            'filters' => $request->only(['armada_id', 'status']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

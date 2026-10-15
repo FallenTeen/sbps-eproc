@@ -9,41 +9,45 @@ use App\Domain\Production\Actions\ScheduleDeliveryAction;
 use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PengirimanController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $query = Pengiriman::with(['session.produk', 'armada', 'driver']);
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'waktu_muat' => ['type' => 'date'],
+            'produk' => ['relation' => 'session.produk', 'column' => 'nama', 'type' => 'like'],
+            'tujuan' => ['column' => 'tujuan_alamat', 'type' => 'like'],
+            'armada' => ['relation' => 'armada', 'column' => 'nopol', 'type' => 'like'],
+            'driver' => ['relation' => 'driver', 'column' => 'nama', 'type' => 'like'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->has('tanggal') && $request->tanggal) {
-            $query->whereDate('waktu_muat', $request->tanggal);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['waktu_muat' => 'desc']);
 
-        $pengirimen = $query->orderBy('waktu_muat', 'desc')->paginate(15)->withQueryString();
+        $pengirimen = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Production/Pengiriman/Index', [
             'pengirimen' => $pengirimen,
-            'filters' => $request->only(['status', 'tanggal']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
     public function today()
     {
-        $pengirimen = Pengiriman::with(['session.produk', 'armada', 'driver'])
-            ->whereDate('waktu_muat', now()->toDateString())
-            ->orderBy('waktu_muat', 'desc')
-            ->get();
+        $today = now()->toDateString();
 
-        return Inertia::render('Production/Pengiriman/Index', [
-            'pengirimen' => $pengirimen,
-            'filters' => ['status' => null, 'tanggal' => now()->toDateString()],
+        return redirect()->route('production.pengiriman.index', [
+            'filters' => ['waktu_muat' => ['from' => $today, 'to' => $today]],
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Domain\Production\Models\MixDesignTemplate;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,8 @@ use Inertia\Inertia;
 
 class ProdukController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Produk::class);
@@ -28,16 +31,16 @@ class ProdukController extends Controller
             $query->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
 
-        if ($request->has('unit_bisnis_id') && $request->unit_bisnis_id) {
-            $query->where('unit_bisnis_id', $request->unit_bisnis_id);
-        }
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'kategori' => ['type' => 'exact'],
+            'satuan_output' => ['type' => 'exact'],
+            'unit_bisnis' => ['relation' => 'unitBisnis', 'column' => 'id', 'type' => 'exact'],
+        ];
 
-        if ($request->has('search') && $request->search) {
-            $query->where('nama', 'like', '%'.$request->search.'%')
-                ->orWhere('kategori', 'like', '%'.$request->search.'%');
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['nama' => 'asc']);
 
-        $produks = $query->orderBy('nama')->paginate(15)->withQueryString();
+        $produks = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $unitBisnisQuery = UnitBisnis::aktif();
         if ($user && ! $user->hasRole('Owner') && $user->unit_bisnis_id) {
@@ -47,7 +50,9 @@ class ProdukController extends Controller
         return Inertia::render('Production/Products/Index', [
             'produks' => $produks,
             'unitBisnis' => $unitBisnisQuery->get(),
-            'filters' => $request->only(['unit_bisnis_id', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

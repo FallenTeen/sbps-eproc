@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -10,41 +11,31 @@ use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $query = User::with('roles');
 
-        // Filter by role
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->role);
-            });
-        }
+        $columns = [
+            'name' => ['type' => 'like'],
+            'email' => ['type' => 'like'],
+            'role' => ['type' => 'exact', 'relation' => 'roles', 'column' => 'name'],
+            'is_active' => ['type' => 'boolean'],
+        ];
 
-        // Filter by active status
-        if ($request->has('is_active') && $request->is_active !== '') {
-            $query->where('is_active', $request->is_active);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, 'name');
 
-        // Search by name or email
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
+        $users = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $roles = Role::pluck('name');
 
         return Inertia::render('UserManagement/Index', [
             'users' => $users,
             'roles' => $roles,
-            'filters' => $request->only(['role', 'is_active', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

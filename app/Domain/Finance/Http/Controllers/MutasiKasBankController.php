@@ -5,52 +5,42 @@ namespace App\Domain\Finance\Http\Controllers;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class MutasiKasBankController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', MutasiKasBank::class);
 
         $query = MutasiKasBank::with(['akunKasBank', 'referensi']);
 
-        // Filter by akun
-        if ($request->filled('akun_kas_bank_id')) {
-            $query->where('akun_kas_bank_id', $request->akun_kas_bank_id);
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'akun' => ['relation' => 'akunKasBank', 'column' => 'id', 'type' => 'exact'],
+            'kategori' => ['type' => 'like'],
+            'tipe' => ['type' => 'exact'],
+            'jumlah' => ['type' => 'exact', 'searchable' => false],
+            'referensi' => ['sortable' => false],
+        ];
 
-        // Filter by tipe (masuk/keluar)
-        if ($request->filled('tipe')) {
-            $query->where('tipe', $request->tipe);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        // Filter by tanggal range
-        if ($request->filled('tanggal_from')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_from);
-        }
-        if ($request->filled('tanggal_to')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_to);
-        }
-
-        // Filter kategori
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
-
-        $mutasis = $query->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+        $mutasis = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $akunList = AkunKasBank::where('aktif', true)->get();
 
         return Inertia::render('Finance/MutasiKas/Index', [
             'mutasis' => $mutasis,
             'akunList' => $akunList,
-            'filters' => $request->only(['akun_kas_bank_id', 'tipe', 'tanggal_from', 'tanggal_to', 'kategori']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

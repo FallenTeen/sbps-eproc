@@ -7,31 +7,39 @@ use App\Domain\Production\Actions\RecordUjiTekanResultAction;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\QCSample;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class QcSampleController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', QCSample::class);
 
         $query = QCSample::with('session.produk');
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'sesi' => ['relation' => 'session', 'column' => 'kode_sesi', 'type' => 'like'],
+            'produk' => ['relation' => 'session.produk', 'column' => 'nama', 'type' => 'like'],
+            'jenis_uji' => ['type' => 'exact'],
+            'nilai_slump' => ['column' => 'nilai_slump', 'searchable' => false],
+            'hasil_uji_tekan' => ['column' => 'hasil_uji_tekan', 'searchable' => false],
+            'status' => ['type' => 'exact'],
+            'created_at' => ['type' => 'date'],
+        ];
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('session.produk', fn ($q) => $q->where('nama', 'like', "%{$search}%"));
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        $samples = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $samples = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Production/QC/Index', [
             'samples' => $samples,
-            'filters' => $request->only(['status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

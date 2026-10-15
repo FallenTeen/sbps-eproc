@@ -7,30 +7,36 @@ use App\Domain\HR\Actions\SubmitCutiAction;
 use App\Domain\HR\Models\Cuti;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CutiController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
-        $status = $request->query('status', 'diajukan'); // default diajukan
+        $query = Cuti::with(['karyawan', 'disetujuiOleh']);
 
-        $query = Cuti::with(['karyawan', 'disetujuiOleh'])->orderBy('created_at', 'desc');
+        $columns = [
+            'karyawan' => ['relation' => 'karyawan', 'column' => 'nama', 'type' => 'like'],
+            'tipe' => ['type' => 'exact'],
+            'tanggal' => ['type' => 'date', 'column' => 'tanggal_mulai'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        $cutis = $query->get();
+        $cutis = $query->paginate($this->tablePerPage($request))->withQueryString();
         $karyawan = Karyawan::where('status', 'aktif')->get();
 
         return Inertia::render('HR/Cuti/Index', [
             'cutis' => $cutis,
             'karyawan' => $karyawan,
-            'filters' => [
-                'status' => $status,
-            ],
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

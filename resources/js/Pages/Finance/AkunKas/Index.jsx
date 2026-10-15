@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
+import DataTable from '@/Components/DataTable';
 import { Plus, Edit, RefreshCw, Eye, Wallet, Trash2 } from 'lucide-react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
@@ -9,7 +10,7 @@ import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import Modal from '@/Components/Modal';
 
-export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisList = [] }) {
+export default function Index({ auth, akunKas, unit_bisnis_id, totalSaldo = 0, transferAccounts = [], unitBisnisList = [], filters, sort, direction }) {
     const [showingAddModal, setShowingAddModal] = useState(false);
     const [showingEditModal, setShowingEditModal] = useState(false);
     const [showingTransferModal, setShowingTransferModal] = useState(false);
@@ -33,7 +34,14 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
 
     const handleFilterChange = (e) => {
         const selectedUnit = e.target.value;
-        router.get(route('finance.akun-kas.index'), { unit_bisnis_id: selectedUnit }, { preserveState: true });
+        const params = {};
+        if (selectedUnit) params.unit_bisnis_id = selectedUnit;
+        if (filters && Object.keys(filters).length) params.filters = filters;
+        if (sort) {
+            params.sort = sort;
+            params.direction = direction;
+        }
+        router.get(route('finance.akun-kas.index'), params, { preserveState: true });
         setData('unit_bisnis_id', selectedUnit);
     };
 
@@ -78,6 +86,83 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
         });
     };
 
+    const columns = [
+        {
+            key: 'nama',
+            label: 'Nama Akun',
+            type: 'text',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900',
+        },
+        {
+            key: 'jenis_kas',
+            label: 'Jenis',
+            type: 'select',
+            options: [
+                { value: 'kas_kecil', label: 'Kas Kecil' },
+                { value: 'kas_besar', label: 'Kas Besar' },
+                { value: 'kas_operasional', label: 'Kas Operasional' },
+                { value: 'bank', label: 'Bank' },
+            ],
+            render: (akun) => <span className="capitalize">{akun.jenis_kas?.replace('_', ' ')}</span>,
+        },
+        {
+            key: 'saldo',
+            label: 'Saldo Saat Ini',
+            search: false,
+            sortable: false,
+            align: 'right',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-bold',
+            render: (akun) => `Rp ${Number(akun.saldo_saat_ini).toLocaleString('id-ID')}`,
+        },
+        {
+            key: 'aktif',
+            label: 'Status',
+            type: 'select',
+            options: [
+                { value: '1', label: 'Aktif' },
+                { value: '0', label: 'Nonaktif' },
+            ],
+            align: 'right',
+            render: (akun) => (
+                <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${akun.aktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {akun.aktif ? 'Aktif' : 'Nonaktif'}
+                </span>
+            ),
+        },
+        {
+            key: 'aksi',
+            label: 'Aksi',
+            search: false,
+            sortable: false,
+            align: 'right',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-3',
+            render: (akun) => (
+                <>
+                    <Link href={route('finance.akun-kas.show', akun.id)} className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium" title="Detail Akun">
+                        <Eye className="w-4 h-4 mr-1" /> Detail
+                    </Link>
+                    <Link href={route('finance.akun-kas.mutasi', akun.id)} className="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium" title="Lihat Mutasi">
+                        <Eye className="w-4 h-4 mr-1" /> Mutasi
+                    </Link>
+                    <button onClick={() => openEditModal(akun)} className="inline-flex items-center text-amber-600 hover:text-amber-900 font-medium" title="Edit Akun">
+                        <Edit className="w-4 h-4 mr-1" /> Edit
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (window.confirm(`Yakin hapus akun "${akun.nama}"?`)) {
+                                router.delete(route('finance.akun-kas.destroy', akun.id));
+                            }
+                        }}
+                        className="inline-flex items-center text-red-600 hover:text-red-900 font-medium"
+                        title="Hapus Akun"
+                    >
+                        <Trash2 className="w-4 h-4 mr-1" /> Hapus
+                    </button>
+                </>
+            ),
+        },
+    ];
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -88,7 +173,6 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        {/* Header & Filter Controls */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div className="flex items-center space-x-3 w-full sm:w-auto">
                                 <div className="w-full sm:w-64">
@@ -108,14 +192,14 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                             </div>
 
                             <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
-                                <SecondaryButton 
-                                    onClick={() => setShowingTransferModal(true)} 
+                                <SecondaryButton
+                                    onClick={() => setShowingTransferModal(true)}
                                     className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
                                 >
                                     <RefreshCw className="w-4 h-4" /> Transfer
                                 </SecondaryButton>
-                                <PrimaryButton 
-                                    onClick={() => setShowingAddModal(true)} 
+                                <PrimaryButton
+                                    onClick={() => setShowingAddModal(true)}
                                     className="flex items-center gap-2"
                                 >
                                     <Plus className="w-4 h-4" /> Tambah Akun
@@ -123,7 +207,6 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                             </div>
                         </div>
 
-                        {/* Summary Total Balance */}
                         <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                                 <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full">
@@ -132,89 +215,23 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                                 <div>
                                     <p className="text-sm font-medium text-gray-500">Total Saldo Kas & Bank</p>
                                     <p className="text-xl font-bold text-gray-900">
-                                        Rp {akunKas.reduce((acc, curr) => acc + Number(curr.saldo_saat_ini || 0), 0).toLocaleString('id-ID')}
+                                        Rp {Number(totalSaldo).toLocaleString('id-ID')}
                                     </p>
                                 </div>
                             </div>
-                            <span className="text-xs text-gray-500 font-medium">Total {akunKas.length} Akun</span>
+                            <span className="text-xs text-gray-500 font-medium">Total {akunKas.total} Akun</span>
                         </div>
 
-                        {/* Data Table */}
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Akun</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Saat Ini</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {akunKas.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                                                Belum ada data akun kas untuk unit bisnis ini.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        akunKas.map((akun) => (
-                                            <tr key={akun.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                                    {akun.nama}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                                                    {akun.jenis_kas.replace('_', ' ')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">
-                                                    Rp {Number(akun.saldo_saat_ini).toLocaleString('id-ID')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${akun.aktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                        {akun.aktif ? 'Aktif' : 'Nonaktif'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
-                                                    <Link
-                                                        href={route('finance.akun-kas.show', akun.id)}
-                                                        className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
-                                                        title="Detail Akun"
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-1" /> Detail
-                                                    </Link>
-                                                    <Link
-                                                        href={route('finance.akun-kas.mutasi', akun.id)}
-                                                        className="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium"
-                                                        title="Lihat Mutasi"
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-1" /> Mutasi
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => openEditModal(akun)}
-                                                        className="inline-flex items-center text-amber-600 hover:text-amber-900 font-medium"
-                                                        title="Edit Akun"
-                                                    >
-                                                        <Edit className="w-4 h-4 mr-1" /> Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (window.confirm(`Yakin hapus akun "${akun.nama}"?`)) {
-                                                                router.delete(route('finance.akun-kas.destroy', akun.id));
-                                                            }
-                                                        }}
-                                                        className="inline-flex items-center text-red-600 hover:text-red-900 font-medium"
-                                                        title="Hapus Akun"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-1" /> Hapus
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            routeName="finance.akun-kas.index"
+                            baseParams={{ unit_bisnis_id }}
+                            columns={columns}
+                            rows={akunKas}
+                            filters={filters}
+                            sort={sort}
+                            direction={direction}
+                            emptyMessage="Belum ada data akun kas untuk unit bisnis ini."
+                        />
                     </div>
                 </div>
             </div>
@@ -223,7 +240,7 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
             <Modal show={showingAddModal} onClose={() => setShowingAddModal(false)}>
                 <form onSubmit={submitAdd} className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Tambah Akun Kas / Bank Baru</h2>
-                    
+
                     <div className="space-y-4">
                         <div>
                             <InputLabel htmlFor="modal_unit_bisnis_id" value="Unit Bisnis" />
@@ -306,7 +323,7 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
             <Modal show={showingEditModal} onClose={() => setShowingEditModal(false)}>
                 <form onSubmit={submitEdit} className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Edit Akun Kas / Bank</h2>
-                    
+
                     <div className="space-y-4">
                         <div>
                             <InputLabel htmlFor="edit_nama" value="Nama Akun" />
@@ -359,7 +376,7 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
             <Modal show={showingTransferModal} onClose={() => setShowingTransferModal(false)}>
                 <form onSubmit={submitTransfer} className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Form Transfer Antar Kas</h2>
-                    
+
                     <div className="space-y-4">
                         <div>
                             <InputLabel htmlFor="dari_akun_kas_bank_id" value="Dari Akun (Sumber)" />
@@ -371,7 +388,7 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                                 required
                             >
                                 <option value="">-- Pilih Akun Sumber --</option>
-                                {akunKas.filter(a => a.aktif).map(a => (
+                                {transferAccounts.map(a => (
                                     <option key={a.id} value={a.id}>
                                         {a.nama} (Saldo: Rp {Number(a.saldo_saat_ini).toLocaleString('id-ID')})
                                     </option>
@@ -389,7 +406,7 @@ export default function Index({ auth, akunKas = [], unit_bisnis_id, unitBisnisLi
                                 required
                             >
                                 <option value="">-- Pilih Akun Tujuan --</option>
-                                {akunKas.filter(a => a.aktif && a.id !== transferForm.data.dari_akun_kas_bank_id).map(a => (
+                                {transferAccounts.filter(a => a.id !== transferForm.data.dari_akun_kas_bank_id).map(a => (
                                     <option key={a.id} value={a.id}>{a.nama}</option>
                                 ))}
                             </select>

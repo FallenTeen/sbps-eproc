@@ -9,6 +9,7 @@ use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,8 @@ use Inertia\Inertia;
 
 class ChecklistHarianController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Map tipe checkable dari URL (string pendek) ke Eloquent class.
      * Dipakai supaya URL tidak perlu membawa FQCN penuh.
@@ -36,19 +39,9 @@ class ChecklistHarianController extends Controller
 
         $query = ArmadaChecklistHarian::with(['checkable', 'dicatatOleh', 'akhir']);
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
-        }
-
-        if ($request->filled('tipe')) {
-            $modelClass = self::CHECKABLE_MAP[$request->tipe] ?? null;
-            if ($modelClass) {
-                $query->where('checkable_type', $modelClass);
-            }
-        }
-
-        if ($request->filled('status')) {
-            $query->where('kondisi_baik', $request->status === 'baik');
+        $tipe = $request->input('filters.tipe');
+        if ($tipe && isset(self::CHECKABLE_MAP[$tipe])) {
+            $query->where('checkable_type', self::CHECKABLE_MAP[$tipe]);
         }
 
         if ($request->user()->unit_bisnis_id) {
@@ -58,11 +51,21 @@ class ChecklistHarianController extends Controller
             });
         }
 
-        $checklists = $query->orderBy('tanggal', 'desc')->paginate(20)->withQueryString();
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'kondisi' => ['column' => 'kondisi_baik', 'type' => 'boolean'],
+            'dicatat_oleh' => ['relation' => 'dicatatOleh', 'column' => 'nama', 'type' => 'like'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc']);
+
+        $checklists = $query->paginate($this->tablePerPage($request, 20))->withQueryString();
 
         return Inertia::render('Fleet/Checklist/Index', [
             'checklists' => $checklists,
-            'filters' => $request->only(['tanggal', 'tipe', 'status']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

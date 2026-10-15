@@ -4,12 +4,15 @@ namespace App\Domain\Core\Http\Controllers;
 
 use App\Domain\Core\Models\UnitBisnis;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class UnitBisnisController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Display a listing of unit bisnis (master data).
      */
@@ -17,26 +20,23 @@ class UnitBisnisController extends Controller
     {
         $this->authorize('viewAny', UnitBisnis::class);
 
+        $columns = [
+            'kode' => ['type' => 'like'],
+            'nama' => ['type' => 'like'],
+            'deskripsi' => ['type' => 'like'],
+            'aktif' => ['type' => 'boolean'],
+        ];
+
         $query = UnitBisnis::query();
+        $sort = $this->applyTableQuery($query, $request, $columns, 'kode');
 
-        if ($request->filled('status')) {
-            // status=aktif | nonaktif
-            $query->where('aktif', $request->status === 'aktif');
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('kode', 'like', "%{$search}%")
-                    ->orWhere('nama', 'like', "%{$search}%");
-            });
-        }
-
-        $unitBisnis = $query->orderBy('kode')->paginate(15)->withQueryString();
+        $unitBisnis = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Core/UnitBisnis/Index', [
             'unitBisnis' => $unitBisnis,
-            'filters' => $request->only(['status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

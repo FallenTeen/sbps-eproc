@@ -14,11 +14,14 @@ use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Production\Actions\CalculateProductionRevenueAction;
 use App\Domain\Production\Models\ProductionSession;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class InvoiceController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Invoice::class);
@@ -26,42 +29,51 @@ class InvoiceController extends Controller
         $status = $request->input('status');
         $unitBisnisId = $request->input('unit_bisnis_id');
 
-        $invoices = Invoice::query()
+        $query = Invoice::query()
             ->with(['unitBisnis:id,nama', 'proyek:id,nama', 'items', 'pembayaranKlien'])
             ->when($status && $status !== 'all', function ($q) use ($status) {
                 return $q->where('status', $status);
             })
             ->when($unitBisnisId, function ($q) use ($unitBisnisId) {
                 return $q->where('unit_bisnis_id', $unitBisnisId);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($invoice) {
-                $total = $invoice->items->sum('subtotal');
-                $totalBayar = $invoice->pembayaranKlien->sum('jumlah');
-                $sisa = max(0, $total - $totalBayar);
-
-                return [
-                    'id' => $invoice->id,
-                    'kode_invoice' => $invoice->kode_invoice,
-                    'unit_bisnis' => $invoice->unitBisnis ? $invoice->unitBisnis->nama : '-',
-                    'proyek_klien' => $invoice->proyek ? $invoice->proyek->nama : ($invoice->catatan ?? '-'),
-                    'tanggal_terbit' => $invoice->tanggal_terbit ? $invoice->tanggal_terbit->format('Y-m-d') : null,
-                    'tanggal_jatuh_tempo' => $invoice->tanggal_jatuh_tempo ? $invoice->tanggal_jatuh_tempo->format('Y-m-d') : null,
-                    'status' => $invoice->status,
-                    'total' => $total,
-                    'total_bayar' => $totalBayar,
-                    'sisa' => $sisa,
-                ];
             });
+
+        $columns = [
+            'kode_invoice' => ['type' => 'like'],
+            'proyek_klien' => ['relation' => 'proyek', 'column' => 'nama', 'type' => 'like'],
+            'status' => ['type' => 'exact'],
+            'tanggal_jatuh_tempo' => ['type' => 'date'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
+
+        $invoices = $query->paginate($this->tablePerPage($request))->withQueryString()->through(function ($invoice) {
+            $total = $invoice->items->sum('subtotal');
+            $totalBayar = $invoice->pembayaranKlien->sum('jumlah');
+            $sisa = max(0, $total - $totalBayar);
+
+            return [
+                'id' => $invoice->id,
+                'kode_invoice' => $invoice->kode_invoice,
+                'unit_bisnis' => $invoice->unitBisnis ? $invoice->unitBisnis->nama : '-',
+                'proyek_klien' => $invoice->proyek ? $invoice->proyek->nama : ($invoice->catatan ?? '-'),
+                'tanggal_terbit' => $invoice->tanggal_terbit ? $invoice->tanggal_terbit->format('Y-m-d') : null,
+                'tanggal_jatuh_tempo' => $invoice->tanggal_jatuh_tempo ? $invoice->tanggal_jatuh_tempo->format('Y-m-d') : null,
+                'status' => $invoice->status,
+                'total' => $total,
+                'total_bayar' => $totalBayar,
+                'sisa' => $sisa,
+            ];
+        });
 
         return Inertia::render('Finance/Invoice/Index', [
             'invoices' => $invoices,
             'unitBisnisList' => UnitBisnis::all(['id', 'nama']),
-            'filters' => [
-                'status' => $status ?? 'all',
-                'unit_bisnis_id' => $unitBisnisId ?? '',
-            ],
+            'statusFilter' => $status ?? 'all',
+            'selectedUnit' => $unitBisnisId ?? '',
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

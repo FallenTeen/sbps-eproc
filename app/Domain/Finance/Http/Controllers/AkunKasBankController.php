@@ -7,11 +7,14 @@ use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\TransferAntarKas;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AkunKasBankController extends Controller
 {
+    use FilterableTable;
+
     public function show(AkunKasBank $akun_ka)
     {
         $this->authorize('view', $akun_ka);
@@ -54,7 +57,13 @@ class AkunKasBankController extends Controller
             $unitBisnisId = $unitBisnis ? $unitBisnis->id : null;
         }
 
-        $akunKas = AkunKasBank::query()
+        $computeSaldo = function ($akun) {
+            $akun->saldo_saat_ini = $akun->saldo_awal + ($akun->total_masuk ?? 0) - ($akun->total_keluar ?? 0);
+
+            return $akun;
+        };
+
+        $base = AkunKasBank::query()
             ->when($unitBisnisId, function ($q, $unitBisnisId) {
                 return $q->where('unit_bisnis_id', $unitBisnisId);
             })
@@ -63,13 +72,23 @@ class AkunKasBankController extends Controller
             }], 'jumlah')
             ->withSum(['mutasis as total_keluar' => function ($q) {
                 $q->where('tipe', 'keluar');
-            }], 'jumlah')
-            ->get()
-            ->map(function ($akun) {
-                $akun->saldo_saat_ini = $akun->saldo_awal + ($akun->total_masuk ?? 0) - ($akun->total_keluar ?? 0);
+            }], 'jumlah');
 
-                return $akun;
-            });
+        // Seluruh akun pada unit (untuk total saldo & opsi modal transfer).
+        $allAkun = (clone $base)->get()->map($computeSaldo);
+        $totalSaldo = $allAkun->sum('saldo_saat_ini');
+        $transferAccounts = $allAkun->where('aktif', true)->values();
+
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'jenis_kas' => ['type' => 'exact'],
+            'aktif' => ['type' => 'boolean'],
+        ];
+
+        $sort = $this->applyTableQuery($base, $request, $columns, 'nama');
+
+        $akunKas = $base->paginate($this->tablePerPage($request))->withQueryString();
+        $akunKas->setCollection($akunKas->getCollection()->map($computeSaldo));
 
         $unitBisnisList = UnitBisnis::all(['id', 'nama']);
         if ($user && ! $user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
@@ -79,7 +98,12 @@ class AkunKasBankController extends Controller
         return Inertia::render('Finance/AkunKas/Index', [
             'akunKas' => $akunKas,
             'unit_bisnis_id' => $unitBisnisId,
+            'totalSaldo' => $totalSaldo,
+            'transferAccounts' => $transferAccounts,
             'unitBisnisList' => $unitBisnisList,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

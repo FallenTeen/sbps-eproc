@@ -71,7 +71,7 @@ test('index armada difilter berdasarkan status', function () {
     Armada::factory()->for($this->unit)->create(['kode_unit' => 'GCS-DT-01']);
     Armada::factory()->for($this->unit)->servis()->create(['kode_unit' => 'GCS-DT-02']);
 
-    $this->get(route('fleet.armada.index', ['status' => 'servis']))
+    $this->get(route('fleet.armada.index', ['filters' => ['status' => 'servis']]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Fleet/Armada/Index')

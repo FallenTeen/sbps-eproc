@@ -1,17 +1,26 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, Link } from '@inertiajs/react';
-import { Plus, Eye, FileText, AlertCircle } from 'lucide-react';
+import DataTable from '@/Components/DataTable';
+import { Plus, Eye, AlertCircle } from 'lucide-react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Index({ auth, invoices = [], unitBisnisList = [], filters = {} }) {
+export default function Index({ auth, invoices, unitBisnisList = [], statusFilter = 'all', selectedUnit = '', filters, sort, direction }) {
+    const applyTopFilter = (key, value) => {
+        const status = key === 'status' ? value : statusFilter;
+        const unit = key === 'unit_bisnis_id' ? value : selectedUnit;
 
-    const handleFilterChange = (key, value) => {
-        router.get(route('finance.invoice.index'), {
-            ...filters,
-            [key]: value
-        }, { preserveState: true });
+        const params = {};
+        if (status && status !== 'all') params.status = status;
+        if (unit) params.unit_bisnis_id = unit;
+        if (filters && Object.keys(filters).length) params.filters = filters;
+        if (sort) {
+            params.sort = sort;
+            params.direction = direction;
+        }
+
+        router.get(route('finance.invoice.index'), params, { preserveState: true });
     };
 
     const getStatusBadge = (status) => {
@@ -29,6 +38,61 @@ export default function Index({ auth, invoices = [], unitBisnisList = [], filter
         }
     };
 
+    const columns = [
+        {
+            key: 'kode_invoice',
+            label: 'Kode Invoice',
+            type: 'text',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-sm font-semibold text-indigo-600',
+        },
+        {
+            key: 'unit_bisnis',
+            label: 'Unit Bisnis',
+            search: false,
+            sortable: false,
+        },
+        {
+            key: 'proyek_klien',
+            label: 'Proyek / Klien',
+            type: 'text',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium',
+        },
+        {
+            key: 'total',
+            label: 'Total (Rp)',
+            search: false,
+            sortable: false,
+            align: 'right',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-sm font-bold text-right text-gray-900',
+            render: (inv) => `Rp ${Number(inv.total).toLocaleString('id-ID')}`,
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            search: false,
+            render: (inv) => getStatusBadge(inv.status),
+        },
+        {
+            key: 'tanggal_jatuh_tempo',
+            label: 'Jatuh Tempo',
+            type: 'dateRange',
+            render: (inv) => (inv.tanggal_jatuh_tempo ? new Date(inv.tanggal_jatuh_tempo).toLocaleDateString('id-ID') : '-'),
+        },
+        {
+            key: 'aksi',
+            label: 'Aksi',
+            search: false,
+            sortable: false,
+            align: 'right',
+            cellClassName: 'px-4 py-3 whitespace-nowrap text-right text-sm font-medium',
+            render: (inv) => (
+                <Link href={route('finance.invoice.show', inv.id)} className="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium">
+                    <Eye className="w-4 h-4 mr-1" /> Detail
+                </Link>
+            ),
+        },
+    ];
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -38,16 +102,15 @@ export default function Index({ auth, invoices = [], unitBisnisList = [], filter
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    
-                    {/* Header Actions & Filters */}
+
                     <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Status Invoice</label>
                                 <select
                                     className="border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                    value={filters.status || 'all'}
-                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    value={statusFilter || 'all'}
+                                    onChange={(e) => applyTopFilter('status', e.target.value)}
                                 >
                                     <option value="all">Semua Status</option>
                                     <option value="draft">Draft</option>
@@ -62,8 +125,8 @@ export default function Index({ auth, invoices = [], unitBisnisList = [], filter
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Unit Bisnis</label>
                                 <select
                                     className="border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                    value={filters.unit_bisnis_id || ''}
-                                    onChange={(e) => handleFilterChange('unit_bisnis_id', e.target.value)}
+                                    value={selectedUnit || ''}
+                                    onChange={(e) => applyTopFilter('unit_bisnis_id', e.target.value)}
                                 >
                                     <option value="">Semua Unit Bisnis</option>
                                     {unitBisnisList.map((ub) => (
@@ -87,64 +150,16 @@ export default function Index({ auth, invoices = [], unitBisnisList = [], filter
                         </div>
                     </div>
 
-                    {/* Invoice Table */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Invoice</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Bisnis</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek / Klien</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total (Rp)</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jatuh Tempo</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {invoices.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                                                Tidak ada data invoice yang sesuai dengan filter.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        invoices.map((inv) => (
-                                            <tr key={inv.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
-                                                    {inv.kode_invoice}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                    {inv.unit_bisnis}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                    {inv.proyek_klien}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-right text-gray-900">
-                                                    Rp {Number(inv.total).toLocaleString('id-ID')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    {getStatusBadge(inv.status)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                                                    {inv.tanggal_jatuh_tempo ? new Date(inv.tanggal_jatuh_tempo).toLocaleDateString('id-ID') : '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                                    <Link
-                                                        href={route('finance.invoice.show', inv.id)}
-                                                        className="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium"
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-1" /> Detail
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        routeName="finance.invoice.index"
+                        baseParams={{ status: statusFilter !== 'all' ? statusFilter : '', unit_bisnis_id: selectedUnit }}
+                        columns={columns}
+                        rows={invoices}
+                        filters={filters}
+                        sort={sort}
+                        direction={direction}
+                        emptyMessage="Tidak ada data invoice yang sesuai dengan filter."
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

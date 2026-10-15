@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import DataTable from "@/Components/DataTable";
 import StatusBadge from "@/Components/StatusBadge";
 import {
     Plus, Search, Eye, MapPin, Clock, ClipboardList, Users,
@@ -16,13 +17,11 @@ const GROUP_OPTIONS = [
     { value: "role", label: "Per Role" },
 ];
 
-export default function Index({ mode, summary, groups, presensis, karyawan, titiks, filters }) {
+export default function Index({ mode, summary, groups, presensis, titiks = [], filters = {}, sort, direction }) {
     const isGrouped = mode === "grouped";
     const isOwner = (usePage().props.auth?.roles || []).includes("Owner");
 
     const [groupBy, setGroupBy] = useState(filters.group_by || "");
-    const [tanggal, setTanggal] = useState(filters.tanggal || "");
-    const [karyawanId, setKaryawanId] = useState(filters.karyawan_id || "");
     const [from, setFrom] = useState(filters.from || "");
     const [to, setTo] = useState(filters.to || "");
     const [titikId, setTitikId] = useState(filters.titik_id || "");
@@ -37,9 +36,6 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
             params.from = overrides.from ?? from;
             params.to = overrides.to ?? to;
             params.titik_id = overrides.titikId ?? titikId;
-        } else {
-            params.tanggal = overrides.tanggal ?? tanggal;
-            params.karyawan_id = overrides.karyawanId ?? karyawanId;
         }
 
         router.get(route("attendance.presensi.index"), params);
@@ -48,8 +44,6 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
     const handleFilter = () => apply();
     const clearFilters = () => {
         setGroupBy("");
-        setTanggal("");
-        setKaryawanId("");
         setFrom("");
         setTo("");
         setTitikId("");
@@ -68,10 +62,6 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
         });
     };
 
-    // KPI ringkasan — ditampilkan di KEDUA mode (grouped maupun individual)
-    // selama backend mengirim prop `summary`, bukan cuma mode grouped seperti
-    // sebelumnya. Kartu Valid/Luar Radius/Tidak Valid juga jadi tombol filter
-    // cepat (filterValue) supaya user tak perlu buka dropdown Status Validasi.
     const stats = summary
         ? [
             { label: "Total Presensi", value: summary.total ?? 0, icon: ClipboardList, color: "bg-gray-900 text-white" },
@@ -90,6 +80,116 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
     };
 
     const groupedLabel = GROUP_OPTIONS.find((o) => o.value === groupBy)?.label || "Kelompok";
+
+    const columns = [
+        {
+            key: "karyawan",
+            label: "Karyawan",
+            type: "text",
+            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            render: (p) => p.karyawan?.nama || "-",
+        },
+        {
+            key: "titik",
+            label: "Titik",
+            type: "select",
+            options: titiks.map((t) => ({ value: String(t.id), label: t.nama })),
+            render: (p) => (
+                p.titik ? (
+                    <span className="inline-flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400" />
+                        {p.titik.nama}
+                    </span>
+                ) : "-"
+            ),
+        },
+        {
+            key: "check_in",
+            label: "Check-In",
+            type: "dateRange",
+            render: (p) => (p.check_in ? new Date(p.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "-"),
+        },
+        {
+            key: "check_out",
+            label: "Check-Out",
+            search: false,
+            render: (p) => (
+                p.check_out ? (
+                    <span className="inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        {new Date(p.check_out).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
+                    </span>
+                ) : "-"
+            ),
+        },
+        {
+            key: "status_validasi",
+            label: "Status",
+            type: "select",
+            options: [
+                { value: "valid", label: "Valid" },
+                { value: "tidak_valid", label: "Tidak Valid" },
+                { value: "luar_radius", label: "Luar Radius" },
+            ],
+            render: (p) => (
+                <>
+                    <StatusBadge status={p.status_validasi} />
+                    {p.catatan_override && (
+                        <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
+                    )}
+                </>
+            ),
+        },
+        {
+            key: "foto",
+            label: "Foto",
+            search: false,
+            sortable: false,
+            render: (p) => (
+                <div className="flex items-center gap-3">
+                    <Link href={route("attendance.presensi.show", p.id)} title="Lihat foto check-in">
+                        {p.check_in_photo ? (
+                            <img src={p.check_in_photo_url || "/storage/" + p.check_in_photo} alt="Check-in" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
+                        ) : (
+                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-in">
+                                <ImageOff className="w-4 h-4" />
+                            </span>
+                        )}
+                    </Link>
+                    <Link href={route("attendance.presensi.show", p.id)} title="Lihat foto check-out">
+                        {p.check_out_photo ? (
+                            <img src={p.check_out_photo_url || "/storage/" + p.check_out_photo} alt="Check-out" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
+                        ) : (
+                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-out">
+                                <Camera className="w-4 h-4" />
+                            </span>
+                        )}
+                    </Link>
+                </div>
+            ),
+        },
+        {
+            key: "formulir",
+            label: "Formulir",
+            search: false,
+            sortable: false,
+            render: (p) => (p.formulir ? "Terkirim" : "-"),
+        },
+        {
+            key: "aksi",
+            label: "Aksi",
+            search: false,
+            sortable: false,
+            align: "right",
+            cellClassName: "px-4 py-3 whitespace-nowrap text-right text-sm",
+            render: (p) => (
+                <Link href={route("attendance.presensi.show", p.id)} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900">
+                    <Eye className="w-4 h-4" />
+                    Detail
+                </Link>
+            ),
+        },
+    ];
 
     return (
         <AuthenticatedLayout>
@@ -124,7 +224,6 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                 </div>
             </div>
 
-            {/* Statistik — tampil di mode grouped maupun individual */}
             {stats.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                     {stats.map((stat) => {
@@ -157,7 +256,6 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                 </div>
             )}
 
-            {/* Filter */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
                 <div className="flex flex-wrap gap-4 items-end">
                     <div>
@@ -176,7 +274,7 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                         </select>
                     </div>
 
-                    {isGrouped ? (
+                    {isGrouped && (
                         <>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Dari</label>
@@ -209,67 +307,39 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                                     ))}
                                 </select>
                             </div>
-                        </>
-                    ) : (
-                        <>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={tanggal}
-                                    onChange={(e) => setTanggal(e.target.value)}
-                                    className="border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Karyawan</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status Validasi</label>
                                 <select
-                                    value={karyawanId}
-                                    onChange={(e) => setKaryawanId(e.target.value)}
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
                                     className="border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="">Semua</option>
-                                    {karyawan.map((k) => (
-                                        <option key={k.id} value={k.id}>{k.nama}</option>
-                                    ))}
+                                    <option value="valid">Valid</option>
+                                    <option value="tidak_valid">Tidak Valid</option>
+                                    <option value="luar_radius">Luar Radius</option>
                                 </select>
                             </div>
+                            <button
+                                onClick={handleFilter}
+                                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+                            >
+                                <Search className="w-4 h-4" />
+                                Filter
+                            </button>
+                            <button
+                                onClick={clearFilters}
+                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Reset
+                            </button>
                         </>
                     )}
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status Validasi</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="border border-gray-300 rounded-md px-3 py-2"
-                        >
-                            <option value="">Semua</option>
-                            <option value="valid">Valid</option>
-                            <option value="tidak_valid">Tidak Valid</option>
-                            <option value="luar_radius">Luar Radius</option>
-                        </select>
-                    </div>
-
-                    <button
-                        onClick={handleFilter}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-                    >
-                        <Search className="w-4 h-4" />
-                        Filter
-                    </button>
-                    <button
-                        onClick={clearFilters}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                        Reset
-                    </button>
                 </div>
             </div>
 
             {isGrouped ? (
                 <>
-                    {/* Tabel kelompok (clickable) */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -349,122 +419,14 @@ export default function Index({ mode, summary, groups, presensis, karyawan, titi
                     )}
                 </>
             ) : (
-                <>
-                    {/* Table individual */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Karyawan</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Titik</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-In</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-Out</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Foto</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Formulir</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {presensis.data.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="8" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
-                                    </tr>
-                                ) : (
-                                    presensis.data.map((p) => (
-                                        <tr key={p.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.karyawan?.nama}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {p.titik ? (
-                                                    <span className="inline-flex items-center gap-1">
-                                                        <MapPin className="w-3 h-3 text-gray-400" />
-                                                        {p.titik.nama}
-                                                    </span>
-                                                ) : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {p.check_in ? new Date(p.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {p.check_out ? (
-                                                    <span className="inline-flex items-center gap-1">
-                                                        <Clock className="w-3 h-3 text-gray-400" />
-                                                        {new Date(p.check_out).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
-                                                    </span>
-                                                ) : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <StatusBadge status={p.status_validasi} />
-                                                {p.catatan_override && (
-                                                    <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <Link
-                                                        href={route("attendance.presensi.show", p.id)}
-                                                        title="Lihat foto check-in"
-                                                    >
-                                                        {p.check_in_photo ? (
-                                                            <img src={p.check_in_photo_url || "/storage/" + p.check_in_photo} alt="Check-in" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
-                                                        ) : (
-                                                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-in">
-                                                                <ImageOff className="w-4 h-4" />
-                                                            </span>
-                                                        )}
-                                                    </Link>
-                                                    <Link
-                                                        href={route("attendance.presensi.show", p.id)}
-                                                        title="Lihat foto check-out"
-                                                    >
-                                                        {p.check_out_photo ? (
-                                                            <img src={p.check_out_photo_url || "/storage/" + p.check_out_photo} alt="Check-out" className="w-9 h-9 object-cover rounded-md border border-gray-200" />
-                                                        ) : (
-                                                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-gray-100 text-gray-400" title="Tidak ada foto check-out">
-                                                                <Camera className="w-4 h-4" />
-                                                            </span>
-                                                        )}
-                                                    </Link>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {p.formulir ? "Terkirim" : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <Link
-                                                    href={route("attendance.presensi.show", p.id)}
-                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                    Detail
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    <div className="mt-4 flex justify-between items-center">
-                        <div className="text-sm text-gray-500">
-                            Menampilkan {presensis.from || 0} - {presensis.to || 0} dari {presensis.total || 0} data
-                        </div>
-                        <div className="flex gap-2">
-                            {presensis.links &&
-                                presensis.links.map((link, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => link.url && router.get(link.url)}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                        className={`px-3 py-1 border rounded ${link.active ? "bg-gray-900 text-white border-gray-900" : "hover:bg-gray-100"}`}
-                                        disabled={!link.url}
-                                    />
-                                ))}
-                        </div>
-                    </div>
-                </>
+                <DataTable
+                    routeName="attendance.presensi.index"
+                    columns={columns}
+                    rows={presensis}
+                    filters={filters}
+                    sort={sort}
+                    direction={direction}
+                />
             )}
         </AuthenticatedLayout>
     );

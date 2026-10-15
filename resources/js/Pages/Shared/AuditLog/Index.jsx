@@ -1,33 +1,13 @@
-import React, { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import React from 'react';
+import { Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Search, Eye, Download } from 'lucide-react';
+import DataTable from '@/Components/DataTable';
+import { Eye, Download } from 'lucide-react';
 
-export default function Index({ logs, modelTypes = [], filters }) {
-    const [search, setSearch] = useState(filters.search || '');
-    const [modelType, setModelType] = useState(filters.model_type || '');
-    const [event, setEvent] = useState(filters.event || '');
-    const [tanggalFrom, setTanggalFrom] = useState(filters.tanggal_from || '');
-    const [tanggalTo, setTanggalTo] = useState(filters.tanggal_to || '');
-
-    const handleSearch = () => {
-        router.get(route('audit.logs'), {
-            search,
-            model_type: modelType,
-            event,
-            tanggal_from: tanggalFrom,
-            tanggal_to: tanggalTo,
-        });
-    };
-
+export default function Index({ logs, modelTypes = [], filters, sort, direction }) {
     const handleExport = () => {
-        router.get(route('audit.logs.export'), {
-            search,
-            model_type: modelType,
-            event,
-            tanggal_from: tanggalFrom,
-            tanggal_to: tanggalTo,
-        });
+        const query = window.location.search;
+        window.location.href = route('audit.logs.export') + query;
     };
 
     const getActionBadge = (action) => {
@@ -38,6 +18,59 @@ export default function Index({ logs, modelTypes = [], filters }) {
         };
         return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colors[action] || 'bg-gray-200 text-gray-800'}`}>{action}</span>;
     };
+
+    const columns = [
+        {
+            key: 'created_at',
+            label: 'Waktu',
+            type: 'dateRange',
+            render: (item) => new Date(item.created_at).toLocaleString('id-ID'),
+        },
+        {
+            key: 'user',
+            label: 'User',
+            type: 'text',
+            render: (item) => item.causer?.name || 'System',
+        },
+        {
+            key: 'model_type',
+            label: 'Model',
+            type: 'select',
+            options: modelTypes.map((m) => ({ value: m, label: m.split('\\').pop() })),
+            render: (item) => item.subject_type?.split('\\').pop() || '-',
+        },
+        {
+            key: 'event',
+            label: 'Aksi',
+            type: 'select',
+            options: [
+                { value: 'created', label: 'Created' },
+                { value: 'updated', label: 'Updated' },
+                { value: 'deleted', label: 'Deleted' },
+            ],
+            render: (item) => getActionBadge(item.event),
+        },
+        {
+            key: 'description',
+            label: 'Deskripsi',
+            type: 'text',
+            cellClassName: 'px-4 py-3 text-sm text-gray-600 max-w-xs truncate',
+            render: (item) => item.description || '-',
+        },
+        {
+            key: 'detail',
+            label: 'Detail',
+            search: false,
+            sortable: false,
+            align: 'right',
+            cellClassName: 'px-4 py-3 text-right text-sm',
+            render: (item) => (
+                <Link href={route('audit.logs.show', item.id)} className="text-blue-600 hover:text-blue-900">
+                    <Eye className="w-4 h-4" />
+                </Link>
+            ),
+        },
+    ];
 
     return (
         <AuthenticatedLayout>
@@ -51,109 +84,14 @@ export default function Index({ logs, modelTypes = [], filters }) {
                 </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-                <div className="flex flex-wrap gap-4 items-end">
-                    <div className="flex-1 min-w-[200px]">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cari</label>
-                        <div className="flex">
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                placeholder="Cari deskripsi, model..."
-                                className="flex-1 border border-gray-300 rounded-l-md px-3 py-2"
-                            />
-                            <button onClick={handleSearch} className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-md px-3 py-2 hover:bg-gray-100">
-                                <Search className="w-4 h-4 text-gray-600" />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="w-56">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                        <select value={modelType} onChange={(e) => setModelType(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2">
-                            <option value="">Semua</option>
-                            {modelTypes.map((m) => (
-                                <option key={m} value={m}>{m.split('\\').pop()}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="w-40">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Aksi</label>
-                        <select value={event} onChange={(e) => setEvent(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2">
-                            <option value="">Semua</option>
-                            <option value="created">Created</option>
-                            <option value="updated">Updated</option>
-                            <option value="deleted">Deleted</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Dari</label>
-                        <input type="date" value={tanggalFrom} onChange={(e) => setTanggalFrom(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sampai</label>
-                        <input type="date" value={tanggalTo} onChange={(e) => setTanggalTo(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2" />
-                    </div>
-                    <button onClick={handleSearch} className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-semibold">
-                        Filter
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Waktu</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">User</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Model</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Aksi</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Deskripsi</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-900 uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {logs.data?.length === 0 ? (
-                            <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>
-                        ) : (
-                            logs.data?.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {new Date(item.created_at).toLocaleString('id-ID')}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.causer?.name || 'System'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.subject_type?.split('\\').pop() || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{getActionBadge(item.event)}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{item.description || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <Link href={route('audit.logs.show', item.id)} className="text-blue-600 hover:text-blue-900">
-                                            <Eye className="w-4 h-4" />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="mt-4 flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                    Menampilkan {logs.from || 0} - {logs.to || 0} dari {logs.total || 0} data
-                </div>
-                <div className="flex gap-2">
-                    {logs.links?.map((link, index) => (
-                        <button
-                            key={index}
-                            onClick={() => link.url && router.get(link.url)}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                            className={`px-3 py-1 border rounded ${link.active ? 'bg-gray-900 text-white border-gray-900' : 'hover:bg-gray-100'}`}
-                            disabled={!link.url}
-                        />
-                    ))}
-                </div>
-            </div>
+            <DataTable
+                routeName="audit.logs"
+                columns={columns}
+                rows={logs}
+                filters={filters}
+                sort={sort}
+                direction={direction}
+            />
         </AuthenticatedLayout>
     );
 }

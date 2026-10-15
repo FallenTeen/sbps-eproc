@@ -14,6 +14,7 @@ use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
 use App\Domain\Procurement\States\Diterima;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,8 @@ use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', PurchaseOrder::class);
@@ -33,20 +36,24 @@ class PurchaseOrderController extends Controller
             });
         }
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'kode_po' => ['type' => 'like'],
+            'supplier' => ['relation' => 'supplier', 'column' => 'nama', 'type' => 'like'],
+            'proyek' => ['relation' => 'proyek', 'column' => 'nama', 'type' => 'like'],
+            'total' => ['type' => 'exact', 'searchable' => false],
+            'status' => ['type' => 'exact'],
+            'created_at' => ['type' => 'date'],
+        ];
 
-        if ($request->has('search')) {
-            $query->where('kode_po', 'like', '%'.$request->search.'%')
-                ->orWhereHas('supplier', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'));
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        $pos = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $pos = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Procurement/PurchaseOrders/Index', [
             'pos' => $pos,
-            'filters' => $request->only(['status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
