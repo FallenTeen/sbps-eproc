@@ -47,10 +47,7 @@ export default function RitaseCreate({
         lokasi_bongkar: "",
         catatan: "",
     });
-    console.log("Data driver:", driverList[0]);
-    console.log("Data armada:", armadaList[0]);
-    console.log("Data proyek:", proyekList[0]);
-    console.log("Data rute:", ruteList[0]);
+
     // Auto-fill rute info when rute is selected
     const [selectedRute, setSelectedRute] = useState(null);
     const handleRuteChange = (ruteId) => {
