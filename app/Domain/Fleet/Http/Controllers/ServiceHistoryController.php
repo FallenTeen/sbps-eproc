@@ -8,11 +8,14 @@ use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ServiceHistoryController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Map tipe serviceable dari URL (string pendek) ke Eloquent class.
      */
@@ -46,16 +49,27 @@ class ServiceHistoryController extends Controller
 
         $this->authorize('view', $serviceable);
 
-        $histories = $serviceable->serviceHistories()
-            ->with('purchaseOrder')
-            ->orderBy('tanggal', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+        $query = $serviceable->serviceHistories()->getQuery()->with('purchaseOrder');
+
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'jenis_servis' => ['type' => 'like'],
+            'biaya' => ['searchable' => false],
+            'purchase_order' => ['relation' => 'purchaseOrder', 'column' => 'kode_po', 'type' => 'like'],
+            'notes' => ['type' => 'like'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc']);
+
+        $histories = $query->paginate($this->tablePerPage($request, 20))->withQueryString();
 
         return Inertia::render('Fleet/ServiceHistory/Index', [
             'serviceable' => $serviceable,
             'serviceableType' => $type,
             'histories' => $histories,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'can' => [
                 'create' => $request->user()->can('create', ServiceHistory::class),
             ],

@@ -12,29 +12,38 @@ use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PengajuanServisArmadaController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', PengajuanServisArmada::class);
 
-        $query = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'spareparts'])
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->when($request->filled('armada_id'), fn ($q) => $q->where('armada_id', $request->input('armada_id')))
-            ->when($request->filled('q'), function ($q) use ($request) {
-                $q->where('kode_pengajuan', 'like', '%'.$request->input('q').'%')
-                    ->orWhereHas('armada', fn ($a) => $a->where('plat_nomor', 'like', '%'.$request->input('q').'%'));
-            });
+        $query = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'spareparts']);
 
-        $pengajuans = $query->latest('tanggal_ajuan')->latest('created_at')->paginate(15)->withQueryString();
+        $columns = [
+            'kode_pengajuan' => ['type' => 'like'],
+            'armada' => ['relation' => 'armada', 'column' => 'plat_nomor', 'type' => 'like'],
+            'diajukan_oleh' => ['relation' => 'diajukanOleh', 'column' => 'name', 'type' => 'like'],
+            'tanggal_ajuan' => ['type' => 'date'],
+            'status' => ['type' => 'exact'],
+            'total_biaya' => ['searchable' => false],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal_ajuan' => 'desc', 'created_at' => 'desc']);
+
+        $pengajuans = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Fleet/ServisArmada/Index', [
             'pengajuans' => $pengajuans,
-            'armadas' => Armada::aktif()->orderBy('plat_nomor')->get(['id', 'plat_nomor', 'kode_unit']),
-            'filters' => $request->only(['status', 'armada_id', 'q']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
