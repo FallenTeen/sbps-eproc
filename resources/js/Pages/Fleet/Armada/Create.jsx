@@ -350,7 +350,7 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                     <div className="flex items-center justify-end gap-3 pb-6">
                         <Link
                             href={route("fleet.armada.index")}
-                            className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                            className="rounded-lg border-2 border-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                         >
                             Batal
                         </Link>
