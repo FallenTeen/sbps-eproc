@@ -1,7 +1,9 @@
-export function formatTanggal(value, options = undefined) {
+export function formatTanggal(value, options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) {
     if (value === null || value === undefined || value === '') return '-';
+    
     const date = new Date(value);
     if (isNaN(date.getTime())) return String(value);
+    
     return date.toLocaleDateString('id-ID', options);
 }
 
