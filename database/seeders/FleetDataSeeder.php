@@ -21,11 +21,22 @@ use Illuminate\Support\Str;
  *   - docs/Daftar kendaraan.csv → truck mixer (TM) — unit bisnis CBP
  *                                 (plat nomor belum terdata, dibiarkan null).
  *
+ * Sumber tambahan:
+ *   - Foto "Daftar kendaraan & alat berat" → operator alat berat GCS.
+ *     Operator alat berat dicatat sebagai Karyawan saja (tipe harian) tanpa
+ *     penugasan armada; alat beratnya sendiri TIDAK dibuat sebagai Armada
+ *     karena foto tidak menyediakan kode unit unik per alat (kolom "Kode"
+ *     berisi SBPS/BPP, bukan identifier unit). Lihat operatorAlatBeratRows().
+ *
  * Untuk tiap driver asli dibuat:
  *   - Karyawan (nama + alias/julukan + no_hp, tipe borongan_rit).
  *   - Akun User role 'Driver Armada' dengan email @real.com (password 'password').
  *   - ArmadaDriver (tipe standby, mulai hari ini).
  *   - ArmadaPenanggungJawab (peran utama, mulai hari ini).
+ *
+ * Operator alat berat dibuat sebagai Karyawan + akun User role 'Driver Armada'
+ * (email @real.com, password 'password') seperti driver lain, tetapi TANPA
+ * relasi armada karena alat beratnya tidak dicatat sebagai Armada.
  *
  * Kolom opsional (tahun, kapasitas, titik_id, tanggal_mulai_pakai) sengaja
  * dikosongkan agar diisi via aplikasi web nanti. Idempotent (updateOrCreate).
@@ -89,7 +100,63 @@ class FleetDataSeeder extends Seeder
             );
         }
 
+        $operatorCount = $this->syncOperatorAlatBerat($gcs);
+
         $this->command?->info("[FleetDataSeeder] {$count} armada real + driver asli tersinkron.");
+        $this->command?->info("[FleetDataSeeder] {$operatorCount} operator alat berat tersinkron (akun Driver Armada, tanpa armada).");
+    }
+
+    /**
+     * Sinkronkan operator alat berat asli sebagai Karyawan + akun User.
+     *
+     * Akun memakai konvensi driver lain: email slug(nama)@real.com, password
+     * 'password', role 'Driver Armada', unit bisnis GCS. Karyawan TIDAK diikat
+     * ke armada karena alat berat tidak dicatat sebagai Armada (foto tidak
+     * menyediakan kode unit unik per alat).
+     *
+     * Idempotent: User hanya dibuat bila belum ada (password akun lama tidak
+     * pernah ditimpa); Karyawan via updateOrCreate(['nama']).
+     */
+    private function syncOperatorAlatBerat(UnitBisnis $gcs): int
+    {
+        $rows = $this->operatorAlatBeratRows();
+
+        foreach ($rows as $row) {
+            $nama = $row['nama'];
+            $email = Str::slug($nama).'@real.com';
+
+            $user = User::where('email', $email)->first();
+            if (! $user) {
+                $user = User::create([
+                    'name' => $nama,
+                    'nama_lengkap' => $nama,
+                    'jabatan' => $row['jabatan'],
+                    'email' => $email,
+                    'password' => Hash::make(self::PASSWORD),
+                    'email_verified_at' => now(),
+                    'unit_bisnis_id' => $gcs->id,
+                    'divisi' => 'Armada',
+                    'is_active' => true,
+                ]);
+                $user->syncRoles(['Driver Armada']);
+            }
+
+            Karyawan::updateOrCreate(
+                ['nama' => $nama],
+                [
+                    'user_id' => $user->id,
+                    'tipe' => 'harian',
+                    'jabatan' => $row['jabatan'],
+                    'rate_gaji_pokok' => null,
+                    'rate_harian' => null,
+                    'no_hp' => $row['no_hp'],
+                    'alias' => $row['alias'] ?? null,
+                    'status' => 'aktif',
+                ]
+            );
+        }
+
+        return count($rows);
     }
 
     /**
@@ -158,6 +225,35 @@ class FleetDataSeeder extends Seeder
             'truck_molen' => 'Driver Truck Mixer',
             default => 'Driver Dump Truck',
         };
+    }
+
+    /**
+     * Operator alat berat dari foto (GCS — jasa sewa alat berat).
+     *
+     * Hanya operator BARU yang identitasnya tidak ambigu yang dimasukkan.
+     * Nama yang sudah dipakai driver di sumber utama TIDAK ditambahkan di sini
+     * agar tidak menggandakan identitas: YANTO (VIBRO 01), TEGUH (EXCA KOMATSU
+     * 01), dan EKO (EXCA KOMATSU 02) — nama tersebut bertabrakan dengan driver
+     * lama dan nomor HP-nya berbeda, sehingga identitasnya perlu verifikasi
+     * manusia lebih dulu (lihat catatan laporan).
+     *
+     * SOKIB muncul pada dua alat (BABY ROLLER & CMM) dengan nomor HP sama,
+     * dicatat sebagai satu Karyawan.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function operatorAlatBeratRows(): array
+    {
+        return [
+            ['nama' => 'TOBIL', 'jabatan' => 'Operator Excavator', 'no_hp' => '0857-2710-1200', 'alias' => null],
+            ['nama' => 'ANTO', 'jabatan' => 'Operator Excavator', 'no_hp' => '0821-3332-1129', 'alias' => null],
+            ['nama' => 'ROKHANI', 'jabatan' => 'Operator Excavator', 'no_hp' => '0857-0177-6117', 'alias' => null],
+            ['nama' => 'SOKIB', 'jabatan' => 'Operator Alat Berat', 'no_hp' => '0852-3261-1908', 'alias' => null],
+            ['nama' => 'ANDRI', 'jabatan' => 'Operator Vibro', 'no_hp' => '0812-2597-1326', 'alias' => null],
+            ['nama' => 'MUKHSIN', 'jabatan' => 'Operator Bulldozer', 'no_hp' => '0851-4711-3033', 'alias' => null],
+            ['nama' => 'ARI', 'jabatan' => 'Operator Excavator', 'no_hp' => '0813-9019-6117', 'alias' => null],
+            ['nama' => 'HONO', 'jabatan' => 'Operator Excavator', 'no_hp' => '0856-4320-3501', 'alias' => null],
+        ];
     }
 
     /** @return array<int, array<string, mixed>> */
