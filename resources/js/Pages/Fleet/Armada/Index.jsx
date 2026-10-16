@@ -25,13 +25,21 @@ const STATUS = {
     nonaktif: "bg-red-200 text-red-800",
 };
 
-export default function Index({ armadas, filters, sort, direction, unitBisnis = [], titiks = [] }) {
+export default function Index({
+    armadas,
+    filters,
+    sort,
+    direction,
+    unitBisnis = [],
+    titiks = [],
+}) {
     const columns = [
         {
             key: "kode_unit",
             label: "Unit",
             type: "text",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
             render: (a) => a.kode_unit,
         },
         {
@@ -45,7 +53,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             key: "jenis",
             label: "Jenis",
             type: "select",
-            options: Object.entries(JENIS).map(([value, label]) => ({ value, label })),
+            options: Object.entries(JENIS).map(([value, label]) => ({
+                value,
+                label,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (a) => JENIS[a.jenis] || a.jenis,
         },
@@ -53,7 +64,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             key: "model_tarif",
             label: "Model Tarif",
             type: "select",
-            options: Object.entries(MODEL_TARIF).map(([value, label]) => ({ value, label })),
+            options: Object.entries(MODEL_TARIF).map(([value, label]) => ({
+                value,
+                label,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (a) => MODEL_TARIF[a.model_tarif] || a.model_tarif,
         },
@@ -61,7 +75,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             key: "unit_bisnis",
             label: "Unit Bisnis",
             type: "select",
-            options: unitBisnis.map((u) => ({ value: String(u.id), label: u.nama })),
+            options: unitBisnis.map((u) => ({
+                value: String(u.id),
+                label: u.nama,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (a) => a.unit_bisnis?.nama || "-",
         },
@@ -69,7 +86,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             key: "titik",
             label: "Titik",
             type: "select",
-            options: titiks.map((t) => ({ value: String(t.id), label: t.nama })),
+            options: titiks.map((t) => ({
+                value: String(t.id),
+                label: t.nama,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (a) => a.titik?.nama || "-",
         },
@@ -91,7 +111,9 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             ],
             cellClassName: "px-4 py-3 whitespace-nowrap",
             render: (a) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS[a.status] || "bg-gray-200 text-gray-800"}`}>
+                <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS[a.status] || "bg-gray-200 text-gray-800"}`}
+                >
                     {a.status}
                 </span>
             ),
@@ -104,7 +126,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
             align: "right",
             cellClassName: "px-4 py-3 whitespace-nowrap text-right text-sm",
             render: (a) => (
-                <Link href={route("fleet.armada.show", a.id)} className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1">
+                <Link
+                    href={route("fleet.armada.show", a.id)}
+                    className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
+                >
                     <Truck className="w-4 h-4" />
                     Detail
                 </Link>
@@ -118,10 +143,10 @@ export default function Index({ armadas, filters, sort, direction, unitBisnis = 
                 <h1 className="text-2xl font-bold">Armada</h1>
                 <Link
                     href={route("fleet.armada.create")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
-                    Tambah Armada
+                    <span>Tambah Armada</span>
                 </Link>
             </div>
 

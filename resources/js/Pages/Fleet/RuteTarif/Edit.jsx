@@ -281,8 +281,9 @@ export default function Edit({ ruteTarif, unitBisnis }) {
                         <button
                             type="button"
                             onClick={() => window.history.back()}
-                            className="rounded-lg border-2 border-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                            className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                         >
+                            <ArrowLeft className="h-4 w-4" />
                             Batal
                         </button>
 
@@ -292,7 +293,7 @@ export default function Edit({ ruteTarif, unitBisnis }) {
                             className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                         >
                             <Save className="h-4 w-4" />
-                            {processing ? "Menyimpan..." : "Simpan Perubahan"}
+                            {processing ? "Menyimpan..." : "Simpan"}
                         </button>
                     </div>
                 </form>

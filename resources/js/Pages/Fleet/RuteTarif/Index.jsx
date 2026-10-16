@@ -147,7 +147,7 @@ export default function Index({
                 {can("manage fleet") && (
                     <Link
                         href={route("fleet.rute-tarif.create")}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Tambah Rute

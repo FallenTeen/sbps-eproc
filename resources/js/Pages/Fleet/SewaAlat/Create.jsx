@@ -388,8 +388,9 @@ export default function SewaAlatCreate({
                 <div className="flex items-center justify-end gap-3 pb-6">
                     <Link
                         href={route("fleet.sewa-alat.index")}
-                        className="rounded-lg border-2 border-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                     >
+                        <ArrowLeft className="h-4 w-4" />
                         Batal
                     </Link>
                     <button
@@ -398,7 +399,7 @@ export default function SewaAlatCreate({
                         className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
                         <Save className="w-4 h-4" />
-                        {processing ? "Menyimpan..." : "Simpan Sewa Alat"}
+                        {processing ? "Menyimpan..." : "Simpan"}
                     </button>
                 </div>
             </form>

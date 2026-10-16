@@ -95,14 +95,14 @@ export default function Index({ bbmLogs, filters, sort, direction }) {
                 <div className="flex gap-2">
                     <Link
                         href={route("fleet.bbm.anomaly")}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-1"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-red-500 border-2 border-red-600 hover:text-white hover:bg-red-600 hover:border-red-600 transition-colors"
                     >
                         <AlertTriangle className="w-4 h-4" />
                         Anomali
                     </Link>
                     <Link
                         href={route("fleet.bbm.create")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-1"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Catat BBM
