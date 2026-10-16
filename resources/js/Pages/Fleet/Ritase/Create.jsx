@@ -6,7 +6,6 @@ import {
     Save,
     Truck,
     MapPin,
-    User,
     Calendar,
     Hash,
 } from "lucide-react";
@@ -128,7 +127,7 @@ export default function RitaseCreate({
                                 <option value="">— Pilih Armada —</option>
                                 {armadaList.map((a) => (
                                     <option key={a.id} value={a.id}>
-                                        {a.jenis} / {a.plat_nomor}
+                                        {a.jenis} / {a.plat_nomor ?? "-"}
                                     </option>
                                 ))}
                             </select>

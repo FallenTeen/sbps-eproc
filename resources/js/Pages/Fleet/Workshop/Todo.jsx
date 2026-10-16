@@ -6,11 +6,12 @@ import {
     CalendarClock,
     CheckCircle2,
     Trash2,
-    Wrench,
     SearchX,
     PackagePlus,
     X,
-    AlertCircle,
+    ArrowLeft,
+    Save,
+    SendHorizontal,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -36,7 +37,14 @@ const emptyTodo = {
     assigned_to: "",
 };
 
-export default function Todo({ todos, armadas, mesins, workshopUsers, filters, can }) {
+export default function Todo({
+    todos,
+    armadas,
+    mesins,
+    workshopUsers,
+    filters,
+    can,
+}) {
     const [status, setStatus] = useState(filters.status || "");
     const [q, setQ] = useState(filters.q || "");
     const [showCreate, setShowCreate] = useState(false);
@@ -44,7 +52,9 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
     const [sparepartFor, setSparepartFor] = useState(null);
-    const [items, setItems] = useState([{ nama_item: "", jumlah: 1, satuan: "", nominal: 0 }]);
+    const [items, setItems] = useState([
+        { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+    ]);
     const [spErrors, setSpErrors] = useState({});
 
     const post = (url, data, opts = {}) => {
@@ -86,15 +96,21 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
 
     const doComplete = (t) => {
         setProcessing(true);
-        router.post(route("fleet.workshop.todo.complete", t.id), {}, {
-            preserveScroll: true,
-            onFinish: () => setProcessing(false),
-        });
+        router.post(
+            route("fleet.workshop.todo.complete", t.id),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setProcessing(false),
+            },
+        );
     };
 
     const doDelete = (t) => {
         if (!confirm(`Hapus to-do "${t.judul}"?`)) return;
-        router.delete(route("fleet.workshop.todo.destroy", t.id), { preserveScroll: true });
+        router.delete(route("fleet.workshop.todo.destroy", t.id), {
+            preserveScroll: true,
+        });
     };
 
     const openSparepart = (t) => {
@@ -104,7 +120,10 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
     };
 
     const addSparepartItem = () =>
-        setItems([...items, { nama_item: "", jumlah: 1, satuan: "", nominal: 0 }]);
+        setItems([
+            ...items,
+            { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+        ]);
 
     const submitSparepart = (e) => {
         e.preventDefault();
@@ -116,12 +135,11 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
             {
                 onError: (err) => setSpErrors(err),
                 onSuccess: () => setSparepartFor(null),
-            }
+            },
         );
     };
 
-    const fmtDate = (d) =>
-        d ? new Date(d).toLocaleDateString("id-ID") : "-";
+    const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("id-ID") : "-");
 
     return (
         <AuthenticatedLayout>
@@ -129,18 +147,21 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">To-Do List Servis Rutin</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        To-Do List Servis Rutin
+                    </h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Servis terjadwal Workshop (harian / mingguan / bulanan / tanggal tertentu)
+                        Servis terjadwal Workshop (harian / mingguan / bulanan /
+                        tanggal tertentu)
                     </p>
                 </div>
                 {can.manage && (
                     <button
-                        onClick={() => setShowCreate(!showCreate)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        onClick={() => setShowCreate(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
-                        {showCreate ? "Tutup Form" : "Buat To-Do"}
+                        Buat To-Do
                     </button>
                 )}
             </div>
@@ -149,7 +170,9 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cari Judul</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Cari Judul
+                        </label>
                         <input
                             type="text"
                             value={q}
@@ -159,7 +182,9 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Status
+                        </label>
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
@@ -170,151 +195,22 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                             <option value="selesai">Selesai</option>
                         </select>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-1">
                         <button
                             onClick={apply}
-                            className="flex-1 bg-gray-900 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-gray-700"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-white border-2 border-black bg-gray-900 transition-colors"
                         >
                             Terapkan
                         </button>
                         <button
                             onClick={clear}
-                            className="flex-1 border border-gray-300 rounded-md px-4 py-2 text-sm hover:bg-gray-100 inline-flex items-center justify-center gap-1"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                         >
                             <SearchX className="w-4 h-4" /> Reset
                         </button>
                     </div>
                 </div>
             </div>
-
-            {/* Form create */}
-            {showCreate && can.manage && (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Buat To-Do Servis Rutin</h2>
-                    <form onSubmit={submitCreate} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Judul *</label>
-                                <input
-                                    type="text"
-                                    value={form.judul}
-                                    onChange={(e) => setForm({ ...form, judul: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                                {errors.judul && <p className="text-red-600 text-xs mt-1">{errors.judul}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Jadwal Tipe *</label>
-                                <select
-                                    value={form.jadwal_tipe}
-                                    onChange={(e) => setForm({ ...form, jadwal_tipe: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    {JADWAL_TIPE.map((t) => (
-                                        <option key={t.value} value={t.value}>{t.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Detail Jadwal</label>
-                                {form.jadwal_tipe === "mingguan" ? (
-                                    <select
-                                        value={form.jadwal_detail}
-                                        onChange={(e) => setForm({ ...form, jadwal_detail: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        {["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"].map((d) => (
-                                            <option key={d} value={d}>{d}</option>
-                                        ))}
-                                    </select>
-                                ) : form.jadwal_tipe === "bulanan" ? (
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="31"
-                                        value={form.jadwal_detail}
-                                        onChange={(e) => setForm({ ...form, jadwal_detail: e.target.value })}
-                                        placeholder="1..31"
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                ) : form.jadwal_tipe === "tanggal_tertentu" ? (
-                                    <input
-                                        type="date"
-                                        value={form.jadwal_detail}
-                                        onChange={(e) => setForm({ ...form, jadwal_detail: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                ) : (
-                                    <input
-                                        type="text"
-                                        value={form.jadwal_detail || "-"}
-                                        disabled
-                                        placeholder="Setiap hari"
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                                    />
-                                )}
-                                {errors.jadwal_detail && <p className="text-red-600 text-xs mt-1">{errors.jadwal_detail}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-                                <select
-                                    value={form.assigned_to}
-                                    onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">- Tidak ditentukan -</option>
-                                    {workshopUsers.map((u) => (
-                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Armada (opsional)</label>
-                                <select
-                                    value={form.armada_id}
-                                    onChange={(e) => setForm({ ...form, armada_id: e.target.value, mesin_id: "" })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">- Pilih Armada -</option>
-                                    {armadas.map((a) => (
-                                        <option key={a.id} value={a.id}>{a.plat_nomor} ({a.kode_unit})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mesin Produksi (opsional)</label>
-                                <select
-                                    value={form.mesin_id}
-                                    onChange={(e) => setForm({ ...form, mesin_id: e.target.value, armada_id: "" })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">- Pilih Mesin -</option>
-                                    {mesins.map((m) => (
-                                        <option key={m.id} value={m.id}>{m.nama} ({m.jenis})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                                <textarea
-                                    rows="3"
-                                    value={form.deskripsi}
-                                    onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                                {errors.deskripsi && <p className="text-red-600 text-xs mt-1">{errors.deskripsi}</p>}
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="bg-gray-900 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
-                        >
-                            Simpan To-Do
-                        </button>
-                    </form>
-                </div>
-            )}
 
             {/* List */}
             <div className="space-y-3">
@@ -324,51 +220,80 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                     </div>
                 ) : (
                     todos.data.map((t) => {
-                        const meta = STATUS_META[t.status_text] || { label: t.status_text, cls: "bg-gray-100 text-gray-600" };
+                        const meta = STATUS_META[t.status_text] || {
+                            label: t.status_text,
+                            cls: "bg-gray-100 text-gray-600",
+                        };
                         return (
-                            <div key={t.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                                <div className="flex items-start justify-between gap-4">
+                            <div
+                                key={t.id}
+                                className="bg-white rounded-xl border border-gray-200 shadow-sm p-5"
+                            >
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="text-base font-semibold text-gray-900">{t.judul}</h3>
-                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${meta.cls}`}>
+                                            <h3 className="text-base font-semibold text-gray-900">
+                                                {t.judul}
+                                            </h3>
+                                            <span
+                                                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${meta.cls}`}
+                                            >
                                                 {meta.label}
                                             </span>
                                         </div>
-                                        {t.deskripsi && <p className="mt-1 text-sm text-gray-500">{t.deskripsi}</p>}
+                                        {t.deskripsi && (
+                                            <p className="mt-1 text-sm text-gray-500">
+                                                {t.deskripsi}
+                                            </p>
+                                        )}
                                         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
                                             <span className="inline-flex items-center gap-1">
                                                 <CalendarClock className="w-3.5 h-3.5" />
                                                 {t.jadwal_label}
                                             </span>
-                                            <span>Unit: <b>{t.unit_label}</b></span>
-                                            <span>Jatuh tempo: <b>{fmtDate(t.due_date)}</b></span>
-                                            {t.assigned_to && <span>PJ: {t.assigned_to?.name}</span>}
+                                            <span>
+                                                Unit: <b>{t.unit_label}</b>
+                                            </span>
+                                            <span>
+                                                Jatuh tempo:{" "}
+                                                <b>{fmtDate(t.due_date)}</b>
+                                            </span>
+                                            {t.assigned_to && (
+                                                <span>
+                                                    PJ: {t.assigned_to?.name}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {can.manage && t.status !== "selesai" && (
-                                            <button
-                                                onClick={() => doComplete(t)}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-900"
-                                            >
-                                                <CheckCircle2 className="w-4 h-4" /> Selesai
-                                            </button>
-                                        )}
+                                    <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 sm:shrink-0 sm:justify-end sm:border-0 sm:pt-0">
+                                        {can.manage &&
+                                            t.status !== "selesai" && (
+                                                <button
+                                                    onClick={() =>
+                                                        doComplete(t)
+                                                    }
+                                                    className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50 sm:px-4 sm:text-sm"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4" />{" "}
+                                                    Selesai
+                                                </button>
+                                            )}
                                         {can.manage && (
                                             <button
                                                 onClick={() => openSparepart(t)}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900"
+                                                className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50 sm:px-4 sm:text-sm"
                                             >
-                                                <PackagePlus className="w-4 h-4" /> Ajukan Sparepart
+                                                <PackagePlus className="w-4 h-4" />{" "}
+                                                Ajukan Sparepart
                                             </button>
                                         )}
                                         {can.manage && (
                                             <button
                                                 onClick={() => doDelete(t)}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800"
+                                                className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50 sm:px-4 sm:text-sm"
                                             >
-                                                <Trash2 className="w-4 h-4" /> Hapus
+                                                <Trash2 className="w-4 h-4" />{" "}
+                                                Hapus
                                             </button>
                                         )}
                                     </div>
@@ -382,7 +307,8 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
             {/* Pagination */}
             <div className="mt-4 flex justify-between items-center">
                 <div className="text-sm text-gray-500">
-                    Menampilkan {todos.from || 0} - {todos.to || 0} dari {todos.total || 0} data
+                    Menampilkan {todos.from || 0} - {todos.to || 0} dari{" "}
+                    {todos.total || 0} data
                 </div>
                 <div className="flex gap-2">
                     {todos.links &&
@@ -398,35 +324,325 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                 </div>
             </div>
 
+            {/* Modal buat to-do */}
+            {showCreate && can.manage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-bw-lg">
+                        <div className="mb-4 flex items-start justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Buat To-Do Servis Rutin
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setShowCreate(false)}
+                                className="text-gray-500 hover:text-gray-900"
+                                aria-label="Tutup"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={submitCreate} className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Judul{" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={form.judul}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                judul: e.target.value,
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    />
+                                    {errors.judul && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {errors.judul}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Jadwal Tipe{" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <select
+                                        value={form.jadwal_tipe}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                jadwal_tipe: e.target.value,
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    >
+                                        {JADWAL_TIPE.map((t) => (
+                                            <option
+                                                key={t.value}
+                                                value={t.value}
+                                            >
+                                                {t.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Detail Jadwal
+                                    </label>
+                                    {form.jadwal_tipe === "mingguan" ? (
+                                        <select
+                                            value={form.jadwal_detail}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    jadwal_detail:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                        >
+                                            {[
+                                                "senin",
+                                                "selasa",
+                                                "rabu",
+                                                "kamis",
+                                                "jumat",
+                                                "sabtu",
+                                                "minggu",
+                                            ].map((d) => (
+                                                <option key={d} value={d}>
+                                                    {d}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : form.jadwal_tipe === "bulanan" ? (
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="31"
+                                            value={form.jadwal_detail}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    jadwal_detail:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            placeholder="1..31"
+                                            className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                        />
+                                    ) : form.jadwal_tipe ===
+                                      "tanggal_tertentu" ? (
+                                        <input
+                                            type="date"
+                                            value={form.jadwal_detail}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    jadwal_detail:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                        />
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={form.jadwal_detail || "-"}
+                                            disabled
+                                            placeholder="Setiap hari"
+                                            className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
+                                        />
+                                    )}
+                                    {errors.jadwal_detail && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {errors.jadwal_detail}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Assigned To
+                                    </label>
+                                    <select
+                                        value={form.assigned_to}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                assigned_to: e.target.value,
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                    >
+                                        <option value="">
+                                            - Tidak ditentukan -
+                                        </option>
+                                        {workshopUsers.map((u) => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Armada (opsional)
+                                    </label>
+                                    <select
+                                        value={form.armada_id}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                armada_id: e.target.value,
+                                                mesin_id: "",
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                    >
+                                        <option value="">
+                                            - Pilih Armada -
+                                        </option>
+                                        {armadas.map((a) => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.plat_nomor ?? "-"} /{" "}
+                                                {a.kode_unit}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Mesin Produksi (opsional)
+                                    </label>
+                                    <select
+                                        value={form.mesin_id}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                mesin_id: e.target.value,
+                                                armada_id: "",
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                    >
+                                        <option value="">
+                                            - Pilih Mesin -
+                                        </option>
+                                        {mesins.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.nama} ({m.jenis})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Deskripsi
+                                    </label>
+                                    <textarea
+                                        rows="3"
+                                        value={form.deskripsi}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                deskripsi: e.target.value,
+                                            })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                                    />
+                                    {errors.deskripsi && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {errors.deskripsi}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreate(false)}
+                                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    <Save className="h-4 w-4" />
+                                    {processing ? "Menyimpan..." : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Modal ajukan sparepart */}
             {sparepartFor && can.manage && (
                 <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-bw-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
                         <div className="flex items-start justify-between mb-4">
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Ajukan Sparepart</h3>
-                                <p className="text-sm text-gray-500">Dari to-do: {sparepartFor.judul}</p>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Ajukan Sparepart
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    Dari to-do: {sparepartFor.judul}
+                                </p>
                             </div>
-                            <button onClick={() => setSparepartFor(null)} className="text-gray-500 hover:text-gray-900">
+                            <button
+                                onClick={() => setSparepartFor(null)}
+                                className="text-gray-500 hover:text-gray-900"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                         <form onSubmit={submitSparepart} className="space-y-3">
                             {items.map((item, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                                <div
+                                    key={idx}
+                                    className="border border-gray-200 rounded-lg p-3 space-y-2"
+                                >
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="text"
                                             placeholder="Nama item *"
                                             value={item.nama_item}
                                             onChange={(e) =>
-                                                setItems(items.map((x, i) => (i === idx ? { ...x, nama_item: e.target.value } : x)))
+                                                setItems(
+                                                    items.map((x, i) =>
+                                                        i === idx
+                                                            ? {
+                                                                  ...x,
+                                                                  nama_item:
+                                                                      e.target
+                                                                          .value,
+                                                              }
+                                                            : x,
+                                                    ),
+                                                )
                                             }
                                             className="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                                            onClick={() =>
+                                                setItems(
+                                                    items.filter(
+                                                        (_, i) => i !== idx,
+                                                    ),
+                                                )
+                                            }
                                             className="text-red-500 hover:text-red-700"
                                         >
                                             <X className="w-4 h-4" />
@@ -438,7 +654,18 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                                             placeholder="Jumlah"
                                             value={item.jumlah}
                                             onChange={(e) =>
-                                                setItems(items.map((x, i) => (i === idx ? { ...x, jumlah: e.target.value } : x)))
+                                                setItems(
+                                                    items.map((x, i) =>
+                                                        i === idx
+                                                            ? {
+                                                                  ...x,
+                                                                  jumlah: e
+                                                                      .target
+                                                                      .value,
+                                                              }
+                                                            : x,
+                                                    ),
+                                                )
                                             }
                                             className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                                         />
@@ -447,7 +674,18 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                                             placeholder="Satuan"
                                             value={item.satuan}
                                             onChange={(e) =>
-                                                setItems(items.map((x, i) => (i === idx ? { ...x, satuan: e.target.value } : x)))
+                                                setItems(
+                                                    items.map((x, i) =>
+                                                        i === idx
+                                                            ? {
+                                                                  ...x,
+                                                                  satuan: e
+                                                                      .target
+                                                                      .value,
+                                                              }
+                                                            : x,
+                                                    ),
+                                                )
                                             }
                                             className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                                         />
@@ -456,7 +694,18 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                                             placeholder="Nominal"
                                             value={item.nominal}
                                             onChange={(e) =>
-                                                setItems(items.map((x, i) => (i === idx ? { ...x, nominal: e.target.value } : x)))
+                                                setItems(
+                                                    items.map((x, i) =>
+                                                        i === idx
+                                                            ? {
+                                                                  ...x,
+                                                                  nominal:
+                                                                      e.target
+                                                                          .value,
+                                                              }
+                                                            : x,
+                                                    ),
+                                                )
                                             }
                                             className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                                         />
@@ -470,31 +719,31 @@ export default function Todo({ todos, armadas, mesins, workshopUsers, filters, c
                             >
                                 <Plus className="w-4 h-4" /> Tambah Item
                             </button>
-                            {spErrors.adalah && <p className="text-red-600 text-xs">{spErrors.adalah}</p>}
+                            {spErrors.adalah && (
+                                <p className="text-red-600 text-xs">
+                                    {spErrors.adalah}
+                                </p>
+                            )}
                             <div className="flex justify-end gap-2 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setSparepartFor(null)}
-                                    className="border border-gray-300 rounded-md px-4 py-2 text-sm hover:bg-gray-100"
+                                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                                 >
+                                    <ArrowLeft className="h-4 w-4" />
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="bg-gray-900 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                                 >
+                                    <SendHorizontal className="h-4 w-4" />
                                     Kirim ke Inventory
                                 </button>
                             </div>
                         </form>
                     </div>
-                </div>
-            )}
-
-            {processing && (
-                <div className="fixed bottom-4 right-4 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg inline-flex items-center gap-2 shadow-lg">
-                    <AlertCircle className="w-4 h-4 animate-spin" /> Memproses...
                 </div>
             )}
         </AuthenticatedLayout>
