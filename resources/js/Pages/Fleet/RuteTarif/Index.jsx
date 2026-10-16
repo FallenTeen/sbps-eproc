@@ -4,7 +4,13 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
 
-export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, direction }) {
+export default function Index({
+    ruteTarifs,
+    unitBisnis = [],
+    filters,
+    sort,
+    direction,
+}) {
     const { auth } = usePage().props;
     const can = (permission) => auth?.permissions?.includes(permission);
 
@@ -23,7 +29,8 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
             key: "lokasi_asal",
             label: "Asal",
             type: "text",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
             render: (r) => r.lokasi_asal,
         },
         {
@@ -38,7 +45,8 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
             label: "Jarak (km)",
             search: false,
             align: "right",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right tabular-nums",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right tabular-nums",
             render: (r) => Number(r.jarak_km).toLocaleString("id-ID"),
         },
         {
@@ -46,14 +54,19 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
             label: "Tarif/Rit",
             search: false,
             align: "right",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right tabular-nums",
-            render: (r) => `Rp ${Number(r.tarif_per_rit).toLocaleString("id-ID")}`,
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right tabular-nums",
+            render: (r) =>
+                `Rp ${Number(r.tarif_per_rit).toLocaleString("id-ID")}`,
         },
         {
             key: "unit_bisnis",
             label: "Unit Bisnis",
             type: "select",
-            options: unitBisnis.map((u) => ({ value: String(u.id), label: u.nama })),
+            options: unitBisnis.map((u) => ({
+                value: String(u.id),
+                label: u.nama,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (r) => r.unit_bisnis?.nama || "-",
         },
@@ -64,7 +77,9 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
             sortable: false,
             cellClassName: "px-4 py-3 whitespace-nowrap",
             render: (r) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${isAktif(r) ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-700"}`}>
+                <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${isAktif(r) ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-700"}`}
+                >
                     {isAktif(r) ? "Berlaku" : "Kadaluarsa"}
                 </span>
             ),
@@ -75,22 +90,35 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
             search: false,
             sortable: false,
             align: "right",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-right text-sm space-x-2",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-right text-sm space-x-2",
             render: (r) => (
                 <>
-                    <Link href={route("fleet.rute-tarif.show", r.id)} className="text-blue-600 hover:text-blue-900 inline-block">
+                    <Link
+                        href={route("fleet.rute-tarif.show", r.id)}
+                        className="text-blue-600 hover:text-blue-900 inline-block"
+                    >
                         <Eye className="w-4 h-4" />
                     </Link>
                     {can("manage fleet") && (
-                        <Link href={route("fleet.rute-tarif.edit", r.id)} className="text-yellow-600 hover:text-yellow-900 inline-block">
+                        <Link
+                            href={route("fleet.rute-tarif.edit", r.id)}
+                            className="text-yellow-600 hover:text-yellow-900 inline-block"
+                        >
                             <Edit className="w-4 h-4" />
                         </Link>
                     )}
                     {can("manage fleet") && (
                         <button
                             onClick={() => {
-                                if (window.confirm("Yakin hapus rute tarif ini?")) {
-                                    router.delete(route("fleet.rute-tarif.destroy", r.id));
+                                if (
+                                    window.confirm(
+                                        "Yakin hapus rute tarif ini?",
+                                    )
+                                ) {
+                                    router.delete(
+                                        route("fleet.rute-tarif.destroy", r.id),
+                                    );
                                 }
                             }}
                             className="text-red-600 hover:text-red-900 inline-block"
@@ -109,13 +137,17 @@ export default function Index({ ruteTarifs, unitBisnis = [], filters, sort, dire
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Rute Tarif</h1>
-                    <p className="mt-1 text-sm text-gray-500">Master tarif rute armada per unit bisnis</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Rute Tarif
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Master tarif rute armada per unit bisnis
+                    </p>
                 </div>
                 {can("manage fleet") && (
                     <Link
                         href={route("fleet.rute-tarif.create")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition shadow-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Tambah Rute
