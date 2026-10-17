@@ -739,7 +739,7 @@ export default function Todo({
                                     className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                                 >
                                     <SendHorizontal className="h-4 w-4" />
-                                    Kirim ke Inventory
+                                    {processing ? "Menyimpan..." : "Kirim ke Inventory"}
                                 </button>
                             </div>
                         </form>
