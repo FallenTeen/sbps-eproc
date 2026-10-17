@@ -1,18 +1,27 @@
 import React from "react";
-import { Head } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 
 export default function Anomaly({ anomalies }) {
     return (
         <AuthenticatedLayout>
             <Head title="Anomali BBM" />
 
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Anomali Konsumsi BBM</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Deteksi pemakaian BBM di atas estimasi rute / rata-rata historis
-                </p>
+            <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Anomali Konsumsi BBM</h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Deteksi pemakaian BBM di atas estimasi rute / rata-rata historis
+                    </p>
+                </div>
+                <Link
+                    href={route("fleet.bbm.index")}
+                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Kembali</span>
+                </Link>
             </div>
 
             {anomalies.length === 0 ? (

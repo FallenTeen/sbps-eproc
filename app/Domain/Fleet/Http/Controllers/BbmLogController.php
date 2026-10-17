@@ -110,7 +110,7 @@ class BbmLogController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'serviceable_type' => 'required|string|in:'.implode(',', array_keys(self::SERVICEABLE_MAP)),
+            'serviceable_type' => 'required|string|in:' . implode(',', array_keys(self::SERVICEABLE_MAP)),
             'serviceable_id' => 'required|string',
             'tanggal' => 'nullable|date|before_or_equal:today',
             'liter' => 'required|numeric|min:0.01',
@@ -149,7 +149,7 @@ class BbmLogController extends Controller
             'purchase_order_id' => $validated['purchase_order_id'] ?? null,
         ]);
 
-        return back()->with('success', 'Pencatatan BBM berhasil disimpan.');
+        return redirect()->route('fleet.bbm.index')->with('success', 'Pencatatan BBM berhasil disimpan.');
     }
 
     /**
@@ -266,7 +266,7 @@ class BbmLogController extends Controller
         }
 
         $logs = $query->get()
-            ->groupBy(fn ($log) => $log->serviceable_type.':'.$log->serviceable_id);
+            ->groupBy(fn($log) => $log->serviceable_type . ':' . $log->serviceable_id);
 
         $anomalies = collect();
 
@@ -306,7 +306,7 @@ class BbmLogController extends Controller
                 ->whereBetween('tanggal', [$prev->tanggal, $curr->tanggal])
                 ->with('ruteTarif')
                 ->get()
-                ->filter(fn ($ritase) => $ritase->ruteTarif && $ritase->ruteTarif->indeks_liter_solar_per_km !== null);
+                ->filter(fn($ritase) => $ritase->ruteTarif && $ritase->ruteTarif->indeks_liter_solar_per_km !== null);
 
             if ($ritasesPeriode->isEmpty()) {
                 // Tidak ada data rute yang bisa dipakai di periode ini,
@@ -317,11 +317,11 @@ class BbmLogController extends Controller
             }
 
             $totalJarakKm = $ritasesPeriode->sum(
-                fn ($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km
+                fn($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km
             );
 
             $estimasiLiter = $ritasesPeriode->sum(
-                fn ($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km * $ritase->ruteTarif->indeks_liter_solar_per_km
+                fn($ritase) => ($ritase->jumlah_rit ?? 0) * $ritase->ruteTarif->jarak_km * $ritase->ruteTarif->indeks_liter_solar_per_km
             );
 
             if ($estimasiLiter <= 0) {
