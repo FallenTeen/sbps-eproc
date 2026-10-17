@@ -116,7 +116,10 @@ export default function Show({ pengajuan, can }) {
             route("fleet.servis-armada.assign-workshop", pengajuan.id),
             work,
             {
+                preserveScroll: true,
+                onError: (validationErrors) => setErrors(validationErrors),
                 onSuccess: () => {
+                    setErrors({});
                     setWork({
                         tanggal_mulai_kerja: "",
                         tanggal_selesai_kerja: "",
@@ -177,7 +180,8 @@ export default function Show({ pengajuan, can }) {
                             </span>
                         </div>
                         <p className="mt-1 text-sm text-gray-500">
-                            Informasi pengajuan, persetujuan, pengerjaan, dan penyelesaian servis.
+                            Informasi pengajuan, persetujuan, pengerjaan, dan
+                            penyelesaian servis.
                         </p>
                     </div>
 
@@ -229,7 +233,10 @@ export default function Show({ pengajuan, can }) {
                         />
 
                         <dl className="mt-2">
-                            <Row label="Catatan ACC" value={pengajuan.catatan_acc} />
+                            <Row
+                                label="Catatan ACC"
+                                value={pengajuan.catatan_acc}
+                            />
                             <Row
                                 label="Disetujui Oleh"
                                 value={pengajuan.disetujui_oleh?.name}
@@ -249,7 +256,9 @@ export default function Show({ pengajuan, can }) {
                                     <textarea
                                         value={approve.catatan_acc}
                                         onChange={(e) =>
-                                            setApprove({ catatan_acc: e.target.value })
+                                            setApprove({
+                                                catatan_acc: e.target.value,
+                                            })
                                         }
                                         rows={2}
                                         placeholder="Berikan catatan persetujuan atau penolakan…"
@@ -277,7 +286,8 @@ export default function Show({ pengajuan, can }) {
                                         disabled={processing}
                                         className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 disabled:opacity-50 transition"
                                     >
-                                        <CheckCircle2 className="w-4 h-4" /> Setujui
+                                        <CheckCircle2 className="w-4 h-4" />{" "}
+                                        Setujui
                                     </button>
                                 </div>
                             </div>
@@ -292,14 +302,18 @@ export default function Show({ pengajuan, can }) {
                             desc="Assign personel & catat pengerjaan oleh Workshop."
                         />
 
-                        <dl className="mt-2">
+                        <div className="mt-2">
                             <Row
                                 label="Mulai Kerja"
-                                value={formatTanggal(pengajuan.tanggal_mulai_kerja)}
+                                value={formatTanggal(
+                                    pengajuan.tanggal_mulai_kerja,
+                                )}
                             />
                             <Row
                                 label="Selesai Kerja"
-                                value={formatTanggal(pengajuan.tanggal_selesai_kerja)}
+                                value={formatTanggal(
+                                    pengajuan.tanggal_selesai_kerja,
+                                )}
                             />
                             <Row
                                 label="Catatan Pengerjaan"
@@ -307,14 +321,13 @@ export default function Show({ pengajuan, can }) {
                             />
                             <Row
                                 label="Butuh Sparepart"
-                                value={pengajuan.butuh_sparepart ? "Ya" : "Tidak"}
+                                value={
+                                    pengajuan.butuh_sparepart ? "Ya" : "Tidak"
+                                }
                             />
-                        </dl>
-
-                        {pengajuan.personels?.length > 0 && (
-                            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
-                                <span className="text-xs font-medium text-gray-500 mr-2">Personel Assigned:</span>
-                                {pengajuan.personels.map((pe) => (
+                            <Row
+                                label="Nama Personel"
+                                value={pengajuan.personels?.map((pe) => (
                                     <span
                                         key={pe.id}
                                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-amber-800 text-xs font-medium"
@@ -324,8 +337,8 @@ export default function Show({ pengajuan, can }) {
                                         {pe.peran ? ` (${pe.peran})` : ""}
                                     </span>
                                 ))}
-                            </div>
-                        )}
+                            />
+                        </div>
 
                         {can.assignWorkshop && (
                             <form
@@ -343,7 +356,8 @@ export default function Show({ pengajuan, can }) {
                                             onChange={(e) =>
                                                 setWork({
                                                     ...work,
-                                                    tanggal_mulai_kerja: e.target.value,
+                                                    tanggal_mulai_kerja:
+                                                        e.target.value,
                                                 })
                                             }
                                             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
@@ -360,11 +374,17 @@ export default function Show({ pengajuan, can }) {
                                             onChange={(e) =>
                                                 setWork({
                                                     ...work,
-                                                    tanggal_selesai_kerja: e.target.value,
+                                                    tanggal_selesai_kerja:
+                                                        e.target.value,
                                                 })
                                             }
                                             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                                         />
+                                        {errors.tanggal_selesai_kerja && (
+                                            <p className="mt-1 text-sm text-red-600">
+                                                {errors.tanggal_selesai_kerja}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -377,7 +397,8 @@ export default function Show({ pengajuan, can }) {
                                         onChange={(e) =>
                                             setWork({
                                                 ...work,
-                                                catatan_pengerjaan: e.target.value,
+                                                catatan_pengerjaan:
+                                                    e.target.value,
                                             })
                                         }
                                         rows={2}
@@ -399,9 +420,15 @@ export default function Show({ pengajuan, can }) {
                                                 <input
                                                     value={pe.nama_personel}
                                                     onChange={(e) => {
-                                                        const p = [...work.personels];
-                                                        p[i].nama_personel = e.target.value;
-                                                        setWork({ ...work, personels: p });
+                                                        const p = [
+                                                            ...work.personels,
+                                                        ];
+                                                        p[i].nama_personel =
+                                                            e.target.value;
+                                                        setWork({
+                                                            ...work,
+                                                            personels: p,
+                                                        });
                                                     }}
                                                     placeholder="Nama personel"
                                                     className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
@@ -409,9 +436,15 @@ export default function Show({ pengajuan, can }) {
                                                 <input
                                                     value={pe.peran}
                                                     onChange={(e) => {
-                                                        const p = [...work.personels];
-                                                        p[i].peran = e.target.value;
-                                                        setWork({ ...work, personels: p });
+                                                        const p = [
+                                                            ...work.personels,
+                                                        ];
+                                                        p[i].peran =
+                                                            e.target.value;
+                                                        setWork({
+                                                            ...work,
+                                                            personels: p,
+                                                        });
                                                     }}
                                                     placeholder="Peran (Mekanik, dll)"
                                                     className="w-36 sm:w-48 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
@@ -421,9 +454,11 @@ export default function Show({ pengajuan, can }) {
                                                     onClick={() =>
                                                         setWork({
                                                             ...work,
-                                                            personels: work.personels.filter(
-                                                                (_, x) => x !== i,
-                                                            ),
+                                                            personels:
+                                                                work.personels.filter(
+                                                                    (_, x) =>
+                                                                        x !== i,
+                                                                ),
                                                         })
                                                     }
                                                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition"
@@ -439,7 +474,8 @@ export default function Show({ pengajuan, can }) {
                                         onClick={addPersonel}
                                         className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 transition"
                                     >
-                                        <Plus className="w-3.5 h-3.5" /> Tambah Personel
+                                        <Plus className="w-3.5 h-3.5" /> Tambah
+                                        Personel
                                     </button>
                                 </div>
 
@@ -451,12 +487,14 @@ export default function Show({ pengajuan, can }) {
                                             onChange={(e) =>
                                                 setWork({
                                                     ...work,
-                                                    butuh_sparepart: e.target.checked,
+                                                    butuh_sparepart:
+                                                        e.target.checked,
                                                 })
                                             }
                                             className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                                         />
-                                        Servis butuh sparepart (lanjut ke pengadaan)
+                                        Servis butuh sparepart (lanjut ke
+                                        pengadaan)
                                     </label>
                                 </div>
 
@@ -485,7 +523,9 @@ export default function Show({ pengajuan, can }) {
                         <dl className="mt-2">
                             <Row
                                 label="Status Pengadaan"
-                                value={pengajuan.status_pengadaan_sparepart || "-"}
+                                value={
+                                    pengajuan.status_pengadaan_sparepart || "-"
+                                }
                             />
                             <Row
                                 label="Total Biaya"
@@ -497,7 +537,8 @@ export default function Show({ pengajuan, can }) {
                             />
                         </dl>
 
-                        {(pengajuan.spareparts?.length > 0 || can.requestSparepart) && (
+                        {(pengajuan.spareparts?.length > 0 ||
+                            can.requestSparepart) && (
                             <div className="mt-5 border-t border-gray-100 pt-4">
                                 <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                     <PackageSearch className="w-4 h-4 text-amber-600" />
@@ -524,12 +565,16 @@ export default function Show({ pengajuan, can }) {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100 bg-white">
                                             {pengajuan.spareparts?.map((s) => (
-                                                <tr key={s.id} className="hover:bg-gray-50/50">
+                                                <tr
+                                                    key={s.id}
+                                                    className="hover:bg-gray-50/50"
+                                                >
                                                     <td className="px-3.5 py-2.5 font-medium text-gray-900">
                                                         {s.nama_item}
                                                         {s.satuan && (
                                                             <span className="text-gray-400 font-normal">
-                                                                {" "} ({s.satuan})
+                                                                {" "}
+                                                                ({s.satuan})
                                                             </span>
                                                         )}
                                                     </td>
@@ -537,17 +582,26 @@ export default function Show({ pengajuan, can }) {
                                                         {s.jumlah}
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-right tabular-nums text-gray-700">
-                                                        Rp {Number(s.nominal || 0).toLocaleString("id-ID")}
+                                                        Rp{" "}
+                                                        {Number(
+                                                            s.nominal || 0,
+                                                        ).toLocaleString(
+                                                            "id-ID",
+                                                        )}
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-center">
                                                         <span
                                                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                                s.status === "tersedia"
+                                                                s.status ===
+                                                                "tersedia"
                                                                     ? "bg-teal-100 text-teal-700"
                                                                     : "bg-yellow-100 text-yellow-800"
                                                             }`}
                                                         >
-                                                            {s.status === "tersedia" ? "Tersedia" : "Diajukan"}
+                                                            {s.status ===
+                                                            "tersedia"
+                                                                ? "Tersedia"
+                                                                : "Diajukan"}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -558,7 +612,8 @@ export default function Show({ pengajuan, can }) {
                                                         colSpan={4}
                                                         className="px-3.5 py-4 text-center text-gray-400"
                                                     >
-                                                        Belum ada item sparepart.
+                                                        Belum ada item
+                                                        sparepart.
                                                     </td>
                                                 </tr>
                                             )}
@@ -585,8 +640,11 @@ export default function Show({ pengajuan, can }) {
                                                     <input
                                                         value={it.nama_item}
                                                         onChange={(e) => {
-                                                            const n = [...items];
-                                                            n[i].nama_item = e.target.value;
+                                                            const n = [
+                                                                ...items,
+                                                            ];
+                                                            n[i].nama_item =
+                                                                e.target.value;
                                                             setItems(n);
                                                         }}
                                                         placeholder="Nama sparepart"
@@ -596,8 +654,11 @@ export default function Show({ pengajuan, can }) {
                                                         type="number"
                                                         value={it.jumlah}
                                                         onChange={(e) => {
-                                                            const n = [...items];
-                                                            n[i].jumlah = e.target.value;
+                                                            const n = [
+                                                                ...items,
+                                                            ];
+                                                            n[i].jumlah =
+                                                                e.target.value;
                                                             setItems(n);
                                                         }}
                                                         placeholder="Qty"
@@ -606,8 +667,11 @@ export default function Show({ pengajuan, can }) {
                                                     <input
                                                         value={it.satuan}
                                                         onChange={(e) => {
-                                                            const n = [...items];
-                                                            n[i].satuan = e.target.value;
+                                                            const n = [
+                                                                ...items,
+                                                            ];
+                                                            n[i].satuan =
+                                                                e.target.value;
                                                             setItems(n);
                                                         }}
                                                         placeholder="Satuan (Pcs, Set, dll)"
@@ -616,7 +680,12 @@ export default function Show({ pengajuan, can }) {
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            setItems(items.filter((_, x) => x !== i))
+                                                            setItems(
+                                                                items.filter(
+                                                                    (_, x) =>
+                                                                        x !== i,
+                                                                ),
+                                                            )
                                                         }
                                                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition"
                                                     >
@@ -632,7 +701,8 @@ export default function Show({ pengajuan, can }) {
                                                 onClick={addItem}
                                                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 transition"
                                             >
-                                                <Plus className="w-3.5 h-3.5" /> Tambah Item
+                                                <Plus className="w-3.5 h-3.5" />{" "}
+                                                Tambah Item
                                             </button>
 
                                             <button
@@ -664,14 +734,23 @@ export default function Show({ pengajuan, can }) {
                                                     className="flex items-center gap-3"
                                                 >
                                                     <span className="flex-1 min-w-0 text-sm font-medium text-gray-700 truncate">
-                                                        {pengajuan.spareparts.find((s) => s.id === r.id)?.nama_item}
+                                                        {
+                                                            pengajuan.spareparts.find(
+                                                                (s) =>
+                                                                    s.id ===
+                                                                    r.id,
+                                                            )?.nama_item
+                                                        }
                                                     </span>
                                                     <input
                                                         type="number"
                                                         value={r.nominal}
                                                         onChange={(e) => {
-                                                            const n = [...records];
-                                                            n[i].nominal = e.target.value;
+                                                            const n = [
+                                                                ...records,
+                                                            ];
+                                                            n[i].nominal =
+                                                                e.target.value;
                                                             setRecords(n);
                                                         }}
                                                         placeholder="Nominal (Rp)"
@@ -716,7 +795,9 @@ export default function Show({ pengajuan, can }) {
                                         </label>
                                         <input
                                             type="number"
-                                            defaultValue={pengajuan.total_biaya || 0}
+                                            defaultValue={
+                                                pengajuan.total_biaya || 0
+                                            }
                                             id="total_biaya"
                                             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                                         />
@@ -726,10 +807,19 @@ export default function Show({ pengajuan, can }) {
                                         type="button"
                                         onClick={() =>
                                             post(
-                                                route("fleet.servis-armada.complete", pengajuan.id),
+                                                route(
+                                                    "fleet.servis-armada.complete",
+                                                    pengajuan.id,
+                                                ),
                                                 {
-                                                    total_biaya: document.getElementById("total_biaya").value,
-                                                    tanggal_selesai_kerja: new Date().toISOString().slice(0, 10),
+                                                    total_biaya:
+                                                        document.getElementById(
+                                                            "total_biaya",
+                                                        ).value,
+                                                    tanggal_selesai_kerja:
+                                                        new Date()
+                                                            .toISOString()
+                                                            .slice(0, 10),
                                                 },
                                             )
                                         }
