@@ -21,6 +21,14 @@ export default function Show({ proyek, rabRealisasi, stats }) {
     const getStatusBadge = (status) => {
         const colors = {
             draft: "bg-gray-200 text-gray-800",
+            diajukan: "bg-yellow-200 text-yellow-800",
+            menunggu_approval_finance: "bg-blue-200 text-blue-800",
+            menunggu_approval_owner: "bg-purple-200 text-purple-800",
+            disetujui: "bg-green-200 text-green-800",
+            diterima: "bg-indigo-200 text-indigo-800",
+            dibayar_sebagian: "bg-orange-200 text-orange-800",
+            lunas: "bg-emerald-200 text-emerald-800",
+            ditolak: "bg-red-200 text-red-800",
             aktif: "bg-green-200 text-green-800",
             selesai: "bg-blue-200 text-blue-800",
             dihentikan: "bg-red-200 text-red-800",
@@ -689,7 +697,7 @@ export default function Show({ proyek, rabRealisasi, stats }) {
                                                     <th className="px-5 py-3 text-right font-semibold text-gray-600">
                                                         Total
                                                     </th>
-                                                    <th className="px-5 py-3 text-left font-semibold text-gray-600">
+                                                    <th Pesan className="px-5 py-3 text-left font-semibold text-gray-600">
                                                         Status
                                                     </th>
                                                     <th className="px-5 py-3 text-left font-semibold text-gray-600">
@@ -730,7 +738,9 @@ export default function Show({ proyek, rabRealisasi, stats }) {
                                                             </td>
 
                                                             <td className="px-5 py-4">
-                                                                <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                                                                <span
+                                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadge(po.status)}`}
+                                                                >
                                                                     {po.status}
                                                                 </span>
                                                             </td>
