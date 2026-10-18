@@ -196,7 +196,7 @@ export default function PilihLokasiDariLink({
                     type="button"
                     onClick={handleAmbil}
                     disabled={resolving}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                 >
                     {resolving ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

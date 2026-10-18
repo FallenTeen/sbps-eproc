@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import DataTable from '@/Components/DataTable';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
+import {formatTanggal} from '@/utils/date';
 
 export default function Index({ proyeks, unitBisnis, filters, sort, direction }) {
     const { auth } = usePage().props;
@@ -120,7 +121,7 @@ export default function Index({ proyeks, unitBisnis, filters, sort, direction })
             key: 'tanggal_mulai',
             label: 'Mulai',
             type: 'dateRange',
-            render: (proyek) => new Date(proyek.tanggal_mulai).toLocaleDateString('id-ID'),
+            render: (proyek) => formatTanggal(proyek.tanggal_mulai),
         },
         {
             key: 'aksi',
