@@ -117,23 +117,30 @@ export default function Index({ proyek, titiks, filters, sort, direction }) {
 
     return (
         <Layout>
-            <div className="flex items-center gap-4 mb-6">
-                <Link href={route('core.proyek.show', proyek.id)} className="text-gray-600 hover:text-gray-900">
-                    <ArrowLeft className="w-5 h-5" />
-                </Link>
+            <div className="mb-6 flex items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Titik Proyek</h1>
                     <p className="text-sm text-gray-500">{proyek.nama} ({proyek.kode_proyek})</p>
                 </div>
-                {can.createTitik() && (
+                <div className="ml-auto flex items-center gap-2">
                     <Link
-                        href={route('core.titik.create', { proyek_id: proyek.id })}
-                        className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                        href={route('core.proyek.show', proyek.id)}
+                        aria-label="Kembali ke proyek"
+                        className="inline-flex items-center gap-1.5 bg-gray-600 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary transition-colors text-white border-2 border-black"
                     >
-                        <Plus className="w-4 h-4" />
-                        Titik Baru
+                        <ArrowLeft className="h-4 w-4" />
+                        kembali
                     </Link>
-                )}
+                    {can.createTitik() && (
+                        <Link
+                            href={route('core.titik.create', { proyek_id: proyek.id })}
+                            className="inline-flex items-center gap-1.5 border-2 border-black bg-surface-muted px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary transition-colors hover:bg-gray-900 hover:text-white"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Tambah Titik
+                        </Link>
+                    )}
+                </div>
             </div>
 
             <DataTable
