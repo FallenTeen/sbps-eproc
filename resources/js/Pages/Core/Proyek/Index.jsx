@@ -128,7 +128,7 @@ export default function Index({ proyeks, unitBisnis, filters, sort, direction })
             search: false,
             sortable: false,
             align: 'right',
-            cellClassName: 'px-4 py-3 text-right text-sm space-x-2',
+            cellClassName: 'px-4 py-3 text-right text-sm space-x-2 flex justify-end',
             render: (proyek) => (
                 <>
                     <Link
