@@ -94,7 +94,7 @@ export default function Index({ bahanBakus, filters, sort, direction }) {
                 {can("manage procurement") && (
                     <Link
                         href={route("procurement.bahan-baku.create")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Tambah Bahan Baku
