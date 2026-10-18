@@ -2,7 +2,8 @@ import React from "react";
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
-import { Plus } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 export default function Index({ pos, filters, sort, direction }) {
     const getStatusBadge = (status) => {
@@ -47,7 +48,7 @@ export default function Index({ pos, filters, sort, direction }) {
                 { value: "ditolak", label: "Ditolak" },
             ],
             render: (po) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(po.status)}`}>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadge(po.status)}`}>
                     {po.status.replace(/_/g, " ")}
                 </span>
             ),
@@ -56,7 +57,7 @@ export default function Index({ pos, filters, sort, direction }) {
             key: "created_at",
             label: "Tanggal",
             type: "dateRange",
-            render: (po) => new Date(po.created_at).toLocaleDateString("id-ID"),
+            render: (po) => formatTanggal(po.created_at),
         },
         {
             key: "aksi",
@@ -66,8 +67,8 @@ export default function Index({ pos, filters, sort, direction }) {
             align: "right",
             cellClassName: "px-6 py-4 whitespace-nowrap text-right text-sm",
             render: (po) => (
-                <Link href={route("procurement.purchase-orders.show", po.id)} className="text-gray-900 hover:text-gray-600 underline">
-                    Detail
+                <Link href={route("procurement.purchase-orders.show", po.id)} className="text-gray-900 hover:text-gray-600">
+                    <Eye className="w-4 h-4 text-blue-600 hover:text-gray-600" />
                 </Link>
             ),
         },
@@ -84,7 +85,7 @@ export default function Index({ pos, filters, sort, direction }) {
                 </div>
                 <Link
                     href={route("procurement.purchase-orders.create")}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Buat PO
