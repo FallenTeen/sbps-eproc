@@ -165,7 +165,7 @@ export default function Index({ proyeks, unitBisnis, filters, sort, direction })
                 {can.createProyek() && (
                     <Link
                         href={route('core.proyek.create')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Proyek Baru
