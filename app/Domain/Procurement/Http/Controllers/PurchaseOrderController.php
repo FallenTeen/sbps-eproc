@@ -95,6 +95,12 @@ class PurchaseOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
+            // 1. Hitung total biaya dari seluruh item
+            $totalPO = collect($request->items)->sum(function ($item) {
+                return $item['jumlah'] * $item['harga_satuan_snapshot'];
+            });
+
+            // 2. Masukkan total ke dalam pembuatan PO
             $po = PurchaseOrder::create([
                 'kode_po' => 'PO-'.date('Ymd').'-'.str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT),
                 'proyek_id' => $request->proyek_id,
@@ -104,9 +110,11 @@ class PurchaseOrderController extends Controller
                 'tanggal_pesan' => $request->tanggal_pesan,
                 'tanggal_diperlukan' => $request->tanggal_diperlukan,
                 'catatan' => $request->catatan,
+                'total' => $totalPO, // <-- Field ini yang sebelumnya terlewat
                 'status' => 'draft',
             ]);
 
+            // 3. Simpan rincian item
             foreach ($request->items as $item) {
                 $po->items()->create([
                     'bahan_baku_id' => $item['bahan_baku_id'],
