@@ -3,17 +3,29 @@ import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { ArrowLeft, RefreshCw, Save } from "lucide-react";
 
-export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori }) {
+export default function Create({
+    titiks,
+    bahanBakus,
+    titik_id,
+    tanggal,
+    kategori,
+}) {
     const { auth } = usePage().props;
-    const canManage = auth?.permissions?.includes("manage stok opname") || auth?.permissions?.includes("manage procurement");
+    const canManage =
+        auth?.permissions?.includes("manage stok opname") ||
+        auth?.permissions?.includes("manage procurement");
 
     const [formTitik, setFormTitik] = useState(titik_id || "");
-    const [formTanggal, setFormTanggal] = useState(tanggal || new Date().toISOString().split("T")[0]);
+    const [formTanggal, setFormTanggal] = useState(
+        tanggal || new Date().toISOString().split("T")[0],
+    );
     const [formKategori, setFormKategori] = useState(kategori || "");
 
     const [checked, setChecked] = useState(() => {
         const obj = {};
-        bahanBakus.forEach((b) => (obj[b.id] = b.opname_lama ? b.opname_lama.saldo_fisik : ""));
+        bahanBakus.forEach(
+            (b) => (obj[b.id] = b.opname_lama ? b.opname_lama.saldo_fisik : ""),
+        );
         return obj;
     });
 
@@ -40,11 +52,20 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
         setNotes(notesObj);
     }, [bahanBakus]);
 
-    const loadItems = () => {
+    const loadItems = (selectedTitik = formTitik) => {
+        if (!selectedTitik) return;
+
         router.get(
             route("inventory.stok-opname.create"),
-            { titik_id: formTitik, tanggal: formTanggal, kategori: formKategori },
-            { preserveState: true, preserveScroll: true }
+            {
+                titik_id: selectedTitik,
+                tanggal: formTanggal,
+                kategori: formKategori,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
         );
     };
 
@@ -74,7 +95,9 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
     if (!canManage) {
         return (
             <AuthenticatedLayout>
-                <p className="text-center text-gray-500 py-12">Anda tidak berhak mencatat stok opname.</p>
+                <p className="text-center text-gray-500 py-12">
+                    Anda tidak berhak mencatat stok opname.
+                </p>
             </AuthenticatedLayout>
         );
     }
@@ -83,19 +106,23 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
         <AuthenticatedLayout>
             <Head title="Catat Stok Opname" />
 
-            <div className="mb-6 flex items-center gap-4">
-                <Link
-                    href={route("inventory.stok-opname.index")}
-                    className="text-gray-600 hover:text-gray-900"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </Link>
+            <div className="mb-6 flex items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Catat Stok Opname</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Catat Stok Opname
+                    </h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Isi saldo fisik; saldo sistem dihitung otomatis saat disimpan.
+                        Isi saldo fisik; saldo sistem dihitung otomatis saat
+                        disimpan.
                     </p>
                 </div>
+                <Link
+                    href={route("inventory.stok-opname.index")}
+                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    Kembali
+                </Link>
             </div>
 
             {/* Pilihan titik/tanggal/kategori -> muat daftar item */}
@@ -108,14 +135,25 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
             >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Titik *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Titik <span className="text-red-600">*</span>
+                        </label>
                         <select
                             value={formTitik}
-                            onChange={(e) => setFormTitik(e.target.value)}
+                            onChange={(e) => {
+                                const selectedTitik = e.target.value;
+
+                                setFormTitik(selectedTitik);
+
+                                if (selectedTitik) {
+                                    loadItems(selectedTitik);
+                                }
+                            }}
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
                             required
                         >
                             <option value="">Pilih Titik</option>
+
                             {titiks.map((t) => (
                                 <option key={t.id} value={t.id}>
                                     {t.nama}
@@ -124,7 +162,9 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tanggal <span className="text-red-600">*</span>
+                        </label>
                         <input
                             type="date"
                             value={formTanggal}
@@ -135,7 +175,9 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Kategori <span className="text-red-600">*</span>
+                        </label>
                         <select
                             value={formKategori}
                             onChange={(e) => setFormKategori(e.target.value)}
@@ -148,36 +190,56 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                     </div>
                     <button
                         type="submit"
-                        className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-600 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700"
                     >
-                        <RefreshCw className="w-4 h-4" /> Muat Item
+                        <RefreshCw className="w-4 h-4" /> Refresh
                     </button>
                 </div>
                 {!titiks.some((t) => t.id === formTitik) && (
                     <p className="text-xs text-gray-500 mt-2">
-                        Pilih titik & kategori lalu "Muat Item" untuk melihat saldo sistem otomatis.
+                        Pilih titik & kategori lalu "Muat Item" untuk melihat
+                        saldo sistem otomatis.
                     </p>
                 )}
             </form>
 
             {/* Daftar item + input saldo fisik */}
-            <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <form
+                onSubmit={submit}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            >
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">Item</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">Kategori</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">Satuan</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">Saldo Sistem</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">Saldo Fisik</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">Catatan</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Item
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Kategori
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">
+                                Satuan
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">
+                                Saldo Sistem
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">
+                                Saldo Fisik
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Catatan
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {bahanBakus.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                                    Tidak ada item aktif (atau filter kategori kosong). Atur filter lalu "Muat Item".
+                                <td
+                                    colSpan={6}
+                                    className="px-6 py-8 text-center text-sm text-gray-500"
+                                >
+                                    Tidak ada item aktif (atau filter kategori
+                                    kosong). Atur filter lalu "Muat Item".
                                 </td>
                             </tr>
                         ) : (
@@ -185,14 +247,22 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                                 <tr key={b.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-3 text-sm text-gray-900">
                                         {b.nama}
-                                        <span className="block text-xs text-gray-400">{b.kode}</span>
+                                        <span className="block text-xs text-gray-400">
+                                            {b.kode}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-3 text-sm text-gray-600">
-                                        {b.kategori === "sparepart" ? "Sparepart" : "Bahan Baku"}
+                                        {b.kategori === "sparepart"
+                                            ? "Sparepart"
+                                            : "Bahan Baku"}
                                     </td>
-                                    <td className="px-6 py-3 text-right text-sm text-gray-600">{b.satuan}</td>
+                                    <td className="px-6 py-3 text-right text-sm text-gray-600">
+                                        {b.satuan}
+                                    </td>
                                     <td className="px-6 py-3 text-right text-sm tabular-nums text-gray-700">
-                                        {b.stok_sistem === null ? "-" : b.stok_sistem}
+                                        {b.stok_sistem === null
+                                            ? "-"
+                                            : b.stok_sistem}
                                     </td>
                                     <td className="px-6 py-3 text-right">
                                         <input
@@ -201,7 +271,12 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                                             step="any"
                                             value={checked[b.id]}
                                             placeholder="-"
-                                            onChange={(e) => setChecked((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                                            onChange={(e) =>
+                                                setChecked((prev) => ({
+                                                    ...prev,
+                                                    [b.id]: e.target.value,
+                                                }))
+                                            }
                                             className="w-32 text-right border border-gray-300 rounded-md px-2 py-1.5 tabular-nums"
                                         />
                                     </td>
@@ -210,7 +285,12 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                                             type="text"
                                             value={notes[b.id]}
                                             placeholder="Catatan (opsional)"
-                                            onChange={(e) => setNotes((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                                            onChange={(e) =>
+                                                setNotes((prev) => ({
+                                                    ...prev,
+                                                    [b.id]: e.target.value,
+                                                }))
+                                            }
                                             className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                                         />
                                     </td>
@@ -222,16 +302,18 @@ export default function Create({ titiks, bahanBakus, titik_id, tanggal, kategori
                 <div className="px-6 py-4 flex justify-end gap-3">
                     <Link
                         href={route("inventory.stok-opname.index")}
-                        className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                        className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                     >
+                        <ArrowLeft className="w-4 h-4" />
                         Batal
                     </Link>
                     <button
                         type="submit"
                         disabled={processing}
-                        className="inline-flex items-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
-                        <Save className="w-4 h-4" /> Simpan Opname
+                        <Save className="w-4 h-4" />
+                        {processing ? "Menyimpan.." : "Simpan"}
                     </button>
                 </div>
                 {errors.items && (

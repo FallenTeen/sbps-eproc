@@ -8,7 +8,9 @@ import { formatTanggal } from "@/utils/date";
 export default function Index({ opnames, titiks, filters, sort, direction }) {
     const { auth } = usePage().props;
     const permissions = auth?.permissions || [];
-    const canManage = permissions.includes("manage stok opname") || permissions.includes("manage procurement");
+    const canManage =
+        permissions.includes("manage stok opname") ||
+        permissions.includes("manage procurement");
 
     const columns = [
         {
@@ -26,7 +28,9 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
             render: (o) => (
                 <>
                     {o.bahan_baku?.nama}
-                    <span className="block text-xs text-gray-400">{o.bahan_baku?.kode}</span>
+                    <span className="block text-xs text-gray-400">
+                        {o.bahan_baku?.kode}
+                    </span>
                 </>
             ),
         },
@@ -46,7 +50,9 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
                             : "bg-blue-100 text-blue-700"
                     }`}
                 >
-                    {o.bahan_baku?.kategori === "sparepart" ? "Sparepart" : "Bahan Baku"}
+                    {o.bahan_baku?.kategori === "sparepart"
+                        ? "Sparepart"
+                        : "Bahan Baku"}
                 </span>
             ),
         },
@@ -54,7 +60,10 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
             key: "titik",
             label: "Titik",
             type: "select",
-            options: titiks.map((t) => ({ value: String(t.id), label: t.nama })),
+            options: titiks.map((t) => ({
+                value: String(t.id),
+                label: t.nama,
+            })),
             render: (o) => o.titik?.nama || "-",
         },
         {
@@ -78,9 +87,18 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
             label: "Selisih",
             search: false,
             align: "right",
-            cellClassName: "px-4 py-3 text-right text-sm font-semibold tabular-nums",
+            cellClassName:
+                "px-4 py-3 text-right text-sm font-semibold tabular-nums",
             render: (o) => (
-                <span className={o.selisih === 0 ? "text-gray-500" : o.selisih > 0 ? "text-green-600" : "text-red-600"}>
+                <span
+                    className={
+                        o.selisih === 0
+                            ? "text-gray-500"
+                            : o.selisih > 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                    }
+                >
                     {o.selisih > 0 ? "+" : ""}
                     {o.selisih}
                 </span>
@@ -107,7 +125,9 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
                 <button
                     onClick={() => {
                         if (window.confirm("Hapus baris opname ini?")) {
-                            router.delete(route("inventory.stok-opname.destroy", o.id));
+                            router.delete(
+                                route("inventory.stok-opname.destroy", o.id),
+                            );
                         }
                     }}
                     className="text-red-600 hover:text-red-900 inline-flex"
@@ -124,15 +144,18 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Stok Opname</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Stok Opname
+                    </h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Checklist inventarisasi: cocokkan saldo sistem vs saldo fisik
+                        Checklist inventarisasi: cocokkan saldo sistem vs saldo
+                        fisik
                     </p>
                 </div>
                 {canManage && (
                     <Link
                         href={route("inventory.stok-opname.create")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Catat Opname

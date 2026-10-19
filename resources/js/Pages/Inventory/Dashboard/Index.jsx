@@ -7,7 +7,7 @@ import { formatTanggal } from "@/utils/date";
 
 export default function Index({ metrics }) {
     const fmt = (n) => "Rp " + Number(n).toLocaleString("id-ID");
-
+console.log(metrics)
     return (
         <AuthenticatedLayout>
             <Head title="Dashboard Inventory" />
