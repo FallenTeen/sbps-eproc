@@ -2,7 +2,7 @@ import React from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
 
 export default function Index({ suppliers, filters, sort, direction }) {
     const { auth } = usePage().props;
@@ -61,12 +61,20 @@ export default function Index({ suppliers, filters, sort, direction }) {
             render: (s) => (
                 <>
                     {can("manage procurement") && (
-                        <Link
-                            href={route("procurement.supplier.edit", s.id)}
-                            className="text-yellow-600 hover:text-yellow-900 inline-block"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </Link>
+                        <>
+                            <Link
+                                href={route("procurement.supplier.show", s.id)}
+                                className="text-blue-600 hover:text-blue-900 inline-block"
+                            >
+                                <Eye className="w-4 h-4" />
+                            </Link>
+                            <Link
+                                href={route("procurement.supplier.edit", s.id)}
+                                className="text-yellow-600 hover:text-yellow-900 inline-block"
+                            >
+                                <Edit className="w-4 h-4" />
+                            </Link>
+                        </>
                     )}
                     {can("manage procurement") && (
                         <button
@@ -95,7 +103,7 @@ export default function Index({ suppliers, filters, sort, direction }) {
                 {can("manage procurement") && (
                     <Link
                         href={route("procurement.supplier.create")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Tambah Supplier
