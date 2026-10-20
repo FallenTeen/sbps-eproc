@@ -2,32 +2,42 @@ import React from "react";
 import { Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
-import { Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle2, Eye, Edit } from "lucide-react";
 
 const STATUS_BADGE = {
     aktif: "bg-emerald-200 text-emerald-800",
-    rusak: "bg-red-200 text-red-800",
-    maintenance: "bg-yellow-200 text-yellow-800",
-    nonaktif: "bg-gray-200 text-gray-800",
+    servis: "bg-yellow-200 text-yellow-800",
+    nonaktif: "bg-red-200 text-red-800",
 };
 
 function checkServisJatuhTempo(item) {
     if (item.status === "nonaktif") return false;
-    if (!item.service_histories || item.service_histories.length === 0) return true;
+    if (!item.service_histories || item.service_histories.length === 0)
+        return true;
 
     const lastService = new Date(item.service_histories[0].tanggal);
-    const diffDays = Math.ceil(Math.abs(new Date() - lastService) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+        Math.abs(new Date() - lastService) / (1000 * 60 * 60 * 24),
+    );
 
     return diffDays > 30;
 }
 
-export default function Index({ mesin, filters, sort, direction, unitBisnis = [], jenisOptions = [] }) {
+export default function Index({
+    mesin,
+    filters,
+    sort,
+    direction,
+    unitBisnis = [],
+    jenisOptions = [],
+}) {
     const columns = [
         {
             key: "nama",
             label: "Nama",
             type: "text",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
             render: (item) => (
                 <>
                     {item.nama}
@@ -50,12 +60,19 @@ export default function Index({ mesin, filters, sort, direction, unitBisnis = []
             key: "unit_bisnis",
             label: "Unit / Titik",
             type: "select",
-            options: unitBisnis.map((ub) => ({ value: String(ub.id), label: ub.nama })),
+            options: unitBisnis.map((ub) => ({
+                value: String(ub.id),
+                label: ub.nama,
+            })),
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
             render: (item) => (
                 <>
-                    <div className="font-medium text-gray-800">{item.unit_bisnis?.nama}</div>
-                    <div className="text-xs text-gray-500">{item.titik?.nama || "-"}</div>
+                    <div className="font-medium text-gray-800">
+                        {item.unit_bisnis?.nama}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                        {item.titik?.nama || "-"}
+                    </div>
                 </>
             ),
         },
@@ -72,8 +89,7 @@ export default function Index({ mesin, filters, sort, direction, unitBisnis = []
             type: "select",
             options: [
                 { value: "aktif", label: "Aktif" },
-                { value: "rusak", label: "Rusak" },
-                { value: "maintenance", label: "Maintenance" },
+                { value: "servis", label: "Servis" },
                 { value: "nonaktif", label: "Nonaktif" },
             ],
             cellClassName: "px-4 py-3 whitespace-nowrap",
@@ -81,7 +97,9 @@ export default function Index({ mesin, filters, sort, direction, unitBisnis = []
                 const jatuhTempo = checkServisJatuhTempo(item);
                 return (
                     <div className="flex flex-col gap-2 items-start">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[item.status] || STATUS_BADGE.nonaktif}`}>
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[item.status] || STATUS_BADGE.nonaktif}`}
+                        >
                             {item.status.toUpperCase()}
                         </span>
                         {jatuhTempo ? (
@@ -108,12 +126,20 @@ export default function Index({ mesin, filters, sort, direction, unitBisnis = []
             cellClassName: "px-4 py-3 whitespace-nowrap text-right text-sm",
             render: (item) => (
                 <>
-                    <Link href={route("production.mesin.show", item.id)} className="text-blue-600 hover:text-blue-800 font-medium mr-4">
-                        Detail
-                    </Link>
-                    <Link href={route("production.mesin.edit", item.id)} className="text-amber-600 hover:text-amber-800 font-medium">
-                        Edit
-                    </Link>
+                    <div className="flex">
+                        <Link
+                            href={route("production.mesin.show", item.id)}
+                            className="text-blue-600 hover:text-blue-700 font-medium mr-4"
+                        >
+                            <Eye className="w-4 h-4" />
+                        </Link>
+                        <Link
+                            href={route("production.mesin.edit", item.id)}
+                            className="text-amber-600 hover:text-amber-700 font-medium"
+                        >
+                            <Edit className="w-4 h-4" />
+                        </Link>
+                    </div>
                 </>
             ),
         },
@@ -122,10 +148,12 @@ export default function Index({ mesin, filters, sort, direction, unitBisnis = []
     return (
         <Layout>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Mesin Produksi</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                    Mesin Produksi
+                </h1>
                 <Link
                     href={route("production.mesin.create")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Tambah Mesin

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useForm } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, FolderKanban, Save, Wrench } from "lucide-react";
 
 export default function Edit({ mesin, unitBisnis, titiks, produks }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -22,147 +22,347 @@ export default function Edit({ mesin, unitBisnis, titiks, produks }) {
 
     return (
         <Layout>
-            <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-4">
-                    <Link
-                        href={route("production.mesin.index")}
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-800">Edit Mesin Produksi: {mesin.nama}</h1>
+            {/* Header */}
+            <div className="mx-auto max-w-5xl space-y-6">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                            Edit Mesin Produksi
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Perbarui informasi mesin: {mesin.nama}
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Mesin <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                value={data.nama}
-                                onChange={(e) => setData("nama", e.target.value)}
-                                className={`w-full rounded-md border ${errors.nama ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            />
-                            {errors.nama && <p className="text-red-500 text-xs mt-1">{errors.nama}</p>}
+                {/* Form */}
+                <div className="max-w-5xl">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Informasi Mesin */}
+                        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/70 px-6 py-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                                    <FolderKanban className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h2 className="font-semibold text-gray-900">
+                                        Informasi Mesin
+                                    </h2>
+                                    <p className="text-sm text-gray-500">
+                                        Perbarui identitas, jenis, dan lokasi
+                                        mesin produksi.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    {/* Nama Mesin */}
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                                            Nama Mesin{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.nama}
+                                            onChange={(e) =>
+                                                setData("nama", e.target.value)
+                                            }
+                                            className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                errors.nama
+                                                    ? "border-red-500 focus:ring-red-100"
+                                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                            }`}
+                                            placeholder="Masukkan nama mesin"
+                                        />
+                                        {errors.nama && (
+                                            <p className="mt-1.5 text-xs text-red-600">
+                                                {errors.nama}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Jenis Mesin */}
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                                            Jenis Mesin{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <select
+                                            value={data.jenis}
+                                            onChange={(e) =>
+                                                setData("jenis", e.target.value)
+                                            }
+                                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                errors.jenis
+                                                    ? "border-red-500 focus:ring-red-100"
+                                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                            }`}
+                                        >
+                                            <option value="">
+                                                -- Pilih Jenis Mesin --
+                                            </option>
+                                            <option value="crusher">
+                                                Crusher (Stone Crusher)
+                                            </option>
+                                            <option value="mixer_aspal">
+                                                Mixer Aspal (AMP)
+                                            </option>
+                                            <option value="mixer_beton">
+                                                Mixer Beton (Batching Plant)
+                                            </option>
+                                        </select>
+                                        {errors.jenis && (
+                                            <p className="mt-1.5 text-xs text-red-600">
+                                                {errors.jenis}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Unit Bisnis */}
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                                            Unit Bisnis{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <select
+                                            value={data.unit_bisnis_id}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "unit_bisnis_id",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                errors.unit_bisnis_id
+                                                    ? "border-red-500 focus:ring-red-100"
+                                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                            }`}
+                                        >
+                                            <option value="">
+                                                -- Pilih Unit Bisnis --
+                                            </option>
+                                            {unitBisnis.map((ub) => (
+                                                <option
+                                                    key={ub.id}
+                                                    value={ub.id}
+                                                >
+                                                    {ub.nama}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.unit_bisnis_id && (
+                                            <p className="mt-1.5 text-xs text-red-600">
+                                                {errors.unit_bisnis_id}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Titik Lokasi */}
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                                            Titik (Lokasi)
+                                        </label>
+                                        <select
+                                            value={data.titik_id}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "titik_id",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                errors.titik_id
+                                                    ? "border-red-500 focus:ring-red-100"
+                                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                            }`}
+                                        >
+                                            <option value="">
+                                                -- Pilih Titik Lokasi --
+                                            </option>
+                                            {titiks.map((titik) => (
+                                                <option
+                                                    key={titik.id}
+                                                    value={titik.id}
+                                                >
+                                                    {titik.nama}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.titik_id && (
+                                            <p className="mt-1.5 text-xs text-red-600">
+                                                {errors.titik_id}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Produk Default */}
+                                    <div className="md:col-span-2">
+                                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                                            Produk Default (Output)
+                                        </label>
+                                        <select
+                                            value={data.produk_id}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "produk_id",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                errors.produk_id
+                                                    ? "border-red-500 focus:ring-red-100"
+                                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                            }`}
+                                        >
+                                            <option value="">
+                                                -- Pilih Produk Output --
+                                            </option>
+                                            {produks.map((p) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.nama}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.produk_id && (
+                                            <p className="mt-1.5 text-xs text-red-600">
+                                                {errors.produk_id}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Mesin <span className="text-red-500">*</span></label>
-                            <select
-                                value={data.jenis}
-                                onChange={(e) => setData("jenis", e.target.value)}
-                                className={`w-full rounded-md border ${errors.jenis ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            >
-                                <option value="">-- Pilih Jenis Mesin --</option>
-                                <option value="crusher">Crusher (Stone Crusher)</option>
-                                <option value="mixer_aspal">Mixer Aspal (AMP)</option>
-                                <option value="mixer_beton">Mixer Beton (Batching Plant)</option>
-                            </select>
-                            {errors.jenis && <p className="text-red-500 text-xs mt-1">{errors.jenis}</p>}
-                        </div>
+                        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/70 px-6 py-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                                    <Wrench className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h2 className="font-semibold text-gray-900">
+                                        Informasi Mesin
+                                    </h2>
+                                    <p className="text-sm text-gray-500">
+                                        Lengkapi identitas, jenis, dan lokasi
+                                        mesin produksi.
+                                    </p>
+                                </div>
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Unit Bisnis <span className="text-red-500">*</span></label>
-                            <select
-                                value={data.unit_bisnis_id}
-                                onChange={(e) => setData("unit_bisnis_id", e.target.value)}
-                                className={`w-full rounded-md border ${errors.unit_bisnis_id ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            >
-                                <option value="">-- Pilih Unit Bisnis --</option>
-                                {unitBisnis.map((ub) => (
-                                    <option key={ub.id} value={ub.id}>{ub.nama}</option>
-                                ))}
-                            </select>
-                            {errors.unit_bisnis_id && <p className="text-red-500 text-xs mt-1">{errors.unit_bisnis_id}</p>}
-                        </div>
+                            <div className="px-6 pb-6">
+                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        {/* Kapasitas Produksi */}
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                                Kapasitas Produksi
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={data.kapasitas}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "kapasitas",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                placeholder="Misal: 60 m³/jam"
+                                            />
+                                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Titik (Lokasi)</label>
-                            <select
-                                value={data.titik_id}
-                                onChange={(e) => setData("titik_id", e.target.value)}
-                                className={`w-full rounded-md border ${errors.titik_id ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            >
-                                <option value="">-- Pilih Titik Lokasi --</option>
-                                {titiks.map((titik) => (
-                                    <option key={titik.id} value={titik.id}>{titik.nama}</option>
-                                ))}
-                            </select>
-                            {errors.titik_id && <p className="text-red-500 text-xs mt-1">{errors.titik_id}</p>}
-                        </div>
+                                        {/* Biaya Per Jam */}
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                                Biaya Per Jam (Rp)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={data.biaya_per_jam}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "biaya_per_jam",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                placeholder="Misal: 150000"
+                                            />
+                                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Produk Default (Output)</label>
-                            <select
-                                value={data.produk_id}
-                                onChange={(e) => setData("produk_id", e.target.value)}
-                                className={`w-full rounded-md border ${errors.produk_id ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            >
-                                <option value="">-- Pilih Produk Output --</option>
-                                {produks.map((p) => (
-                                    <option key={p.id} value={p.id}>{p.nama_produk}</option>
-                                ))}
-                            </select>
-                            {errors.produk_id && <p className="text-red-500 text-xs mt-1">{errors.produk_id}</p>}
-                        </div>
+                                        {/* Status */}
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                                Status{" "}
+                                                <span className="text-red-500">
+                                                    *
+                                                </span>
+                                            </label>
+                                            <select
+                                                value={data.status}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "status",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                                    errors.status
+                                                        ? "border-red-500 focus:ring-red-100"
+                                                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                                }`}
+                                            >
+                                                <option value="aktif">
+                                                    Aktif
+                                                </option>
+                                                <option value="servis">
+                                                    Servis
+                                                </option>
+                                                <option value="nonaktif">
+                                                    Nonaktif
+                                                </option>
+                                            </select>
+                                            {errors.status && (
+                                                <p className="mt-1.5 text-xs text-red-600">
+                                                    {errors.status}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Kapasitas Produksi</label>
-                            <input
-                                type="text"
-                                value={data.kapasitas}
-                                onChange={(e) => setData("kapasitas", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 focus:ring-blue-500 px-4 py-2 transition-shadow"
-                            />
-                        </div>
+                        {/* Tombol Aksi */}
+                        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => window.history.back()}
+                                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                    <ArrowLeft className="w-4 -4" />
+                                    Batal
+                                </button>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Biaya Per Jam (Rp)</label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={data.biaya_per_jam}
-                                onChange={(e) => setData("biaya_per_jam", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 focus:ring-blue-500 px-4 py-2 transition-shadow"
-                            />
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    <Save className="h-4 w-4" />
+                                    {processing ? "Menyimpan..." : "Simpan"}
+                                </button>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
-                            <select
-                                value={data.status}
-                                onChange={(e) => setData("status", e.target.value)}
-                                className={`w-full rounded-md border ${errors.status ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} px-4 py-2 transition-shadow`}
-                            >
-                                <option value="aktif">Aktif</option>
-                                <option value="rusak">Rusak</option>
-                                <option value="maintenance">Maintenance</option>
-                                <option value="nonaktif">Nonaktif</option>
-                            </select>
-                            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end pt-4 border-t border-gray-100">
-                        <button
-                            type="button"
-                            onClick={() => window.history.back()}
-                            className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-md mr-3 hover:bg-gray-50 font-medium transition-colors"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
-                        >
-                            <Save className="w-4 h-4" />
-                            {processing ? "Menyimpan..." : "Simpan Perubahan"}
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </Layout>
     );
