@@ -36,6 +36,7 @@ class ProdukController extends Controller
             'kategori' => ['type' => 'exact'],
             'satuan_output' => ['type' => 'exact'],
             'unit_bisnis' => ['relation' => 'unitBisnis', 'column' => 'id', 'type' => 'exact'],
+            'aktif' => ['type' => 'exact'],
         ];
 
         $sort = $this->applyTableQuery($query, $request, $columns, ['nama' => 'asc']);
