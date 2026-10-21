@@ -2,19 +2,25 @@ import React from "react";
 import { Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
-import { Plus } from "lucide-react";
+import { Edit, Eye, Plus } from "lucide-react";
 
 const KATEGORI_BADGE = {
-    beton_cor: "bg-blue-100 text-blue-700",
-    aspal: "bg-amber-100 text-amber-700",
-    agregat: "bg-stone-100 text-stone-700",
-    lainnya: "bg-gray-100 text-gray-700",
+    BETON_COR: "bg-blue-100 text-blue-700",
+    SPLIT: "bg-amber-100 text-amber-700",
+    ASPAL: "bg-red-100 text-red-700",
+    LAINNYA: "bg-gray-100 text-gray-700",
+};
+
+const getKategoriBadge = (kategori) => {
+    const key = (kategori ?? "").trim().toUpperCase();
+
+    return KATEGORI_BADGE[key] ?? KATEGORI_BADGE.LAINNYA;
 };
 
 const KATEGORI_OPTIONS = [
     { value: "beton_cor", label: "Beton Cor" },
-    { value: "aspal", label: "Aspal" },
-    { value: "agregat", label: "Agregat" },
+    { value: "split", label: "Split" },
+    { value: "hotmix", label: "Hotmix" },
     { value: "lainnya", label: "Lainnya" },
 ];
 
@@ -33,7 +39,13 @@ function HargaAktif(hargaArr) {
     });
 }
 
-export default function Index({ produks, unitBisnis, filters, sort, direction }) {
+export default function Index({
+    produks,
+    unitBisnis,
+    filters,
+    sort,
+    direction,
+}) {
     const columns = [
         {
             key: "nama",
@@ -48,8 +60,10 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
             type: "select",
             options: KATEGORI_OPTIONS,
             render: (p) => (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${KATEGORI_BADGE[p.kategori] || KATEGORI_BADGE.lainnya}`}>
-                    {p.kategori?.replace("_", " ")}
+                <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase ${getKategoriBadge(p.kategori)}`}
+                >
+                    {p.kategori?.replaceAll("_", " ")}
                 </span>
             ),
         },
@@ -68,7 +82,10 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
             key: "unit_bisnis",
             label: "Unit Bisnis",
             type: "select",
-            options: unitBisnis.map((ub) => ({ value: String(ub.id), label: ub.nama })),
+            options: unitBisnis.map((ub) => ({
+                value: String(ub.id),
+                label: ub.nama,
+            })),
             cellClassName: "px-4 py-4 text-sm text-gray-600",
             render: (p) => p.unit_bisnis?.nama || "-",
         },
@@ -83,7 +100,9 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
                 return hargaAktif ? (
                     formatRupiah(hargaAktif.harga)
                 ) : (
-                    <span className="text-gray-400 italic text-xs">Belum ada harga</span>
+                    <span className="text-gray-400 italic text-xs">
+                        Belum ada harga
+                    </span>
                 );
             },
         },
@@ -96,7 +115,9 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
                 { value: "0", label: "Nonaktif" },
             ],
             render: (p) => (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${p.aktif ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                <span
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold ${p.aktif ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                >
                     {p.aktif ? "AKTIF" : "NONAKTIF"}
                 </span>
             ),
@@ -110,8 +131,20 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
             cellClassName: "px-4 py-4 text-right",
             render: (p) => (
                 <div className="flex items-center justify-end gap-3">
-                    <Link href={route("production.produk.show", p.id)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">Detail</Link>
-                    <Link href={route("production.produk.edit", p.id)} className="text-sm text-amber-600 hover:text-amber-800 font-medium">Edit</Link>
+                    <Link
+                        href={route("production.produk.show", p.id)}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                        <Eye className="w-4 h-4" />
+                        Detail
+                    </Link>
+                    <Link
+                        href={route("production.produk.edit", p.id)}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-800"
+                    >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                    </Link>
                 </div>
             ),
         },
@@ -120,10 +153,12 @@ export default function Index({ produks, unitBisnis, filters, sort, direction })
     return (
         <Layout>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Katalog Produk</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                    Katalog Produk
+                </h1>
                 <Link
                     href={route("production.produk.create")}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
                     <Plus className="w-4 h-4" /> Tambah Produk
                 </Link>
