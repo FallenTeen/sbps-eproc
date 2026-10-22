@@ -39,7 +39,9 @@ use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
+use App\Models\AppVersion;
 use App\Policies\AkunKasBankPolicy;
+use App\Policies\AppVersionPolicy;
 use App\Policies\ArmadaChecklistHarianPolicy;
 use App\Policies\ArmadaPenanggungJawabPolicy;
 use App\Policies\ArmadaPolicy;
@@ -150,6 +152,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Titik::class, TitikPolicy::class);
         Gate::policy(Rab::class, RabPolicy::class);
         Gate::policy(UnitBisnis::class, UnitBisnisPolicy::class);
+        Gate::policy(AppVersion::class, AppVersionPolicy::class);
 
         // Procurement Policies
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);

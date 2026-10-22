@@ -27,6 +27,7 @@ class KaryawanSeeder extends Seeder
         $mandorTitik = User::where('email', 'mandor.titik@dummy.com')->firstOrFail();
         $cbp = User::where('email', 'cbp@real.com')->firstOrFail();
         $amp = User::where('email', 'amp@real.com')->firstOrFail();
+        $operatorMesin = User::where('email', 'operator.mesin@real.com')->first();
 
         // ───────────────────────── KARYAWAN ─────────────────────────
         $karyawans = [
@@ -38,7 +39,7 @@ class KaryawanSeeder extends Seeder
             ['user_id' => $amp->id, 'nama' => 'Hendra Wijaya', 'tipe' => 'tetap', 'jabatan' => 'Operator AMP', 'rate_gaji_pokok' => 7_500_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0006', 'alias' => 'HENDRA'],
             ['user_id' => null, 'nama' => 'Slamet Riyadi', 'tipe' => 'borongan_rit', 'jabatan' => 'Driver Dump Truck', 'rate_gaji_pokok' => null, 'rate_harian' => 150_000, 'no_hp' => '0812-1000-0007', 'alias' => 'SLAMET'],
             ['user_id' => null, 'nama' => 'Yanto Operator', 'tipe' => 'harian', 'jabatan' => 'Operator Excavator', 'rate_gaji_pokok' => null, 'rate_harian' => 200_000, 'no_hp' => '0812-1000-0008', 'alias' => 'YANTO'],
-            ['user_id' => null, 'nama' => 'Dedi Kurniawan', 'tipe' => 'tetap', 'jabatan' => 'Operator Batching Plant', 'rate_gaji_pokok' => 6_800_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0009', 'alias' => 'DEDI'],
+            ['user_id' => $operatorMesin?->id, 'nama' => 'Dedi Kurniawan', 'tipe' => 'tetap', 'jabatan' => 'Operator Batching Plant', 'rate_gaji_pokok' => 6_800_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0009', 'alias' => 'DEDI'],
             ['user_id' => null, 'nama' => 'Andi Firmansyah', 'tipe' => 'tetap', 'jabatan' => 'Operator AMP', 'rate_gaji_pokok' => 7_200_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0010', 'alias' => 'ANDI'],
             ['user_id' => null, 'nama' => 'Siti Aminah', 'tipe' => 'tetap', 'jabatan' => 'Laboran QC', 'rate_gaji_pokok' => 5_800_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0011', 'alias' => 'SITI'],
             ['user_id' => null, 'nama' => 'Budi Santoso', 'tipe' => 'tetap', 'jabatan' => 'Mekanik Armada', 'rate_gaji_pokok' => 5_500_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0012', 'alias' => 'BUDI'],

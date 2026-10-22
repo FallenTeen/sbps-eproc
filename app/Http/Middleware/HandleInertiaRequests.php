@@ -43,6 +43,8 @@ class HandleInertiaRequests extends Middleware
         'core.rab.realisasi' => 'Realisasi RAB',
         'core.rab.compare' => 'RAB vs Realisasi',
 
+        'core.app-version.index' => 'Versi Aplikasi Mobile',
+
         'procurement.bahan-baku.index' => 'Bahan Baku',
         'procurement.bahan-baku.create' => 'Tambah Bahan Baku',
         'procurement.bahan-baku.show' => 'Detail Bahan Baku',

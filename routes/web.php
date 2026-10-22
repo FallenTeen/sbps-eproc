@@ -5,6 +5,7 @@ use App\Domain\Attendance\Http\Controllers\PresensiController;
 use App\Domain\Attendance\Http\Controllers\TrackingTimelineController;
 use App\Domain\Core\Http\Controllers\LokasiController;
 use App\Domain\Core\Http\Controllers\KomunikasiController;
+use App\Domain\Core\Http\Controllers\AppVersionController;
 use App\Domain\Core\Http\Controllers\ProyekController;
 use App\Domain\Core\Http\Controllers\RabController;
 // Core Controllers
@@ -125,6 +126,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('proyek/{proyek}/rab', [RabController::class, 'index'])->name('rab.index');
         Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
         Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
+
+        // Versi Aplikasi Mobile (version-gate / Shorebird — docs/TODO-SHOREBIRD-WEB.md W2)
+        Route::prefix('app-version')->name('app-version.')->middleware('permission:manage app version')->group(function () {
+            Route::get('/', [AppVersionController::class, 'index'])->name('index');
+            Route::put('{appVersion}', [AppVersionController::class, 'update'])->name('update');
+        });
     });
 
     // ============================================================

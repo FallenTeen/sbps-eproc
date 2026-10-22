@@ -17,6 +17,7 @@ import {
     MapPin,
     Wrench,
     Navigation,
+    Smartphone,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -163,6 +164,14 @@ function getAllMenus() {
             href: safeRoute('kontraktor.dashboard', {}, '/kontraktor/dashboard'),
             routeName: 'kontraktor.*',
         },
+        {
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
+            permission: ['manage app version'],
+            excludeRoles: ['Owner'],
+        },
     ];
 }
 
@@ -228,6 +237,12 @@ export default function Sidebar({ isOpen, onClose }) {
             icon: Navigation,
             href: safeRoute('attendance.tracking.index', {}, '/attendance/tracking'),
             routeName: 'attendance.tracking.*',
+        });
+        roleExtraMenus.push({
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
         });
     }
 

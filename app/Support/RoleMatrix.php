@@ -94,6 +94,9 @@ class RoleMatrix
         'view kontraktor',
         'manage kontraktor',
 
+        // Mobile version-gate (Shorebird OTA, kelola di Admin UI)
+        'manage app version',
+
         // Approval divisi (procurement per-divisi, threshold)
         'manage procurement division',
         'approve procurement division',
@@ -130,6 +133,7 @@ class RoleMatrix
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
             'manage presensi', 'manage formulir lapangan',
             'view kontraktor', 'manage kontraktor',
+            'manage app version',
         ],
 
         // ─── Admin & Koordinator ───────────────────────────────────────
@@ -177,6 +181,7 @@ class RoleMatrix
         'Koordinator SDM' => [
             'manage hr', 'view hr', 'manage payroll', 'view payroll', 'manage presensi', 'view proyek',
             'manage helper armada',
+            'manage app version',
         ],
         'Mandor Proyek' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab',

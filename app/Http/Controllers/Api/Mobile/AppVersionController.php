@@ -21,15 +21,13 @@ class AppVersionController extends Controller
             'platform' => 'required|string|in:android,ios',
         ]);
 
-        $version = AppVersion::query()
-            ->where(function ($q) use ($validated) {
-                $q->where('app', $validated['app']);
-                if ($validated['app'] === 'mobile') {
-                    $q->orWhere('app', 'presensi');
-                }
-            })
-            ->where('platform', $validated['platform'])
-            ->first();
+        $baseQuery = AppVersion::query()->where('platform', $validated['platform']);
+
+        $version = match ($validated['app']) {
+            'mobile' => (clone $baseQuery)->where('app', 'mobile')->first()
+                ?? (clone $baseQuery)->where('app', 'presensi')->first(),
+            default => (clone $baseQuery)->where('app', $validated['app'])->first(),
+        };
 
         if (! $version) {
             return $this->error('Konfigurasi versi aplikasi belum tersedia.', 404);

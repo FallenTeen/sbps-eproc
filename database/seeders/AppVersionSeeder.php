@@ -14,6 +14,8 @@ class AppVersionSeeder extends Seeder
             ['app' => 'presensi', 'platform' => 'ios'],
             ['app' => 'proyek', 'platform' => 'android'],
             ['app' => 'proyek', 'platform' => 'ios'],
+            ['app' => 'mobile', 'platform' => 'android'],
+            ['app' => 'mobile', 'platform' => 'ios'],
         ];
 
         foreach ($rows as ['app' => $app, 'platform' => $platform]) {
