@@ -520,9 +520,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ============================================================
-    // USER MANAGEMENT (Owner & Admin saja)
+    // USER MANAGEMENT (via permission 'manage user': Owner,
+    // Admin Keuangan, Koordinator SDM — RoleMatrix)
     // ============================================================
-    Route::prefix('users')->name('users.')->middleware(['role:Owner|Admin Keuangan'])->group(function () {
+    Route::prefix('users')->name('users.')->middleware(['permission:manage user'])->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
         Route::get('/create', [UserManagementController::class, 'create'])->name('create');
         Route::post('/', [UserManagementController::class, 'store'])->name('store');
@@ -531,6 +532,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('assign-role');
         Route::post('/{user}/remove-role', [UserManagementController::class, 'removeRole'])->name('remove-role');
+        Route::post('/{user}/link-karyawan', [UserManagementController::class, 'linkKaryawan'])->name('link-karyawan');
+        Route::post('/{user}/unlink-karyawan', [UserManagementController::class, 'unlinkKaryawan'])->name('unlink-karyawan');
     });
 
 });

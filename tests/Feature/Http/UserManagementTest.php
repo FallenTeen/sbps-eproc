@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,6 +13,9 @@ beforeEach(function () {
 
     $this->adminKeuangan = User::factory()->create();
     $this->adminKeuangan->assignRole('Admin Keuangan');
+
+    $this->koordinatorSdm = User::factory()->create();
+    $this->koordinatorSdm->assignRole('Koordinator SDM');
 
     $this->user = User::factory()->create();
     $this->user->assignRole('Kontraktor');
@@ -99,6 +103,154 @@ test('admin keuangan can assign role to user', function () {
 
     $targetUser->refresh();
     expect($targetUser->hasRole('Koordinator CBP'))->toBeTrue();
+});
+
+test('koordinator sdm can view user management index (manage user)', function () {
+    $this->actingAs($this->koordinatorSdm)
+        ->get(route('users.index'))
+        ->assertStatus(200);
+});
+
+test('owner can create user linked to existing karyawan', function () {
+    $karyawan = Karyawan::factory()->create();
+
+    $this->actingAs($this->owner)
+        ->post(route('users.store'), [
+            'name' => 'Dengan Karyawan',
+            'email' => 'karyawan-link@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'Koordinator GCS',
+            'karyawan_id' => $karyawan->id,
+        ])
+        ->assertRedirect();
+
+    $user = User::where('email', 'karyawan-link@example.com')->first();
+    expect($user->karyawan()->whereKey($karyawan->id)->exists())->toBeTrue();
+
+    $karyawan->refresh();
+    expect((string) $karyawan->user_id)->toBe((string) $user->id);
+});
+
+test('owner can create user with new karyawan data', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.store'), [
+            'name' => 'Buat Karyawan Baru',
+            'email' => 'karyawan-baru@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'Koordinator GCS',
+            'new_karyawan' => [
+                'nama' => 'Budi Santoso',
+                'tipe' => 'harian',
+                'jabatan' => 'Operator AMP',
+            ],
+        ])
+        ->assertRedirect();
+
+    $user = User::where('email', 'karyawan-baru@example.com')->first();
+
+    $karyawan = Karyawan::where('user_id', $user->id)->first();
+    expect($karyawan)->not->toBeNull();
+    expect($karyawan->nama)->toBe('Budi Santoso');
+    expect($karyawan->tipe)->toBe('harian');
+});
+
+test('cannot create user linking karyawan owned by another account', function () {
+    $existingUser = User::factory()->create();
+    $karyawan = Karyawan::factory()->create(['user_id' => $existingUser->id]);
+
+    $this->actingAs($this->owner)
+        ->post(route('users.store'), [
+            'name' => 'Try Link',
+            'email' => 'try-link@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'Koordinator GCS',
+            'karyawan_id' => $karyawan->id,
+        ])
+        ->assertSessionHasErrors('karyawan_id');
+
+    $karyawan->refresh();
+    expect((string) $karyawan->user_id)->toBe((string) $existingUser->id);
+});
+
+test('owner can create user without karyawan data (karyawan tidak wajib punya akun)', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.store'), [
+            'name' => 'Tanpa Karyawan',
+            'email' => 'tanpa-karyawan@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'Koordinator GCS',
+        ])
+        ->assertRedirect();
+
+    $user = User::where('email', 'tanpa-karyawan@example.com')->first();
+    expect($user->karyawan()->exists())->toBeFalse();
+    expect(Karyawan::where('user_id', $user->id)->exists())->toBeFalse();
+});
+
+test('link-karyawan requires karyawan_id or new_karyawan', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.link-karyawan', $this->owner), [])
+        ->assertSessionHasErrors(['karyawan_id', 'new_karyawan']);
+});
+
+test('link-karyawan endpoint links existing karyawan to account', function () {
+    $karyawan = Karyawan::factory()->create();
+
+    $this->actingAs($this->owner)
+        ->post(route('users.link-karyawan', $this->user), [
+            'karyawan_id' => $karyawan->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $karyawan->refresh();
+    expect((string) $karyawan->user_id)->toBe((string) $this->user->id);
+});
+
+test('link-karyawan endpoint can create new karyawan', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.link-karyawan', $this->user), [
+            'new_karyawan' => [
+                'nama' => 'Siti Aminah',
+                'tipe' => 'tetap',
+                'jabatan' => 'Admin',
+            ],
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $karyawan = Karyawan::where('user_id', $this->user->id)->first();
+    expect($karyawan)->not->toBeNull();
+    expect($karyawan->nama)->toBe('Siti Aminah');
+});
+
+test('unlink-karyawan detaches karyawan but keeps the karyawan record', function () {
+    $karyawan = Karyawan::factory()->create(['user_id' => $this->user->id]);
+
+    $this->actingAs($this->owner)
+        ->post(route('users.unlink-karyawan', $this->user))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $karyawan->refresh();
+    expect($karyawan->user_id)->toBeNull();
+    expect(Karyawan::whereKey($karyawan->id)->exists())->toBeTrue();
+
+    $this->assertDatabaseHas('activity_log', [
+        'log_name' => 'user-management',
+        'description' => "Melepas tautan karyawan '{$karyawan->nama}' dari akun '{$this->user->email}'",
+    ]);
+});
+
+test('unlink-karyawan errors when account has no linked karyawan', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.unlink-karyawan', $this->user))
+        ->assertRedirect()
+        ->assertSessionHas('error');
 });
 
 test('inactive user cannot login', function () {

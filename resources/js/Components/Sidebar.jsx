@@ -172,6 +172,13 @@ function getAllMenus() {
             permission: ['manage app version'],
             excludeRoles: ['Owner'],
         },
+        {
+            title: 'Manajemen User',
+            icon: Users,
+            href: safeRoute('users.index', {}, '/users'),
+            routeName: 'users.*',
+            permission: ['manage user'],
+        },
     ];
 }
 
@@ -220,17 +227,8 @@ export default function Sidebar({ isOpen, onClose }) {
     const menuList = filterMenuByPermissions(allMenus, userPermissions, roles);
 
     const isOwner = roles.includes('Owner');
-    const isAdminKeuangan = roles.includes('Admin Keuangan');
 
     const roleExtraMenus = [];
-    if (isOwner || isAdminKeuangan) {
-        roleExtraMenus.push({
-            title: 'Manajemen User',
-            icon: Users,
-            href: safeRoute('users.index', {}, '/users'),
-            routeName: 'users.*',
-        });
-    }
     if (isOwner) {
         roleExtraMenus.push({
             title: 'Tracking Linimasa',

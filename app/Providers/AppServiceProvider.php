@@ -40,8 +40,10 @@ use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
 use App\Models\AppVersion;
+use App\Models\User;
 use App\Policies\AkunKasBankPolicy;
 use App\Policies\AppVersionPolicy;
+use App\Policies\UserManagementPolicy;
 use App\Policies\ArmadaChecklistHarianPolicy;
 use App\Policies\ArmadaPenanggungJawabPolicy;
 use App\Policies\ArmadaPolicy;
@@ -153,6 +155,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Rab::class, RabPolicy::class);
         Gate::policy(UnitBisnis::class, UnitBisnisPolicy::class);
         Gate::policy(AppVersion::class, AppVersionPolicy::class);
+        Gate::policy(User::class, UserManagementPolicy::class);
 
         // Procurement Policies
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
@@ -174,6 +177,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ServiceHistory::class, ServiceHistoryPolicy::class);
         Gate::policy(PengajuanServisArmada::class, PengajuanServisPolicy::class);
         Gate::policy(WorkshopTodo::class, WorkshopTodoPolicy::class);
+        Gate::policy(User::class, UserManagementPolicy::class);
 
         // Production Policies
         Gate::policy(MesinProduksi::class, MesinProduksiPolicy::class);

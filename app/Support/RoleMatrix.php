@@ -26,6 +26,7 @@ class RoleMatrix
         'manage rab',
         'view rab',
         'manage role',
+        'manage user',
         'view owner dashboard',
 
         // Procurement
@@ -121,6 +122,7 @@ class RoleMatrix
         // keuangan, armada, kontraktor, workshop, inventory).
         'Owner' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab', 'manage role', 'view owner dashboard',
+            'manage user',
             'manage procurement', 'view procurement', 'approve procurement', 'receive procurement', 'pay procurement',
             'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
             'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
@@ -140,6 +142,7 @@ class RoleMatrix
         // Mobile Admin Keuangan: tracking, dashboard, keuangan, armada, kontraktor.
         'Admin Keuangan' => [
             'view owner dashboard',
+            'manage user',
             'approve procurement', 'pay procurement', 'approve procurement keuangan', 'view procurement',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
             'manage rab', 'view rab', 'view proyek', 'view fleet',
@@ -182,6 +185,7 @@ class RoleMatrix
             'manage hr', 'view hr', 'manage payroll', 'view payroll', 'manage presensi', 'view proyek',
             'manage helper armada',
             'manage app version',
+            'manage user',
         ],
         'Mandor Proyek' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab',
