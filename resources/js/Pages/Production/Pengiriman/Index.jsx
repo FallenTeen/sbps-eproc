@@ -2,7 +2,8 @@ import React from "react";
 import { Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
-import { Truck } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 const STATUS_OPTIONS = [
     { value: "dijadwalkan", label: "Dijadwalkan" },
@@ -13,11 +14,16 @@ const STATUS_OPTIONS = [
 
 function getStatusColor(status) {
     switch (status) {
-        case "dijadwalkan": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-        case "dalam_perjalanan": return "bg-blue-100 text-blue-800 border-blue-200";
-        case "selesai": return "bg-emerald-100 text-emerald-800 border-emerald-200";
-        case "dibatalkan": return "bg-gray-100 text-gray-800 border-gray-200";
-        default: return "bg-gray-100 text-gray-800";
+        case "dijadwalkan":
+            return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        case "dalam_perjalanan":
+            return "bg-blue-100 text-blue-800 border-blue-200";
+        case "selesai":
+            return "bg-emerald-100 text-emerald-800 border-emerald-200";
+        case "dibatalkan":
+            return "bg-red-100 text-red-800 border-red-200";
+        default:
+            return "bg-gray-100 text-gray-800";
     }
 }
 
@@ -28,7 +34,7 @@ export default function Index({ pengirimen, filters, sort, direction }) {
             label: "Waktu Muat",
             type: "dateRange",
             cellClassName: "px-4 py-4 text-sm text-gray-700 whitespace-nowrap",
-            render: (p) => new Date(p.waktu_muat).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+            render: (p) => formatTanggal(p.waktu_muat),
         },
         {
             key: "produk",
@@ -36,8 +42,13 @@ export default function Index({ pengirimen, filters, sort, direction }) {
             type: "text",
             render: (p) => (
                 <>
-                    <div className="text-sm font-semibold text-gray-900">{p.session?.produk?.nama}</div>
-                    <div className="text-xs text-gray-500">Vol: {p.session?.hasil_output} {p.session?.produk?.satuan_output}</div>
+                    <div className="text-sm font-semibold text-gray-900">
+                        {p.session?.produk?.nama}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                        Vol: {p.session?.hasil_output}{" "}
+                        {p.session?.produk?.satuan_output}
+                    </div>
                 </>
             ),
         },
@@ -67,7 +78,11 @@ export default function Index({ pengirimen, filters, sort, direction }) {
             type: "select",
             options: STATUS_OPTIONS,
             render: (p) => (
-                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusColor(p.status)}`}>
+                <span
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${
+                        getStatusColor(p.status)
+                    }`}
+                >
                     {p.status.replace("_", " ").toUpperCase()}
                 </span>
             ),
@@ -82,8 +97,9 @@ export default function Index({ pengirimen, filters, sort, direction }) {
             render: (p) => (
                 <Link
                     href={route("production.pengiriman.show", p.id)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    className="flex  gap-2 items-center text-blue-600 text-sm font-semibold px-3 py-1.5"
                 >
+                    <Eye className="h-4 w-4" />
                     Detail
                 </Link>
             ),
@@ -94,14 +110,19 @@ export default function Index({ pengirimen, filters, sort, direction }) {
         <Layout>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Pengiriman Produksi</h1>
-                    <p className="text-sm text-gray-500 mt-1">Kelola jadwal dan riwayat pengiriman produk beton ke proyek/customer.</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Pengiriman Produksi
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Kelola jadwal dan riwayat pengiriman produk beton ke
+                        proyek/customer.
+                    </p>
                 </div>
                 <Link
                     href={route("production.pengiriman.create")}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
-                    <Truck className="w-4 h-4" /> Jadwalkan Baru
+                    <Plus className="w-4 h-4" /> Jadwalkan Baru
                 </Link>
             </div>
 
