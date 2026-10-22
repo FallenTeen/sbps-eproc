@@ -29,6 +29,21 @@ export default function Index({ users, roles, filters, sort, direction }) {
         { key: 'name', label: 'Nama', type: 'text' },
         { key: 'email', label: 'Email', type: 'text' },
         {
+            key: 'karyawan',
+            label: 'Karyawan',
+            search: false,
+            sortable: false,
+            render: (user) => {
+                const karyawan = user.karyawan;
+                if (!karyawan) return <span className="text-gray-400 italic">Tidak tertaut</span>;
+                return (
+                    <span className="inline-block text-sm" title={`${karyawan.jabatan || '-'} · ${karyawan.tipe || '-'}`}>
+                        {karyawan.nama}
+                    </span>
+                );
+            },
+        },
+        {
             key: 'role',
             label: 'Role',
             type: 'select',

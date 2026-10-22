@@ -20,8 +20,10 @@ class SeedProduction extends Command
     {
         $this->seedPermissions();
         $this->seedRoles();
+        $this->seedDivisiRoles();
         $this->seedUnitBisnis();
         $this->seedUsers();
+        $this->seedAppVersions();
 
         $this->info('Production seeding completed successfully.');
 
@@ -45,6 +47,25 @@ class SeedProduction extends Command
         }
 
         $this->info('Roles seeded ('.count(RoleMatrix::ROLES).').');
+    }
+
+    /**
+     * Role "Ketua Divisi X" hanya ada sebagai kunci DIVISI_AUGMENTS (bukan di
+     * ROLES), jadi tanpa langkah ini role-nya tidak terbuat/sinkron di production.
+     */
+    private function seedDivisiRoles(): void
+    {
+        foreach (array_keys(RoleMatrix::DIVISI_AUGMENTS) as $roleName) {
+            $role = Role::firstOrCreate(['name' => $roleName]);
+            $role->syncPermissions(RoleMatrix::privilegesFor($roleName));
+        }
+
+        $this->info('Divisi roles seeded ('.count(RoleMatrix::DIVISI_AUGMENTS).').');
+    }
+
+    private function seedAppVersions(): void
+    {
+        $this->call(\Database\Seeders\AppVersionSeeder::class);
     }
 
     private function seedUnitBisnis(): void

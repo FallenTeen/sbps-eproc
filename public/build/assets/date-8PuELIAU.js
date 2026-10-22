@@ -1,1 +1,0 @@
-function e(e,t=void 0){if(e==null||e===``)return`-`;let n=new Date(e);return isNaN(n.getTime())?String(e):n.toLocaleDateString(`id-ID`,t)}function t(e,t=void 0){if(e==null||e===``)return`-`;let n=new Date(e);return isNaN(n.getTime())?String(e):n.toLocaleString(`id-ID`,t)}export{t as n,e as t};

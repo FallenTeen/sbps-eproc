@@ -26,6 +26,7 @@ class RoleMatrix
         'manage rab',
         'view rab',
         'manage role',
+        'manage user',
         'view owner dashboard',
 
         // Procurement
@@ -94,6 +95,9 @@ class RoleMatrix
         'view kontraktor',
         'manage kontraktor',
 
+        // Mobile version-gate (Shorebird OTA, kelola di Admin UI)
+        'manage app version',
+
         // Approval divisi (procurement per-divisi, threshold)
         'manage procurement division',
         'approve procurement division',
@@ -118,6 +122,7 @@ class RoleMatrix
         // keuangan, armada, kontraktor, workshop, inventory).
         'Owner' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab', 'manage role', 'view owner dashboard',
+            'manage user',
             'manage procurement', 'view procurement', 'approve procurement', 'receive procurement', 'pay procurement',
             'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
             'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
@@ -130,12 +135,14 @@ class RoleMatrix
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
             'manage presensi', 'manage formulir lapangan',
             'view kontraktor', 'manage kontraktor',
+            'manage app version',
         ],
 
         // ─── Admin & Koordinator ───────────────────────────────────────
         // Mobile Admin Keuangan: tracking, dashboard, keuangan, armada, kontraktor.
         'Admin Keuangan' => [
             'view owner dashboard',
+            'manage user',
             'approve procurement', 'pay procurement', 'approve procurement keuangan', 'view procurement',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
             'manage rab', 'view rab', 'view proyek', 'view fleet',
@@ -177,6 +184,8 @@ class RoleMatrix
         'Koordinator SDM' => [
             'manage hr', 'view hr', 'manage payroll', 'view payroll', 'manage presensi', 'view proyek',
             'manage helper armada',
+            'manage app version',
+            'manage user',
         ],
         'Mandor Proyek' => [
             'manage proyek', 'view proyek', 'manage rab', 'view rab',

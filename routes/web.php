@@ -5,6 +5,7 @@ use App\Domain\Attendance\Http\Controllers\PresensiController;
 use App\Domain\Attendance\Http\Controllers\TrackingTimelineController;
 use App\Domain\Core\Http\Controllers\LokasiController;
 use App\Domain\Core\Http\Controllers\KomunikasiController;
+use App\Domain\Core\Http\Controllers\AppVersionController;
 use App\Domain\Core\Http\Controllers\ProyekController;
 use App\Domain\Core\Http\Controllers\RabController;
 // Core Controllers
@@ -125,6 +126,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('proyek/{proyek}/rab', [RabController::class, 'index'])->name('rab.index');
         Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
         Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
+
+        // Versi Aplikasi Mobile (version-gate / Shorebird — docs/TODO-SHOREBIRD-WEB.md W2)
+        Route::prefix('app-version')->name('app-version.')->middleware('permission:manage app version')->group(function () {
+            Route::get('/', [AppVersionController::class, 'index'])->name('index');
+            Route::put('{appVersion}', [AppVersionController::class, 'update'])->name('update');
+        });
     });
 
     // ============================================================
@@ -513,9 +520,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ============================================================
-    // USER MANAGEMENT (Owner & Admin saja)
+    // USER MANAGEMENT (via permission 'manage user': Owner,
+    // Admin Keuangan, Koordinator SDM — RoleMatrix)
     // ============================================================
-    Route::prefix('users')->name('users.')->middleware(['role:Owner|Admin Keuangan'])->group(function () {
+    Route::prefix('users')->name('users.')->middleware(['permission:manage user'])->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
         Route::get('/create', [UserManagementController::class, 'create'])->name('create');
         Route::post('/', [UserManagementController::class, 'store'])->name('store');
@@ -524,6 +532,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('assign-role');
         Route::post('/{user}/remove-role', [UserManagementController::class, 'removeRole'])->name('remove-role');
+        Route::post('/{user}/link-karyawan', [UserManagementController::class, 'linkKaryawan'])->name('link-karyawan');
+        Route::post('/{user}/unlink-karyawan', [UserManagementController::class, 'unlinkKaryawan'])->name('unlink-karyawan');
     });
 
 });

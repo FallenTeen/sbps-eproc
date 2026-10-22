@@ -63,6 +63,31 @@ test('404 jika kombinasi app dan platform belum dikonfigurasi', function () {
         ->assertJson(['status' => 'error']);
 });
 
+test('app=mobile memakai baris mobile bila tersedia', function () {
+    createAppVersion(['app' => 'mobile', 'platform' => 'android', 'min_version' => '5.5.0']);
+
+    $this->getJson('/api/mobile/app-version?app=mobile&platform=android')
+        ->assertStatus(200)
+        ->assertJsonPath('data.min_version', '5.5.0');
+});
+
+test('app=mobile fallback ke presensi bila baris mobile belum ada', function () {
+    createAppVersion(['app' => 'presensi', 'platform' => 'android', 'min_version' => '2.2.0']);
+
+    $this->getJson('/api/mobile/app-version?app=mobile&platform=android')
+        ->assertStatus(200)
+        ->assertJsonPath('data.min_version', '2.2.0');
+});
+
+test('app=mobile fallback presensi spesifik per platform', function () {
+    createAppVersion(['app' => 'presensi', 'platform' => 'android', 'min_version' => '1.0.0']);
+    createAppVersion(['app' => 'presensi', 'platform' => 'ios', 'min_version' => '3.0.0']);
+
+    $this->getJson('/api/mobile/app-version?app=mobile&platform=ios')
+        ->assertStatus(200)
+        ->assertJsonPath('data.min_version', '3.0.0');
+});
+
 test('validasi query parameter wajib dan bernilai benar', function () {
     // Parameter hilang
     $this->getJson('/api/mobile/app-version')->assertStatus(422);

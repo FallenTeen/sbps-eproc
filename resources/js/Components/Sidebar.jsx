@@ -17,6 +17,7 @@ import {
     MapPin,
     Wrench,
     Navigation,
+    Smartphone,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -163,6 +164,21 @@ function getAllMenus() {
             href: safeRoute('kontraktor.dashboard', {}, '/kontraktor/dashboard'),
             routeName: 'kontraktor.*',
         },
+        {
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
+            permission: ['manage app version'],
+            excludeRoles: ['Owner'],
+        },
+        {
+            title: 'Manajemen User',
+            icon: Users,
+            href: safeRoute('users.index', {}, '/users'),
+            routeName: 'users.*',
+            permission: ['manage user'],
+        },
     ];
 }
 
@@ -211,23 +227,20 @@ export default function Sidebar({ isOpen, onClose }) {
     const menuList = filterMenuByPermissions(allMenus, userPermissions, roles);
 
     const isOwner = roles.includes('Owner');
-    const isAdminKeuangan = roles.includes('Admin Keuangan');
 
     const roleExtraMenus = [];
-    if (isOwner || isAdminKeuangan) {
-        roleExtraMenus.push({
-            title: 'Manajemen User',
-            icon: Users,
-            href: safeRoute('users.index', {}, '/users'),
-            routeName: 'users.*',
-        });
-    }
     if (isOwner) {
         roleExtraMenus.push({
             title: 'Tracking Linimasa',
             icon: Navigation,
             href: safeRoute('attendance.tracking.index', {}, '/attendance/tracking'),
             routeName: 'attendance.tracking.*',
+        });
+        roleExtraMenus.push({
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
         });
     }
 
