@@ -221,12 +221,13 @@ test('armada widget DISCALING lingkup unit untuk user ber-unit (bukan kebocoran 
 });
 
 test('owner menerima widget admin: PO pending, unit summary, audit & deadline', function () {
+    // created_at diberi jeda eksplisit: list diurutkan latest-first per detik.
+    PurchaseOrder::factory()
+        ->for($this->proyekMilik)
+        ->create(['status' => 'menunggu_approval_owner', 'created_at' => now()->subMinute()]);
     PurchaseOrder::factory()
         ->for($this->proyekMilik)
         ->create(['status' => 'menunggu_approval_finance']);
-    PurchaseOrder::factory()
-        ->for($this->proyekMilik)
-        ->create(['status' => 'menunggu_approval_owner']);
 
     $this->actingAs($this->owner)
         ->get(route('dashboard'))
