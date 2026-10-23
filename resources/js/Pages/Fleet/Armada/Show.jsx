@@ -15,7 +15,7 @@ import {
     Clock,
     Users,
     Truck,
-    User,
+    Edit,
 } from "lucide-react";
 
 const JENIS = {
@@ -55,7 +55,10 @@ function FlashMessage() {
     return (
         <div className="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex justify-between items-center">
             <span>{flash.success}</span>
-            <button onClick={() => setVisible(false)} className="text-green-600">
+            <button
+                onClick={() => setVisible(false)}
+                className="text-green-600"
+            >
                 &times;
             </button>
         </div>
@@ -104,20 +107,21 @@ function Tabs({ tabs, active, onChange }) {
 
 function RitaseSection({ armada, options, can }) {
     const canRecord = can ? can.recordRitase : true;
-    const { data, setData, post, processing, errors } = useForm({
-        driver_karyawan_id: "",
-        tanggal: new Date().toISOString().split("T")[0],
-        rute_tarif_id: "",
-        kategori: "",
-        material: "",
-        jumlah_rit: "",
-        tarif_per_rit_snapshot: "",
-        proyek_id: "",
-        titik_id: "",
-        customer: "",
-        catatan: "",
-        biaya_lain: [],
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            driver_karyawan_id: "",
+            tanggal: new Date().toISOString().split("T")[0],
+            rute_tarif_id: "",
+            kategori: "",
+            material: "",
+            jumlah_rit: "",
+            tarif_per_rit_snapshot: "",
+            proyek_id: "",
+            titik_id: "",
+            customer: "",
+            catatan: "",
+            biaya_lain: [],
+        });
 
     const onRuteChange = (e) => {
         const id = e.target.value;
@@ -151,239 +155,277 @@ function RitaseSection({ armada, options, can }) {
 
     const submit = (e) => {
         e.preventDefault();
+
         post(route("fleet.armada.record-ritase", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
     return (
-        <div className={canRecord ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
+        <div
+            className={
+                canRecord
+                    ? "grid grid-cols-1 lg:grid-cols-3 gap-6"
+                    : "space-y-6"
+            }
+        >
             {canRecord && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
                         <Plus className="w-4 h-4 text-blue-600" /> Catat Ritase
                     </h3>
-                <form onSubmit={submit} className="space-y-4">
-                    <Field label="Driver *" error={errors.driver_karyawan_id}>
-                        <select
-                            value={data.driver_karyawan_id}
-                            onChange={(e) =>
-                                setData(
-                                    "driver_karyawan_id",
-                                    e.target.value,
-                                )
-                            }
-                            className={inputClass}
+                    <form onSubmit={submit} className="space-y-4">
+                        <Field
+                            label="Driver *"
+                            error={errors.driver_karyawan_id}
                         >
-                            <option value="">Pilih Driver</option>
-                            {options.drivers.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                    {d.nama}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                    <Field label="Tanggal *" error={errors.tanggal}>
-                        <input
-                            type="date"
-                            value={data.tanggal}
-                            onChange={(e) =>
-                                setData("tanggal", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Rute Tarif" error={errors.rute_tarif_id}>
-                        <select
-                            value={data.rute_tarif_id}
-                            onChange={onRuteChange}
-                            className={inputClass}
+                            <select
+                                value={data.driver_karyawan_id}
+                                onChange={(e) =>
+                                    setData(
+                                        "driver_karyawan_id",
+                                        e.target.value,
+                                    )
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Driver</option>
+                                {options.drivers.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label="Tanggal *" error={errors.tanggal}>
+                            <input
+                                type="date"
+                                value={data.tanggal}
+                                onChange={(e) =>
+                                    setData("tanggal", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Rute Tarif" error={errors.rute_tarif_id}>
+                            <select
+                                value={data.rute_tarif_id}
+                                onChange={onRuteChange}
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Rute</option>
+                                {options.ruteTarifs.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {r.lokasi_asal} → {r.lokasi_tujuan}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field
+                            label="Tarif / Rit (manual jika tanpa rute)"
+                            error={errors.tarif_per_rit_snapshot}
                         >
-                            <option value="">Pilih Rute</option>
-                            {options.ruteTarifs.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                    {r.lokasi_asal} → {r.lokasi_tujuan}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                    <Field
-                        label="Tarif / Rit (manual jika tanpa rute)"
-                        error={errors.tarif_per_rit_snapshot}
-                    >
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={data.tarif_per_rit_snapshot}
-                            onChange={(e) =>
-                                setData(
-                                    "tarif_per_rit_snapshot",
-                                    e.target.value,
-                                )
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Field label="Jumlah Rit *" error={errors.jumlah_rit}>
                             <input
                                 type="number"
-                                min="1"
-                                value={data.jumlah_rit}
+                                step="0.01"
+                                value={data.tarif_per_rit_snapshot}
                                 onChange={(e) =>
-                                    setData("jumlah_rit", e.target.value)
+                                    setData(
+                                        "tarif_per_rit_snapshot",
+                                        e.target.value,
+                                    )
                                 }
                                 className={inputClass}
                             />
                         </Field>
-                        <Field label="Kategori">
-                            <input
-                                type="text"
-                                value={data.kategori}
-                                onChange={(e) =>
-                                    setData("kategori", e.target.value)
-                                }
-                                placeholder="batu pecah, pasir"
-                                className={inputClass}
-                            />
-                        </Field>
-                    </div>
-                    <Field label="Material">
-                        <input
-                            type="text"
-                            value={data.material}
-                            onChange={(e) =>
-                                setData("material", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Proyek">
-                        <select
-                            value={data.proyek_id}
-                            onChange={(e) =>
-                                setData("proyek_id", e.target.value)
-                            }
-                            className={inputClass}
-                        >
-                            <option value="">Pilih Proyek</option>
-                            {options.proyeks.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.nama}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                    <Field label="Titik">
-                        <select
-                            value={data.titik_id}
-                            onChange={(e) =>
-                                setData("titik_id", e.target.value)
-                            }
-                            className={inputClass}
-                        >
-                            <option value="">Pilih Titik</option>
-                            {options.titiks.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.nama}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                    <Field label="Customer">
-                        <input
-                            type="text"
-                            value={data.customer}
-                            onChange={(e) =>
-                                setData("customer", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-
-                    {/* Biaya lain */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm font-medium text-gray-700">
-                                Biaya Lain
-                            </label>
-                            <button
-                                type="button"
-                                onClick={addBiaya}
-                                className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field
+                                label="Jumlah Rit *"
+                                error={errors.jumlah_rit}
                             >
-                                <Plus className="w-3 h-3" /> Tambah
-                            </button>
-                        </div>
-                        {data.biaya_lain.map((b, i) => (
-                            <div
-                                key={i}
-                                className="flex gap-2 items-end mb-2"
-                            >
-                                <select
-                                    value={b.jenis}
-                                    onChange={(e) =>
-                                        updateBiaya(
-                                            i,
-                                            "jenis",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-1/3 border border-gray-300 rounded-md px-2 py-2 text-sm"
-                                >
-                                    {Object.entries(BIAYA_JENIS).map(
-                                        ([k, v]) => (
-                                            <option key={k} value={k}>
-                                                {v}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
                                 <input
                                     type="number"
-                                    step="0.01"
-                                    value={b.jumlah}
+                                    min="1"
+                                    value={data.jumlah_rit}
                                     onChange={(e) =>
-                                        updateBiaya(i, "jumlah", e.target.value)
+                                        setData("jumlah_rit", e.target.value)
                                     }
-                                    placeholder="Jumlah"
-                                    className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm"
+                                    className={inputClass}
                                 />
+                            </Field>
+                            <Field label="Satuan Volume *">
+                                <select
+                                    value={data.satuan_volume}
+                                    onChange={(e) =>
+                                        setData("satuan_volume", e.target.value)
+                                    }
+                                    className={inputClass}
+                                >
+                                    <option value="">Pilih Volume</option>
+                                    <option value="tonase">Tonase</option>
+                                    <option value="ritase">Ritase</option>
+                                    <option value="m3">m³</option>
+                                    <option value="harian">Harian</option>
+                                </select>
+                            </Field>
+                            <Field label="Kategori">
+                                <input
+                                    type="text"
+                                    value={data.kategori}
+                                    onChange={(e) =>
+                                        setData("kategori", e.target.value)
+                                    }
+                                    placeholder="batu pecah, pasir"
+                                    className={inputClass}
+                                />
+                            </Field>
+                        </div>
+                        <Field label="Material">
+                            <input
+                                type="text"
+                                value={data.material}
+                                onChange={(e) =>
+                                    setData("material", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Proyek">
+                            <select
+                                value={data.proyek_id}
+                                onChange={(e) =>
+                                    setData("proyek_id", e.target.value)
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Proyek</option>
+                                {options.proyeks.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label="Titik">
+                            <select
+                                value={data.titik_id}
+                                onChange={(e) =>
+                                    setData("titik_id", e.target.value)
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Titik</option>
+                                {options.titiks.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label="Customer">
+                            <input
+                                type="text"
+                                value={data.customer}
+                                onChange={(e) =>
+                                    setData("customer", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+
+                        {/* Biaya lain */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Biaya Lain
+                                </label>
                                 <button
                                     type="button"
-                                    onClick={() => removeBiaya(i)}
-                                    className="text-red-600 hover:text-red-800 pb-2"
+                                    onClick={addBiaya}
+                                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Plus className="w-3 h-3" /> Tambah
                                 </button>
                             </div>
-                        ))}
-                    </div>
+                            {data.biaya_lain.map((b, i) => (
+                                <div
+                                    key={i}
+                                    className="flex gap-2 items-end mb-2"
+                                >
+                                    <select
+                                        value={b.jenis}
+                                        onChange={(e) =>
+                                            updateBiaya(
+                                                i,
+                                                "jenis",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="w-1/3 border border-gray-300 rounded-md px-2 py-2 text-sm"
+                                    >
+                                        {Object.entries(BIAYA_JENIS).map(
+                                            ([k, v]) => (
+                                                <option key={k} value={k}>
+                                                    {v}
+                                                </option>
+                                            ),
+                                        )}
+                                    </select>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={b.jumlah}
+                                        onChange={(e) =>
+                                            updateBiaya(
+                                                i,
+                                                "jumlah",
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Jumlah"
+                                        className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeBiaya(i)}
+                                        className="text-red-600 hover:text-red-800 pb-2"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
 
-                    <Field label="Catatan">
-                        <textarea
-                            rows="2"
-                            value={data.catatan}
-                            onChange={(e) =>
-                                setData("catatan", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
+                        <Field label="Catatan">
+                            <textarea
+                                rows="2"
+                                value={data.catatan}
+                                onChange={(e) =>
+                                    setData("catatan", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
 
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className={btnPrimary + " w-full"}
-                    >
-                        {processing ? "Menyimpan..." : "Simpan Ritase"}
-                    </button>
-                </form>
-            </div>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className={btnPrimary + " w-full"}
+                        >
+                            {processing ? "Menyimpan..." : "Simpan Ritase"}
+                        </button>
+                    </form>
+                </div>
             )}
 
             {/* Riwayat ritase */}
-            <div className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}>
+            <div
+                className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}
+            >
                 <h3 className="font-semibold mb-4">Riwayat Ritase</h3>
                 {armada.ritases.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
@@ -420,9 +462,7 @@ function RitaseSection({ armada, options, can }) {
                             {armada.ritases.map((r) => (
                                 <tr key={r.id}>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            r.tanggal,
-                                        ).toLocaleDateString("id-ID")}
+                                        {formatTanggal(r.tanggal)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {r.driver?.nama || "-"}
@@ -462,154 +502,198 @@ function RitaseSection({ armada, options, can }) {
 
 function SewaSection({ armada, options, can }) {
     const canRecord = can ? can.recordSewa : true;
-    const { data, setData, post, processing, errors } = useForm({
-        proyek_id: "",
-        penyewa_eksternal: "",
-        lokasi_pekerjaan: "",
-        harga_per_jam_snapshot: "",
-        tanggal: new Date().toISOString().split("T")[0],
-        hm_awal: "",
-        hm_akhir: "",
-        jumlah_jam: "",
-        catatan: "",
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            proyek_id: "",
+            tipe_sewa: "",
+            penyewa_nama: "",
+            penyewa_eksternal: "",
+            lokasi_pekerjaan: "",
+            harga_per_jam_snapshot: "",
+            tanggal: new Date().toISOString().split("T")[0],
+            hm_awal: "",
+            hm_akhir: "",
+            jumlah_jam: "",
+            catatan: "",
+        });
 
     const submit = (e) => {
         e.preventDefault();
         post(route("fleet.armada.record-sewa", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
     return (
-        <div className={canRecord ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
+        <div
+            className={
+                canRecord
+                    ? "grid grid-cols-1 lg:grid-cols-3 gap-6"
+                    : "space-y-6"
+            }
+        >
             {canRecord && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-blue-600" /> Catat Sewa Alat
+                        <Clock className="w-4 h-4 text-blue-600" /> Catat Sewa
+                        Alat
                     </h3>
-                <form onSubmit={submit} className="space-y-4">
-                    <Field label="Proyek">
-                        <select
-                            value={data.proyek_id}
-                            onChange={(e) =>
-                                setData("proyek_id", e.target.value)
-                            }
-                            className={inputClass}
+                    <form onSubmit={submit} className="space-y-4">
+                        <Field label="Proyek">
+                            <select
+                                value={data.proyek_id}
+                                onChange={(e) =>
+                                    setData("proyek_id", e.target.value)
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Proyek</option>
+                                {options.proyeks.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label="Tipe Sewa">
+                            <select
+                                value={data.tipe_sewa}
+                                onChange={(e) =>
+                                    setData("tipe_sewa", e.target.value)
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">Pilih Tipe Sewa</option>
+                                <option value="internal">Internal</option>
+                                <option value="eksternal">Eksternal</option>
+                            </select>
+                        </Field>
+                        {data.tipe_sewa === "eksternal" && (
+                            <Field
+                                label="Nama Penyewa"
+                                error={errors.penyewa_nama}
+                            >
+                                <input
+                                    type="text"
+                                    value={data.penyewa_nama}
+                                    onChange={(e) =>
+                                        setData("penyewa_nama", e.target.value)
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                        )}
+                        <Field label="Penyewa Eksternal">
+                            <input
+                                type="text"
+                                value={data.penyewa_eksternal}
+                                onChange={(e) =>
+                                    setData("penyewa_eksternal", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Lokasi Pekerjaan">
+                            <input
+                                type="text"
+                                value={data.lokasi_pekerjaan}
+                                onChange={(e) =>
+                                    setData("lokasi_pekerjaan", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field
+                            label="Harga / Jam *"
+                            error={errors.harga_per_jam_snapshot}
                         >
-                            <option value="">Pilih Proyek</option>
-                            {options.proyeks.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.nama}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                    <Field label="Penyewa Eksternal">
-                        <input
-                            type="text"
-                            value={data.penyewa_eksternal}
-                            onChange={(e) =>
-                                setData("penyewa_eksternal", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Lokasi Pekerjaan">
-                        <input
-                            type="text"
-                            value={data.lokasi_pekerjaan}
-                            onChange={(e) =>
-                                setData("lokasi_pekerjaan", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field
-                        label="Harga / Jam *"
-                        error={errors.harga_per_jam_snapshot}
-                    >
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={data.harga_per_jam_snapshot}
-                            onChange={(e) =>
-                                setData(
-                                    "harga_per_jam_snapshot",
-                                    e.target.value,
-                                )
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Tanggal *" error={errors.tanggal}>
-                        <input
-                            type="date"
-                            value={data.tanggal}
-                            onChange={(e) =>
-                                setData("tanggal", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Field label="HM Awal">
                             <input
                                 type="number"
                                 step="0.01"
-                                value={data.hm_awal}
+                                value={data.harga_per_jam_snapshot}
                                 onChange={(e) =>
-                                    setData("hm_awal", e.target.value)
+                                    setData(
+                                        "harga_per_jam_snapshot",
+                                        e.target.value,
+                                    )
                                 }
                                 className={inputClass}
                             />
                         </Field>
-                        <Field label="HM Akhir">
+                        <Field label="Tanggal *" error={errors.tanggal}>
                             <input
-                                type="number"
-                                step="0.01"
-                                value={data.hm_akhir}
+                                type="date"
+                                value={data.tanggal}
                                 onChange={(e) =>
-                                    setData("hm_akhir", e.target.value)
+                                    setData("tanggal", e.target.value)
                                 }
                                 className={inputClass}
                             />
                         </Field>
-                    </div>
-                    <Field label="Jumlah Jam *" error={errors.jumlah_jam}>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0.1"
-                            value={data.jumlah_jam}
-                            onChange={(e) =>
-                                setData("jumlah_jam", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Catatan">
-                        <textarea
-                            rows="2"
-                            value={data.catatan}
-                            onChange={(e) =>
-                                setData("catatan", e.target.value)
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className={btnPrimary + " w-full"}
-                    >
-                        {processing ? "Menyimpan..." : "Simpan Sewa"}
-                    </button>
-                </form>
-            </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="HM Awal">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={data.hm_awal}
+                                    onChange={(e) =>
+                                        setData("hm_awal", e.target.value)
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="HM Akhir">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={data.hm_akhir}
+                                    onChange={(e) =>
+                                        setData("hm_akhir", e.target.value)
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                        </div>
+                        <Field label="Jumlah Jam *" error={errors.jumlah_jam}>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.1"
+                                value={data.jumlah_jam}
+                                onChange={(e) =>
+                                    setData("jumlah_jam", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Catatan">
+                            <textarea
+                                rows="2"
+                                value={data.catatan}
+                                onChange={(e) =>
+                                    setData("catatan", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className={btnPrimary + " w-full"}
+                        >
+                            {processing ? "Menyimpan..." : "Simpan Sewa"}
+                        </button>
+                    </form>
+                </div>
             )}
 
-            <div className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}>
+            <div
+                className={`${canRecord ? "lg:col-span-2" : "col-span-full"} bg-white rounded-lg shadow p-6 overflow-x-auto`}
+            >
                 <h3 className="font-semibold mb-4">Riwayat Sewa Alat</h3>
                 {armada.sewa_alat_jams.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
@@ -643,15 +727,13 @@ function SewaSection({ armada, options, can }) {
                             {armada.sewa_alat_jams.map((s) => (
                                 <tr key={s.id}>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            s.tanggal,
-                                        ).toLocaleDateString("id-ID")}
+                                        {formatTanggal(s.tanggal)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {s.proyek?.nama || s.penyewa_eksternal}
                                     </td>
                                     <td className="px-4 py-2 text-sm text-right">
-                                        {s.jumlah_jam}
+                                        {s.jumlah_jam} Jam
                                     </td>
                                     <td className="px-4 py-2 text-sm text-right">
                                         Rp{" "}
@@ -680,17 +762,22 @@ function SewaSection({ armada, options, can }) {
 }
 
 function ServiceSection({ armada, options }) {
-    const { data, setData, post, processing, errors } = useForm({
-        tanggal: new Date().toISOString().split("T")[0],
-        jenis_servis: "",
-        biaya: "",
-        notes: "",
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            tanggal: new Date().toISOString().split("T")[0],
+            jenis_servis: "",
+            biaya: "",
+            notes: "",
+        });
 
     const submit = (e) => {
         e.preventDefault();
         post(route("fleet.armada.record-service", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
@@ -705,9 +792,7 @@ function ServiceSection({ armada, options }) {
                         <input
                             type="date"
                             value={data.tanggal}
-                            onChange={(e) =>
-                                setData("tanggal", e.target.value)
-                            }
+                            onChange={(e) => setData("tanggal", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -728,9 +813,7 @@ function ServiceSection({ armada, options }) {
                             step="0.01"
                             min="0"
                             value={data.biaya}
-                            onChange={(e) =>
-                                setData("biaya", e.target.value)
-                            }
+                            onChange={(e) => setData("biaya", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -738,9 +821,7 @@ function ServiceSection({ armada, options }) {
                         <textarea
                             rows="2"
                             value={data.notes}
-                            onChange={(e) =>
-                                setData("notes", e.target.value)
-                            }
+                            onChange={(e) => setData("notes", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -782,9 +863,7 @@ function ServiceSection({ armada, options }) {
                             {armada.service_histories.map((s) => (
                                 <tr key={s.id}>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            s.tanggal,
-                                        ).toLocaleDateString("id-ID")}
+                                        {formatTanggal(s.tanggal)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {s.jenis_servis || "-"}
@@ -809,17 +888,22 @@ function ServiceSection({ armada, options }) {
 }
 
 function BbmSection({ armada, options }) {
-    const { data, setData, post, processing, errors } = useForm({
-        tanggal: new Date().toISOString().split("T")[0],
-        liter: "",
-        biaya: "",
-        jam_operasional_saat_isi: "",
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            tanggal: new Date().toISOString().split("T")[0],
+            liter: "",
+            biaya: "",
+            jam_operasional_saat_isi: "",
+        });
 
     const submit = (e) => {
         e.preventDefault();
         post(route("fleet.armada.record-bbm", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
@@ -834,9 +918,7 @@ function BbmSection({ armada, options }) {
                         <input
                             type="date"
                             value={data.tanggal}
-                            onChange={(e) =>
-                                setData("tanggal", e.target.value)
-                            }
+                            onChange={(e) => setData("tanggal", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -846,9 +928,7 @@ function BbmSection({ armada, options }) {
                             step="0.01"
                             min="0.01"
                             value={data.liter}
-                            onChange={(e) =>
-                                setData("liter", e.target.value)
-                            }
+                            onChange={(e) => setData("liter", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -857,9 +937,7 @@ function BbmSection({ armada, options }) {
                             type="number"
                             step="0.01"
                             value={data.biaya}
-                            onChange={(e) =>
-                                setData("biaya", e.target.value)
-                            }
+                            onChange={(e) => setData("biaya", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -915,9 +993,7 @@ function BbmSection({ armada, options }) {
                             {armada.bbm_logs.map((b) => (
                                 <tr key={b.id}>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            b.tanggal,
-                                        ).toLocaleDateString("id-ID")}
+                                        {formatTanggal(b.tanggal)}
                                     </td>
                                     <td className="px-4 py-2 text-sm text-right">
                                         {Number(b.liter).toLocaleString(
@@ -978,7 +1054,9 @@ function KondisiBadge({ baik }) {
 
 function ItemEditor({ items, setItems }) {
     const update = (idx, key, value) =>
-        setItems(items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)));
+        setItems(
+            items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)),
+        );
 
     return (
         <div className="space-y-2">
@@ -1011,7 +1089,9 @@ function ItemEditor({ items, setItems }) {
                     />
                     <button
                         type="button"
-                        onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                        onClick={() =>
+                            setItems(items.filter((_, i) => i !== idx))
+                        }
                         className="text-red-500 hover:text-red-700"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -1020,7 +1100,12 @@ function ItemEditor({ items, setItems }) {
             ))}
             <button
                 type="button"
-                onClick={() => setItems([...items, { bagian: "", kondisi: "baik", catatan: "" }])}
+                onClick={() =>
+                    setItems([
+                        ...items,
+                        { bagian: "", kondisi: "baik", catatan: "" },
+                    ])
+                }
                 className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
                 <Plus className="w-4 h-4" /> Tambah bagian
@@ -1086,7 +1171,9 @@ function ChecklistForm({ armada, options, tipe }) {
                     <Field label="Stok Solar">
                         <select
                             value={data.stok_solar}
-                            onChange={(e) => setData("stok_solar", e.target.value)}
+                            onChange={(e) =>
+                                setData("stok_solar", e.target.value)
+                            }
                             className={inputClass}
                         >
                             <option value="">-</option>
@@ -1107,7 +1194,11 @@ function ChecklistForm({ armada, options, tipe }) {
                         />
                     </Field>
                 </div>
-                <Field label={isAkhir ? "Jam Selesai Operasi" : "Jam Mulai Operasi"}>
+                <Field
+                    label={
+                        isAkhir ? "Jam Selesai Operasi" : "Jam Mulai Operasi"
+                    }
+                >
                     <input
                         type="time"
                         value={data[jamKey]}
@@ -1121,10 +1212,15 @@ function ChecklistForm({ armada, options, tipe }) {
                         setItems={(v) => setData("items", v)}
                     />
                 </Field>
-                <Field label="Dicatat Oleh *" error={errors.dicatat_oleh_karyawan_id}>
+                <Field
+                    label="Dicatat Oleh *"
+                    error={errors.dicatat_oleh_karyawan_id}
+                >
                     <select
                         value={data.dicatat_oleh_karyawan_id}
-                        onChange={(e) => setData("dicatat_oleh_karyawan_id", e.target.value)}
+                        onChange={(e) =>
+                            setData("dicatat_oleh_karyawan_id", e.target.value)
+                        }
                         className={inputClass}
                     >
                         <option value="">Pilih Petugas</option>
@@ -1190,16 +1286,20 @@ function ChecklistSection({ armada, options }) {
                             {armada.checklists.map((c) => (
                                 <tr key={c.id}>
                                     <td className="px-4 py-2 text-sm whitespace-nowrap">
-                                        {new Date(c.tanggal).toLocaleDateString("id-ID")}
+                                        {formatTanggal(c.tanggal)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         <KondisiBadge baik={c.kondisi_baik} />
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {c.akhir ? (
-                                            <KondisiBadge baik={c.akhir.kondisi_baik} />
+                                            <KondisiBadge
+                                                baik={c.akhir.kondisi_baik}
+                                            />
                                         ) : (
-                                            <span className="text-gray-400">-</span>
+                                            <span className="text-gray-400">
+                                                -
+                                            </span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
@@ -1207,7 +1307,9 @@ function ChecklistSection({ armada, options }) {
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-semibold w-fit ${c.akhir ? "bg-blue-200 text-blue-800" : "bg-gray-200 text-gray-700"}`}
                                             >
-                                                {c.akhir ? "Selesai" : "Berjalan"}
+                                                {c.akhir
+                                                    ? "Selesai"
+                                                    : "Berjalan"}
                                             </span>
                                             {c.akhir?.odo_anomali && (
                                                 <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800 w-fit">
@@ -1235,7 +1337,8 @@ function PengisianSolarSection({ armada }) {
     return (
         <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Fuel className="w-4 h-4 text-blue-600" /> Riwayat Pengisian Solar
+                <Fuel className="w-4 h-4 text-blue-600" /> Riwayat Pengisian
+                Solar
             </h3>
             {rows.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
@@ -1268,22 +1371,32 @@ function PengisianSolarSection({ armada }) {
                         {rows.map((p) => (
                             <tr key={p.id}>
                                 <td className="px-4 py-2 text-sm whitespace-nowrap">
-                                    {new Date(p.tanggal).toLocaleDateString("id-ID")}
+                                    {formatTanggal(p.tanggal)}
                                 </td>
-                                <td className="px-4 py-2 text-sm">{p.waktu || "-"}</td>
+                                <td className="px-4 py-2 text-sm">
+                                    {p.waktu || "-"}
+                                </td>
                                 <td className="px-4 py-2 text-sm">
                                     {p.odo_atau_hm != null
-                                        ? Number(p.odo_atau_hm).toLocaleString("id-ID")
+                                        ? Number(p.odo_atau_hm).toLocaleString(
+                                              "id-ID",
+                                          )
                                         : "-"}
                                 </td>
                                 <td className="px-4 py-2 text-sm">
                                     {Number(p.liter).toLocaleString("id-ID")} L
                                 </td>
                                 <td className="px-4 py-2 text-sm">
-                                    Rp {Number(p.nominal_rp).toLocaleString("id-ID")}
+                                    Rp{" "}
+                                    {Number(p.nominal_rp).toLocaleString(
+                                        "id-ID",
+                                    )}
                                 </td>
                                 <td className="px-4 py-2 text-sm">
-                                    Rp {Number(p.harga_per_liter).toLocaleString("id-ID")}
+                                    Rp{" "}
+                                    {Number(p.harga_per_liter).toLocaleString(
+                                        "id-ID",
+                                    )}
                                 </td>
                                 <td className="px-4 py-2 text-sm">
                                     <div className="flex gap-2">
@@ -1310,7 +1423,9 @@ function PengisianSolarSection({ armada }) {
                                     </div>
                                 </td>
                                 <td className="px-4 py-2 text-sm">
-                                    {p.dicatat_oleh?.nama || p.karyawan?.nama || "-"}
+                                    {p.dicatat_oleh?.nama ||
+                                        p.karyawan?.nama ||
+                                        "-"}
                                 </td>
                             </tr>
                         ))}
@@ -1322,16 +1437,21 @@ function PengisianSolarSection({ armada }) {
 }
 
 function DowntimeSection({ armada }) {
-    const { data, setData, post, processing, errors } = useForm({
-        penyebab: "",
-        kategori: "kerusakan",
-        catatan: "",
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            penyebab: "",
+            kategori: "kerusakan",
+            catatan: "",
+        });
 
     const submit = (e) => {
         e.preventDefault();
         post(route("fleet.armada.start-downtime", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
@@ -1381,9 +1501,7 @@ function DowntimeSection({ armada }) {
                         <textarea
                             rows="2"
                             value={data.catatan}
-                            onChange={(e) =>
-                                setData("catatan", e.target.value)
-                            }
+                            onChange={(e) => setData("catatan", e.target.value)}
                             className={inputClass}
                         />
                     </Field>
@@ -1428,15 +1546,11 @@ function DowntimeSection({ armada }) {
                             {armada.downtimes.map((d) => (
                                 <tr key={d.id}>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            d.mulai,
-                                        ).toLocaleString("id-ID")}
+                                        {formatTanggal(d.mulai)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {d.selesai
-                                            ? new Date(
-                                                  d.selesai,
-                                              ).toLocaleString("id-ID")
+                                            ? formatTanggal(d.selesai)
                                             : "Berjalan"}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
@@ -1469,16 +1583,21 @@ function DowntimeSection({ armada }) {
 }
 
 function DriverSection({ armada, options }) {
-    const { data, setData, post, processing, errors } = useForm({
-        karyawan_id: "",
-        tipe: "standby",
-        tanggal_mulai: new Date().toISOString().split("T")[0],
-    });
+    const { data, setData, post, processing, errors, reset, clearErrors } =
+        useForm({
+            karyawan_id: "",
+            tipe: "standby",
+            tanggal_mulai: new Date().toISOString().split("T")[0],
+        });
 
     const submit = (e) => {
         e.preventDefault();
         post(route("fleet.armada.assign-driver", armada.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                clearErrors();
+            },
         });
     };
 
@@ -1509,19 +1628,14 @@ function DriverSection({ armada, options }) {
                     <Field label="Tipe *" error={errors.tipe}>
                         <select
                             value={data.tipe}
-                            onChange={(e) =>
-                                setData("tipe", e.target.value)
-                            }
+                            onChange={(e) => setData("tipe", e.target.value)}
                             className={inputClass}
                         >
                             <option value="standby">Standby</option>
                             <option value="kondisional">Kondisional</option>
                         </select>
                     </Field>
-                    <Field
-                        label="Tanggal Mulai *"
-                        error={errors.tanggal_mulai}
-                    >
+                    <Field label="Tanggal Mulai *" error={errors.tanggal_mulai}>
                         <input
                             type="date"
                             value={data.tanggal_mulai}
@@ -1542,9 +1656,7 @@ function DriverSection({ armada, options }) {
             </div>
 
             <div className="lg:col-span-2 bg-white rounded-lg shadow p-6 overflow-x-auto">
-                <h3 className="font-semibold mb-4">
-                    Riwayat Penugasan Driver
-                </h3>
+                <h3 className="font-semibold mb-4">Riwayat Penugasan Driver</h3>
                 {armada.driver_assignments.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
                         Belum ada penugasan driver
@@ -1580,15 +1692,11 @@ function DriverSection({ armada, options }) {
                                         {da.tipe}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
-                                        {new Date(
-                                            da.tanggal_mulai,
-                                        ).toLocaleDateString("id-ID")}
+                                        {formatTanggal(da.tanggal_mulai)}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
                                         {da.tanggal_selesai
-                                            ? new Date(
-                                                  da.tanggal_selesai,
-                                              ).toLocaleDateString("id-ID")
+                                            ? formatTanggal(da.tanggal_selesai)
                                             : "-"}
                                     </td>
                                     <td className="px-4 py-2 text-sm">
@@ -1634,7 +1742,10 @@ function HelperSection({ armada }) {
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600" /> Tambah Helper
                 </h3>
-                <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form
+                    onSubmit={submit}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                >
                     <Field label="Nama *" error={errors.nama}>
                         <input
                             type="text"
@@ -1663,7 +1774,9 @@ function HelperSection({ armada }) {
                         <input
                             type="date"
                             value={data.durasi_mulai}
-                            onChange={(e) => setData("durasi_mulai", e.target.value)}
+                            onChange={(e) =>
+                                setData("durasi_mulai", e.target.value)
+                            }
                             className={inputClass}
                         />
                     </Field>
@@ -1671,7 +1784,9 @@ function HelperSection({ armada }) {
                         <input
                             type="date"
                             value={data.durasi_selesai}
-                            onChange={(e) => setData("durasi_selesai", e.target.value)}
+                            onChange={(e) =>
+                                setData("durasi_selesai", e.target.value)
+                            }
                             className={inputClass}
                         />
                     </Field>
@@ -1692,18 +1807,36 @@ function HelperSection({ armada }) {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Nama</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">No HP</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Honor</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Durasi</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Presensi</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Aksi</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    Nama
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    No HP
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    Honor
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    Durasi
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    Presensi
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                    Status
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">
+                                    Aksi
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {helpers.map((h) => (
-                                <HelperRow key={h.id} armada={armada} helper={h} />
+                                <HelperRow
+                                    key={h.id}
+                                    armada={armada}
+                                    helper={h}
+                                />
                             ))}
                         </tbody>
                     </table>
@@ -1715,87 +1848,316 @@ function HelperSection({ armada }) {
 
 function HelperRow({ armada, helper }) {
     const [editing, setEditing] = useState(false);
-    const { data, setData, put, delete: destroy, processing } = useForm({
+
+    const {
+        data,
+        setData,
+        put,
+        delete: destroy,
+        processing,
+        errors,
+        reset,
+        clearErrors,
+    } = useForm({
         armada_id: armada.id,
-        nama: helper.nama,
+        nama: helper.nama || "",
         no_hp: helper.no_hp || "",
-        honor: helper.honor,
-        durasi_mulai: helper.durasi_mulai,
+        honor: helper.honor ?? "",
+        durasi_mulai: helper.durasi_mulai || "",
         durasi_selesai: helper.durasi_selesai || "",
-        status: helper.status,
+        status: helper.status || "aktif",
     });
 
     const save = (e) => {
         e.preventDefault();
+
         put(route("fleet.helper.update", helper.id), {
             preserveScroll: true,
-            onSuccess: () => setEditing(false),
+            onSuccess: () => {
+                setEditing(false);
+                clearErrors();
+            },
         });
+    };
+
+    const cancelEdit = () => {
+        reset();
+        clearErrors();
+        setEditing(false);
+    };
+
+    const handleDelete = () => {
+        if (
+            window.confirm(
+                `Apakah Anda yakin ingin menghapus helper "${helper.nama}"?`,
+            )
+        ) {
+            destroy(route("fleet.helper.destroy", helper.id), {
+                preserveScroll: true,
+            });
+        }
     };
 
     const presensis = helper.presensis || [];
 
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
+
     return (
-        <tr>
-            <td className="px-4 py-3 text-sm font-medium">{helper.nama}</td>
-            <td className="px-4 py-3 text-sm">{helper.no_hp || "-"}</td>
-            <td className="px-4 py-3 text-sm">
-                {Number(helper.honor || 0).toLocaleString("id-ID")}
-            </td>
-            <td className="px-4 py-3 text-sm">
-                {helper.durasi_mulai}
-                {helper.durasi_selesai ? ` s/d ${helper.durasi_selesai}` : ""}
-            </td>
-            <td className="px-4 py-3 text-sm">
-                {presensis.length === 0 ? (
-                    "-"
+        <tr className="border-b border-gray-100 last:border-b-0">
+            <td colSpan={7} className="p-0">
+                {editing ? (
+                    <form onSubmit={save} className="bg-blue-50/50 p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-gray-900">
+                                    Edit Helper
+                                </h3>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Perbarui informasi helper di bawah ini.
+                                </p>
+                            </div>
+                            <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                                Mode Edit
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Nama Helper
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.nama}
+                                    onChange={(e) =>
+                                        setData("nama", e.target.value)
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                                {errors.nama && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.nama}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Nomor HP
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.no_hp}
+                                    onChange={(e) =>
+                                        setData("no_hp", e.target.value)
+                                    }
+                                    className={inputClass}
+                                />
+                                {errors.no_hp && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.no_hp}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Honor
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={data.honor}
+                                    onChange={(e) =>
+                                        setData("honor", e.target.value)
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                                {errors.honor && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.honor}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Durasi Mulai
+                                </label>
+                                <input
+                                    type="date"
+                                    value={data.durasi_mulai}
+                                    onChange={(e) =>
+                                        setData("durasi_mulai", e.target.value)
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                                {errors.durasi_mulai && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.durasi_mulai}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Durasi Selesai
+                                </label>
+                                <input
+                                    type="date"
+                                    value={data.durasi_selesai}
+                                    min={data.durasi_mulai || undefined}
+                                    onChange={(e) =>
+                                        setData(
+                                            "durasi_selesai",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                                {errors.durasi_selesai && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.durasi_selesai}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Status
+                                </label>
+                                <select
+                                    value={data.status}
+                                    onChange={(e) =>
+                                        setData("status", e.target.value)
+                                    }
+                                    className={inputClass}
+                                    required
+                                >
+                                    <option value="aktif">Aktif</option>
+                                    <option value="nonaktif">Nonaktif</option>
+                                </select>
+                                {errors.status && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.status}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-5 flex justify-end gap-2 border-t border-gray-200 pt-4">
+                            <button
+                                type="button"
+                                onClick={cancelEdit}
+                                disabled={processing}
+                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {processing
+                                    ? "Menyimpan..."
+                                    : "Simpan Perubahan"}
+                            </button>
+                        </div>
+                    </form>
                 ) : (
-                    <ul className="space-y-0.5">
-                        {presensis.map((p) => (
-                            <li key={p.id}>
-                                {formatTanggal(p.tanggal)} ·{" "}
-                                {p.check_in
-                                    ? new Date(p.check_in).toLocaleTimeString("id-ID", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                      })
-                                    : "?"}
-                                {" - "}
-                                {p.check_out
-                                    ? new Date(p.check_out).toLocaleTimeString("id-ID", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                      })
-                                    : "?"}
-                            </li>
-                        ))}
-                    </ul>
+                    <table className="w-full">
+                        <tbody>
+                            <tr>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                    {helper.nama}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                    {helper.no_hp || "-"}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm text-gray-700">
+                                    {Number(helper.honor || 0).toLocaleString(
+                                        "id-ID",
+                                    )}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                    {formatTanggal(helper.durasi_mulai) || "-"}
+                                    {formatTanggal(helper.durasi_selesai)
+                                        ? ` s/d ${formatTanggal(helper.durasi_selesai)}`
+                                        : ""}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                    {presensis.length === 0 ? (
+                                        "-"
+                                    ) : (
+                                        <ul className="space-y-1">
+                                            {presensis.map((p) => (
+                                                <li key={p.id}>
+                                                    {formatTanggal(p.tanggal)}
+                                                    {" · "}
+                                                    {p.check_in
+                                                        ? formatTanggal(
+                                                              p.check_in,
+                                                          )
+                                                        : "?"}
+                                                    {" - "}
+                                                    {p.check_out
+                                                        ? formatTanggal(
+                                                              p.check_out,
+                                                          )
+                                                        : "?"}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </td>
+
+                                <td className="px-4 py-3 text-sm">
+                                    <span
+                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                            helper.status === "aktif"
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-gray-100 text-gray-600"
+                                        }`}
+                                    >
+                                        {helper.status === "aktif"
+                                            ? "Aktif"
+                                            : "Nonaktif"}
+                                    </span>
+                                </td>
+
+                                <td className="whitespace-nowrap px-4 py-3 text-right">
+                                    <div className="flex items-center justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditing(true)}
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 )}
-            </td>
-            <td className="px-4 py-3 text-sm">
-                <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        helper.status === "aktif"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-600"
-                    }`}
-                >
-                    {helper.status}
-                </span>
-            </td>
-            <td className="px-4 py-3 text-sm text-right space-x-2">
-                <button
-                    onClick={() => setEditing(!editing)}
-                    className="text-blue-600 hover:underline"
-                >
-                    {editing ? "Batal" : "Edit"}
-                </button>
-                <button
-                    onClick={() => destroy(route("fleet.helper.destroy", helper.id))}
-                    className="text-red-600 hover:underline"
-                >
-                    Hapus
-                </button>
             </td>
         </tr>
     );
@@ -1806,27 +2168,51 @@ export default function Show({ armada, options, can }) {
 
     const tabs = [
         { key: "ritase", label: "Ritase", icon: <Truck className="w-4 h-4" /> },
-        { key: "sewa", label: "Sewa Alat", icon: <Clock className="w-4 h-4" /> },
-        { key: "service", label: "Servis", icon: <Wrench className="w-4 h-4" /> },
+        {
+            key: "sewa",
+            label: "Sewa Alat",
+            icon: <Clock className="w-4 h-4" />,
+        },
+        {
+            key: "service",
+            label: "Servis",
+            icon: <Wrench className="w-4 h-4" />,
+        },
         { key: "bbm", label: "BBM", icon: <Fuel className="w-4 h-4" /> },
-        { key: "checklist", label: "Checklist", icon: <ClipboardCheck className="w-4 h-4" /> },
-        { key: "pengisian_solar", label: "Pengisian Solar", icon: <Fuel className="w-4 h-4" /> },
-        { key: "downtime", label: "Downtime", icon: <Play className="w-4 h-4" /> },
-        { key: "driver", label: "Driver", icon: <UserPlus className="w-4 h-4" /> },
+        {
+            key: "checklist",
+            label: "Checklist",
+            icon: <ClipboardCheck className="w-4 h-4" />,
+        },
+        {
+            key: "pengisian_solar",
+            label: "Pengisian Solar",
+            icon: <Fuel className="w-4 h-4" />,
+        },
+        {
+            key: "downtime",
+            label: "Downtime",
+            icon: <Play className="w-4 h-4" />,
+        },
+        {
+            key: "driver",
+            label: "Driver",
+            icon: <UserPlus className="w-4 h-4" />,
+        },
         ...(can.helper
-            ? [{ key: "helper", label: "Helper", icon: <Users className="w-4 h-4" /> }]
+            ? [
+                  {
+                      key: "helper",
+                      label: "Helper",
+                      icon: <Users className="w-4 h-4" />,
+                  },
+              ]
             : []),
     ];
 
     return (
         <Layout>
             <div className="mb-6 flex items-center gap-4 flex-wrap">
-                <Link
-                    href={route("fleet.armada.index")}
-                    className="text-gray-600 hover:text-gray-900"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </Link>
                 <h1 className="text-2xl font-bold">
                     Armada: {armada.kode_unit}
                 </h1>
@@ -1835,12 +2221,22 @@ export default function Show({ armada, options, can }) {
                 >
                     {armada.status}
                 </span>
-                <Link
-                    href={route("fleet.armada.edit", armada.id)}
-                    className="ml-auto px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
-                >
-                    Edit
-                </Link>
+                <div className="ml-auto flex items-center gap-2">
+                    <Link
+                        href={route("fleet.armada.index")}
+                        className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                        Kembali
+                    </Link>
+                    <Link
+                        href={route("fleet.armada.edit", armada.id)}
+                        className="flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
+                    >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                    </Link>
+                </div>
             </div>
 
             <FlashMessage />
@@ -1900,7 +2296,7 @@ export default function Show({ armada, options, can }) {
                             Driver Saat Ini
                         </strong>
                         <span>
-                            {armada.current_driver?.karyawan?.nama || "-"}
+                            {armada.driver_assignments[0]?.karyawan?.nama}
                         </span>
                     </div>
                 </div>
@@ -1921,12 +2317,16 @@ export default function Show({ armada, options, can }) {
             {tab === "checklist" && (
                 <ChecklistSection armada={armada} options={options} />
             )}
-            {tab === "pengisian_solar" && <PengisianSolarSection armada={armada} />}
+            {tab === "pengisian_solar" && (
+                <PengisianSolarSection armada={armada} />
+            )}
             {tab === "downtime" && <DowntimeSection armada={armada} />}
             {tab === "driver" && (
                 <DriverSection armada={armada} options={options} />
             )}
-            {tab === "helper" && can.helper && <HelperSection armada={armada} />}
+            {tab === "helper" && can.helper && (
+                <HelperSection armada={armada} />
+            )}
         </Layout>
     );
 }
