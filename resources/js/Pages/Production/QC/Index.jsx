@@ -3,6 +3,7 @@ import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 const STATUS_BADGE = {
     menunggu_hasil: "bg-yellow-200 text-yellow-800",
@@ -22,8 +23,9 @@ export default function Index({ samples, filters, sort, direction }) {
             key: "sesi",
             label: "Sesi",
             type: "text",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
-            render: (s) => s.session?.kode_sesi,
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            render: (s) => s.session?.mesin_id,
         },
         {
             key: "produk",
@@ -41,14 +43,16 @@ export default function Index({ samples, filters, sort, direction }) {
                 { value: "uji_tekan", label: "Uji Tekan" },
             ],
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
-            render: (s) => (s.jenis_uji === "slump_test" ? "Slump Test" : "Uji Tekan"),
+            render: (s) =>
+                s.jenis_uji === "slump_test" ? "Slump Test" : "Uji Tekan",
         },
         {
             key: "nilai_slump",
             label: "Nilai Slump",
             search: false,
             align: "right",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right",
             render: (s) => (s.nilai_slump != null ? s.nilai_slump : "-"),
         },
         {
@@ -56,8 +60,10 @@ export default function Index({ samples, filters, sort, direction }) {
             label: "Hasil Uji Tekan",
             search: false,
             align: "right",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right",
-            render: (s) => (s.hasil_uji_tekan != null ? s.hasil_uji_tekan + " MPa" : "-"),
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right",
+            render: (s) =>
+                s.hasil_uji_tekan != null ? s.hasil_uji_tekan + " MPa" : "-",
         },
         {
             key: "status",
@@ -65,7 +71,9 @@ export default function Index({ samples, filters, sort, direction }) {
             type: "select",
             options: STATUS_OPTIONS,
             render: (s) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS_BADGE[s.status] || "bg-gray-200 text-gray-800"}`}>
+                <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS_BADGE[s.status] || "bg-gray-200 text-gray-800"}`}
+                >
                     {s.status?.replace(/_/g, " ")}
                 </span>
             ),
@@ -75,7 +83,7 @@ export default function Index({ samples, filters, sort, direction }) {
             label: "Tanggal Dibuat",
             type: "dateRange",
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
-            render: (s) => new Date(s.created_at).toLocaleDateString("id-ID"),
+            render: (s) => formatTanggal(s.created_at),
         },
     ];
 
@@ -85,19 +93,23 @@ export default function Index({ samples, filters, sort, direction }) {
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">QC Samples</h1>
-                    <p className="mt-1 text-sm text-gray-500">Daftar sampel uji mutu produksi</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        QC Samples
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Daftar sampel uji mutu produksi
+                    </p>
                 </div>
                 <div className="flex gap-2">
                     <Link
                         href={route("production.qc.pending")}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                        className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-white transition"
                     >
                         Menunggu Hasil
                     </Link>
                     <Link
                         href={route("production.qc.create")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Catat Sample
