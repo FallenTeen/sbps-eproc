@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { router, useForm } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
-import { Plus, Users, Pencil, Trash2 } from "lucide-react";
+import { Plus, Users, Edit, Trash2, ArrowLeft, Save } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
 
 const STATUS_BADGE = {
@@ -165,10 +165,10 @@ export default function Index({ helpers, options, filters, sort, direction }) {
                 <>
                     <button
                         onClick={() => openEdit(h)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-amber-500 hover:text-amber-600"
                         title="Edit"
                     >
-                        <Pencil className="w-4 h-4 inline" />
+                        <Edit className="w-4 h-4 inline" />
                     </button>
                     <button
                         onClick={() => {
@@ -311,7 +311,7 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
                 onSubmit={submit}
                 className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl my-8"
             >
-                <div className="flex items-center justify-between border-b pb-3 mb-5">
+                <div className="flex items-center justify-between pb-3 mb-5">
                     <h2 className="text-lg font-bold text-gray-900">
                         {isEdit ? "Edit Helper" : "Tambah Helper"}
                     </h2>
@@ -327,7 +327,9 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Armada - Full Row */}
                     <div className="md:col-span-2">
-                        <label className={labelClass}>Armada *</label>
+                        <label className={labelClass}>
+                            Armada <span className="text-red-600">*</span>
+                        </label>
                         <select
                             value={data.armada_id}
                             onChange={(e) =>
@@ -351,7 +353,9 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
 
                     {/* Nama Helper */}
                     <div>
-                        <label className={labelClass}>Nama Helper *</label>
+                        <label className={labelClass}>
+                            Nama Helper <span className="text-red-600">*</span>
+                        </label>
                         <input
                             type="text"
                             value={data.nama}
@@ -402,7 +406,9 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
 
                     {/* Status */}
                     <div>
-                        <label className={labelClass}>Status</label>
+                        <label className={labelClass}>
+                            Status <span className="text-red-600">*</span>
+                        </label>
                         <select
                             value={data.status}
                             onChange={(e) => setData("status", e.target.value)}
@@ -418,7 +424,9 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
 
                     {/* Durasi Mulai */}
                     <div>
-                        <label className={labelClass}>Durasi Mulai *</label>
+                        <label className={labelClass}>
+                            Durasi Mulai <span className="text-red-600">*</span>
+                        </label>
                         <input
                             type="date"
                             value={data.durasi_mulai}
@@ -474,19 +482,21 @@ function HelperModal({ helper, armadas, statuses, onClose }) {
                 </div>
 
                 {/* Footer Action Buttons */}
-                <div className="mt-6 flex justify-end gap-2 border-t pt-4">
+                <div className="mt-6 flex justify-end gap-2 pt-4">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium text-gray-700 transition-colors"
+                        className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                     >
+                        <ArrowLeft className="h-4 w-4" />
                         Batal
                     </button>
                     <button
                         type="submit"
                         disabled={processing}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
+                        <Save className="h-4 w-4" />
                         {processing ? "Menyimpan..." : "Simpan Helper"}
                     </button>
                 </div>
