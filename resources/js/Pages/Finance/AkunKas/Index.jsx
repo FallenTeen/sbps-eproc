@@ -245,12 +245,12 @@ export default function Index({
                 </div>
 
                 <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
-                    <PrimaryButton
+                    <SecondaryButton
                         onClick={() => setShowingTransferModal(true)}
                         className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-600 border-blue-600"
                     >
                         <RefreshCw className="w-4 h-4" /> Transfer
-                    </PrimaryButton>
+                    </SecondaryButton>
                     <PrimaryButton
                         onClick={() => setShowingAddModal(true)}
                         className="flex items-center gap-2"
