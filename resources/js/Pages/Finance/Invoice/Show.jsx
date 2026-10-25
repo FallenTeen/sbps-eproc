@@ -4,18 +4,11 @@ import { Head, useForm, Link } from "@inertiajs/react";
 import {
     ArrowLeft,
     CreditCard,
-    DollarSign,
     CheckCircle2,
     Clock,
-    Calendar,
     FileText,
     Save,
 } from "lucide-react";
-import PrimaryButton from "@/Components/PrimaryButton";
-import SecondaryButton from "@/Components/SecondaryButton";
-import TextInput from "@/Components/TextInput";
-import InputLabel from "@/Components/InputLabel";
-import InputError from "@/Components/InputError";
 import Modal from "@/Components/Modal";
 import { formatTanggal } from "@/utils/date";
 
