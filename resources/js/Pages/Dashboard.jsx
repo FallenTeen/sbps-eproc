@@ -312,6 +312,7 @@ function ArmadaDashboard({ ownerData }) {
 
     const downtimeRows = (widgets.downtime_list || []).map((d) => ({
         id: d.id,
+        armada_id: d.armada_id,
         primary: d.armada,
         secondary: `${d.kategori || '-'}: ${d.penyebab || '-'}`,
         badge: `${d.durasi_menit} mnt`,
