@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { ArrowLeft, LocateFixed, Save } from "lucide-react";
+import { ArrowLeft, Clock, LocateFixed, Save } from "lucide-react";
 import TitikSelectorWithMap from "@/Components/TitikSelectorWithMap";
 
 export default function Create({ karyawan, titiks }) {
@@ -51,115 +51,179 @@ export default function Create({ karyawan, titiks }) {
     };
 
     return (
-        <AuthenticatedLayout>
-            <Head title="Catat Presensi" />
+<AuthenticatedLayout>
+    <Head title="Catat Presensi" />
 
-            <div className="mb-6">
-                <button
-                    onClick={() => window.history.back()}
-                    className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-3"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Kembali
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">Catat Presensi</h1>
-                <p className="mt-1 text-sm text-gray-500">Check-in karyawan dengan validasi lokasi</p>
+    <div className="mx-auto max-w-5xl">
+        {/* Header Halaman */}
+        <div className="mb-6 flex items-start justify-between">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800">
+                    Catat Presensi
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                    Check-in karyawan secara manual dengan validasi lokasi titik.
+                </p>
             </div>
+        </div>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-w-2xl space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Karyawan *</label>
-                    <select
-                        value={data.karyawan_id}
-                        onChange={(e) => setData({ ...data, karyawan_id: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    >
-                        <option value="">Pilih Karyawan</option>
-                        {karyawan.map((k) => (
-                            <option key={k.id} value={k.id}>{k.nama} ({k.jabatan})</option>
-                        ))}
-                    </select>
-                    {errors.karyawan_id && <p className="text-red-600 text-sm mt-1">{errors.karyawan_id}</p>}
+        {/* Form Container Card */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="mb-5 border-b border-slate-100 pb-4">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100">
+                            <Clock className="h-5 w-5 text-blue-600" />
+                        </span>
+                        Formulir Check-In Presensi
+                    </h2>
+                    <p className="mt-1.5 text-sm text-slate-500">
+                        Isi detail karyawan, titik penugasan, waktu, serta koordinat lokasi check-in.
+                    </p>
                 </div>
 
-                <TitikSelectorWithMap
-                    titiks={titiks}
-                    value={data.titik_id}
-                    onChange={(val) => setData({ ...data, titik_id: val })}
-                    error={errors.titik_id}
-                    label="Titik"
-                    placeholder="-- Pilih Titik (opsional) --"
-                    optionFormatter={(t) => t.nama}
-                />
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Waktu Check-In *</label>
-                    <input
-                        type="datetime-local"
-                        value={data.check_in}
-                        onChange={(e) => setData({ ...data, check_in: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.check_in && <p className="text-red-600 text-sm mt-1">{errors.check_in}</p>}
-                </div>
-
-                <div>
-                    <div className="flex items-center justify-between mb-1">
-                        <label className="block text-sm font-medium text-gray-700">Lokasi Check-In *</label>
-                        <button
-                            type="button"
-                            onClick={getLocation}
-                            disabled={locating}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                <div className="space-y-5">
+                    {/* Pilih Karyawan */}
+                    <div>
+                        <label htmlFor="karyawan_id" className="mb-2 block text-sm font-medium text-gray-700">
+                            Karyawan <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="karyawan_id"
+                            value={data.karyawan_id}
+                            onChange={(e) => setData({ ...data, karyawan_id: e.target.value })}
+                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                errors.karyawan_id
+                                    ? "border-red-500 focus:ring-red-100"
+                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                            }`}
                         >
-                            <LocateFixed className="w-4 h-4" />
-                            {locating ? "Mendeteksi..." : "Deteksi Lokasi Saya"}
-                        </button>
+                            <option value="">-- Pilih Karyawan --</option>
+                            {karyawan.map((k) => (
+                                <option key={k.id} value={k.id}>
+                                    {k.nama} ({k.jabatan})
+                                </option>
+                            ))}
+                        </select>
+                        {errors.karyawan_id && (
+                            <p className="mt-1.5 text-xs text-red-600">{errors.karyawan_id}</p>
+                        )}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <input
-                                type="number"
-                                step="any"
-                                value={data.check_in_lat}
-                                onChange={(e) => setData({ ...data, check_in_lat: e.target.value })}
-                                placeholder="Latitude"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                            />
-                            {errors.check_in_lat && <p className="text-red-600 text-sm mt-1">{errors.check_in_lat}</p>}
+
+                    {/* Titik Selector */}
+                    <div>
+                        <TitikSelectorWithMap
+                            titiks={titiks}
+                            value={data.titik_id}
+                            onChange={(val) => setData({ ...data, titik_id: val })}
+                            error={errors.titik_id}
+                            label="Titik Lokasi"
+                            placeholder="-- Pilih Titik (opsional) --"
+                            optionFormatter={(t) => t.nama}
+                            mapHeight="260px"
+                        />
+                    </div>
+
+                    {/* Waktu Check-In */}
+                    <div>
+                        <label htmlFor="check_in" className="mb-2 block text-sm font-medium text-gray-700">
+                            Waktu Check-In <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="check_in"
+                            value={data.check_in}
+                            onChange={(e) => setData({ ...data, check_in: e.target.value })}
+                            className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                errors.check_in
+                                    ? "border-red-500 focus:ring-red-100"
+                                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                            }`}
+                        />
+                        {errors.check_in && (
+                            <p className="mt-1.5 text-xs text-red-600">{errors.check_in}</p>
+                        )}
+                    </div>
+
+                    {/* Koordinat Lokasi Check-In */}
+                    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <label className="text-sm font-medium text-gray-700">
+                                Lokasi Check-In (Koordinat GPS) <span className="text-red-500">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                onClick={getLocation}
+                                disabled={locating}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                            >
+                                <LocateFixed className="h-4 w-4" />
+                                {locating ? "Mendeteksi Lokasi..." : "Deteksi Lokasi Saya"}
+                            </button>
                         </div>
-                        <div>
-                            <input
-                                type="number"
-                                step="any"
-                                value={data.check_in_lng}
-                                onChange={(e) => setData({ ...data, check_in_lng: e.target.value })}
-                                placeholder="Longitude"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                            />
-                            {errors.check_in_lng && <p className="text-red-600 text-sm mt-1">{errors.check_in_lng}</p>}
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={data.check_in_lat}
+                                    onChange={(e) => setData({ ...data, check_in_lat: e.target.value })}
+                                    placeholder="Latitude (contoh: -7.4243)"
+                                    className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                        errors.check_in_lat
+                                            ? "border-red-500 focus:ring-red-100"
+                                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                    }`}
+                                />
+                                {errors.check_in_lat && (
+                                    <p className="mt-1.5 text-xs text-red-600">{errors.check_in_lat}</p>
+                                )}
+                            </div>
+                            <div>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={data.check_in_lng}
+                                    onChange={(e) => setData({ ...data, check_in_lng: e.target.value })}
+                                    placeholder="Longitude (contoh: 109.2392)"
+                                    className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                        errors.check_in_lng
+                                            ? "border-red-500 focus:ring-red-100"
+                                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                    }`}
+                                />
+                                {errors.check_in_lng && (
+                                    <p className="mt-1.5 text-xs text-red-600">{errors.check_in_lng}</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                {/* Tombol Aksi */}
+                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
                     <button
                         type="button"
                         onClick={() => window.history.back()}
-                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                     >
+                        <ArrowLeft className="h-4 w-4" />
                         Batal
                     </button>
+
                     <button
                         type="submit"
                         disabled={processing}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white rounded-md disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                     >
-                        <Save className="w-4 h-4" />
-                        {processing ? "Menyimpan..." : "Simpan Presensi"}
+                        <Save className="h-4 w-4" />
+                        {processing ? "Menyimpan..." : "Simpan"}
                     </button>
                 </div>
-            </form>
-        </AuthenticatedLayout>
+            </section>
+        </form>
+    </div>
+</AuthenticatedLayout>
     );
 }
