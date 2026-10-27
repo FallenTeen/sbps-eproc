@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { 
-    Users, 
-    ArrowLeft, 
+import React, { useState } from "react";
+import { Head, Link, useForm, router } from "@inertiajs/react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import {
+    Users,
+    ArrowLeft,
     Briefcase,
     MapPin,
     Calendar,
     Save,
     Trash2,
-    CheckCircle2
-} from 'lucide-react';
-import PrimaryButton from '@/Components/PrimaryButton';
-import InputLabel from '@/Components/InputLabel';
-import InputError from '@/Components/InputError';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import DangerButton from '@/Components/DangerButton';
-import TitikSelectorWithMap from '@/Components/TitikSelectorWithMap';
+    CheckCircle2,
+    CreditCard,
+    Edit,
+} from "lucide-react";
+import InputError from "@/Components/InputError";
+import Modal from "@/Components/Modal";
+import SecondaryButton from "@/Components/SecondaryButton";
+import DangerButton from "@/Components/DangerButton";
+import TitikSelectorWithMap from "@/Components/TitikSelectorWithMap";
+import { formatTanggal } from "@/utils/date";
 
-export default function Show({ auth, karyawan, titiks }) {
+export default function Show({ karyawan, titiks }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        titik_id: '',
-        tanggal_mulai: new Date().toISOString().split('T')[0],
+        titik_id: "",
+        tanggal_mulai: new Date().toISOString().split("T")[0],
     });
 
     const [confirmingDeletion, setConfirmingDeletion] = useState(false);
@@ -30,7 +31,7 @@ export default function Show({ auth, karyawan, titiks }) {
 
     const submitAssign = (e) => {
         e.preventDefault();
-        post(route('hr.karyawan.assign-titik', karyawan.id), {
+        post(route("hr.karyawan.assign-titik", karyawan.id), {
             onSuccess: () => reset(),
         });
     };
@@ -47,271 +48,447 @@ export default function Show({ auth, karyawan, titiks }) {
 
     const deleteAssignment = (e) => {
         e.preventDefault();
-        router.post(route('hr.karyawan.remove-titik', karyawan.id), {
-            assignment_id: assignmentToDelete
-        }, {
-            preserveScroll: true,
-            onSuccess: () => closeModal(),
-        });
+        router.post(
+            route("hr.karyawan.remove-titik", karyawan.id),
+            {
+                assignment_id: assignmentToDelete,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => closeModal(),
+            },
+        );
     };
 
     const formatCurrency = (amount) => {
-        if (!amount) return '-';
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
+        if (!amount) return "-";
+        return new Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+        }).format(amount);
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Detail Karyawan</h2>}
-        >
-            <Head title={`Detail Karyawan - ${karyawan.nama}`} />
+        <AuthenticatedLayout>
+            <Head title={`Detail Karyawan - ${karyawan?.nama ?? ""}`} />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    
-                    {/* Header Action */}
-                    <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow">
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                                <Users className="h-6 w-6 text-indigo-600" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-900">
-                                    {karyawan.nama}
-                                    {karyawan.alias ? (
-                                        <span className="ml-2 text-sm font-normal text-indigo-600">
-                                            alias "{karyawan.alias}"
-                                        </span>
-                                    ) : null}
-                                </h3>
-                                <p className="text-sm text-gray-500">{karyawan.jabatan}</p>
-                            </div>
+            <div className="mx-auto max-w-5xl space-y-6">
+                {/* Header Action Card */}
+                <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                            <Users className="h-6 w-6" />
                         </div>
-                        <div className="flex gap-2">
-                            <Link href={route('hr.karyawan.edit', karyawan.id)}>
-                                <SecondaryButton>Edit Data</SecondaryButton>
-                            </Link>
-                            <Link href={route('hr.karyawan.index')}>
-                                <PrimaryButton className="bg-gray-600 hover:bg-gray-700">
-                                    <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
-                                </PrimaryButton>
-                            </Link>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-xl font-bold text-slate-800">
+                                    {karyawan?.nama}
+                                </h1>
+                                {karyawan?.alias && (
+                                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600 border border-blue-200">
+                                        alias "{karyawan.alias}"
+                                    </span>
+                                )}
+                            </div>
+                            <p className="mt-0.5 text-sm text-slate-500">
+                                {karyawan?.jabatan || "-"}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        
-                        {/* Kiri: Profil & Info Dasar */}
-                        <div className="md:col-span-1 space-y-6">
-                            <div className="bg-white p-6 rounded-lg shadow">
-                                <h4 className="text-lg font-medium text-gray-900 border-b pb-3 mb-4 flex items-center gap-2">
-                                    <Briefcase className="w-5 h-5 text-indigo-500" />
-                                    Informasi Kepegawaian
-                                </h4>
-                                <dl className="space-y-4">
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Tipe Karyawan</dt>
-                                        <dd className="mt-1 text-sm text-gray-900 capitalize">{karyawan.tipe.replace('_', ' ')}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Status Aktif</dt>
-                                        <dd className="mt-1">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                karyawan.status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {karyawan.status === 'aktif' ? 'Aktif' : 'Non-Aktif'}
-                                            </span>
-                                        </dd>
-                                    </div>
-                                    {karyawan.tipe === 'tetap' && (
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Rate Gaji Pokok</dt>
-                                            <dd className="mt-1 text-sm text-gray-900">{formatCurrency(karyawan.rate_gaji_pokok)} / bulan</dd>
-                                        </div>
-                                    )}
-                                    {karyawan.tipe === 'harian' && (
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Rate Harian</dt>
-                                            <dd className="mt-1 text-sm text-gray-900">{formatCurrency(karyawan.rate_harian)} / hari</dd>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">No. HP</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.no_hp || '-'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Akun Login</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.user?.email || <span className="text-gray-400 italic">Belum ditautkan</span>}</dd>
-                                    </div>
-                                </dl>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow">
-                                <h4 className="text-lg font-medium text-gray-900 border-b pb-3 mb-4">Administrasi & Pajak</h4>
-                                <dl className="space-y-4">
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Status PTKP</dt>
-                                        <dd className="mt-1 text-sm text-gray-900 uppercase">{karyawan.status_ptkp || '-'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">NPWP</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.npwp || '-'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">BPJS Kesehatan</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.no_bpjs_kesehatan || '-'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">BPJS Ketenagakerjaan</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{karyawan.no_bpjs_ketenagakerjaan || '-'}</dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
-
-                        {/* Kanan: Riwayat Penugasan / Assignment */}
-                        <div className="md:col-span-2 space-y-6">
-                            
-                            {/* Form Assign Titik Baru */}
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-indigo-500">
-                                <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                                    <MapPin className="w-5 h-5 text-indigo-500" />
-                                    Penugasan Lokasi (Titik)
-                                </h4>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    Penugasan titik baru akan otomatis menutup/mengakhiri penugasan yang masih aktif saat ini.
-                                </p>
-                                
-                                <form onSubmit={submitAssign} className="flex flex-col gap-4 bg-gray-50 p-4 rounded-md">
-                                    <div className="w-full">
-                                        <TitikSelectorWithMap
-                                            id="titik_id"
-                                            name="titik_id"
-                                            titiks={titiks}
-                                            value={data.titik_id}
-                                            onChange={(val) => setData('titik_id', val)}
-                                            error={errors.titik_id}
-                                            label="Pilih Titik Lokasi"
-                                            placeholder="-- Pilih Titik --"
-                                            required={true}
-                                            mapHeight="280px"
-                                        />
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row gap-4 items-end">
-                                        <div className="w-full sm:w-48">
-                                            <InputLabel htmlFor="tanggal_mulai" value="Tgl. Mulai Berlaku" />
-                                            <input
-                                                type="date"
-                                                id="tanggal_mulai"
-                                                className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                                value={data.tanggal_mulai}
-                                                onChange={(e) => setData('tanggal_mulai', e.target.value)}
-                                                required
-                                            />
-                                            <InputError message={errors.tanggal_mulai} className="mt-2" />
-                                        </div>
-                                        <PrimaryButton disabled={processing} className="h-[42px] mb-[2px]">
-                                            <Save className="w-4 h-4 mr-2" /> Assign
-                                        </PrimaryButton>
-                                    </div>
-                                </form>
-                            </div>
-
-                            {/* Tabel Riwayat Assignment */}
-                            <div className="bg-white p-6 rounded-lg shadow">
-                                <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-gray-500" />
-                                    Riwayat Penugasan
-                                </h4>
-                                
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi / Titik</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periode</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {karyawan.assignments && karyawan.assignments.map((assignment) => (
-                                                <tr key={assignment.id} className={assignment.status === 'aktif' ? 'bg-indigo-50' : 'hover:bg-gray-50'}>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {assignment.status === 'aktif' && <CheckCircle2 className="inline w-4 h-4 text-green-500 mr-1" />}
-                                                            {assignment.titik?.nama}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">
-                                                            {formatDate(assignment.tanggal_mulai)} - {assignment.tanggal_selesai ? formatDate(assignment.tanggal_selesai) : 'Sekarang'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                            assignment.status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {assignment.status === 'aktif' ? 'Aktif' : 'Selesai'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                                        <button 
-                                                            onClick={() => confirmDelete(assignment.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {(!karyawan.assignments || karyawan.assignments.length === 0) && (
-                                                <tr>
-                                                    <td colSpan="4" className="px-4 py-8 text-center text-sm text-gray-500 italic">
-                                                        Belum ada riwayat penugasan untuk karyawan ini.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href={route("hr.karyawan.edit", karyawan.id)}
+                            className="flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
+                        >
+                            <Edit className="w-4 h-4"/>
+                            Edit Data
+                        </Link>
+                        <Link href={route("hr.karyawan.index")}>
+                            <button
+                                type="button"
+                                className="flex items-center justify-center gap-2 rounded-lg bg-gray-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                Kembali
+                            </button>
+                        </Link>
                     </div>
                 </div>
-            </div>
 
-            <Modal show={confirmingDeletion} onClose={closeModal}>
-                <form onSubmit={deleteAssignment} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900">
-                        Hapus Riwayat Penugasan?
-                    </h2>
+                {/* Layout Grid 3 Kolom */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {/* Kolom Kiri: Informasi Kepegawaian & Administrasi */}
+                    <div className="space-y-6 md:col-span-1">
+                        {/* Info Kepegawaian */}
+                        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3 text-base font-semibold text-slate-800">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                                    <Briefcase className="h-4 w-4 text-blue-600" />
+                                </span>
+                                Informasi Kepegawaian
+                            </h2>
 
-                    <p className="mt-1 text-sm text-gray-600">
-                        Apakah Anda yakin ingin menghapus data penugasan ini secara permanen?
-                    </p>
+                            <dl className="space-y-4">
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        Tipe Karyawan
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-semibold text-slate-800 capitalize">
+                                        {karyawan?.tipe?.replace("_", " ") ??
+                                            "-"}
+                                    </dd>
+                                </div>
 
-                    <div className="mt-6 flex justify-end">
-                        <SecondaryButton onClick={closeModal}>Batal</SecondaryButton>
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        Status Aktif
+                                    </dt>
+                                    <dd className="mt-1.5">
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                karyawan?.status === "aktif"
+                                                    ? "bg-emerald-100 text-emerald-800"
+                                                    : "bg-red-100 text-red-800"
+                                            }`}
+                                        >
+                                            {karyawan?.status === "aktif"
+                                                ? "Aktif"
+                                                : "Non-Aktif"}
+                                        </span>
+                                    </dd>
+                                </div>
 
-                        <DangerButton className="ml-3" disabled={processing}>
-                            Hapus Penugasan
-                        </DangerButton>
+                                {karyawan?.tipe === "tetap" && (
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-400">
+                                            Rate Gaji Pokok
+                                        </dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-800">
+                                            {formatCurrency(
+                                                karyawan.rate_gaji_pokok,
+                                            )}{" "}
+                                            / bulan
+                                        </dd>
+                                    </div>
+                                )}
+
+                                {karyawan?.tipe === "harian" && (
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-400">
+                                            Rate Harian
+                                        </dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-800">
+                                            {formatCurrency(
+                                                karyawan.rate_harian,
+                                            )}{" "}
+                                            / hari
+                                        </dd>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        No. HP
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-slate-800">
+                                        {karyawan?.no_hp || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        Akun Login
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-slate-800">
+                                        {karyawan?.user?.email ? (
+                                            <span className="text-blue-600 font-semibold">
+                                                {karyawan.user.email}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 italic">
+                                                Belum ditautkan
+                                            </span>
+                                        )}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </section>
+
+                        {/* Administrasi & Pajak */}
+                        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3 text-base font-semibold text-slate-800">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                                    <CreditCard className="h-4 w-4 text-blue-600" />
+                                </span>
+                                Administrasi & Pajak
+                            </h2>
+
+                            <dl className="space-y-4">
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        Status PTKP
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-semibold uppercase text-slate-800">
+                                        {karyawan?.status_ptkp || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        NPWP
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-slate-800">
+                                        {karyawan?.npwp || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        BPJS Kesehatan
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-slate-800">
+                                        {karyawan?.no_bpjs_kesehatan || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-400">
+                                        BPJS Ketenagakerjaan
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-slate-800">
+                                        {karyawan?.no_bpjs_ketenagakerjaan ||
+                                            "-"}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </section>
                     </div>
-                </form>
-            </Modal>
 
+                    {/* Kolom Kanan: Form Penugasan & Tabel Riwayat */}
+                    <div className="space-y-6 md:col-span-2">
+                        {/* Form Assign Titik Baru */}
+                        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-4">
+                                <h2 className="flex items-center gap-2 text-base font-semibold text-slate-800">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                                        <MapPin className="h-4 w-4 text-blue-600" />
+                                    </span>
+                                    Penugasan Lokasi (Titik)
+                                </h2>
+                                <p className="mt-1.5 text-xs text-slate-500">
+                                    Penugasan titik baru akan otomatis
+                                    menutup/mengakhiri penugasan yang masih
+                                    aktif saat ini.
+                                </p>
+                            </div>
+
+                            <form
+                                onSubmit={submitAssign}
+                                className="space-y-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-4"
+                            >
+                                <div className="w-full">
+                                    <TitikSelectorWithMap
+                                        id="titik_id"
+                                        name="titik_id"
+                                        titiks={titiks}
+                                        value={data.titik_id}
+                                        onChange={(val) =>
+                                            setData("titik_id", val)
+                                        }
+                                        error={errors.titik_id}
+                                        label="Pilih Titik Lokasi"
+                                        placeholder="-- Pilih Titik --"
+                                        required={true}
+                                        mapHeight="240px"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                    <div className="w-full sm:w-56">
+                                        <label
+                                            htmlFor="tanggal_mulai"
+                                            className="mb-1.5 block text-xs font-medium text-gray-700"
+                                        >
+                                            Tgl. Mulai Berlaku{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="tanggal_mulai"
+                                            className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            value={data.tanggal_mulai}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "tanggal_mulai",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            required
+                                        />
+                                        <InputError
+                                            message={errors.tanggal_mulai}
+                                            className="mt-1 text-xs text-red-600"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="flex h-[40px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        <Save className="h-4 w-4" />
+                                        {processing
+                                            ? "Menugaskan..."
+                                            : "Assign Titik"}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+
+                        {/* Tabel Riwayat Assignment */}
+                        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-4">
+                                <h2 className="flex items-center gap-2 text-base font-semibold text-slate-800">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                                        <Calendar className="h-4 w-4 text-blue-600" />
+                                    </span>
+                                    Riwayat Penugasan
+                                </h2>
+                            </div>
+
+                            <div className="overflow-hidden rounded-lg border border-slate-200">
+                                <table className="min-w-full divide-y divide-slate-200">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Lokasi / Titik
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Periode
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Status
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Aksi
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {karyawan?.assignments &&
+                                        karyawan.assignments.length > 0 ? (
+                                            karyawan.assignments.map(
+                                                (assignment) => {
+                                                    const isAktif =
+                                                        assignment.status ===
+                                                        "aktif";
+                                                    return (
+                                                        <tr
+                                                            key={assignment.id}
+                                                            className={
+                                                                isAktif
+                                                                    ? "bg-blue-50/40"
+                                                                    : "hover:bg-slate-50"
+                                                            }
+                                                        >
+                                                            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-800">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {isAktif && (
+                                                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                                    )}
+                                                                    {
+                                                                        assignment
+                                                                            .titik
+                                                                            ?.nama
+                                                                    }
+                                                                </div>
+                                                            </td>
+                                                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+                                                                {formatTanggal(
+                                                                    assignment.tanggal_mulai,
+                                                                )}{" "}
+                                                                -{" "}
+                                                                {assignment.tanggal_selesai
+                                                                    ? formatTanggal(
+                                                                          assignment.tanggal_selesai,
+                                                                      )
+                                                                    : "Sekarang"}
+                                                            </td>
+                                                            <td className="whitespace-nowrap px-4 py-3 text-sm">
+                                                                <span
+                                                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                                        isAktif
+                                                                            ? "bg-emerald-100 text-emerald-800"
+                                                                            : "bg-slate-100 text-slate-600"
+                                                                    }`}
+                                                                >
+                                                                    {isAktif
+                                                                        ? "Aktif"
+                                                                        : "Selesai"}
+                                                                </span>
+                                                            </td>
+                                                            <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        confirmDelete(
+                                                                            assignment.id,
+                                                                        )
+                                                                    }
+                                                                    className="rounded p-1 text-red-600"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                },
+                                            )
+                                        ) : (
+                                            <tr>
+                                                <td
+                                                    colSpan="4"
+                                                    className="px-4 py-8 text-center text-sm italic text-slate-400"
+                                                >
+                                                    Belum ada riwayat penugasan
+                                                    untuk karyawan ini.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                {/* Modal Konfirmasi Hapus */}
+                <Modal show={confirmingDeletion} onClose={closeModal}>
+                    <form onSubmit={deleteAssignment} className="p-6">
+                        <h2 className="text-lg font-semibold text-slate-800">
+                            Hapus Riwayat Penugasan?
+                        </h2>
+
+                        <p className="mt-2 text-sm text-slate-500">
+                            Apakah Anda yakin ingin menghapus data penugasan ini
+                            secara permanen?
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <SecondaryButton onClick={closeModal}>
+                                Batal
+                            </SecondaryButton>
+
+                            <DangerButton disabled={processing}>
+                                Hapus Penugasan
+                            </DangerButton>
+                        </div>
+                    </form>
+                </Modal>
+            </div>
         </AuthenticatedLayout>
     );
 }
