@@ -14,10 +14,46 @@ export default function Index({ users, roles, filters, sort, direction }) {
     const getRoleBadge = (rolesList) => {
         const roleName = rolesList?.[0]?.name || "-";
         const colors = {
-            Owner: "bg-black text-white",
-            "Admin Keuangan": "bg-purple-100 text-purple-800",
-            "Koordinator SDM": "bg-green-100 text-green-800",
+            // Portal Admin / Owner (Merah)
+            Owner: "bg-red-600 text-white",
+
+            // Portal Keuangan (Kuning / Amber)
+            "Admin Keuangan": "bg-amber-500 text-white",
+            "Ketua Divisi Keuangan": "bg-amber-500 text-white",
+
+            // Portal SDM (Ungu / Indigo / Violet)
+            "Koordinator SDM": "bg-purple-500 text-white",
+            "SDM Lapangan Kondisional": "bg-purple-500 text-white",
+
+            // Portal Armada (Biru)
+            "Ketua Divisi Armada": "bg-blue-600 text-white",
+            "Ketua Armada": "bg-blue-600 text-white",
+            "Driver Armada": "bg-blue-600 text-white",
+            "Driver Kondisional": "bg-blue-600 text-white",
+            "Driver Standby": "bg-blue-600 text-white",
+            "Koordinator Procurement": "bg-blue-600 text-white",
+            "Workshop / Teknisi Workshop": "bg-blue-600 text-white",
+
+            // Portal Produksi (Hijau)
+            "Ketua Divisi Produksi AMP": "bg-green-600 text-white",
+            "Ketua Divisi Produksi CBP": "bg-green-600 text-white",
+            "Koordinator AMP": "bg-green-600 text-white",
+            "Koordinator CBP": "bg-green-600 text-white",
+            "Koordinator GCS": "bg-green-600 text-white",
+            "Mandor Proyek": "bg-green-600 text-white",
+            "Mandor Titik": "bg-green-600 text-white",
+            "Operator Mesin": "bg-green-600 text-white",
+            "Inventory / Staff Inventory": "bg-green-600 text-white",
+
+            // Portal Kontraktor (Teal / Emerald)
+            "Ketua Divisi Kontraktor": "bg-teal-600 text-white",
+            Kontraktor: "bg-teal-600 text-white",
+
+            // lainnya
+            "Inventory" : "bg-gray-900 text-white",
+            "Workshop" : "bg-gray-900 text-white"
         };
+
         return (
             <span
                 className={`px-2 py-1 rounded-full text-xs font-semibold ${colors[roleName] || "bg-gray-100 text-gray-800"}`}
@@ -87,7 +123,7 @@ export default function Index({ users, roles, filters, sort, direction }) {
                 <>
                     <Link
                         href={route("users.edit", user.id)}
-                        className="text-blue-600 hover:text-blue-900 inline-block"
+                        className="text-amber-500 hover:text-amber-600 inline-block"
                     >
                         <Edit className="w-4 h-4" />
                     </Link>
