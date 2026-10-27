@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, ClipboardList, Save } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 export default function Create({ presensis }) {
     const [data, setData] = useState({
@@ -31,111 +32,252 @@ export default function Create({ presensis }) {
         <AuthenticatedLayout>
             <Head title="Formulir Lapangan" />
 
-            <div className="mb-6">
-                <button
-                    onClick={() => window.history.back()}
-                    className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-3"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Kembali
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">Buat Formulir Lapangan</h1>
-                <p className="mt-1 text-sm text-gray-500">Laporan aktivitas harian di titik kerja</p>
+            <div className="mx-auto max-w-5xl">
+                {/* Header Halaman */}
+                <div className="mb-6 flex items-start justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">
+                            Buat Formulir Lapangan
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Laporan aktivitas harian dan kondisi di titik kerja.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Form Container Card */}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="mb-5 border-b border-slate-100 pb-4">
+                            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100">
+                                    <ClipboardList className="h-5 w-5 text-blue-600" />
+                                </span>
+                                Laporan Aktivitas &amp; Kondisi Lapangan
+                            </h2>
+                            <p className="mt-1.5 text-sm text-slate-500">
+                                Isi presensi terkait, aktivitas pekerjaan, serta
+                                dokumentasi kendala lokasi.
+                            </p>
+                        </div>
+
+                        <div className="space-y-5">
+                            {/* Pilih Presensi */}
+                            <div>
+                                <label
+                                    htmlFor="presensi_id"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    Presensi{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="presensi_id"
+                                    value={data.presensi_id}
+                                    onChange={(e) =>
+                                        setData({
+                                            ...data,
+                                            presensi_id: e.target.value,
+                                        })
+                                    }
+                                    className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                        errors.presensi_id
+                                            ? "border-red-500 focus:ring-red-100"
+                                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                    }`}
+                                >
+                                    <option value="">
+                                        -- Pilih Presensi --
+                                    </option>
+                                    {presensis.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.karyawan?.nama} —{" "}
+                                            {formatTanggal(p.check_in)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.presensi_id && (
+                                    <p className="mt-1.5 text-xs text-red-600">
+                                        {errors.presensi_id}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Aktivitas Dilakukan */}
+                            <div>
+                                <label
+                                    htmlFor="aktivitas_dilakukan"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    Aktivitas Dilakukan{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    id="aktivitas_dilakukan"
+                                    rows="3"
+                                    value={data.aktivitas_dilakukan}
+                                    onChange={(e) =>
+                                        setData({
+                                            ...data,
+                                            aktivitas_dilakukan: e.target.value,
+                                        })
+                                    }
+                                    placeholder="Deskripsikan secara detail pekerjaan yang telah dilakukan..."
+                                    className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                        errors.aktivitas_dilakukan
+                                            ? "border-red-500 focus:ring-red-100"
+                                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                    }`}
+                                />
+                                {errors.aktivitas_dilakukan && (
+                                    <p className="mt-1.5 text-xs text-red-600">
+                                        {errors.aktivitas_dilakukan}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Grid Kondisi Area & Kendala */}
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                {/* Kondisi Area */}
+                                <div>
+                                    <label
+                                        htmlFor="kondisi_area"
+                                        className="mb-2 block text-sm font-medium text-gray-700"
+                                    >
+                                        Kondisi Area
+                                    </label>
+                                    <textarea
+                                        id="kondisi_area"
+                                        rows="3"
+                                        value={data.kondisi_area}
+                                        onChange={(e) =>
+                                            setData({
+                                                ...data,
+                                                kondisi_area: e.target.value,
+                                            })
+                                        }
+                                        placeholder="Cuaca, kebersihan, keselamatan lokasi..."
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+                                    {errors.kondisi_area && (
+                                        <p className="mt-1.5 text-xs text-red-600">
+                                            {errors.kondisi_area}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Kendala */}
+                                <div>
+                                    <label
+                                        htmlFor="kendala"
+                                        className="mb-2 block text-sm font-medium text-gray-700"
+                                    >
+                                        Kendala / Hambatan
+                                    </label>
+                                    <textarea
+                                        id="kendala"
+                                        rows="3"
+                                        value={data.kendala}
+                                        onChange={(e) =>
+                                            setData({
+                                                ...data,
+                                                kendala: e.target.value,
+                                            })
+                                        }
+                                        placeholder="Tuliskan jika terdapat kendala operasional..."
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+                                    {errors.kendala && (
+                                        <p className="mt-1.5 text-xs text-red-600">
+                                            {errors.kendala}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* URL Foto Dokumentasi */}
+                            <div>
+                                <label
+                                    htmlFor="foto"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    URL Foto Dokumentasi{" "}
+                                    <span className="text-xs font-normal text-gray-400">
+                                        (opsional)
+                                    </span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="foto"
+                                    value={data.foto}
+                                    onChange={(e) =>
+                                        setData({
+                                            ...data,
+                                            foto: e.target.value,
+                                        })
+                                    }
+                                    placeholder="https://..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                {errors.foto && (
+                                    <p className="mt-1.5 text-xs text-red-600">
+                                        {errors.foto}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Catatan Tambahan */}
+                            <div>
+                                <label
+                                    htmlFor="catatan_tambahan"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    Catatan Tambahan
+                                </label>
+                                <textarea
+                                    id="catatan_tambahan"
+                                    rows="2"
+                                    value={data.catatan_tambahan}
+                                    onChange={(e) =>
+                                        setData({
+                                            ...data,
+                                            catatan_tambahan: e.target.value,
+                                        })
+                                    }
+                                    placeholder="Catatan pendukung lainnya..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                {errors.catatan_tambahan && (
+                                    <p className="mt-1.5 text-xs text-red-600">
+                                        {errors.catatan_tambahan}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Tombol Aksi */}
+                        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                onClick={() => window.history.back()}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                Batal
+                            </button>
+
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                <Save className="h-4 w-4" />
+                                {processing ? "Menyimpan..." : "Simpan"}
+                            </button>
+                        </div>
+                    </section>
+                </form>
             </div>
-
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-w-2xl space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Presensi *</label>
-                    <select
-                        value={data.presensi_id}
-                        onChange={(e) => setData({ ...data, presensi_id: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    >
-                        <option value="">Pilih Presensi</option>
-                        {presensis.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.karyawan?.nama} — {new Date(p.check_in).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.presensi_id && <p className="text-red-600 text-sm mt-1">{errors.presensi_id}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kondisi Area</label>
-                    <textarea
-                        value={data.kondisi_area}
-                        onChange={(e) => setData({ ...data, kondisi_area: e.target.value })}
-                        rows="2"
-                        placeholder="Cuaca, kebersihan, keselamatan lokasi..."
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.kondisi_area && <p className="text-red-600 text-sm mt-1">{errors.kondisi_area}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aktivitas Dilakukan *</label>
-                    <textarea
-                        value={data.aktivitas_dilakukan}
-                        onChange={(e) => setData({ ...data, aktivitas_dilakukan: e.target.value })}
-                        rows="3"
-                        placeholder="Deskripsikan pekerjaan yang dilakukan"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.aktivitas_dilakukan && <p className="text-red-600 text-sm mt-1">{errors.aktivitas_dilakukan}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kendala</label>
-                    <textarea
-                        value={data.kendala}
-                        onChange={(e) => setData({ ...data, kendala: e.target.value })}
-                        rows="2"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.kendala && <p className="text-red-600 text-sm mt-1">{errors.kendala}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL Foto (opsional)</label>
-                    <input
-                        type="text"
-                        value={data.foto}
-                        onChange={(e) => setData({ ...data, foto: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.foto && <p className="text-red-600 text-sm mt-1">{errors.foto}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan</label>
-                    <textarea
-                        value={data.catatan_tambahan}
-                        onChange={(e) => setData({ ...data, catatan_tambahan: e.target.value })}
-                        rows="2"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-gray-900 focus:border-gray-900"
-                    />
-                    {errors.catatan_tambahan && <p className="text-red-600 text-sm mt-1">{errors.catatan_tambahan}</p>}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button
-                        type="button"
-                        onClick={() => window.history.back()}
-                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white rounded-md disabled:opacity-50"
-                    >
-                        <Save className="w-4 h-4" />
-                        {processing ? "Menyimpan..." : "Kirim Formulir"}
-                    </button>
-                </div>
-            </form>
         </AuthenticatedLayout>
     );
 }

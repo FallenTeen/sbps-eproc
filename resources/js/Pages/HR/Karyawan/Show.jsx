@@ -72,7 +72,7 @@ export default function Show({ karyawan, titiks }) {
         <AuthenticatedLayout>
             <Head title={`Detail Karyawan - ${karyawan?.nama ?? ""}`} />
 
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="mx-auto space-y-6">
                 {/* Header Action Card */}
                 <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">

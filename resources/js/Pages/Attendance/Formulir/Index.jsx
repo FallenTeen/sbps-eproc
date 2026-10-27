@@ -3,6 +3,7 @@ import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Eye } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 export default function Index({ formulirs, filters, sort, direction }) {
     const columns = [
@@ -10,7 +11,8 @@ export default function Index({ formulirs, filters, sort, direction }) {
             key: "karyawan",
             label: "Karyawan",
             type: "text",
-            cellClassName: "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
+            cellClassName:
+                "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
             render: (f) => f.presensi?.karyawan?.nama || "-",
         },
         {
@@ -18,9 +20,7 @@ export default function Index({ formulirs, filters, sort, direction }) {
             label: "Tanggal",
             type: "dateRange",
             render: (f) =>
-                f.presensi?.check_in
-                    ? new Date(f.presensi.check_in).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })
-                    : "-",
+                f.presensi?.check_in ? formatTanggal(f.presensi.check_in) : "-",
         },
         {
             key: "aktivitas",
@@ -51,7 +51,10 @@ export default function Index({ formulirs, filters, sort, direction }) {
             align: "right",
             cellClassName: "px-4 py-3 whitespace-nowrap text-right text-sm",
             render: (f) => (
-                <Link href={route("attendance.formulir.show", f.id)} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900">
+                <Link
+                    href={route("attendance.formulir.show", f.id)}
+                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900"
+                >
                     <Eye className="w-4 h-4" />
                     Detail
                 </Link>
@@ -65,12 +68,16 @@ export default function Index({ formulirs, filters, sort, direction }) {
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Formulir Lapangan</h1>
-                    <p className="mt-1 text-sm text-gray-500">Laporan kondisi area dan aktivitas pekerjaan lapangan</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Formulir Lapangan
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Laporan kondisi area dan aktivitas pekerjaan lapangan
+                    </p>
                 </div>
                 <Link
                     href={route("attendance.formulir.create")}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Buat Formulir
