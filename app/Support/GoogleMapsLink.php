@@ -86,7 +86,7 @@ class GoogleMapsLink
     private static function coordinatesFromText(string $text): ?array
     {
         $patterns = [
-            // @lat,lng[,zoom] — format utama Google Maps (place/dir/search).
+            // @lat,lng[,zoom] - format utama Google Maps (place/dir/search).
             '/@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/',
             // query=lat,lng  (koma mentalah atau %2C)
             '/[?&]query=(-?\d{1,3}(?:\.\d+)?)(?:%2C|,)(-?\d{1,3}(?:\.\d+)?)/i',

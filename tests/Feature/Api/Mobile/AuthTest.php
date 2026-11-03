@@ -146,7 +146,7 @@ test('logout-all-devices mencabut semua token mobile tapi menyimpan token web', 
         ->assertJsonPath('status', 'success')
         ->assertJsonPath('data.revoked', 2);
 
-    // Semua token mobile habis — termasuk yang dipakai request ini.
+    // Semua token mobile habis - termasuk yang dipakai request ini.
     expect($user->tokens()->where('name', 'like', 'mobile%')->count())->toBe(0);
 
     // Token web tetap ada dan masih valid untuk endpoint web.

@@ -34,7 +34,7 @@ use Spatie\Activitylog\Models\Activity;
  * BERLAKUKAN SEOBJECT-LEVEL SCOPING: semua data proyek/titik dibatasi ke
  * proyek yang boleh diakses user (lihat Proyek::scopeVisibleFor). Tanpa ini,
  * user eksternal Kontraktor menerima peta & daftar proyek seluruh perusahaan
- * (termasuk nama client/lokasi milik unit lain) — kebocoran data lintas-klien.
+ * (termasuk nama client/lokasi milik unit lain) - kebocoran data lintas-klien.
  *
  * Semua angka dihitung on-the-fly (tidak ada agregat statis tersimpan).
  */
@@ -48,7 +48,7 @@ class OwnerDashboardAggregatorService
         $visibleProyekIds = Proyek::visibleForUserIds($user);
 
         // Titik milik proyek yang terlihat (untuk scoping tabel yang hanya
-        // mencantumkan titik_id — ProductionSession, Pengiriman, QCSample).
+        // mencantumkan titik_id - ProductionSession, Pengiriman, QCSample).
         $visibleTitikIds = $visibleProyekIds === null
             ? null
             : Titik::whereIn('proyek_id', $visibleProyekIds)->pluck('id')->all();
@@ -59,7 +59,7 @@ class OwnerDashboardAggregatorService
                 : $query->whereIn('proyek_id', $visibleProyekIds);
         };
 
-        // 1. Peta Aktif (Titik dengan SDM & Armada aktif) — DISCALING ke user
+        // 1. Peta Aktif (Titik dengan SDM & Armada aktif) - DISCALING ke user
         $titikAktif = $scope(Titik::query())
             ->where('status', 'aktif')
             ->with(['proyek:id,nama,kode_proyek,client,lokasi,status,tipe_proyek,tanggal_mulai,tanggal_selesai_rencana', 'armadas', 'karyawanAssignments'])
@@ -86,7 +86,7 @@ class OwnerDashboardAggregatorService
                 ];
             });
 
-        // 1b. Daftar Proyek untuk Filter & Monitoring — DISCALING ke user
+        // 1b. Daftar Proyek untuk Filter & Monitoring - DISCALING ke user
         $proyekQuery = Proyek::withCount('titik')->orderBy('nama');
         if ($visibleProyekIds !== null) {
             $proyekQuery->whereIn('id', $visibleProyekIds);
@@ -107,7 +107,7 @@ class OwnerDashboardAggregatorService
 
         // 2. (summary_today dibangun oleh buildSummary() di bawah)
 
-        // 3. RAB vs Realisasi Semua Proyek Aktif (Ringkas) — DISCALING ke user
+        // 3. RAB vs Realisasi Semua Proyek Aktif (Ringkas) - DISCALING ke user
         $proyekAktif = Proyek::where('status', 'aktif')->with('rab');
         if ($visibleProyekIds !== null) {
             $proyekAktif->whereIn('id', $visibleProyekIds);
@@ -155,7 +155,7 @@ class OwnerDashboardAggregatorService
     }
 
     /**
-     * Ringkasan hari ini per modul — dihitung on-the-fly dan hanya untuk
+     * Ringkasan hari ini per modul - dihitung on-the-fly dan hanya untuk
      * modul yang berhak dilihat user (mencegah info leak + kartu menuju 403).
      */
     protected function buildSummary(
@@ -410,7 +410,7 @@ class OwnerDashboardAggregatorService
             })
             ->all();
 
-        // Servis jatuh tempo — heuristik sama dgn NotificationController (90 hari).
+        // Servis jatuh tempo - heuristik sama dgn NotificationController (90 hari).
         $servisDue = Armada::query()
             ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
             ->where('status', 'aktif')

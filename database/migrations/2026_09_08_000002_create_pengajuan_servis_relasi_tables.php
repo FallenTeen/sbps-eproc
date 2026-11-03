@@ -5,11 +5,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Bagian 21.8 — tabel relasi servis armada.
+ * Bagian 21.8 - tabel relasi servis armada.
  *
- * 1. `pengajuan_servis_personels` — pivot personel Workshop yang mengerjakan
+ * 1. `pengajuan_servis_personels` - pivot personel Workshop yang mengerjakan
  *    (bagian 3, bisa multi).
- * 2. `pengajuan_servis_spareparts` — item sparepart ringan yang dibelanjakan
+ * 2. `pengajuan_servis_spareparts` - item sparepart ringan yang dibelanjakan
  *    Inventory (bagian 4); bukan relasi ke purchase_order (keputusan: tabel
  *    ringan terpisah, lihat 21.8).
  */

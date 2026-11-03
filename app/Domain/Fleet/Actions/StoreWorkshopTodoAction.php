@@ -6,7 +6,7 @@ use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Models\User;
 
 /**
- * Bagian 21.9 — buat/ubah to-do servis rutin Workshop.
+ * Bagian 21.9 - buat/ubah to-do servis rutin Workshop.
  * `created_by` dipertahankan saat update (milik pembuat pertama).
  */
 class StoreWorkshopTodoAction

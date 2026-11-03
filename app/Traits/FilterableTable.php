@@ -139,7 +139,7 @@ trait FilterableTable
 
     private function applyTableSort(Builder $query, string $sort, string $direction, array $config): void
     {
-        // Sorting kolom relasi belum didukung (butuh join) — cukup filter saja.
+        // Sorting kolom relasi belum didukung (butuh join) - cukup filter saja.
         if (! empty($config['relation'])) {
             return;
         }

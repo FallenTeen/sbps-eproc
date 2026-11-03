@@ -104,7 +104,7 @@ class AuthController extends Controller
      * POST /api/mobile/logout-all-devices
      *
      * Mencabut SEMUA token mobile milik user (termasuk token yang dipakai
-     * saat ini) — untuk kasus HP hilang/dicuri. Token web tidak terpengaruh.
+     * saat ini) - untuk kasus HP hilang/dicuri. Token web tidak terpengaruh.
      */
     public function logoutAllDevices(Request $request)
     {

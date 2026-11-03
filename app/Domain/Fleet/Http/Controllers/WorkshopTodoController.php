@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 /**
- * Bagian 21.9 — to-do servis rutin Workshop (terjadwal).
+ * Bagian 21.9 - to-do servis rutin Workshop (terjadwal).
  */
 class WorkshopTodoController extends Controller
 {

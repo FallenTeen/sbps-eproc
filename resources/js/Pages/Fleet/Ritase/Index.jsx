@@ -54,7 +54,7 @@ export default function RitaseIndex({ ritase, filters = {}, armadaList = [], sta
                 <>
                     <p className="text-sm font-semibold text-slate-800">{r.armada?.kode_unit}</p>
                     <p className="text-xs text-slate-500">
-                        {r.armada?.plat_nomor} · {r.driver?.nama ?? "–"}
+                        {r.armada?.plat_nomor} · {r.driver?.nama ?? "-"}
                     </p>
                 </>
             ),
@@ -64,7 +64,7 @@ export default function RitaseIndex({ ritase, filters = {}, armadaList = [], sta
             label: "Driver",
             type: "text",
             cellClassName: "px-4 py-3 text-sm text-slate-700",
-            render: (r) => r.driver?.nama || "–",
+            render: (r) => r.driver?.nama || "-",
         },
         {
             key: "rute",
@@ -77,7 +77,7 @@ export default function RitaseIndex({ ritase, filters = {}, armadaList = [], sta
                     <span>
                         {r.rute_tarif
                             ? `${r.rute_tarif.lokasi_asal} → ${r.rute_tarif.lokasi_tujuan}`
-                            : r.titik?.nama ?? "–"}
+                            : r.titik?.nama ?? "-"}
                     </span>
                 </div>
             ),

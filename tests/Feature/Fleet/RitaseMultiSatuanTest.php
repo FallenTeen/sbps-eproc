@@ -41,7 +41,7 @@ beforeEach(function () {
 });
 
 // =========================================================
-// Fase A3 — ritase multi-satuan & normalisasi total_upah_rit
+// Fase A3 - ritase multi-satuan & normalisasi total_upah_rit
 // =========================================================
 
 describe('Fase A3 - Normalisasi total_upah_rit', function () {

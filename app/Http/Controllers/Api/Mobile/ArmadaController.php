@@ -1080,7 +1080,7 @@ class ArmadaController extends Controller
 
     /**
      * Simpan foto dari upload file (multipart). Path string TIDAK lagi
-     * diterima — semua foto armada wajib berupa upload file (Bagian 4).
+     * diterima - semua foto armada wajib berupa upload file (Bagian 4).
      */
     private function storeFoto($file, string $prefix = 'foto/checklist'): ?string
     {

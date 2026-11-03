@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Seeder SESI UJI COBA MODUL FLEET oleh USER ASLI (staging).
  *
- * Menyiapkan basis data yang IDENTIK dengan StagingSeeder — data master asli
+ * Menyiapkan basis data yang IDENTIK dengan StagingSeeder - data master asli
  * (unit bisnis, user esensial, armada + driver asli dari FleetDataSeeder,
  * proyek & titik termasuk Kantor Pusat) plus data dummy untuk role NON-fleet
- * (finance, HR, procurement, produksi, presensi, tracking) — TETAPI seluruh
+ * (finance, HR, procurement, produksi, presensi, tracking) - TETAPI seluruh
  * data transaksional FLEET dikosongkan agar pengemudi asli memulai dari nol:
  *
  *   - Checklist awal/akhir armada, pengisian solar, ODO awal proyek.
@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\DB;
  *     sesi uji coba presensi user asli besok dimulai dari nol.
  *
  * Master yang DIPERTAHANKAN: tabel `armadas` (asli), `armada_drivers`,
- * `armada_penanggung_jawabs`, `rute_tarifs` — agar driver asli mengenali unit
+ * `armada_penanggung_jawabs`, `rute_tarifs` - agar driver asli mengenali unit
  * yang diampu dan bisa langsung mencatat ritase.
  *
  * Jalankan eksplisit (tidak mengubah jalur default StagingSeeder):
@@ -139,7 +139,7 @@ class StagingTest1Seeder extends Seeder
      *
      * `formulir_lapangans` dihapus lebih dulu (anak), lalu `presensis`.
      * `mobile_tracking_locations.presensi_id` (FK `on delete set null`) ikut
-     * menjadi NULL otomatis — titik tracking itu sendiri tidak dihapus.
+     * menjadi NULL otomatis - titik tracking itu sendiri tidak dihapus.
      */
     private function purgeAttendance(): void
     {

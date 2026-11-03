@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Buat / perbarui satu baris RAB per (proyek, titik, kategori).
  *
- * Realiasi dihitung on-the-fly oleh GetRABRealisasiAction — action ini tidak
+ * Realiasi dihitung on-the-fly oleh GetRABRealisasiAction - action ini tidak
  * pernah merekam nilai realisasi (prinsip anti-agregat statis, manual book §1.3).
  */
 class SetRABAction

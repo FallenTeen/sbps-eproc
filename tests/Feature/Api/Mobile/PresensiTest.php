@@ -75,7 +75,7 @@ test('check-in di luar radius tetap tercatat status luar_radius dengan catatan o
 
     $presensi = Presensi::where('karyawan_id', $this->karyawan->id)->latest('check_in')->first();
     expect($presensi->catatan_override)
-        ->toStartWith('Di luar area kerja — jarak ')
+        ->toStartWith('Di luar area kerja - jarak ')
         ->toEndWith(' m');
 });
 

@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Bagian 21.9 #2 — Inventory mencatat pengadaan sparepart yang lahir dari
+ * Bagian 21.9 #2 - Inventory mencatat pengadaan sparepart yang lahir dari
  * to-do servis rutin (`workshop_todo_id`). Pengadaan dari pengajuan insidental
  * tetap lewat `RecordPengadaanSparepartAction` (21.8, bagian 4).
  */

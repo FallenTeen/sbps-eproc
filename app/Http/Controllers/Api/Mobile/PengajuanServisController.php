@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * v6 (21.8) — Sistem Servis Armada (mobile).
+ * v6 (21.8) - Sistem Servis Armada (mobile).
  *
  * Bagian 1 (ajuan) bisa diajukan dari mobile oleh PIC/operator/driver melalui
  * armada yang sedang diampu. Status, riwayat, dan approval (Ketua Divisi / Admin)
@@ -182,7 +182,7 @@ class PengajuanServisController extends Controller
             ->where('terkait_pengajuan_servis_id', $pengajuan->id)
             ->firstOrFail();
 
-        // Retry outbox memakai foto yang sama dengan idempotency key yang sama —
+        // Retry outbox memakai foto yang sama dengan idempotency key yang sama -
         // file lama dibuang dulu supaya tiap retry TIDAK menimbun file yatim
         // di storage (baris DB tetap tunggal: foto_bukti last-write-wins).
         $previous = $todo->foto_bukti;
@@ -200,7 +200,7 @@ class PengajuanServisController extends Controller
 
     /**
      * POST /api/mobile/servis-armada/{id}/approve
-     * Bagian 21.8 #2 — ACC ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
+     * Bagian 21.8 #2 - ACC ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
      */
     public function approve(Request $request, $id)
     {
@@ -225,7 +225,7 @@ class PengajuanServisController extends Controller
 
     /**
      * POST /api/mobile/servis-armada/{id}/tolak
-     * Bagian 21.8 #2 — Tolak ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
+     * Bagian 21.8 #2 - Tolak ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
      */
     public function tolak(Request $request, $id)
     {
@@ -250,7 +250,7 @@ class PengajuanServisController extends Controller
 
     /**
      * POST /api/mobile/servis-armada/{id}/mulai
-     * Bagian 21.8 #3 — Workshop mulai mengerjakan servis (menunggu -> dikerjakan).
+     * Bagian 21.8 #3 - Workshop mulai mengerjakan servis (menunggu -> dikerjakan).
      */
     public function mulai(Request $request, $id)
     {
@@ -275,7 +275,7 @@ class PengajuanServisController extends Controller
 
     /**
      * POST /api/mobile/servis-armada/{id}/selesai
-     * Bagian 21.8 #4+ — Tandai servis selesai (dikerjakan/menunggu_sparepart -> selesai).
+     * Bagian 21.8 #4+ - Tandai servis selesai (dikerjakan/menunggu_sparepart -> selesai).
      */
     public function selesai(Request $request, $id)
     {
@@ -296,8 +296,8 @@ class PengajuanServisController extends Controller
 
     /**
      * POST /api/mobile/workshop/job/{id}/request-sparepart
-     * Bagian 21.8 #4 — Workshop mengajukan permintaan sparepart ke Inventory.
-     * Item dikirim sebagai `nama_barang` (mobile) — dipetakan ke `nama_item`.
+     * Bagian 21.8 #4 - Workshop mengajukan permintaan sparepart ke Inventory.
+     * Item dikirim sebagai `nama_barang` (mobile) - dipetakan ke `nama_item`.
      */
     public function requestSparepart(Request $request, $id)
     {

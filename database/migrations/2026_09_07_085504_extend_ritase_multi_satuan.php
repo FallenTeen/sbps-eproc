@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * v6 (Bagian 21.4) — ritase multi-satuan (Tonase/Ritase/m³/Harian).
+     * v6 (Bagian 21.4) - ritase multi-satuan (Tonase/Ritase/m³/Harian).
      * `total_upah_rit` diubah dari stored-generated column menjadi kolom biasa,
      * supaya bisa diisi/dinormalisasi dari `nominal` untuk satuan non-ritase.
      */

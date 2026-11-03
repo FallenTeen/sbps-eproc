@@ -60,11 +60,11 @@ export default function Show({ pengajuan, can }) {
         cls: "bg-gray-100 text-gray-600",
     };
 
-    // Bagian 2 — approval
+    // Bagian 2 - approval
     const [approve, setApprove] = useState({ catatan_acc: "" });
     const [errors, setErrors] = useState({});
 
-    // Bagian 3 — workshop pengerjaan
+    // Bagian 3 - workshop pengerjaan
     const [work, setWork] = useState({
         tanggal_mulai_kerja: new Date().toISOString().slice(0, 10),
         tanggal_selesai_kerja: "",
@@ -73,12 +73,12 @@ export default function Show({ pengajuan, can }) {
         personels: [{ nama_personel: "", peran: "" }],
     });
 
-    // Bagian 3 — request sparepart
+    // Bagian 3 - request sparepart
     const [items, setItems] = useState([
         { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
     ]);
 
-    // Bagian 4 — record pengadaan sparepart (Inventory)
+    // Bagian 4 - record pengadaan sparepart (Inventory)
     const [records, setRecords] = useState(
         (pengajuan.spareparts || []).map((s) => ({
             id: s.id,
@@ -196,7 +196,7 @@ export default function Show({ pengajuan, can }) {
 
                 {/* Main Content Sections */}
                 <div className="grid grid-cols-1 gap-6">
-                    {/* Bagian 1 — Ajuan */}
+                    {/* Bagian 1 - Ajuan */}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                         <SectionTitle
                             number={1}
@@ -224,7 +224,7 @@ export default function Show({ pengajuan, can }) {
                         </dl>
                     </div>
 
-                    {/* Bagian 2 — Approval */}
+                    {/* Bagian 2 - Approval */}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                         <SectionTitle
                             number={2}
@@ -294,7 +294,7 @@ export default function Show({ pengajuan, can }) {
                         )}
                     </div>
 
-                    {/* Bagian 3 — Pengerjaan */}
+                    {/* Bagian 3 - Pengerjaan */}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                         <SectionTitle
                             number={3}
@@ -512,7 +512,7 @@ export default function Show({ pengajuan, can }) {
                         )}
                     </div>
 
-                    {/* Bagian 4 — Sparepart & Complete */}
+                    {/* Bagian 4 - Sparepart & Complete */}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                         <SectionTitle
                             number={4}

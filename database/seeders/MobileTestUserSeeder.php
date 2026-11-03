@@ -241,7 +241,7 @@ class MobileTestUserSeeder extends Seeder
                 'rate_harian' => 0,
                 'tugas' => false,
             ],
-            // ─── Role Divisi Produksi (CBP/AMP) — terpisah dari tim Armada ───
+            // ─── Role Divisi Produksi (CBP/AMP) - terpisah dari tim Armada ───
             [
                 'email' => 'test.koordinator.cbp@dummy.com',
                 'name' => 'Test Koordinator CBP',

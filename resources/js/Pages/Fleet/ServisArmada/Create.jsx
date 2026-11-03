@@ -36,7 +36,7 @@ export default function Create({ armadas }) {
                                 Ajukan Servis Armada
                             </h1>
                             <p className="mt-1 text-sm text-slate-500">
-                                Bagian 1 — Ajuan (PIC/operator/driver)
+                                Bagian 1 - Ajuan (PIC/operator/driver)
                             </p>
                         </div>
                     </div>

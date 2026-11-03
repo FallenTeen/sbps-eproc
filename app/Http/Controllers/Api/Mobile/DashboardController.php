@@ -241,7 +241,7 @@ class DashboardController extends Controller
 
     /**
      * GET /api/mobile/dashboard/armada-monitoring
-     * Metrik utilisasi & kondisi seluruh armada (Bagian 21.11) —
+     * Metrik utilisasi & kondisi seluruh armada (Bagian 21.11) -
      * ringkasan KPI, rekap durasi per tanggal, dan baris per unit.
      */
     public function armadaMonitoring(Request $request, CalculateArmadaUtilizationAction $action)

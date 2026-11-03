@@ -72,7 +72,7 @@ export default function Create({ checkableType, checkableId, checkable, karyawan
                             <select value={data.dicatat_oleh_karyawan_id} onChange={(e) => setData('dicatat_oleh_karyawan_id', e.target.value)} className={inputCls}>
                                 <option value="">Pilih Petugas</option>
                                 {karyawans.map((k) => (
-                                    <option key={k.id} value={k.id}>{k.nama}{k.jabatan ? ` — ${k.jabatan}` : ''}</option>
+                                    <option key={k.id} value={k.id}>{k.nama}{k.jabatan ? ` - ${k.jabatan}` : ''}</option>
                                 ))}
                             </select>
                             {errors.dicatat_oleh_karyawan_id && <p className="text-red-600 text-sm mt-1">{errors.dicatat_oleh_karyawan_id}</p>}

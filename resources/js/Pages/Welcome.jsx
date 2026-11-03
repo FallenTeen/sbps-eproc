@@ -424,7 +424,7 @@ export default function Welcome({
                                 <article key={b.kode} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center py-16 lg:py-20 border-t border-[var(--line)]">
                                     <div className={`${b.flip ? "lg:order-2" : ""}`}>
                                         <div className="flex items-baseline gap-4">
-                                            <span className="font-head font-bold text-xl text-[var(--accent)]">{b.nomor} —</span>
+                                            <span className="font-head font-bold text-xl text-[var(--accent)]">{b.nomor} -</span>
                                             <span className="font-head font-extrabold text-5xl sm:text-6xl tracking-tight">{b.kode}</span>
                                         </div>
                                         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
@@ -452,7 +452,7 @@ export default function Welcome({
                                             />
                                         </div>
                                         <figcaption className="mt-3 flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
-                                            <span>{b.kode} — {b.jenis}</span>
+                                            <span>{b.kode} - {b.jenis}</span>
                                             <span className="h-px flex-1 bg-[var(--line)] max-w-[4rem]" aria-hidden="true" />
                                             <span>{b.nomor}</span>
                                         </figcaption>

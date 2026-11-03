@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Fase B (Bagian 21.3, sub-fitur #2) — ODO awal proyek.
+     * Fase B (Bagian 21.3, sub-fitur #2) - ODO awal proyek.
      * Diinput SEKALI saat armada pertama kali beroperasi di suatu proyek;
      * dipakai sebagai baseline jarak kantor pusat <-> proyek.
      * Guard: 1 baris per (armada_id, proyek_id).

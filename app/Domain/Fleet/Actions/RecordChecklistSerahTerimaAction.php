@@ -7,11 +7,11 @@ use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Models\User;
 
 /**
- * Bagian 21.10 — catat checklist serah terima (major) sewa alat,
+ * Bagian 21.10 - catat checklist serah terima (major) sewa alat,
  * dipanggil 2x per transaksi: `berangkat` & `kembali`.
  *
  * `data_penyewa` adalah snapshot dari `sewa_alat_jams` (PT, alamat,
- * penanggung_jawab, no_hp) — tidak diinput ulang (spec 21.10).
+ * penanggung_jawab, no_hp) - tidak diinput ulang (spec 21.10).
  * Idempoten per (sewa, tipe): record ulang menggantikan baris lama.
  */
 class RecordChecklistSerahTerimaAction

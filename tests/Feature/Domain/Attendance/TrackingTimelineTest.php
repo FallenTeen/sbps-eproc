@@ -39,7 +39,7 @@ beforeEach(function () {
         'status_validasi' => 'valid',
     ]);
 
-    // 8:05 & 8:20 berada di bucket 30-menit yang sama (8:00–8:30) → hanya
+    // 8:05 & 8:20 berada di bucket 30-menit yang sama (8:00-8:30) → hanya
     // titik pertama yang diambil. 9:10 bucket terpisah.
     foreach ([
         [now()->startOfDay()->addHours(8)->addMinutes(5), -7.101, 110.201],

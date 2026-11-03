@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 /**
- * Bagian 21.9 — dashboard Workshop: ajuan sparepart (rutin + insidental),
+ * Bagian 21.9 - dashboard Workshop: ajuan sparepart (rutin + insidental),
  * riwayat servis gabungan, monitoring kondisi alat produksi.
  */
 class WorkshopController extends Controller

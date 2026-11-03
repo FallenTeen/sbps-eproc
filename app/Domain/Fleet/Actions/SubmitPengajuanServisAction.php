@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 
 /**
- * Bagian 21.8 #1 — Ajuan servis oleh PIC/operator/driver (mobile & web).
+ * Bagian 21.8 #1 - Ajuan servis oleh PIC/operator/driver (mobile & web).
  * Beri nomor otomatis dan default status `diajukan`.
  */
 class SubmitPengajuanServisAction

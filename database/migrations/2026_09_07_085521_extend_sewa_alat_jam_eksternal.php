@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * v6 (Bagian 21.5) — sewa alat berat eksternal (non-proyek).
+     * v6 (Bagian 21.5) - sewa alat berat eksternal (non-proyek).
      * `tipe_sewa` = internal | eksternal. Data penyewa eksternal wajib kalau eksternal.
      */
     public function up(): void

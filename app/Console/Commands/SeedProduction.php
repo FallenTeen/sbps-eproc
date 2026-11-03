@@ -90,7 +90,7 @@ class SeedProduction extends Command
     {
         // Production hanya butuh 2 user: Owner (guard admin web/mobile) dan
         // Koordinator Procurement (untuk setup PO/supplier). User operasional
-        // & demo TIDAK dibuat di production — gunakan app:seed-mobile-demo
+        // & demo TIDAK dibuat di production - gunakan app:seed-mobile-demo
         // atau DatabaseSeeder bila env staging/development.
         $users = [
             [

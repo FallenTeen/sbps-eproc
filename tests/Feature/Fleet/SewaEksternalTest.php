@@ -24,7 +24,7 @@ beforeEach(function () {
 });
 
 // =========================================================
-// Fase A4 — sewa alat jam: internal & eksternal
+// Fase A4 - sewa alat jam: internal & eksternal
 // =========================================================
 
 describe('Fase A4 - Sewa Internal', function () {

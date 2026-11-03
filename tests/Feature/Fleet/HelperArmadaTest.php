@@ -45,7 +45,7 @@ beforeEach(function () {
     $this->nonPicKaryawan = Karyawan::factory()->create(['user_id' => $this->nonPic->id]);
 
     // Manager (Ketua Armada / HR): pemegang manage helper armada.
-    // TIDAK punya manage fleet — sengaja, seperti Koordinator SDM.
+    // TIDAK punya manage fleet - sengaja, seperti Koordinator SDM.
     $this->manager = User::factory()->create(['is_active' => true]);
     $this->manager->givePermissionTo('manage helper armada');
     $this->managerKaryawan = Karyawan::factory()->create(['user_id' => $this->manager->id]);

@@ -28,7 +28,7 @@ function monitoringFleetUser(): User
 }
 
 /**
- * Pastikan role pengelola armada ada. Idempotent — melindungi test dari
+ * Pastikan role pengelola armada ada. Idempotent - melindungi test dari
  * ketergantungan state seeding antar-file (RefreshDatabase hanya migrate+seed
  * pada file pertama yang dijalankan).
  */

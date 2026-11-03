@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Bagian 21.8 — Sistem Servis Armada (Form Multi-Bagian).
+ * Bagian 21.8 - Sistem Servis Armada (Form Multi-Bagian).
  *
  * Satu model `pengajuan_servis_armada` menampung 4 kelompok kolom (bukan 4
  * tabel terpisah), supaya "1 form" berlaku secara data juga. Status adalah
@@ -19,29 +19,29 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('kode_pengajuan')->nullable()->index();
 
-            // Bagian 1 — Ajuan (PIC/operator/driver via mobile)
+            // Bagian 1 - Ajuan (PIC/operator/driver via mobile)
             $table->date('tanggal_ajuan');
             $table->uuid('armada_id');
             $table->uuid('diajukan_oleh');          // user PIC/operator/driver
             $table->string('foto_armada')->nullable();
             $table->text('catatan_ajuan')->nullable();
 
-            // Bagian 2 — Approval (Ketua Divisi Armada)
+            // Bagian 2 - Approval (Ketua Divisi Armada)
             $table->text('catatan_acc')->nullable();
             $table->string('status')->default('diajukan');
             $table->uuid('disetujui_oleh')->nullable();
             $table->date('tanggal_acc')->nullable();
 
-            // Bagian 3 — Pengerjaan (Workshop)
+            // Bagian 3 - Pengerjaan (Workshop)
             $table->date('tanggal_mulai_kerja')->nullable();
             $table->date('tanggal_selesai_kerja')->nullable();
             $table->text('catatan_pengerjaan')->nullable();
             $table->boolean('butuh_sparepart')->default(false);
 
-            // Bagian 4 — Status pengadaan sparepart (Inventory)
+            // Bagian 4 - Status pengadaan sparepart (Inventory)
             $table->string('status_pengadaan_sparepart')->nullable();
 
-            // Selesai — snapshot untuk service_history
+            // Selesai - snapshot untuk service_history
             $table->decimal('total_biaya', 15, 2)->default(0);
             $table->date('tanggal_selesai')->nullable();
 

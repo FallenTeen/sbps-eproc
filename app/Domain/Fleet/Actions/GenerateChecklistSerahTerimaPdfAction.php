@@ -8,7 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Bagian 21.10 — cetak dokumen checklist serah terima (PDF, dompdf —
+ * Bagian 21.10 - cetak dokumen checklist serah terima (PDF, dompdf -
  * sudah di stack Bagian 20.1, sama seperti invoice/slip gaji, bukan library
  * baru). Berisi kondisi `berangkat` & `kembali` berdampingan + pemakaian HM.
  */

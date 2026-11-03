@@ -85,7 +85,7 @@ export default function PenanggungJawab({
                 </Link>
                 <h1 className="text-2xl font-bold">Penanggung Jawab Armada</h1>
                 <p className="text-gray-600">
-                    {armada.kode_unit} — {armada.plat_nomor || "-"}
+                    {armada.kode_unit} - {armada.plat_nomor || "-"}
                 </p>
             </div>
 
@@ -231,7 +231,7 @@ export default function PenanggungJawab({
                                 }
                                 className={inputClass}
                             >
-                                <option value="">— Pakai cadangan aktif —</option>
+                                <option value="">- Pakai cadangan aktif -</option>
                                 {options.karyawans.map((k) => (
                                     <option key={k.id} value={k.id}>
                                         {k.nama}

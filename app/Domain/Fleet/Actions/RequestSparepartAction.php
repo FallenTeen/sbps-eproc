@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Bagian 21.8 #3→#4 & 21.9 #2 — Workshop ajukan sparepart ke Inventory.
+ * Bagian 21.8 #3→#4 & 21.9 #2 - Workshop ajukan sparepart ke Inventory.
  * Satu action, dua sumber pemicu (jangan duplikasi logic):
  *  - pengajuan servis insidental (21.8) → menandai pengajuan, status `menunggu_sparepart`
  *  - workshop todo rutin (21.9) → item sparepart dicatat lewat `workshop_todo_id`

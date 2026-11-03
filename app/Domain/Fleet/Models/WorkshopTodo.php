@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Bagian 21.9 — to-do servis rutin Workshop (terjadwal),
+ * Bagian 21.9 - to-do servis rutin Workshop (terjadwal),
  * terpisah dari ajuan insidental 21.8 tapi bisa saling terhubung
  * lewat `terkait_pengajuan_servis_id`.
  */

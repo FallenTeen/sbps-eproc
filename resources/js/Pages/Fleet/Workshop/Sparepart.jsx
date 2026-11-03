@@ -86,7 +86,7 @@ export default function Sparepart({ items, filters, canRecord }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Workshop — Ajuan Sparepart" />
+            <Head title="Workshop - Ajuan Sparepart" />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">

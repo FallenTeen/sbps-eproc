@@ -169,7 +169,7 @@ class TrackingController extends Controller
      * GET /api/mobile/tracking/active-users
      * Karyawan yang masih ber-presensi aktif HARI INI (check-in, belum
      * check-out) beserta status GPS terkini. Setiap field adalah data ABSAH
-     * server — tidak ada fabrikasi realtime:
+     * server - tidak ada fabrikasi realtime:
      *
      * - `titik`        : titik kerja dari presensi aktif mereka;
      * - `aktif_sejak`  : waktu check-in yang masih aktif (ISO);
@@ -178,12 +178,12 @@ class TrackingController extends Controller
      * - `last_lat`     : latitude GPS TERAKHIR hari ini (null bila tanpa GPS);
      * - `last_lng`     : longitude GPS TERAKHIR hari ini (null bila tanpa GPS);
      * - `google_maps_url` : URL universal Google Maps dari koordinat GPS terakhir
-     *                    (null bila tanpa GPS) — dipakai aksi "Buka di Google
+     *                    (null bila tanpa GPS) - dipakai aksi "Buka di Google
      *                    Maps" / "Bagikan Lokasi", format sama di mobile & web;
      * - `point_count`  : jumlah titik GPS hari ini.
      *
      * Freshness / stale-state dihitung klien dari `last_seen`. Daftar ini
-     * BUKAN janji realtime — app wajib menyebut keterlambatannya bila lama.
+     * BUKAN janji realtime - app wajib menyebut keterlambatannya bila lama.
      * Khusus role Owner / Admin.
      */
     public function activeUsers(Request $request)

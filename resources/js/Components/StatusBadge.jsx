@@ -7,11 +7,11 @@ const STATUS_META = {
 };
 
 /**
- * Badge status validasi presensi — dipakai di Index, RekapDetail, dan Show
+ * Badge status validasi presensi - dipakai di Index, RekapDetail, dan Show
  * supaya warna & label selalu konsisten di satu tempat (sebelumnya fungsi
  * `getStatusBadge` diduplikasi identik di 3 file berbeda).
  *
- * `status` boleh null/undefined (mis. presensi yang belum direview) — tetap
+ * `status` boleh null/undefined (mis. presensi yang belum direview) - tetap
  * menampilkan pill abu-abu dengan label yang jelas, bukan pill kosong tanpa
  * teks seperti sebelumnya.
  */

@@ -17,8 +17,8 @@ use Illuminate\Support\Str;
  *
  * Sumber data:
  *   - docs/DATA ARMADA.csv      → dump truck (DT), dump truck tronton (DTT),
- *                                 self loader (SL) — unit bisnis GCS.
- *   - docs/Daftar kendaraan.csv → truck mixer (TM) — unit bisnis CBP
+ *                                 self loader (SL) - unit bisnis GCS.
+ *   - docs/Daftar kendaraan.csv → truck mixer (TM) - unit bisnis CBP
  *                                 (plat nomor belum terdata, dibiarkan null).
  *
  * Sumber tambahan:
@@ -228,12 +228,12 @@ class FleetDataSeeder extends Seeder
     }
 
     /**
-     * Operator alat berat dari foto (GCS — jasa sewa alat berat).
+     * Operator alat berat dari foto (GCS - jasa sewa alat berat).
      *
      * Hanya operator BARU yang identitasnya tidak ambigu yang dimasukkan.
      * Nama yang sudah dipakai driver di sumber utama TIDAK ditambahkan di sini
      * agar tidak menggandakan identitas: YANTO (VIBRO 01), TEGUH (EXCA KOMATSU
-     * 01), dan EKO (EXCA KOMATSU 02) — nama tersebut bertabrakan dengan driver
+     * 01), dan EKO (EXCA KOMATSU 02) - nama tersebut bertabrakan dengan driver
      * lama dan nomor HP-nya berbeda, sehingga identitasnya perlu verifikasi
      * manusia lebih dulu (lihat catatan laporan).
      *
@@ -293,7 +293,7 @@ class FleetDataSeeder extends Seeder
             ['plat_nomor' => 'R 8048 FR', 'kode_unit' => 'SL 02', 'jenis' => 'self_loader', 'unit_bisnis' => 'GCS', 'driver' => ['nama' => 'TOLET', 'alias' => null, 'no_hp' => '0813-9233-2349']],
             ['plat_nomor' => 'R 8236 ER', 'kode_unit' => 'SL 03', 'jenis' => 'self_loader', 'unit_bisnis' => 'GCS', 'driver' => ['nama' => 'TARISUN', 'alias' => null, 'no_hp' => '0853-2618-3433']],
 
-            // ── MOBIL TRUCK MIXER (CBP) — plat belum terdata di CSV ──
+            // ── MOBIL TRUCK MIXER (CBP) - plat belum terdata di CSV ──
             ['plat_nomor' => null, 'kode_unit' => 'TM 01 C', 'jenis' => 'truck_molen', 'unit_bisnis' => 'CBP', 'driver' => ['nama' => 'NADOM', 'alias' => null, 'no_hp' => null]],
             ['plat_nomor' => null, 'kode_unit' => 'TM 02 C', 'jenis' => 'truck_molen', 'unit_bisnis' => 'CBP', 'driver' => ['nama' => 'DULKARIM', 'alias' => null, 'no_hp' => null]],
             ['plat_nomor' => null, 'kode_unit' => 'TM 03 B', 'jenis' => 'truck_molen', 'unit_bisnis' => 'CBP', 'driver' => ['nama' => 'KAMTO', 'alias' => null, 'no_hp' => null]],

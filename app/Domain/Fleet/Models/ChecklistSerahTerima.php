@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Bagian 21.10 — header checklist serah terima (major) sewa alat.
+ * Bagian 21.10 - header checklist serah terima (major) sewa alat.
  * Dua baris per transaksi sewa: `berangkat` & `kembali`.
  */
 class ChecklistSerahTerima extends Model
@@ -17,7 +17,7 @@ class ChecklistSerahTerima extends Model
     protected $table = 'checklist_serah_terima_armada';
 
     /**
-     * Item pengecekan default — reuse kondisi checklist harian (21.3)
+     * Item pengecekan default - reuse kondisi checklist harian (21.3)
      * tapi lebih lengkap (major/serah terima).
      */
     public const DEFAULT_ITEMS = [

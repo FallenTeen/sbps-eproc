@@ -197,7 +197,7 @@ export default function Show({ presensi, tracking }) {
                         </div>
                     </div>
 
-                    {/* Foto Bukti Presensi — untuk verifikasi */}
+                    {/* Foto Bukti Presensi - untuk verifikasi */}
                     <div className="border-t border-gray-100 pt-4">
                         <p className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                             <Camera className="w-4 h-4 text-gray-400" />
@@ -221,7 +221,7 @@ export default function Show({ presensi, tracking }) {
                         </div>
                     </div>
 
-                    {/* Tracking Lokasi — linimasa GPS, khusus Owner */}
+                    {/* Tracking Lokasi - linimasa GPS, khusus Owner */}
                     {tracking && (
                         <div className="border-t border-gray-100 pt-4">
                             <p className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">

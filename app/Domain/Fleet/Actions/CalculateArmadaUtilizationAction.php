@@ -14,14 +14,14 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Bagian 21.11 — Monitoring Armada: metrik utilisasi.
+ * Bagian 21.11 - Monitoring Armada: metrik utilisasi.
  *
- * Menghitung on-the-fly (prinsip Bagian 0 #1 — tidak ada agregat statis):
+ * Menghitung on-the-fly (prinsip Bagian 0 #1 - tidak ada agregat statis):
  * - total jam aktif (alat berat: jam_selesai_operasi - jam_mulai_operasi;
- *   armada jalan: durasi antar check-in/out — saat ini memakai baris checklist
+ *   armada jalan: durasi antar check-in/out - saat ini memakai baris checklist
  *   yang punya jam operasi, sisanya dihitung lewat hari operasi + ODO).
  * - HM/Jam (khusus alat_berat): rasio pemakaian HM (hm_odo) terhadap jam aktif.
- * - jam/rit (khusus armada_jalan): rata-rata jam aktif per ritase — metrik ini
+ * - jam/rit (khusus armada_jalan): rata-rata jam aktif per ritase - metrik ini
  *   dipakai karena HM/Jam sering kosong untuk armada_jalan (jarang isi jam
  *   mulai/selesai operasi di checklist).
  * - rekap durasi per tanggal (mirror "REKAP HARIAN PERALATAN").
@@ -68,7 +68,7 @@ class CalculateArmadaUtilizationAction
     }
 
     /**
-     * Riwayat detail satu armada untuk panel drill-down — checklist harian,
+     * Riwayat detail satu armada untuk panel drill-down - checklist harian,
      * ritase, sewa jam, downtime, dan pengajuan servis dalam satu rentang,
      * digabung jadi satu timeline terurut tanggal terbaru dahulu.
      */
@@ -121,7 +121,7 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'checklist_awal',
-                'label' => $row->kondisi_baik ? 'Checklist awal — kondisi baik' : 'Checklist awal — '.($row->item_bermasalah ?: 'bermasalah'),
+                'label' => $row->kondisi_baik ? 'Checklist awal - kondisi baik' : 'Checklist awal - '.($row->item_bermasalah ?: 'bermasalah'),
                 'jam_aktif' => 0.0,
                 'hm' => (float) ($row->hm_odo ?? 0),
                 'odo_km' => 0.0,
@@ -135,7 +135,7 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'checklist_akhir',
-                'label' => ($row->kondisi_baik ? 'Checklist akhir — kondisi baik' : 'Checklist akhir — '.($row->item_bermasalah ?: 'bermasalah'))
+                'label' => ($row->kondisi_baik ? 'Checklist akhir - kondisi baik' : 'Checklist akhir - '.($row->item_bermasalah ?: 'bermasalah'))
                     .($row->odo_anomali ? ' (anomali ODO)' : ''),
                 'jam_aktif' => $this->durasiJam((string) $awal?->jam_mulai_operasi, (string) $row->jam_selesai_operasi),
                 'hm' => (float) ($row->hm_akhir ?? 0),
@@ -149,7 +149,7 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'solar',
-                'label' => 'Pengisian solar — '.number_format((float) $row->liter, 2, ',', '.').' L',
+                'label' => 'Pengisian solar - '.number_format((float) $row->liter, 2, ',', '.').' L',
                 'jam_aktif' => 0.0,
                 'hm' => 0.0,
                 'odo_km' => 0.0,
@@ -162,7 +162,7 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'ritase',
-                'label' => "Ritase — {$row->jumlah_rit} rit",
+                'label' => "Ritase - {$row->jumlah_rit} rit",
                 'jumlah_rit' => (int) $row->jumlah_rit,
             ]);
         }
@@ -171,7 +171,7 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'sewa',
-                'label' => "Sewa alat — {$row->jumlah_jam} jam",
+                'label' => "Sewa alat - {$row->jumlah_jam} jam",
                 'sewa_jam' => (float) $row->jumlah_jam,
             ]);
         }
@@ -231,13 +231,13 @@ class CalculateArmadaUtilizationAction
     }
 
     /**
-     * Breakdown ringkasan per unit bisnis — supaya bisa bandingkan performa
+     * Breakdown ringkasan per unit bisnis - supaya bisa bandingkan performa
      * antar unit bisnis (mis. GCS vs CBP vs AMP) dalam satu layar.
      */
     private function perUnitBisnis(array $perUnit): array
     {
         return collect($perUnit)
-            ->groupBy(fn ($u) => $u['unit_bisnis_kode'] ?? '—')
+            ->groupBy(fn ($u) => $u['unit_bisnis_kode'] ?? '-')
             ->map(function (Collection $rows, string $kode) {
                 return [
                     'unit_bisnis_kode' => $kode,
@@ -407,7 +407,7 @@ class CalculateArmadaUtilizationAction
 
     /**
      * Tanggal aktivitas (checklist/ritase/sewa) paling baru per armada,
-     * dilihat 90 hari ke belakang dari hari ini — dipakai untuk deteksi idle
+     * dilihat 90 hari ke belakang dari hari ini - dipakai untuk deteksi idle
      * agar tidak tergantung pada rentang filter "dari/sampai" yang aktif.
      */
     private function aktivitasTerakhirMap(Collection $ids): array
@@ -546,7 +546,7 @@ class CalculateArmadaUtilizationAction
                 ], $byDate);
             });
 
-        // Pastikan setiap tanggal dalam rentang muncul (termasuk 0) —
+        // Pastikan setiap tanggal dalam rentang muncul (termasuk 0) -
         // mirror "REKAP HARIAN PERALATAN" di manual.
         $zeroRow = fn ($tanggal) => [
             'tanggal' => $tanggal,

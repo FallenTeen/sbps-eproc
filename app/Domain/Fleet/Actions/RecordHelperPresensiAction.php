@@ -12,7 +12,7 @@ class RecordHelperPresensiAction
     /**
      * Catat presensi helper atas nama PIC (Bagian 21.6).
      *
-     * Helper TIDAK punya akun — yang mencatat selalu PIC aktif armada.
+     * Helper TIDAK punya akun - yang mencatat selalu PIC aktif armada.
      * Satu baris per (helper, tanggal); check-in & check-out saling update.
      *
      * @param  string  $tipe  'check_in' | 'check_out'

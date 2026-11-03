@@ -104,7 +104,7 @@ class ProyekSeeder extends Seeder
                 'tanggal_mulai' => now()->subMonths(8)->toDateString(),
                 'tanggal_selesai_rencana' => now()->addYears(5)->toDateString(),
                 'status' => 'aktif',
-                'catatan' => 'Head Office PT Satria Buana Pamula Sakti — lokasi absen karyawan kantor.',
+                'catatan' => 'Head Office PT Satria Buana Pamula Sakti - lokasi absen karyawan kantor.',
                 'created_by' => $owner->id,
             ],
         ];
@@ -114,7 +114,7 @@ class ProyekSeeder extends Seeder
 
             // Hubungkan user kontraktor (eksternal) HANYA ke proyek kontrak_klien
             // miliknya (pivot proyek_user) untuk object-level scoping. Kontraktor
-            // ini menangani PRJ-GCS-002 saja — proyek milik klien/unit lain TIDAK
+            // ini menangani PRJ-GCS-002 saja - proyek milik klien/unit lain TIDAK
             // boleh terlihat olehnya walau juga bertipe kontrak_klien.
             if ($data['kode_proyek'] === 'PRJ-GCS-002') {
                 $proyek->users()->syncWithoutDetaching([$kontraktor->id]);
@@ -133,7 +133,7 @@ class ProyekSeeder extends Seeder
             ['PRJ-AMP-001', 'Jalan Provinsi KM 12', -6.18000000, 107.18000000, 100],
             ['PRJ-CBP-002', 'Area Plant CBP-2', -6.23000000, 107.01000000, 100],
             // Kantor utama SBPS (Jl. Raya Patikraja No. 99, Patikraja, Banyumas)
-            // — titik absen wajib karyawan kantor.
+            // - titik absen wajib karyawan kantor.
             ['PRJ-KTR-001', 'Kantor Pusat', -7.4685527, 109.217636, 100],
         ];
 

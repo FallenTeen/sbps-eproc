@@ -124,7 +124,7 @@ export default function RitaseCreate({
                                 className={selectClass}
                                 required
                             >
-                                <option value="">— Pilih Armada —</option>
+                                <option value="">- Pilih Armada -</option>
                                 {armadaList.map((a) => (
                                     <option key={a.id} value={a.id}>
                                         {a.jenis} / {a.plat_nomor ?? "-"}
@@ -146,7 +146,7 @@ export default function RitaseCreate({
                                 className={selectClass}
                                 required
                             >
-                                <option value="">— Pilih Driver —</option>
+                                <option value="">- Pilih Driver -</option>
                                 {driverList.map((d) => (
                                     <option key={d.id} value={d.id}>
                                         {d.nama_lengkap ?? d.nama}
@@ -164,7 +164,7 @@ export default function RitaseCreate({
                                 className={selectClass}
                             >
                                 <option value="">
-                                    — Pilih Proyek (opsional) —
+                                    - Pilih Proyek (opsional) -
                                 </option>
                                 {proyekList.map((p) => (
                                     <option key={p.id} value={p.id}>
@@ -221,10 +221,10 @@ export default function RitaseCreate({
                                     className={selectClass}
                                     required
                                 >
-                                    <option value="">— Pilih Rute —</option>
+                                    <option value="">- Pilih Rute -</option>
                                     {ruteList.map((r) => (
                                         <option key={r.id} value={r.id}>
-                                            {r.nama_rute} — Rp{" "}
+                                            {r.nama_rute} - Rp{" "}
                                             {Number(
                                                 r.tarif_per_rit,
                                             ).toLocaleString("id-ID")}
@@ -336,7 +336,7 @@ export default function RitaseCreate({
                                 className={selectClass}
                                 required
                             >
-                                <option value="">— Pilih Satuan —</option>
+                                <option value="">- Pilih Satuan -</option>
                                 <option value="tonase">Tonase (Ton)</option>
                                 <option value="ritase">Ritase (Trip)</option>
                                 <option value="m3">Meter Kubik (m³)</option>
@@ -407,7 +407,7 @@ export default function RitaseCreate({
                                     setData("catatan", e.target.value)
                                 }
                                 rows={3}
-                                placeholder="Opsional — kondisi jalan, kendala, dll."
+                                placeholder="Opsional - kondisi jalan, kendala, dll."
                                 className={inputClass}
                             />
                         </Field>

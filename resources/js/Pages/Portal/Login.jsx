@@ -88,7 +88,7 @@ export default function PortalLogin({ portal, status }) {
 
     return (
         <div className="flex min-h-screen flex-col items-center bg-white pt-6 sm:justify-center sm:pt-0">
-            <Head title={`Login — ${portal.name}`} />
+            <Head title={`Login - ${portal.name}`} />
 
             {/* Logo + Back */}
             <div className="mb-6 flex items-center gap-4">

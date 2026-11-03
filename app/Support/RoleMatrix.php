@@ -86,6 +86,7 @@ class RoleMatrix
         'manage kas',
         'manage invoice',
         'view invoice',
+        'manage rekap keuangan',
 
         // Lapangan
         'manage presensi',
@@ -114,7 +115,7 @@ class RoleMatrix
     /**
      * Privilege dasar per role (web + sesuai matriks modul mobile).
      * Role divisi di bawah ini diberi tambahan approval divisi via
-     * [DIVISI_AUGMENTS] — keduanya di-union saat disync (tidak menghapus).
+     * [DIVISI_AUGMENTS] - keduanya di-union saat disync (tidak menghapus).
      */
     public const ROLES = [
         // ─── Super Admin ───────────────────────────────────────────────
@@ -133,6 +134,7 @@ class RoleMatrix
             'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
             'manage hr', 'view hr', 'manage payroll', 'view payroll',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+            'manage rekap keuangan',
             'manage presensi', 'manage formulir lapangan',
             'view kontraktor', 'manage kontraktor',
             'manage app version',
@@ -145,6 +147,7 @@ class RoleMatrix
             'manage user',
             'approve procurement', 'pay procurement', 'approve procurement keuangan', 'view procurement',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+            'manage rekap keuangan',
             'manage rab', 'view rab', 'view proyek', 'view fleet',
             'view production',
             'manage payroll', 'view payroll',
@@ -201,11 +204,13 @@ class RoleMatrix
         // ─── Ketua Divisi ──────────────────────────────────────────────
         'Ketua Divisi Keuangan' => [
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+            'manage rekap keuangan',
             'manage rab', 'view rab', 'view proyek',
             'approve procurement keuangan', 'pay procurement',
         ],
         'Ketua Divisi Finance' => [
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
+            'manage rekap keuangan',
             'manage rab', 'view rab', 'view proyek',
             'approve procurement keuangan', 'pay procurement',
         ],
@@ -281,7 +286,7 @@ class RoleMatrix
     /**
      * Permission khusus approval divisi yang ditambahkan di atas privilege
      * dasar (sebelumnya di DivisiRoleSeeder dengan syncPermissions yang
-     * justru MENIMPA — sekarang non-destruktif).
+     * justru MENIMPA - sekarang non-destruktif).
      */
     public const DIVISI_AUGMENTS = [
         'Ketua Divisi Finance' => [

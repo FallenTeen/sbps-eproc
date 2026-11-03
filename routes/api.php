@@ -127,12 +127,12 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('armada/checklist-major', [ArmadaController::class, 'submitChecklistMajor'])
             ->name('armada.checklist-major')->middleware('idempotency');
 
-        // v6 (21.6) — helper armada & presensi (dicatat PIC)
+        // v6 (21.6) - helper armada & presensi (dicatat PIC)
         Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
         Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])
             ->name('armada.helper.presensi')->middleware('idempotency');
 
-        // v6 (21.8) — Sistem Servis Armada (mobile: ajuan, riwayat, detail, approval/reject)
+        // v6 (21.8) - Sistem Servis Armada (mobile: ajuan, riwayat, detail, approval/reject)
         Route::get('servis-armada', [PengajuanServisController::class, 'index'])->name('servis-armada.index');
         Route::get('servis-armada/saya', [PengajuanServisController::class, 'saya'])->name('servis-armada.saya');
         Route::post('servis-armada', [PengajuanServisController::class, 'store'])
@@ -143,7 +143,7 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])
             ->name('servis-armada.tolak')->middleware('idempotency');
 
-        // v6 (21.8 #3-4) — Pengerjaan workshop (mulai, selesai, request sparepart)
+        // v6 (21.8 #3-4) - Pengerjaan workshop (mulai, selesai, request sparepart)
         Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])
             ->name('servis-armada.mulai')->middleware('idempotency');
         Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])
@@ -155,7 +155,7 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])
             ->name('workshop.job.todo.photo')->middleware('idempotency');
 
-        // v6 (21.7 & 14d) — Modul Inventory (stok, request sparepart, opname)
+        // v6 (21.7 & 14d) - Modul Inventory (stok, request sparepart, opname)
         Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
         Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
         Route::get('inventory/materials/{id}/mutasi', [InventoryController::class, 'materialMutasi'])->name('inventory.material-mutasi');
