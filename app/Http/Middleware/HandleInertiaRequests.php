@@ -146,6 +146,7 @@ class HandleInertiaRequests extends Middleware
         'finance.invoice.outstanding' => 'Piutang Outstanding',
         'finance.invoice.aging' => 'Aging Piutang',
         'finance.laporan-keuangan.index' => 'Laporan Keuangan',
+        'finance.rekap-kas.index' => 'Rekap Pemasukan & Pengeluaran',
         'finance.laporan-keuangan.rab-realisasi' => 'RAB vs Realisasi',
         'finance.laporan-keuangan.laba-rugi' => 'Laporan Laba Rugi',
 

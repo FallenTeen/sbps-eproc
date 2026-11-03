@@ -39,7 +39,7 @@ return [
      * The disk on which to store conversions (thumbnails, etc.) and responsive images
      * when no disk is specified explicitly on the media collection or via
      * `storingConversionsOnDisk()`. When left null, conversions are stored on the
-     * same disk as the original media — preserving previous behavior.
+     * same disk as the original media - preserving previous behavior.
      *
      * This is useful when the originals live on a remote disk (e.g. S3) but the
      * generated derivatives should stay local for faster access and lower egress.

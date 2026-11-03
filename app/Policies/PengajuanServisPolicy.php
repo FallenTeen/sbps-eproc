@@ -6,7 +6,7 @@ use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Models\User;
 
 /**
- * Bagian 21.8 — Policy per-bagian form servis armada.
+ * Bagian 21.8 - Policy per-bagian form servis armada.
  *
  * Semua role terkait boleh melihat (read-all), tapi hanya peran tertentu yang
  * boleh mengedit bagian miliknya (edit-scoped), sesuai tabel "Bisa diedit oleh".
@@ -41,7 +41,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 1 — submit ajuan (mobile/web). PIC armada atau pemegang
+     * Bagian 1 - submit ajuan (mobile/web). PIC armada atau pemegang
      * permission `manage fleet service`/`submit fleet service`.
      */
     public function submit(User $user): bool
@@ -54,7 +54,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 1 — edit ajuan. Hanya pembuat, sebelum status pindah dari `diajukan`.
+     * Bagian 1 - edit ajuan. Hanya pembuat, sebelum status pindah dari `diajukan`.
      */
     public function editAjuan(User $user, PengajuanServisArmada $pengajuan): bool
     {
@@ -63,7 +63,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 2 — approval. Hanya Ketua Divisi Armada.
+     * Bagian 2 - approval. Hanya Ketua Divisi Armada.
      */
     public function approve(User $user, PengajuanServisArmada $pengajuan): bool
     {
@@ -72,7 +72,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 3 — pengerjaan (Workshop). Hanya role Workshop, setelah status `disetujui`.
+     * Bagian 3 - pengerjaan (Workshop). Hanya role Workshop, setelah status `disetujui`.
      */
     public function assignWorkshop(User $user, PengajuanServisArmada $pengajuan): bool
     {
@@ -81,7 +81,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 3 — ajukan sparepart (Workshop → Inventory).
+     * Bagian 3 - ajukan sparepart (Workshop → Inventory).
      */
     public function requestSparepart(User $user, PengajuanServisArmada $pengajuan): bool
     {
@@ -90,7 +90,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Bagian 4 — catat pengadaan sparepart. Hanya Inventory, kalau butuh_sparepart.
+     * Bagian 4 - catat pengadaan sparepart. Hanya Inventory, kalau butuh_sparepart.
      */
     public function recordSparepart(User $user, PengajuanServisArmada $pengajuan): bool
     {
@@ -100,7 +100,7 @@ class PengajuanServisPolicy
     }
 
     /**
-     * Selesai — Workshop (atau approver) menutup servis.
+     * Selesai - Workshop (atau approver) menutup servis.
      */
     public function complete(User $user, PengajuanServisArmada $pengajuan): bool
     {

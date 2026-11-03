@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * Mencatat checklist inventarisasi (Bagian 21.7) secara massal: satu opname
  * mencakup banyak item di satu titik untuk satu tanggal. `saldo_sistem`
  * di-snapshot dari GetStokSaldoAction saat opname dibuat, `selisih` dihitung
- * (saldo_fisik - saldo_sistem) — tidak disimpan manual.
+ * (saldo_fisik - saldo_sistem) - tidak disimpan manual.
  */
 class CreateStokOpnameAction
 {

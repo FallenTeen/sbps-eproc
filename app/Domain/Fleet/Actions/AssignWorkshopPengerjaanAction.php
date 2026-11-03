@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Bagian 21.8 #3 — Workshop mulai kerjakan (assign personel, catat pengerjaan).
+ * Bagian 21.8 #3 - Workshop mulai kerjakan (assign personel, catat pengerjaan).
  * Kalau `butuh_sparepart = true`, lanjut ke status `menunggu_sparepart`.
  */
 class AssignWorkshopPengerjaanAction
@@ -25,7 +25,7 @@ class AssignWorkshopPengerjaanAction
                 'butuh_sparepart' => $data['butuh_sparepart'] ?? false,
             ]);
 
-            // Personel pengerja (multi) — replace
+            // Personel pengerja (multi) - replace
             $pengajuan->personels()->delete();
             $personels = $data['personels'] ?? [];
             foreach (array_filter($personels, fn ($p) => ! empty($p['nama_personel'])) as $p) {

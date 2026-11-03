@@ -33,10 +33,10 @@ function safeRoute(name, params = {}, fallback = '/dashboard') {
 
 /**
  * All possible menu items with required permission(s).
- * permission: string | string[]  — user must have AT LEAST ONE of these.
- * excludeRoles: string[]         — item HIDDEN for these roles regardless of permission
+ * permission: string | string[]  - user must have AT LEAST ONE of these.
+ * excludeRoles: string[]         - item HIDDEN for these roles regardless of permission
  *                                  (mis. role eksternal Kontraktor vs menu core).
- * roles: string[]                — item ONLY shown if user has ANY of these roles
+ * roles: string[]                - item ONLY shown if user has ANY of these roles
  *                                  (mis. "Portal Kontraktor" yang rutenya role:Kontraktor).
  * If permission & roles omitted, item is always shown (e.g. Dashboard).
  */
@@ -151,13 +151,14 @@ function getAllMenus() {
                 { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*', permission: ['manage kas', 'manage finance', 'view finance'] },
                 { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: ['finance.invoice.*', '!finance.invoice.outstanding', '!finance.invoice.aging'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: ['finance.invoice.outstanding', 'finance.invoice.aging', 'finance.pembayaran-klien.*'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
+                { title: 'Rekap Pemasukan & Pengeluaran', href: safeRoute('finance.rekap-kas.index', {}, '/finance/rekap-kas'), routeName: ['finance.rekap-kas.*'], permission: ['manage rekap keuangan'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
             ],
         },
         {
             title: 'Portal Kontraktor',
             icon: ClipboardList,
-            // Route-nya dibatasi middleware `role:Kontraktor` — jadi menu HANYA
+            // Route-nya dibatasi middleware `role:Kontraktor` - jadi menu HANYA
             // untuk role Kontraktor. Internal (Owner/Admin dll) yang melewati
             // cek permission TIDAK boleh melihatnya (kalau diklik → 403).
             roles: ['Kontraktor'],

@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Bagian 21.8 #4 — Inventory mencatat pengadaan sparepart (nominal, foto nota).
+ * Bagian 21.8 #4 - Inventory mencatat pengadaan sparepart (nominal, foto nota).
  * Setiap item di-update nominal/tanggal/foto_nota; kalau semua item tersedia,
  * status pengajuan jadi `sparepart_tersedia` dan `total_biaya` diakumulasi.
  */

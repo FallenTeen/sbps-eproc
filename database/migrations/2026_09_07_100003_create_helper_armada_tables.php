@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Fase C (Bagian 21.6) — Helper Armada & Presensi Individu.
+     * Fase C (Bagian 21.6) - Helper Armada & Presensi Individu.
      *
      * - `helper_armada`: tenaga bantu serabutan yang diinput oleh PIC armada
      *   (web: nama, no HP, honor, durasi tanggal), tanpa akun/login.

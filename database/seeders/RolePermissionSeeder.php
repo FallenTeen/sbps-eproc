@@ -18,7 +18,7 @@ class RolePermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Matriks kanonik (base + augment divisi). Idempotent —
+        // Matriks kanonik (base + augment divisi). Idempotent -
         // firstOrCreate + syncPermissions({matriks}) tidak menghapus apa pun
         // selain yang TIDAK ada di matriks.
         foreach (RoleMatrix::ROLES as $name => $basePerms) {

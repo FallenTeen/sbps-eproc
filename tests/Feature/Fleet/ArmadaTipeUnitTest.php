@@ -20,7 +20,7 @@ beforeEach(function () {
 });
 
 // =========================================================
-// Fase A1 — tipe_unit: armada_jalan vs alat_berat
+// Fase A1 - tipe_unit: armada_jalan vs alat_berat
 // =========================================================
 
 describe('Fase A1 - tipe_unit armada', function () {

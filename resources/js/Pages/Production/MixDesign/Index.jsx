@@ -118,7 +118,7 @@ export default function Index({ mixDesigns }) {
 
                                                     {md.nama && (
                                                         <span className="text-sm text-gray-600">
-                                                            — {md.nama}
+                                                            - {md.nama}
                                                         </span>
                                                     )}
                                                 </div>

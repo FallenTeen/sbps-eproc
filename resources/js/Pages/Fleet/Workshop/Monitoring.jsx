@@ -174,7 +174,7 @@ export default function Monitoring({
 }) {
     return (
         <AuthenticatedLayout>
-            <Head title="Workshop — Monitoring Kondisi Alat" />
+            <Head title="Workshop - Monitoring Kondisi Alat" />
 
             <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-6">
                 {/* Statistik */}

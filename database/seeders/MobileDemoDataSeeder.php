@@ -46,7 +46,7 @@ class MobileDemoDataSeeder extends Seeder
 
     private const TITIK_LNG = 107.0010;
 
-    /** Koordinat Kantor Pusat SBPS (Titik "Kantor Pusat", Patikraja) —
+    /** Koordinat Kantor Pusat SBPS (Titik "Kantor Pusat", Patikraja) -
      *  tempat absen wajib karyawan kantor. */
     private const OFFICE_LAT = -7.4685527;
 
@@ -64,10 +64,10 @@ class MobileDemoDataSeeder extends Seeder
             return;
         }
 
-        // Kantor pusat SBPS — karyawan kantor absen di sini (lihat ProyekSeeder).
+        // Kantor pusat SBPS - karyawan kantor absen di sini (lihat ProyekSeeder).
         $titikKantor = Titik::where('nama', 'Kantor Pusat')->first();
         if (! $titikKantor) {
-            $this->command?->warn('[MobileDemoData] Titik "Kantor Pusat" tidak ditemukan — karyawan kantor memakai titik uji coba.');
+            $this->command?->warn('[MobileDemoData] Titik "Kantor Pusat" tidak ditemukan - karyawan kantor memakai titik uji coba.');
             $titikKantor = $titik;
         }
 
@@ -261,7 +261,7 @@ class MobileDemoDataSeeder extends Seeder
 
     /**
      * Tulis file foto demo (SVG sederhana) sekali ke disk 'public' dan
-     * kembalikan path relatifnya — dipakai agar menu "Foto Bukti Presensi"
+     * kembalikan path relatifnya - dipakai agar menu "Foto Bukti Presensi"
      * di web dapat dites tanpa harus upload foto asli dari perangkat.
      */
     private function demoPhoto(string $dir, string|int $key, float $lat, float $lng): string
@@ -355,7 +355,7 @@ class MobileDemoDataSeeder extends Seeder
 
     private function seedQc(ProductionSession $session): void
     {
-        // Sample slump yang sudah jadi (lolos) — uji tekan selesai.
+        // Sample slump yang sudah jadi (lolos) - uji tekan selesai.
         QCSample::firstOrCreate(
             [
                 'production_session_id' => $session->id,

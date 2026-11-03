@@ -93,12 +93,12 @@ export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pe
 
     return (
         <AuthenticatedLayout>
-            <Head title={`Checklist Serah Terima — ${sewa.armada?.kode_unit}`} />
+            <Head title={`Checklist Serah Terima - ${sewa.armada?.kode_unit}`} />
 
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-slate-800">Checklist Serah Terima</h1>
                 <div>
-                    <StatCard label="Pemakaian HM" value={pemakaian > 0 ? pemakaian + ' HM' : '—'} color="blue" />
+                    <StatCard label="Pemakaian HM" value={pemakaian > 0 ? pemakaian + ' HM' : '-'} color="blue" />
                     <StatCard label="Status" value={sewa.status} color="purple" />
                 </div>
             </div>
@@ -106,8 +106,8 @@ export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pe
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard label="Arma" value={`${sewa.armada?.kode_unit} / ${sewa.armada?.plat_nomor}`} color="blue" />
                 <StatCard label="Penyewa" value={sewa.penyewa_nama ?? '-'} color="purple" />
-                <StatCard label="HM Awal" value={sewa.hm_awal ?? '–'} color="green" />
-                <StatCard label="HM Akhir" value={sewa.hm_akhir ?? '–'} color="green" />
+                <StatCard label="HM Awal" value={sewa.hm_awal ?? '-'} color="green" />
+                <StatCard label="HM Akhir" value={sewa.hm_akhir ?? '-'} color="green" />
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
@@ -118,8 +118,8 @@ export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pe
                     style={{ minHeight: berangkat ? '200px' : '100px' }}>
                     {berangkat ? (
                         <div>
-                            <p className="text-sm text-slate-600 mb-2">Tanggal: {berangkat.tanggal ? berangkat.tanggal.format('d F Y') : '—'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {berangkat.odo_atau_hm ?? '—'} HM</p>
+                            <p className="text-sm text-slate-600 mb-2">Tanggal: {berangkat.tanggal ? berangkat.tanggal.format('d F Y') : '-'}</p>
+                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {berangkat.odo_atau_hm ?? '-'} HM</p>
                             <p className="text-sm text-slate-600 mb-2">Penyewa: {(berangkat?.data_penyewa?.nama ?? '-') + ' - ' + (berangkat?.data_penyewa?.pt ?? '')}</p>
                             <p className="text-sm text-slate-600 mb-2">Ditandatangani Oleh: {berangkat?.dicatatOleh?.name ?? '-'}</p>
                             <p className="text-sm text-slate-600 mb-2">Catatan: {berangkat?.catatan ?? '-'}</p>
@@ -151,9 +151,9 @@ export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pe
                     style={{ minHeight: kembali ? '200px' : '100px' }}>
                     {kembali ? (
                         <div>
-                            <p className="text-sm text-slate-600 mb-2">Tanggal: {kembali.tanggal ? kembali.tanggal.format('d F Y') : '—'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {kembali.odo_atau_hm ?? '—'} HM</p>
-                            <p className="text-sm text-slate-600 mb-2">Pemakaian: {pemakaian > 0 ? pemakaian.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' HM' : '—'}</p>
+                            <p className="text-sm text-slate-600 mb-2">Tanggal: {kembali.tanggal ? kembali.tanggal.format('d F Y') : '-'}</p>
+                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {kembali.odo_atau_hm ?? '-'} HM</p>
+                            <p className="text-sm text-slate-600 mb-2">Pemakaian: {pemakaian > 0 ? pemakaian.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' HM' : '-'}</p>
                             <p className="text-sm text-slate-600 mb-2">Penyewa: {(kembali.data_penyewa?.nama ?? '-') + ' - ' + (kembali.data_penyewa?.pt ?? '')}</p>
                             <p className="text-sm text-slate-600 mb-2">Ditandatangani Oleh: {kembali.dicatatOleh?.name ?? '-'}</p>
                             <p className="text-sm text-slate-600 mb-2">Catatan: {kembali?.catatan ?? '-'}</p>

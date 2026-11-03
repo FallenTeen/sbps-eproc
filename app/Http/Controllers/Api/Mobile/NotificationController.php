@@ -28,7 +28,7 @@ class NotificationController extends Controller
         return $this->success([
             'notifications' => $notifications->map(fn (DatabaseNotification $n) => [
                 // `id` = id NOTIFIKASI (basis markRead). ID record tujuan
-                // deep-link disandang `route_id` (Phase 16 — bukan lagi
+                // deep-link disandang `route_id` (Phase 16 - bukan lagi
                 // menimpa `id` seperti sebelumnya).
                 'id' => $n->id,
                 'type' => class_basename($n->type),
@@ -132,7 +132,7 @@ class NotificationController extends Controller
 
     /**
      * ID record tujuan deep-link. Hanya segmen terakhir yang berupa UUID
-     * atau angka dianggap ID — path dekoratif (unit-saya, ajuan, ...) bukan.
+     * atau angka dianggap ID - path dekoratif (unit-saya, ajuan, ...) bukan.
      */
     private function mobileRouteId(array $data): ?string
     {

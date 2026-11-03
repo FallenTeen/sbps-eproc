@@ -16,7 +16,7 @@ class KontraktorController extends Controller
     public function dashboard()
     {
         // Hanya proyek dengan tipe kontrak_klien, DISCALING ke proyek milik
-        // kontraktor tsb (pivot proyek_user) — bukan seluruh proyek perusahaan.
+        // kontraktor tsb (pivot proyek_user) - bukan seluruh proyek perusahaan.
         $proyekList = Proyek::kontrakKlien()
             ->visibleFor(Auth::user())
             ->with(['unitBisnis:id,nama'])
@@ -30,12 +30,12 @@ class KontraktorController extends Controller
 
     public function proyekDetail(Proyek $proyek)
     {
-        // PENTING: object-level scoping — user Kontraktor TIDAK BOLEH melihat
+        // PENTING: object-level scoping - user Kontraktor TIDAK BOLEH melihat
         // proyek/klien milik kontraktor lain walau lewat manipulasi URL.
         $this->authorizeProyek($proyek);
 
         // 1. Progres Produksi (Ringkasan Output saja, Tanpa detail biaya)
-        // Catatan: production_sessions tidak punya kolom proyek_id — sesi
+        // Catatan: production_sessions tidak punya kolom proyek_id - sesi
         // menempel di titik, jadi ditarik via titik-titik yang ada di proyek ini.
         $sessions = ProductionSession::whereHas('titik', fn ($q) => $q->where('proyek_id', $proyek->id))
             ->with('produk:id,nama,satuan_output')

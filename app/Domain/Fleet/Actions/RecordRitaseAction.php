@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class RecordRitaseAction
 {
     /**
-     * v6 (Bagian 21.4) — multi-satuan & nominal.
+     * v6 (Bagian 21.4) - multi-satuan & nominal.
      *
      * Alur:
      * - `satuan_volume` default 'ritase'.

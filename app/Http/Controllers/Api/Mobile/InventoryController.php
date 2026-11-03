@@ -13,7 +13,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 /**
- * Mobile API — Modul Inventory (Bagian 21.7 & SYSTEM_DOCUMENTATION §14d).
+ * Mobile API - Modul Inventory (Bagian 21.7 & SYSTEM_DOCUMENTATION §14d).
  *
  * Endpoint untuk role Inventory: ringkasan deret kunci, daftar stok
  * bahan baku & sparepart beserta saldo (dihitung on-the-fly dari
@@ -165,7 +165,7 @@ class InventoryController extends Controller
 
     /**
      * POST /api/mobile/inventory/requests/{id}/proses
-     * Catat pengadaan/kesediaan sparepart — semua item yang dikirim jadi
+     * Catat pengadaan/kesediaan sparepart - semua item yang dikirim jadi
      * `tersedia`, status servis lanjut ke `sparepart_tersedia`.
      */
     public function prosesRequest(Request $request, $id)

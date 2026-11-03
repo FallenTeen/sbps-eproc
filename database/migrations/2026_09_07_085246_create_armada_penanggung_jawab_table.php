@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * v6 (Bagian 21.2) — riwayat penanggung jawab armada (utama & cadangan).
+     * v6 (Bagian 21.2) - riwayat penanggung jawab armada (utama & cadangan).
      * Banyak baris per armada sepanjang waktu; "PIC aktif" = peran=utama, sampai IS NULL
      * (fallback ke cadangan aktif kalau utama sedang non-aktif).
      */

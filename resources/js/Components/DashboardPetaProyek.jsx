@@ -143,7 +143,7 @@ export default function DashboardPetaProyek({
                         <option value="">-- Pilih Titik untuk Zoom / Highlight --</option>
                         {filteredTitiks.map((t) => (
                             <option key={t.id} value={t.id}>
-                                {t.nama} {t.proyek_nama ? `— ${t.proyek_nama}` : ''}
+                                {t.nama} {t.proyek_nama ? `- ${t.proyek_nama}` : ''}
                             </option>
                         ))}
                     </select>
@@ -264,7 +264,7 @@ export default function DashboardPetaProyek({
                                 )}
                             </div>
                             <h4 className="text-lg font-bold text-white">
-                                {activeTitik ? `${activeTitik.nama} — ${activeTitik.proyek_nama || '-'}` : activeProyek?.nama}
+                                {activeTitik ? `${activeTitik.nama} - ${activeTitik.proyek_nama || '-'}` : activeProyek?.nama}
                             </h4>
                             <p className="text-xs text-slate-400">
                                 {activeProyek?.client ? `Client: ${activeProyek.client}` : ''}

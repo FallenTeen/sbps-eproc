@@ -95,7 +95,7 @@ export default function Create({ mesins, produks, operator, titiks }) {
 
                                             {mesins.map((m) => (
                                                 <option key={m.id} value={m.id}>
-                                                    {m.nama} —{" "}
+                                                    {m.nama} -{" "}
                                                     {m.jenis?.replace("_", " ")}{" "}
                                                     {m.kapasitas
                                                         ? `(${m.kapasitas})`

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * Dipakai terutama untuk role eksternal `Kontraktor`: user hanya boleh
  * melihat proyek yang ditautkan di pivot ini. Owner/karyawan internal
- * tidak wajib diisi di sini — mereka tetap lewat permission/unit_bisnis.
+ * tidak wajib diisi di sini - mereka tetap lewat permission/unit_bisnis.
  */
 return new class extends Migration
 {

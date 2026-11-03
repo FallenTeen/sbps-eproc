@@ -114,7 +114,7 @@ class Armada extends Model
         return $this->hasOne(ArmadaDriver::class)->where('status', 'aktif')->latestOfMany();
     }
 
-    // v6 (21.2) — riwayat penanggung jawab (utama & cadangan)
+    // v6 (21.2) - riwayat penanggung jawab (utama & cadangan)
     public function penanggungJawabs()
     {
         return $this->hasMany(ArmadaPenanggungJawab::class);
@@ -122,7 +122,7 @@ class Armada extends Model
 
     /**
      * PIC aktif = baris peran=utama yang `sampai` null; fallback ke cadangan aktif.
-     * (spec Bagian 21.2 — utama menang, cadangan dipakai kalau utama sedang non-aktif)
+     * (spec Bagian 21.2 - utama menang, cadangan dipakai kalau utama sedang non-aktif)
      */
     public function getActivePenanggungJawabAttribute()
     {
@@ -144,7 +144,7 @@ class Armada extends Model
     }
 
     /**
-     * v6 (21.6) — apakah karyawan ini PIC aktif (utama/cadangan) armada saat ini.
+     * v6 (21.6) - apakah karyawan ini PIC aktif (utama/cadangan) armada saat ini.
      */
     public function isActivePicFor($karyawan): bool
     {

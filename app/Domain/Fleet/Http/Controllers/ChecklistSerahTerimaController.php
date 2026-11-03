@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 /**
- * Bagian 21.10 — Checklist Armada Major (Serah Terima Sewa).
+ * Bagian 21.10 - Checklist Armada Major (Serah Terima Sewa).
  * Tab "Serah Terima" pada transaksi Sewa Alat Berat (21.5).
  */
 class ChecklistSerahTerimaController extends Controller

@@ -5,16 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Bagian 21.10 — Checklist Armada Major (Serah Terima Sewa).
+ * Bagian 21.10 - Checklist Armada Major (Serah Terima Sewa).
  *
  * Berbeda dari checklist harian (21.3): pengecekan menyeluruh saat armada
  * akan disewa (serah terima), form `berangkat` & `kembali` (dua baris per
  * transaksi sewa), output dokumen cetak (PDF).
  *
  * `data_penyewa` = snapshot dari `sewa_alat_jams` (PT, alamat,
- * penanggung_jawab, no_hp) — JANGAN input ulang (prinsip: ambil dari 21.5).
+ * penanggung_jawab, no_hp) - JANGAN input ulang (prinsip: ambil dari 21.5).
  * `foto_kondisi` = JSON array path (banyak foto per sisi unit).
- * `pemakaian` (selisih ODO/HM kembali - berangkat) TIDAK disimpan —
+ * `pemakaian` (selisih ODO/HM kembali - berangkat) TIDAK disimpan -
  * dihitung on-the-fly (prinsip Bagian 0 #1: data turunan tidak disimpan).
  */
 return new class extends Migration

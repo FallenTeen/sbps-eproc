@@ -54,7 +54,7 @@ export default function Create({ sessions }) {
                         <option value="">Pilih Sesi</option>
                         {sessions.map((s) => (
                             <option key={s.id} value={s.id}>
-                                {s.kode_sesi} — {s.produk?.nama} ({s.status})
+                                {s.kode_sesi} - {s.produk?.nama} ({s.status})
                             </option>
                         ))}
                     </select>

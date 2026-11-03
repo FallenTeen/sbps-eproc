@@ -54,7 +54,7 @@ test('link pendek di-resolve via HTTP sebelum parsing', function () {
         'maps.app.goo.gl/*' => Http::response('', 200),
     ]);
 
-    // Fake tidak benar-benar mengikuti redirect, jadi hasil menjadi null —
+    // Fake tidak benar-benar mengikuti redirect, jadi hasil menjadi null -
     // yang penting: request ke host shortlink dikirim.
     GoogleMapsLink::extractCoordinates('https://maps.app.goo.gl/abc123');
 

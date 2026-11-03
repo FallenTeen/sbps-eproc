@@ -143,7 +143,7 @@ export default function Todo({
 
     return (
         <AuthenticatedLayout>
-            <Head title="Workshop — To-Do List" />
+            <Head title="Workshop - To-Do List" />
 
             <div className="mb-6 flex items-center justify-between">
                 <div>

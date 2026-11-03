@@ -282,7 +282,7 @@ export default function Create({ unitBisnis, mixDesigns }) {
                                         {mixDesigns.map((md) => (
                                             <option key={md.id} value={md.id}>
                                                 {md.mutu_beton}
-                                                {md.nama ? ` — ${md.nama}` : ""}
+                                                {md.nama ? ` - ${md.nama}` : ""}
                                             </option>
                                         ))}
                                     </select>

@@ -52,7 +52,7 @@ class FinanceDataSeeder extends Seeder
         $armadaDt01 = Armada::where('kode_unit', 'DT 01')->firstOrFail();
         $driverNovi = Karyawan::where('nama', 'NOVI')->firstOrFail();
 
-        // Ritase demo (staging) untuk armada DT 01 — armada & driver asli.
+        // Ritase demo (staging) untuk armada DT 01 - armada & driver asli.
         $ruteTarif = RuteTarif::firstOrCreate(
             ['unit_bisnis_id' => $gcs->id, 'lokasi_asal' => 'Lokasi Tambang', 'lokasi_tujuan' => 'Plant GCS'],
             [
@@ -143,7 +143,7 @@ class FinanceDataSeeder extends Seeder
                 'tanggal_terbit' => now()->subDays(10)->toDateString(),
                 'tanggal_jatuh_tempo' => now()->addDays(20)->toDateString(),
                 'status' => 'lunas_sebagian',
-                'catatan' => 'Tagihan angkut & sewa alat proyek bendungan — dibayar sebagian.',
+                'catatan' => 'Tagihan angkut & sewa alat proyek bendungan - dibayar sebagian.',
                 'created_by' => $owner->id,
             ]
         );
@@ -180,7 +180,7 @@ class FinanceDataSeeder extends Seeder
         );
         InvoiceItem::create(['invoice_id' => $invoice3->id, 'deskripsi' => 'Beton K-225 - 120 m³', 'referensi_type' => ProductionSession::class, 'referensi_id' => $session1->id, 'jumlah' => 120, 'harga_satuan' => 1_200_000, 'subtotal' => 144_000_000]);
 
-        // Invoice AMP (hotmix) — sudah terkirim ke Dinas PU.
+        // Invoice AMP (hotmix) - sudah terkirim ke Dinas PU.
         $sessionHotmix = ProductionSession::where('status', 'selesai')
             ->whereDate('mulai', now()->subDays(1)->toDateString())
             ->firstOrFail();

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Fase D (Bagian 21.7) — Checklist inventarisasi (stok opname).
+     * Fase D (Bagian 21.7) - Checklist inventarisasi (stok opname).
      *
      * Satu baris = satu item (bahan baku/sparepart) di satu titik untuk satu
      * tanggal opname. `saldo_sistem` adalah snapshot saldo hasil

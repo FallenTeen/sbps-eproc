@@ -19,7 +19,7 @@ function armadaLabel(armada) {
     const unit = [armada.kode_unit, armada.plat_nomor]
         .filter(Boolean)
         .join(" · ");
-    return armada.driver_aktif ? `${unit} — ${armada.driver_aktif}` : unit;
+    return armada.driver_aktif ? `${unit} - ${armada.driver_aktif}` : unit;
 }
 
 export default function Index({ helpers, options, filters, sort, direction }) {

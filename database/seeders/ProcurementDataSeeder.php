@@ -191,7 +191,7 @@ class ProcurementDataSeeder extends Seeder
 
         PurchaseOrderApproval::create(['purchase_order_id' => $po5->id, 'approved_by' => $ketuaArmada->id, 'status' => 'ditolak', 'catatan' => 'Stok kampas masih cukup.']);
 
-        // PO-6: diterima — aspal & filler untuk AMP (proyek hotmix).
+        // PO-6: diterima - aspal & filler untuk AMP (proyek hotmix).
         $po6 = PurchaseOrder::updateOrCreate(
             ['kode_po' => 'PO-2026-0006'],
             [

@@ -9,7 +9,7 @@ use App\Domain\Procurement\Models\StokMutasi;
 
 /**
  * Widget ringkas untuk Dashboard Inventory (Bagian 21.7): nilai stok,
- * PO menunggu approval, item mendekati habis — semua dihitung on-the-fly.
+ * PO menunggu approval, item mendekati habis - semua dihitung on-the-fly.
  */
 class InventoryDashboardAggregator
 {

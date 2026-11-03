@@ -57,7 +57,7 @@ export default function Edit({ supplier }) {
                                     Informasi Supplier
                                 </h2>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    Kode: {supplier.kode} — {supplier.nama}
+                                    Kode: {supplier.kode} - {supplier.nama}
                                 </p>
                             </div>
 

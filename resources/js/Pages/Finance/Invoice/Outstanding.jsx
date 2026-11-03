@@ -86,7 +86,7 @@ export default function Outstanding({
 
                     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
                         <div className="text-sm font-medium text-green-600 mb-1 flex items-center">
-                            <Clock className="w-4 h-4 mr-1" /> Aging 0 – 30 Hari
+                            <Clock className="w-4 h-4 mr-1" /> Aging 0 - 30 Hari
                         </div>
                         <div className="text-2xl font-bold text-gray-900">
                             Rp{" "}
@@ -98,7 +98,7 @@ export default function Outstanding({
 
                     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-amber-500">
                         <div className="text-sm font-medium text-amber-600 mb-1 flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" /> Aging 31 – 60
+                            <Calendar className="w-4 h-4 mr-1" /> Aging 31 - 60
                             Hari
                         </div>
                         <div className="text-2xl font-bold text-gray-900">

@@ -105,7 +105,7 @@ function StatCard({ icon: Icon, label, value, suffix, color, href, hrefLabel }) 
 // ── Portal-specific dashboard sections ────────────────────────────
 
 function formatHariSisa(value) {
-    if (value == null) return '—';
+    if (value == null) return '-';
     if (value < 0) return `${Math.abs(value)} hr lewat`;
     if (value === 0) return 'Hari ini';
     return `${value} hr`;
@@ -157,7 +157,7 @@ function AdminDashboard({
                     <StatCard
                         icon={Users}
                         label="Total User Aktif"
-                        value={summaryToday.total_users ?? '—'}
+                        value={summaryToday.total_users ?? '-'}
                         color="red"
                         suffix="System"
                         href="/users"
@@ -189,7 +189,7 @@ function AdminDashboard({
                     <StatCard
                         icon={ShieldCheck}
                         label="Audit Log"
-                        value={summaryToday.audit_log_count ?? '—'}
+                        value={summaryToday.audit_log_count ?? '-'}
                         color="purple"
                         href="/audit/logs"
                         hrefLabel="Lihat Audit Log"
@@ -734,7 +734,7 @@ function SDMDashboard({ ownerData }) {
             <StatCard
                 icon={Wallet}
                 label="Payroll Periode Ini"
-                value={summaryToday.payroll_periode || '—'}
+                value={summaryToday.payroll_periode || '-'}
                 color="purple"
                 href="/hr/payroll"
                 hrefLabel="Payroll"
@@ -751,7 +751,7 @@ function KontraktorDashboard({ ownerData }) {
             <StatCard
                 icon={Building2}
                 label="Proyek Aktif"
-                value={summaryToday.proyek_aktif ?? '—'}
+                value={summaryToday.proyek_aktif ?? '-'}
                 suffix="Proyek"
                 color="teal"
                 href="/kontraktor/dashboard"
@@ -760,7 +760,7 @@ function KontraktorDashboard({ ownerData }) {
             <StatCard
                 icon={ClipboardList}
                 label="Invoice"
-                value={summaryToday.invoice_count ?? '—'}
+                value={summaryToday.invoice_count ?? '-'}
                 suffix="Unit"
                 color="teal"
                 href="/kontraktor/dashboard"
@@ -771,7 +771,7 @@ function KontraktorDashboard({ ownerData }) {
                 label="Tagihan Outstanding"
                 value={summaryToday.piutang_outstanding != null
                     ? `Rp ${Number(summaryToday.piutang_outstanding).toLocaleString('id-ID')}`
-                    : '—'}
+                    : '-'}
                 color="amber"
                 href="/kontraktor/dashboard"
                 hrefLabel="Detail Tagihan"
@@ -792,7 +792,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
     const proyekList = ownerData?.proyek_list || [];
     const access = ownerData?.access || {};
 
-    // Izin menghadirkan kartu yang menuju halaman terbatas — data sudah
+    // Izin menghadirkan kartu yang menuju halaman terbatas - data sudah
     // dibatasi server-side (OwnerDashboardAggregatorService). Card dengan
     // akses yang tidak dimiliki TIDAK dirender (menghindari link 403).
     const canManageUsers = access.can_manage_users;
@@ -807,7 +807,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
 
     // Role yang memiliki privilege untuk mengatur/melihat proyek LINTAS UNIT.
     // PENTING: role eksternal Kontraktor (dan pemegang 'view proyek' saja)
-    // TIDAK termasuk di sini — mereka tidak boleh menerima peta & daftar
+    // TIDAK termasuk di sini - mereka tidak boleh menerima peta & daftar
     // proyek seluruh perusahaan. Portal kontraktor punya halaman sendiri
     // (Kontraktor/Index) yang discoping ke proyek miliknya saja.
     const canManageOrViewProyek =
@@ -879,7 +879,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {renderPortalDashboard()}
 
-                    {/* Monitoring Peta & Titik Proyek — untuk role yang memiliki privilege mengatur/melihat proyek */}
+                    {/* Monitoring Peta & Titik Proyek - untuk role yang memiliki privilege mengatur/melihat proyek */}
                     {canManageOrViewProyek && (
                         <DashboardPetaProyek
                             titiks={petaTitik}
@@ -887,7 +887,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         />
                     )}
 
-                    {/* RAB Summary — hanya untuk yang bisa akses laporan keuangan (menghindari link 403) */}
+                    {/* RAB Summary - hanya untuk yang bisa akses laporan keuangan (menghindari link 403) */}
                     {canViewFinance && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between space-y-4">
@@ -937,7 +937,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </div>
                     )}
 
-                    {/* Tren Grafik — hanya untuk yang bisa akses laporan keuangan */}
+                    {/* Tren Grafik - hanya untuk yang bisa akses laporan keuangan */}
                     {canViewFinance && trenBulanan.length > 0 && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
                             <div className="flex justify-between items-center border-b pb-3">

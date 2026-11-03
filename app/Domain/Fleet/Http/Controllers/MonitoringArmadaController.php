@@ -13,7 +13,7 @@ use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * Bagian 21.11 — Monitoring Armada (web).
+ * Bagian 21.11 - Monitoring Armada (web).
  *
  * Menampilkan metrik utilisasi armada (total jam aktif, HM/Jam atau jam/rit,
  * rekap durasi per tanggal, breakdown per unit bisnis) serta kondisi seluruh

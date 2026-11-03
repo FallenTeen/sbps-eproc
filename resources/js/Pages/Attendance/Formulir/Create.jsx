@@ -91,7 +91,7 @@ export default function Create({ presensis }) {
                                     </option>
                                     {presensis.map((p) => (
                                         <option key={p.id} value={p.id}>
-                                            {p.karyawan?.nama} —{" "}
+                                            {p.karyawan?.nama} -{" "}
                                             {formatTanggal(p.check_in)}
                                         </option>
                                     ))}

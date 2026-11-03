@@ -63,7 +63,7 @@ return [
 
         'kontraktor' => [
             'name' => 'Kontraktor',
-            'description' => 'Portal klien — proyek kontrak, progress produksi, invoice, dan komunikasi.',
+            'description' => 'Portal klien - proyek kontrak, progress produksi, invoice, dan komunikasi.',
             'icon' => 'ClipboardList',
             'color' => 'teal',
             'roles' => ['Kontraktor'],

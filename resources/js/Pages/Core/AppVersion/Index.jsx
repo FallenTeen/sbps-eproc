@@ -671,7 +671,7 @@ export default function Index({
                             disabled={processing || !hasChanges}
                         >
                             {hasChanges
-                                ? 'Lanjut — Rincian Dampak'
+                                ? 'Lanjut - Rincian Dampak'
                                 : 'Tidak Ada Perubahan'}
                         </PrimaryButton>
                     </div>
@@ -787,7 +787,7 @@ export default function Index({
                         >
                             {processing
                                 ? 'Menyimpan...'
-                                : 'Saya Paham — Simpan'}
+                                : 'Saya Paham - Simpan'}
                         </PrimaryButton>
                     </div>
                 </div>

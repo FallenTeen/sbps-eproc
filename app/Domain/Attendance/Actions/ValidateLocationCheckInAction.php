@@ -14,7 +14,7 @@ class ValidateLocationCheckInAction
         return [
             'status_validasi' => $status,
             'catatan_override' => $status === 'luar_radius'
-                ? sprintf('Di luar area kerja — jarak %d m', (int) round($distance))
+                ? sprintf('Di luar area kerja - jarak %d m', (int) round($distance))
                 : null,
         ];
     }

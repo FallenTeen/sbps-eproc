@@ -30,7 +30,7 @@ export default function Edit({ pengiriman, armadas, drivers }) {
                                 Ubah Pengiriman
                             </h1>
                             <p className="mt-1 text-sm text-gray-500">
-                                Ubah jadwal pengiriman #{pengiriman.id} —{" "}
+                                Ubah jadwal pengiriman #{pengiriman.id} -{" "}
                                 {pengiriman.session?.produk?.nama}.
                             </p>
                         </div>

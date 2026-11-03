@@ -275,7 +275,7 @@ export default function Riwayat({ pengajuans = [], histories = [] }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Workshop — Riwayat Servis" />
+            <Head title="Workshop - Riwayat Servis" />
 
             <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-6">
                 {/* Ringkasan */}

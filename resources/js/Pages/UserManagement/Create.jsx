@@ -329,7 +329,7 @@ export default function Create({ roles, karyawans = [] }) {
                                             </option>
                                             {karyawans.map((k) => (
                                                 <option key={k.id} value={k.id}>
-                                                    {k.nama} — {k.jabatan}
+                                                    {k.nama} - {k.jabatan}
                                                 </option>
                                             ))}
                                         </select>

@@ -118,7 +118,7 @@ test('active users mengembalikan koordinat GPS terakhir & google maps url', func
         'status_validasi' => 'valid',
     ]);
 
-    // Titik GPS lama — harus TIDAK dipilih sebagai lokasi terakhir.
+    // Titik GPS lama - harus TIDAK dipilih sebagai lokasi terakhir.
     MobileTrackingLocation::create([
         'karyawan_id' => $targetKaryawan->id,
         'latitude' => -7.0900,
@@ -126,7 +126,7 @@ test('active users mengembalikan koordinat GPS terakhir & google maps url', func
         'recorded_at' => now()->subHours(1),
     ]);
 
-    // Titik GPS terbaru — inilah yang menjadi last_lat/last_lng & url.
+    // Titik GPS terbaru - inilah yang menjadi last_lat/last_lng & url.
     MobileTrackingLocation::create([
         'karyawan_id' => $targetKaryawan->id,
         'latitude' => -7.1010,

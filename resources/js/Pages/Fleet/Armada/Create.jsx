@@ -72,7 +72,7 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 >
                                     <option value="">
-                                        — Pilih Unit Bisnis —
+                                        - Pilih Unit Bisnis -
                                     </option>
                                     {unitBisnis.map((ub) => (
                                         <option key={ub.id} value={ub.id}>
@@ -308,7 +308,7 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                                     }
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 >
-                                    <option value="">— Pilih Titik —</option>
+                                    <option value="">- Pilih Titik -</option>
                                     {titiks.map((t) => (
                                         <option key={t.id} value={t.id}>
                                             {t.nama}

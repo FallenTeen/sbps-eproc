@@ -5,9 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Bagian 21.9 — Role Workshop: to-do list terjadwal.
+ * Bagian 21.9 - Role Workshop: to-do list terjadwal.
  *
- * `workshop_todos` — servis rutin (grease, oli, dsb) yang dijadwalkan
+ * `workshop_todos` - servis rutin (grease, oli, dsb) yang dijadwalkan
  * (harian/mingguan/bulanan/tanggal tertentu), terpisah dari ajuan insidental
  * (21.8). Status `terjadwal`|`selesai` disimpan; `terlewat` diturunkan dari
  * jadwal (prinsip Bagian 0 #1: data turunan tidak disimpan).

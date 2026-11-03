@@ -315,7 +315,7 @@ export default function Edit({ user, roles, userRole, karyawans = [] }) {
                             <p className="mt-2 text-sm text-slate-500">
                                 Data karyawan yang memakai akun ini (muncul di
                                 modul SDM & Payroll). Karyawan tidak wajib punya
-                                akun — satu karyawan hanya boleh menaungi satu
+                                akun - satu karyawan hanya boleh menaungi satu
                                 akun.
                             </p>
                         </div>
@@ -418,7 +418,7 @@ export default function Edit({ user, roles, userRole, karyawans = [] }) {
                                             </option>
                                             {karyawans.map((k) => (
                                                 <option key={k.id} value={k.id}>
-                                                    {k.nama} — {k.jabatan}
+                                                    {k.nama} - {k.jabatan}
                                                 </option>
                                             ))}
                                         </select>

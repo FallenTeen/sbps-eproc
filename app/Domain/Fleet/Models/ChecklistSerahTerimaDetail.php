@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Bagian 21.10 — detail item pengecekan kondisi unit (baik/rusak).
+ * Bagian 21.10 - detail item pengecekan kondisi unit (baik/rusak).
  */
 class ChecklistSerahTerimaDetail extends Model
 {

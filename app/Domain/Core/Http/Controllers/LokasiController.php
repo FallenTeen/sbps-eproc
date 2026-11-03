@@ -12,12 +12,12 @@ use Throwable;
 /**
  * Bantuan input lokasi "tempel link Google Maps" untuk web.
  *
- * resolve : ekstrak lat/lng dari tautan yang ditempel pengguna (tanpa SDK —
+ * resolve : ekstrak lat/lng dari tautan yang ditempel pengguna (tanpa SDK -
  *           link hanya sumber koordinat; tampilan tetap memakai map OSM).
  * reverse : cari alamat dari koordinat via Nominatim (OpenStreetMap) sebagai
  *           proxy server (User-Agent jujur + cache 7 hari agar hormati
  *           kebijakan rate-limit). Alamat hanya DITAMPILKAN untuk konfirmasi
- *           "Apakah lokasi ini sudah benar?" — tidak dipersist.
+ *           "Apakah lokasi ini sudah benar?" - tidak dipersist.
  */
 class LokasiController extends Controller
 {

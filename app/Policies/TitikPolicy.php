@@ -24,7 +24,7 @@ class TitikPolicy
      */
     public function viewAny(User $user): bool
     {
-        // Kontraktor eksternal: TIDAK pakai layar core titik — cukup portal/pivot.
+        // Kontraktor eksternal: TIDAK pakai layar core titik - cukup portal/pivot.
         if ($user->hasRole('Kontraktor')) {
             return false;
         }

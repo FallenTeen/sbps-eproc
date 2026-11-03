@@ -14,7 +14,7 @@ class SeedMobileDemo extends Command
     public function handle(): int
     {
         $this->info('═══════════════════════════════════════════════════');
-        $this->info('  SBPS Mobile — Demo Data Seeder (Staging)');
+        $this->info('  SBPS Mobile - Demo Data Seeder (Staging)');
         $this->info('═══════════════════════════════════════════════════');
         $this->newLine();
 

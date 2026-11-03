@@ -358,7 +358,7 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Monitoring Armada</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Metrik utilisasi (jam aktif, HM/Jam, jam/rit) & kondisi seluruh armada — rentang{" "}
+                        Metrik utilisasi (jam aktif, HM/Jam, jam/rit) & kondisi seluruh armada - rentang{" "}
                         <strong>{filters.dari || "30 hari terakhir"}</strong> s.d.{" "}
                         <strong>{filters.sampai || "hari ini"}</strong>.
                     </p>
@@ -384,7 +384,7 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                             <option value="">Semua Unit</option>
                             {unit_bisnis.map((u) => (
                                 <option key={u.id} value={u.id}>
-                                    {u.kode} — {u.nama}
+                                    {u.kode} - {u.nama}
                                 </option>
                             ))}
                         </select>
@@ -458,7 +458,7 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 <KpiCard
                     title="Rasio HM/Jam (Alat Berat)"
                     value={r.rasio_hm_jam == null ? "-" : fmtNum(r.rasio_hm_jam)}
-                    note="Pemakaian HM ÷ jam aktif — khusus alat berat"
+                    note="Pemakaian HM ÷ jam aktif - khusus alat berat"
                     icon={<Gauge className="w-6 h-6 text-fuchsia-500" />}
                     colorClass="bg-fuchsia-50 border-fuchsia-100 text-fuchsia-900"
                 />
@@ -704,17 +704,17 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                                             {u.stok_solar_terakhir ? (
                                                 <span className="text-xs">{STOK_SOLAR[u.stok_solar_terakhir] || u.stok_solar_terakhir}</span>
                                             ) : (
-                                                <span className="text-gray-300 text-xs">—</span>
+                                                <span className="text-gray-300 text-xs">-</span>
                                             )}
                                         </td>
                                         <td className="py-2 pr-4 text-right tabular-nums">{u.jumlah_rit}</td>
                                         <td className="py-2 pr-4 text-right tabular-nums">
                                             {u.aktif ? (
                                                 <span className={u.idle ? "text-purple-600 font-semibold" : "text-gray-400"}>
-                                                    {u.hari_sejak_aktivitas ?? "—"}
+                                                    {u.hari_sejak_aktivitas ?? "-"}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-300">—</span>
+                                                <span className="text-gray-300">-</span>
                                             )}
                                         </td>
                                         <td className="py-2">

@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Bagian 21.9 — tandai to-do servis rutin selesai.
+ * Bagian 21.9 - tandai to-do servis rutin selesai.
  */
 class CompleteWorkshopTodoAction
 {

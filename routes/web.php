@@ -17,6 +17,8 @@ use App\Domain\Finance\Http\Controllers\InvoiceController;
 use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
 use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
 use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
+use App\Domain\Finance\Http\Controllers\RekapKasController;
+use App\Domain\Finance\Http\Controllers\RekapPublikController;
 use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
@@ -127,7 +129,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
         Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
 
-        // Versi Aplikasi Mobile (version-gate / Shorebird — docs/TODO-SHOREBIRD-WEB.md W2)
+        // Versi Aplikasi Mobile (version-gate / Shorebird - docs/TODO-SHOREBIRD-WEB.md W2)
         Route::prefix('app-version')->name('app-version.')->middleware('permission:manage app version')->group(function () {
             Route::get('/', [AppVersionController::class, 'index'])->name('index');
             Route::put('{appVersion}', [AppVersionController::class, 'update'])->name('update');
@@ -135,7 +137,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ============================================================
-    // KOMUNIKASI PROYEK (sisi KANTOR — thread kantor↔kontraktor)
+    // KOMUNIKASI PROYEK (sisi KANTOR - thread kantor↔kontraktor)
     // ============================================================
     Route::prefix('komunikasi')->name('komunikasi.')->middleware(['permission:manage proyek|view proyek'])->group(function () {
         Route::get('/', [KomunikasiController::class, 'index'])->name('index');
@@ -171,7 +173,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ============================================================
-    // INVENTORY MODULE (Bagian 21.7) — role baru, reuse Procurement
+    // INVENTORY MODULE (Bagian 21.7) - role baru, reuse Procurement
     // ============================================================
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('dashboard', [InventoryDashboardController::class, 'index'])
@@ -194,7 +196,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('armada', ArmadaController::class);
         Route::post('armada/{armada}/assign-driver', [ArmadaController::class, 'assignDriver'])->name('armada.assign-driver');
 
-        // v6 (21.2) — Penanggung Jawab Armada (utama & cadangan)
+        // v6 (21.2) - Penanggung Jawab Armada (utama & cadangan)
         Route::get('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'index'])->name('armada.penanggung-jawab.index');
         Route::post('armada/{armada}/penanggung-jawab', [ArmadaPenanggungJawabController::class, 'store'])->name('armada.penanggung-jawab.store');
         Route::post('armada/{armada}/penanggung-jawab/cadangan', [ArmadaPenanggungJawabController::class, 'activateCadangan'])->name('armada.penanggung-jawab.cadangan');
@@ -262,13 +264,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('rute-tarif/{ruteTarif}/set-harga', [RuteTarifController::class, 'setHarga'])->name('rute-tarif.set-harga');
         Route::get('rute-tarif/current/{asal}/{tujuan}', [RuteTarifController::class, 'current'])->name('rute-tarif.current');
 
-        // v6 (21.11) — Monitoring Armada (metrik utilisasi & kondisi armada)
+        // v6 (21.11) - Monitoring Armada (metrik utilisasi & kondisi armada)
         Route::get('monitoring-armada', [MonitoringArmadaController::class, 'index'])->name('monitoring-armada.index');
         Route::get('monitoring-armada/export', [MonitoringArmadaController::class, 'export'])->name('monitoring-armada.export');
         Route::get('monitoring-armada/{armada}/detail', [MonitoringArmadaController::class, 'detail'])->name('monitoring-armada.detail');
     });
 
-    // v7 (21.6) — Helper Armada (diinput Ketua Armada / HR / Owner).
+    // v7 (21.6) - Helper Armada (diinput Ketua Armada / HR / Owner).
     // Grup sendiri (di luar permission fleet) supaya Koordinator SDM ikut akses.
     Route::prefix('fleet/helper')->name('fleet.helper.')->middleware('permission:manage helper armada')->group(function () {
         Route::get('/', [HelperArmadaController::class, 'index'])->name('index');
@@ -277,7 +279,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{helper}', [HelperArmadaController::class, 'destroy'])->name('destroy');
     });
 
-    // v6 (21.8) — Sistem Servis Armada (multi-bagian: ajuan → approval →
+    // v6 (21.8) - Sistem Servis Armada (multi-bagian: ajuan → approval →
     // workshop → sparepart Inventory). Group terpisah agar role Workshop &
     // Inventory ikut ter-expose (policy yang memilah akses per bagian).
     Route::prefix('fleet')->name('fleet.')->middleware([
@@ -295,7 +297,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('servis-armada/{pengajuan}', [PengajuanServisArmadaController::class, 'show'])->name('servis-armada.show');
     });
 
-    // v6 (21.9) — Role Workshop: to-do servis rutin terjadwal, ajuan sparepart
+    // v6 (21.9) - Role Workshop: to-do servis rutin terjadwal, ajuan sparepart
     // dari to-do, riwayat servis gabungan, monitoring kondisi alat produksi.
     Route::prefix('fleet/workshop')->name('fleet.workshop.')->middleware([
         'permission:view fleet service|manage fleet service|manage sparepart|view sparepart|view fleet|manage fleet',
@@ -432,7 +434,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
-    // Tracking Linimasa (web, KHUSUS Owner) — di luar group permission HR di atas.
+    // Tracking Linimasa (web, KHUSUS Owner) - di luar group permission HR di atas.
     Route::prefix('attendance')->name('attendance.')->middleware(['role:Owner'])->group(function () {
         Route::get('/tracking', [TrackingTimelineController::class, 'index'])->name('tracking.index');
     });
@@ -493,6 +495,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ============================================================
+    // REKAP PEMASUKAN & PENGELUARAN (Owner + Admin Keuangan)
+    // - penyesuaian manual ditulis ke mutasi_kas_banks
+    // ============================================================
+    Route::prefix('finance/rekap-kas')->name('finance.rekap-kas.')->group(function () {
+        Route::get('/', [RekapKasController::class, 'index'])->name('index')->middleware('permission:manage rekap keuangan');
+        Route::post('/', [RekapKasController::class, 'store'])->name('store')->middleware('permission:manage rekap keuangan');
+        Route::get('/export', [RekapKasController::class, 'export'])->name('export')->middleware('permission:manage rekap keuangan');
+        Route::put('/password', [RekapKasController::class, 'updatePassword'])->name('password')->middleware('permission:manage rekap keuangan');
+        Route::put('/{mutasiKas}', [RekapKasController::class, 'update'])->name('update')->middleware('permission:manage rekap keuangan');
+        Route::delete('/{mutasiKas}', [RekapKasController::class, 'destroy'])->name('destroy')->middleware('permission:manage rekap keuangan');
+    });
+
+    // ============================================================
     // KONTRAKTOR PORTAL (Eksternal)
     // ============================================================
     Route::prefix('kontraktor')->name('kontraktor.')->middleware(['role:Kontraktor'])->group(function () {
@@ -521,7 +536,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ============================================================
     // USER MANAGEMENT (via permission 'manage user': Owner,
-    // Admin Keuangan, Koordinator SDM — RoleMatrix)
+    // Admin Keuangan, Koordinator SDM - RoleMatrix)
     // ============================================================
     Route::prefix('users')->name('users.')->middleware(['permission:manage user'])->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
@@ -536,6 +551,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{user}/unlink-karyawan', [UserManagementController::class, 'unlinkKaryawan'])->name('unlink-karyawan');
     });
 
+});
+
+// ============================================================
+// REKAP PUBLIK (TANPA LOGIN - password sederhana via session)
+// Bisa diakses siapa pun; pengguna login juga boleh buka.
+// ============================================================
+Route::prefix('rekap-publik')->name('rekap-publik.')->group(function () {
+    Route::get('/', [RekapPublikController::class, 'index'])->name('index');
+    Route::post('/unlock', [RekapPublikController::class, 'unlock'])->name('unlock');
+    Route::post('/lock', [RekapPublikController::class, 'lock'])->name('lock');
+    Route::get('/export', [RekapPublikController::class, 'export'])->name('export');
 });
 
 // ============================================================

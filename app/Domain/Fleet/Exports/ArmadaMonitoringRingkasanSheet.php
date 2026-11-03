@@ -8,7 +8,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
- * Sheet ringkasan KPI agregat monitoring armada — ditampilkan sebagai
+ * Sheet ringkasan KPI agregat monitoring armada - ditampilkan sebagai
  * pasangan label/nilai, satu baris per metrik.
  */
 class ArmadaMonitoringRingkasanSheet implements FromArray, ShouldAutoSize, WithStyles

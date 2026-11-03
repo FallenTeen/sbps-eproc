@@ -22,7 +22,7 @@ class ProyekPolicy
     /**
      * viewAny: Owner, Koordinator terkait, role dengan permission
      *          "manage proyek" atau "view proyek".
-     *          Kontraktor (eksternal) TIDAK masuk — ia hanya memakai
+     *          Kontraktor (eksternal) TIDAK masuk - ia hanya memakai
      *          portal per-proyek (pivot proyek_user), bukan layar core.
      */
     public function viewAny(User $user): bool
@@ -53,7 +53,7 @@ class ProyekPolicy
      */
     public function view(User $user, Proyek $proyek): bool
     {
-        // Kontraktor: scoping ketat ke proyek miliknya (pivot) — bukan layar core.
+        // Kontraktor: scoping ketat ke proyek miliknya (pivot) - bukan layar core.
         if ($user->hasRole('Kontraktor')) {
             return $proyek->users()->where('users.id', $user->id)->exists();
         }

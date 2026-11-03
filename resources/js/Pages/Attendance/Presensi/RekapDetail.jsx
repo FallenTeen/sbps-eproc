@@ -51,7 +51,7 @@ export default function RekapDetail({ presensis, group_by, group_key, group_labe
                 </Link>
                 <h1 className="text-2xl font-bold text-gray-900">{group_label}</h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Detail presensi per {GROUP_NAMES[group_by]?.toLowerCase()} — {presensis.total} data
+                    Detail presensi per {GROUP_NAMES[group_by]?.toLowerCase()} - {presensis.total} data
                 </p>
             </div>
 

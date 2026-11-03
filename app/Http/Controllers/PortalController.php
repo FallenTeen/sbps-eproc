@@ -13,7 +13,7 @@ use Inertia\Response;
 class PortalController extends Controller
 {
     /**
-     * Portal landing page — card grid pilihan portal.
+     * Portal landing page - card grid pilihan portal.
      */
     public function index(): Response
     {

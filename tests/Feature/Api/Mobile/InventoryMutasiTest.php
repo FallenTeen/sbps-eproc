@@ -26,7 +26,7 @@ beforeEach(function () {
     $this->sparepart = BahanBaku::factory()->create(['kategori' => 'sparepart', 'nama' => 'Filter Oli']);
 });
 
-test('mutasi masuk via PO — GET /inventory/mutasi menampilkan baris dengan sumber pembelian', function () {
+test('mutasi masuk via PO - GET /inventory/mutasi menampilkan baris dengan sumber pembelian', function () {
     $po = PurchaseOrder::factory()->create();
 
     StokMutasi::create([
@@ -52,7 +52,7 @@ test('mutasi masuk via PO — GET /inventory/mutasi menampilkan baris dengan sum
         ->assertJsonPath('data.items.0.created_by', $this->user->nama_lengkap ?? $this->user->name);
 });
 
-test('mutasi keluar produksi — sumber produksi; filter tanggal_mulai berfungsi', function () {
+test('mutasi keluar produksi - sumber produksi; filter tanggal_mulai berfungsi', function () {
     StokMutasi::create([
         'bahan_baku_id' => $this->sparepart->id,
         'titik_id' => $this->titik->id,

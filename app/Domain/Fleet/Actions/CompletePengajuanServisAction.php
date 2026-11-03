@@ -8,9 +8,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Bagian 21.8 — Selesaikan servis. Menutup status jadi `selesai` dan
+ * Bagian 21.8 - Selesaikan servis. Menutup status jadi `selesai` dan
  * otomatis membuat baris `service_history` (reuse RecordServiceHistoryAction,
- * satu-satunya sumber realisasi RAB kategori `sparepart` — Keputusan #1, Bag. 16).
+ * satu-satunya sumber realisasi RAB kategori `sparepart` - Keputusan #1, Bag. 16).
  */
 class CompletePengajuanServisAction
 {

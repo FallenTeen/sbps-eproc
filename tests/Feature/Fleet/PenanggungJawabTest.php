@@ -33,7 +33,7 @@ beforeEach(function () {
 });
 
 // =========================================================
-// Fase A2 — penanggung jawab armada (utama & cadangan)
+// Fase A2 - penanggung jawab armada (utama & cadangan)
 // =========================================================
 
 describe('Fase A2 - Assign Penanggung Jawab', function () {

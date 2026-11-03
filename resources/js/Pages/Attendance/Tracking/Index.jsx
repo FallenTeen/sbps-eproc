@@ -148,7 +148,7 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                                             </span>
                                             <span className="inline-flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
-                                                {formatJam(r.check_in)} – {r.check_out ? formatJam(r.check_out) : "aktif"}
+                                                {formatJam(r.check_in)} - {r.check_out ? formatJam(r.check_out) : "aktif"}
                                             </span>
                                         </div>
                                         <div className={`mt-1 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>

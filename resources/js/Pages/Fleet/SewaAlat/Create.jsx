@@ -105,7 +105,7 @@ export default function SewaAlatCreate({
                                 className={selectClass}
                                 required
                             >
-                                <option value="">— Pilih Alat —</option>
+                                <option value="">- Pilih Alat -</option>
                                 {armadaList.map((a) => (
                                     <option key={a.id} value={a.id}>
                                         {a.jenis} / {a.plat_nomor}
@@ -149,7 +149,7 @@ export default function SewaAlatCreate({
                                 className={selectClass}
                             >
                                 <option value="">
-                                    — Pilih Proyek Internal (opsional) —
+                                    - Pilih Proyek Internal (opsional) -
                                 </option>
                                 {proyekList.map((p) => (
                                     <option key={p.id} value={p.id}>
@@ -172,7 +172,7 @@ export default function SewaAlatCreate({
                                 className={selectClass}
                                 required
                             >
-                                <option value="">— Pilih Tipe Sewa —</option>
+                                <option value="">- Pilih Tipe Sewa -</option>
                                 <option value="internal">Internal</option>
                                 <option value="eksternal">Eksternal</option>
                             </select>

@@ -64,7 +64,7 @@ export default function Show({ mixDesign, produks }) {
                         <div className="min-w-0">
                             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                                 {mixDesign.mutu_beton}
-                                {mixDesign.nama ? ` — ${mixDesign.nama}` : ""}
+                                {mixDesign.nama ? ` - ${mixDesign.nama}` : ""}
                             </h1>
 
                             <p className="mt-1 text-sm text-gray-500">

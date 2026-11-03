@@ -18,7 +18,7 @@ beforeEach(function () {
 });
 
 /**
- * Semua role — termasuk role divisi — harus punya privilege persis sesuai
+ * Semua role - termasuk role divisi - harus punya privilege persis sesuai
  * matriks kanonik (base RoleMatrix::ROLES + DIVISI_AUGMENTS).
  */
 test('setiap role memiliki privilege persis matriks kanonik ({role})', function (string $roleName) {
@@ -36,7 +36,7 @@ test('setiap role memiliki privilege persis matriks kanonik ({role})', function 
 });
 
 /**
- * REGRESI — root cause tombol approval hilang: user
+ * REGRESI - root cause tombol approval hilang: user
  * ketua.armada@example.com (role Ketua Divisi Armada) sempat kehilangan
  * `approve fleet service` karena DivisiRoleSeeder lama menimpa via
  * syncPermissions. Setelah seeder kanonik, approval WAJIB muncul.

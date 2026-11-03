@@ -69,7 +69,7 @@ export default function Create({ unitBisnis }) {
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 >
                                     <option value="">
-                                        — Pilih Unit Bisnis —
+                                        - Pilih Unit Bisnis -
                                     </option>
                                     {unitBisnis.map((u) => (
                                         <option key={u.id} value={u.id}>

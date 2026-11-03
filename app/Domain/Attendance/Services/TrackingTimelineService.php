@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 /**
  * Bangun linimasa lokasi GPS untuk satu presensi (tampilan web khusus Owner).
  *
- * Sampling per `bucketMinutes` menit HANYA untuk kepadatan tampilan — interval
+ * Sampling per `bucketMinutes` menit HANYA untuk kepadatan tampilan - interval
  * GPS di HP tidak diubah.
  */
 class TrackingTimelineService

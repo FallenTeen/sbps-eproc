@@ -7,7 +7,7 @@ use App\Domain\Fleet\Models\SewaAlatJam;
 class RecordSewaAlatJamAction
 {
     /**
-     * v6 (Bagian 21.5) — sewa alat per jam (HM-based), mendukung internal & eksternal.
+     * v6 (Bagian 21.5) - sewa alat per jam (HM-based), mendukung internal & eksternal.
      * tipe_sewa=internal -> wajib proyek_id. tipe_sewa=eksternal -> wajib data penyewa.
      */
     public function execute(array $data): SewaAlatJam

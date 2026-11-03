@@ -12,7 +12,7 @@ uses(TestCase::class);
 /**
  * Foto yang diunggah dari aplikasi mobile disimpan di disk `public` dengan path
  * relatif. Halaman web Fleet membaca field `foto_*_url`, sehingga accessor URL
- * HARUS ikut diserialisasi (`$appends`) — tanpa ini foto tidak pernah muncul
+ * HARUS ikut diserialisasi (`$appends`) - tanpa ini foto tidak pernah muncul
  * di website meski file-nya ada.
  */
 test('checklist awal menyertakan url foto saat diserialisasi', function () {

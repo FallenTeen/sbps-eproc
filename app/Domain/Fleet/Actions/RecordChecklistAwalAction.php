@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Catat "Checklist Awal" (pagi) pada tabel bersama `armada_checklist_harians`
  * (dipakai armada maupun mesin produksi). Liter/rupiah solar TIDAK lagi
- * disimpan di sini — pindah ke armada_pengisian_solars.
+ * disimpan di sini - pindah ke armada_pengisian_solars.
  */
 class RecordChecklistAwalAction
 {

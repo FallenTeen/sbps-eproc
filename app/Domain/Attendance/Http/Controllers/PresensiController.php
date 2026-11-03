@@ -59,7 +59,7 @@ class PresensiController extends Controller
     }
 
     /**
-     * Render mode grouped dari Index — stats + rekap table (clickable).
+     * Render mode grouped dari Index - stats + rekap table (clickable).
      */
     private function renderGroupedIndex(Request $request, string $groupBy)
     {

@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Bagian 21.8 #2 — Tolak ajuan oleh Ketua Divisi Armada.
+ * Bagian 21.8 #2 - Tolak ajuan oleh Ketua Divisi Armada.
  */
 class RejectPengajuanServisAction
 {

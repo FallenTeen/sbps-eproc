@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * v6 (Bagian 21.1) — klasifikasi armada bergerak (jalan raya) vs alat berat stasioner.
+     * v6 (Bagian 21.1) - klasifikasi armada bergerak (jalan raya) vs alat berat stasioner.
      */
     public function up(): void
     {

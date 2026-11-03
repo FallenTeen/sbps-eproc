@@ -14,7 +14,7 @@ use App\Models\User;
  * - Driver aktif (`armada_drivers` dengan `status` aktif).
  *
  * Manajer (Owner/Admin Keuangan/Ketua Divisi Armada dll.) TIDAK dibatasi
- * daftar ini — mereka melihat/mengelola semua armada.
+ * daftar ini - mereka melihat/mengelola semua armada.
  */
 class ArmadaOwnership
 {
