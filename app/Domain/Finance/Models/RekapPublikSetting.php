@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Singleton pengaturan halaman publik /rekap-publik.
+ * Singleton pengaturan halaman publik /rekap-pengeluaran-publik.
  * Password disimpan terenkripsi (bisa di-reveal oleh pemegang
  * permission 'manage rekap keuangan'); null/kosong = halaman
  * publik bebas diakses.

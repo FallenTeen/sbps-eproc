@@ -60,7 +60,7 @@ class ArmadaController extends Controller
             return collect();
         }
 
-        return ArmadaDriver::with(['armada.unitBisnis', 'armada.titik'])
+        return ArmadaDriver::with(['armada.unitBisnis', 'armada.titik', 'armada.media', 'armada.dokumenBerkalas'])
             ->where('karyawan_id', $karyawan->id)
             ->where('status', 'aktif')
             ->get()
@@ -166,6 +166,22 @@ class ArmadaController extends Controller
                 'odo_terkini' => $latestOdo,
                 'jam_operasional_terkini' => $latestJam,
                 'helper_aktif_count' => (int) ($helperCounts[$a->id] ?? 0),
+                'foto_url' => $a->foto_url,
+                'foto_thumb_url' => $a->foto_thumb_url,
+                'data_diperbarui_pada' => $a->data_diperbarui_pada?->toIso8601String(),
+                'dokumen_berkala' => $a->dokumenBerkalas->map(function ($doc) {
+                    $now = now()->startOfDay();
+                    $sisaHari = $doc->tanggal_jatuh_tempo ? (int) $now->diffInDays($doc->tanggal_jatuh_tempo, false) : null;
+                    return [
+                        'id' => $doc->id,
+                        'jenis' => $doc->jenis_label,
+                        'nomor' => $doc->nomor_dokumen,
+                        'jatuh_tempo' => $doc->tanggal_jatuh_tempo?->toDateString(),
+                        'sisa_hari' => $sisaHari,
+                        'status' => $doc->status_dokumen,
+                        'nominal_biaya' => $doc->nominal_biaya,
+                    ];
+                })->values()->all(),
             ];
         });
 
@@ -196,7 +212,7 @@ class ArmadaController extends Controller
 
         $perPage = $validated['per_page'] ?? 15;
 
-        $query = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik'])
+        $query = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik', 'muatan', 'verifikasiLogistik', 'verifikasiSecurity', 'timbang'])
             ->when(! $isManager, fn ($q) => $q->where('driver_karyawan_id', $karyawan?->id))
             ->orderByDesc('tanggal');
 
@@ -229,6 +245,17 @@ class ArmadaController extends Controller
                 ] : null,
                 'proyek' => $r->proyek?->nama,
                 'titik' => $r->titik?->nama,
+                'wajib_jembatan_timbang' => (bool) $r->wajib_jembatan_timbang,
+                'status_verifikasi_logistik' => $r->verifikasiLogistik?->status,
+                'status_verifikasi_security' => $r->verifikasiSecurity?->status,
+                'jumlah_driver' => $r->muatan?->jumlah_driver ?? (float) ($r->jumlah_volume ?: $r->jumlah_rit),
+                'jumlah_verifikasi_logistik' => $r->verifikasiLogistik?->jumlah_verifikasi,
+                'satuan_muatan' => $r->muatan?->satuan ?? $r->satuan_volume,
+                'ada_selisih' => (bool) $r->ada_selisih,
+                'tara_master_kg' => (float) ($r->armada?->tara_master_kg ?? 0),
+                'berat_kosong_kg' => $r->timbang?->berat_kosong_kg,
+                'berat_isi_kg' => $r->timbang?->berat_isi_kg,
+                'berat_netto_kg' => $r->timbang?->berat_netto_kg,
             ]),
             'current_page' => $page->currentPage(),
             'last_page' => $page->lastPage(),
@@ -422,6 +449,9 @@ class ArmadaController extends Controller
             'tanggal' => $p->tanggal?->toDateString(),
             'odo_atau_hm' => $p->odo_atau_hm,
             'liter' => $p->liter,
+            'liter_sumber' => $p->liter_sumber,
+            'ocr_status' => $p->ocr_status,
+            'nota_lengkap' => (bool) $p->nota_lengkap,
             'nominal_rp' => $p->nominal_rp,
             'harga_per_liter' => $p->harga_per_liter,
             'foto_odo_url' => $p->foto_odo_url,
@@ -625,7 +655,9 @@ class ArmadaController extends Controller
             'armada_id' => 'required|string|exists:armadas,id',
             'tanggal' => 'nullable|date|before_or_equal:today',
             'odo_atau_hm' => 'required|numeric|min:0',
-            'liter' => 'required|numeric|min:0.01',
+            // TD-A: app baru tidak mengirim liter (diisi Ketua Armada via web);
+            // app lama tetap kompatibel (tersimpan liter_sumber = manual).
+            'liter' => 'nullable|numeric|min:0.01',
             'nominal_rp' => 'required|numeric|min:0.01',
             'foto_odo' => 'nullable|image|max:5120',
             'foto_odo_metadata' => 'nullable',
@@ -657,14 +689,11 @@ class ArmadaController extends Controller
         if (! $fotoOdo) {
             return $this->error('Foto ODO saat isi wajib diisi.', 422);
         }
-        if (! $fotoNota) {
-            return $this->error('Foto nota wajib diisi.', 422);
-        }
 
         $pengisian = app(RecordPengisianSolarAction::class)->execute($armada, [
             'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
             'odo_atau_hm' => $validated['odo_atau_hm'],
-            'liter' => $validated['liter'],
+            'liter' => $validated['liter'] ?? null,
             'nominal_rp' => $validated['nominal_rp'],
             'foto_odo' => $fotoOdo,
             'foto_odo_metadata' => $this->decodeMetadata($validated['foto_odo_metadata'] ?? null),

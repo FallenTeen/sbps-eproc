@@ -67,10 +67,14 @@ class RecordPengisianSolarAction
 
     private function persist(Armada $armada, array $data, ArmadaPengisianSolar $pengisian): ArmadaPengisianSolar
     {
-        $liter = (float) ($data['liter'] ?? $pengisian->liter);
-        $nominal = (float) ($data['nominal_rp'] ?? $pengisian->nominal_rp);
+        // TD-A: liter boleh tidak dikirim driver (diisi belakangan oleh
+        // Ketua Armada/Keuangan via web). `null` berarti belum diisi.
+        $literAda = ($data['liter'] ?? null) !== null;
+        $liter = $literAda ? (float) $data['liter'] : ($pengisian->liter !== null ? (float) $pengisian->liter : null);
+        $nominal = ($data['nominal_rp'] ?? $pengisian->nominal_rp) !== null ? (float) ($data['nominal_rp'] ?? $pengisian->nominal_rp) : null;
         $tanggal = $data['tanggal'] ?? $pengisian->tanggal?->toDateString() ?? now()->toDateString();
         $awal = $armada->checklists()->whereDate('tanggal', $tanggal)->first();
+        $fotoNota = $data['foto_nota'] ?? $pengisian->foto_nota;
 
         $pengisian->fill([
             'armada_id' => $armada->id,
@@ -83,12 +87,19 @@ class RecordPengisianSolarAction
             'foto_odo' => $data['foto_odo'] ?? $pengisian->foto_odo,
             'foto_odo_metadata' => $data['foto_odo_metadata'] ?? $pengisian->foto_odo_metadata,
             'liter' => $liter,
+            'liter_sumber' => $liter !== null
+                ? ($data['liter_sumber'] ?? $pengisian->liter_sumber ?? 'manual')
+                : null,
+            'ocr_status' => $data['ocr_status'] ?? $pengisian->ocr_status,
+            'nota_lengkap' => $fotoNota !== null,
             'nominal_rp' => $nominal,
-            'harga_per_liter' => $liter > 0 ? round($nominal / $liter, 2) : 0,
-            'foto_nota' => $data['foto_nota'] ?? $pengisian->foto_nota,
+            'harga_per_liter' => $liter !== null && $liter > 0 ? round($nominal / $liter, 2) : null,
+            'foto_nota' => $fotoNota,
             'foto_nota_metadata' => $data['foto_nota_metadata'] ?? $pengisian->foto_nota_metadata,
             'catatan' => $data['catatan'] ?? $pengisian->catatan,
             'client_uuid' => $data['client_uuid'] ?? $pengisian->client_uuid,
+            'diperbarui_oleh_id' => $data['diperbarui_oleh_id'] ?? $pengisian->diperbarui_oleh_id,
+            'diverifikasi_pada' => $data['diverifikasi_pada'] ?? $pengisian->diverifikasi_pada,
         ]);
 
         $pengisian->save();

@@ -149,11 +149,13 @@ class CalculateArmadaUtilizationAction
             $timeline->push([
                 'tanggal' => $row->tanggal->toDateString(),
                 'tipe' => 'solar',
-                'label' => 'Pengisian solar - '.number_format((float) $row->liter, 2, ',', '.').' L',
+                'label' => $row->liter !== null
+                    ? 'Pengisian solar - '.number_format((float) $row->liter, 2, ',', '.').' L'
+                    : 'Pengisian solar - liter belum diisi',
                 'jam_aktif' => 0.0,
                 'hm' => 0.0,
                 'odo_km' => 0.0,
-                'solar_liter' => (float) $row->liter,
+                'solar_liter' => $row->liter !== null ? (float) $row->liter : null,
                 'kondisi_baik' => true,
             ]);
         }
@@ -346,7 +348,10 @@ class CalculateArmadaUtilizationAction
                 $tanggalOperasi->push($s->tanggal->toDateString());
             }
 
-            $totalSolar = (float) $solarRows->sum('liter');
+            // TD-A: metrik solar hanya memakai record yang sudah punya nilai
+            // liter (nominal ditandai terpisah); rekap "nominal semua record".
+            $solarRowsDenganLiter = $solarRows->filter(fn ($r) => $r->liter !== null);
+            $totalSolar = (float) $solarRowsDenganLiter->sum('liter');
 
             // Kondisi terakhir diambil dari baris terbaru antara checklist awal & akhir.
             $kondisiTerakhir = $awalRows->concat($akhirRows)
@@ -387,6 +392,11 @@ class CalculateArmadaUtilizationAction
                     : null,
                 'total_odo_km' => round($totalOdo, 2),
                 'total_solar_liter' => round($totalSolar, 2),
+                // Keterangan sumber liter (TD-A): hanya N pengisian yang sudah
+                // dilengkapi liter yang ikut ke metrik solar.
+                'solar_keterangan' => $solarRows->isNotEmpty()
+                    ? 'dari '.$solarRowsDenganLiter->count().' pengisian dengan liter ('.$solarRows->count().' total)'
+                    : null,
                 'jumlah_rit' => $jumlahRit,
                 'total_sewa_jam' => round($sewaRows->sum('jumlah_jam'), 2),
                 'kondisi_terakhir' => $kondisiTerakhir ? [
@@ -506,13 +516,13 @@ class CalculateArmadaUtilizationAction
                     'jam_aktif' => 0.0,
                     'hm' => 0.0,
                     'odo_km' => 0.0,
-                    'solar_liter' => (float) $row->liter,
+                    'solar_liter' => $row->liter !== null ? (float) $row->liter : 0.0,
                     'jumlah_rit' => 0,
                     'sewa_jam' => 0.0,
                 ], $byDate);
             });
 
-        Ritase::whereIn('armada_id', $ids)
+            Ritase::whereIn('armada_id', $ids)
             ->whereBetween('tanggal', [$dari->toDateString(), $sampai->toDateString()])
             ->orderBy('tanggal')
             ->get()

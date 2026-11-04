@@ -8,11 +8,13 @@ use Database\Factories\Domain\Fleet\Models\PengajuanServisArmadaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\ModelStates\HasStates;
 
-class PengajuanServisArmada extends Model
+class PengajuanServisArmada extends Model implements HasMedia
 {
-    use HasFactory, HasStates, HasUuids;
+    use HasFactory, HasStates, HasUuids, InteractsWithMedia;
 
     protected $table = 'pengajuan_servis_armadas';
 
@@ -20,6 +22,7 @@ class PengajuanServisArmada extends Model
         'kode_pengajuan',
         'tanggal_ajuan',
         'armada_id',
+        'tipe_servis',
         'diajukan_oleh',
         'foto_armada',
         'catatan_ajuan',
@@ -63,10 +66,33 @@ class PengajuanServisArmada extends Model
         $this->addState('status', PengajuanServisState::class);
     }
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('foto_hasil_kerja');
+    }
+
+    public function getFotoHasilUrlsAttribute(): array
+    {
+        return $this->getMedia('foto_hasil_kerja')
+            ->map(fn ($media) => $media->getUrl())
+            ->values()
+            ->all();
+    }
+
     // Relasi
     public function armada()
     {
         return $this->belongsTo(Armada::class);
+    }
+
+    public function eksternalDetail()
+    {
+        return $this->hasOne(ServisEksternalDetail::class, 'pengajuan_id');
+    }
+
+    public function eksternalNotas()
+    {
+        return $this->hasMany(ServisEksternalNota::class, 'pengajuan_id');
     }
 
     public function diajukanOleh()

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Domain\Attendance\Http\Controllers\FormulirLapanganController;
 use App\Domain\Attendance\Http\Controllers\PresensiController;
 use App\Domain\Attendance\Http\Controllers\TrackingTimelineController;
@@ -18,10 +19,12 @@ use App\Domain\Finance\Http\Controllers\LaporanKeuanganController;
 use App\Domain\Finance\Http\Controllers\MutasiKasBankController;
 use App\Domain\Finance\Http\Controllers\PembayaranKlienController;
 use App\Domain\Finance\Http\Controllers\RekapKasController;
-use App\Domain\Finance\Http\Controllers\RekapPublikController;
+use App\Domain\Finance\Http\Controllers\RekapPengeluaranController;
+use App\Domain\Finance\Http\Controllers\RekapPengeluaranPublikController;
 use App\Domain\Finance\Http\Controllers\TransferKasController;
 // Fleet Controllers
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
+use App\Domain\Fleet\Http\Controllers\ArmadaDokumenBerkalaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
 use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
@@ -30,6 +33,7 @@ use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
 use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
 use App\Domain\Fleet\Http\Controllers\MonitoringArmadaController;
 use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
+use App\Domain\Fleet\Http\Controllers\PengisianSolarController;
 use App\Domain\Fleet\Http\Controllers\RitaseController;
 use App\Domain\Fleet\Http\Controllers\RuteTarifController;
 use App\Domain\Fleet\Http\Controllers\ServiceHistoryController;
@@ -210,6 +214,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('armada/{armada}/start-downtime', [ArmadaController::class, 'startDowntime'])->name('armada.start-downtime');
         Route::post('armada/{armada}/downtime/{downtime}/end', [ArmadaController::class, 'endDowntime'])->name('armada.end-downtime');
 
+        // TD-C3-C7: Dokumen Berkala Armada (Pajak/STNK/KIR)
+        Route::post('armada/{armada}/dokumen-berkala', [ArmadaDokumenBerkalaController::class, 'store'])->name('armada.dokumen-berkala.store');
+        Route::put('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'update'])->name('armada.dokumen-berkala.update');
+        Route::post('armada/{armada}/dokumen-berkala/{dokumen}/perpanjang', [ArmadaDokumenBerkalaController::class, 'perpanjang'])->name('armada.dokumen-berkala.perpanjang');
+        Route::delete('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'destroy'])->name('armada.dokumen-berkala.destroy');
+
         // Service History (polymorphic)
         Route::resource('service-history', ServiceHistoryController::class)->except(['index']);
         Route::get('serviceable/{type}/{id}/service-history', [ServiceHistoryController::class, 'index'])->name('service-history.index');
@@ -277,6 +287,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [HelperArmadaController::class, 'store'])->name('store');
         Route::put('{helper}', [HelperArmadaController::class, 'update'])->name('update');
         Route::delete('{helper}', [HelperArmadaController::class, 'destroy'])->name('destroy');
+    });
+
+    // TD-A4 (Meeting 5 & 6) - Pengisian Solar: kelengkapan liter & nota oleh
+    // Ketua Armada / Keuangan / Owner. Group terpisah seperti helper karena
+    // pemegangnya tidak selalu pegang permission fleet (Admin Keuangan).
+    Route::prefix('fleet/pengisian-solar')->name('fleet.pengisian-solar.')->middleware('permission:manage pengisian solar')->group(function () {
+        Route::get('/', [PengisianSolarController::class, 'index'])->name('index');
+        Route::put('{pengisian}', [PengisianSolarController::class, 'update'])->name('update');
     });
 
     // v6 (21.8) - Sistem Servis Armada (multi-bagian: ajuan → approval →
@@ -497,14 +515,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // REKAP PEMASUKAN & PENGELUARAN (Owner + Admin Keuangan)
     // - penyesuaian manual ditulis ke mutasi_kas_banks
+    // - internal murni (TD-D5): tanpa halaman/ekspor publik,
+    //   panel sandi publik pindah ke Rekap Pengeluaran
     // ============================================================
     Route::prefix('finance/rekap-kas')->name('finance.rekap-kas.')->group(function () {
         Route::get('/', [RekapKasController::class, 'index'])->name('index')->middleware('permission:manage rekap keuangan');
         Route::post('/', [RekapKasController::class, 'store'])->name('store')->middleware('permission:manage rekap keuangan');
         Route::get('/export', [RekapKasController::class, 'export'])->name('export')->middleware('permission:manage rekap keuangan');
-        Route::put('/password', [RekapKasController::class, 'updatePassword'])->name('password')->middleware('permission:manage rekap keuangan');
         Route::put('/{mutasiKas}', [RekapKasController::class, 'update'])->name('update')->middleware('permission:manage rekap keuangan');
         Route::delete('/{mutasiKas}', [RekapKasController::class, 'destroy'])->name('destroy')->middleware('permission:manage rekap keuangan');
+    });
+
+    // ============================================================
+    // REKAP PENGELUARAN (TD-D1/D2/D4) - hanya transaksi keluar,
+    // filter periode fleksibel; panel sandi halaman publik di sini
+    // ============================================================
+    Route::prefix('finance/rekap-pengeluaran')->name('finance.rekap-pengeluaran.')->group(function () {
+        Route::get('/', [RekapPengeluaranController::class, 'index'])->name('index')->middleware('permission:manage rekap pengeluaran');
+        Route::post('/', [RekapPengeluaranController::class, 'store'])->name('store')->middleware('permission:manage rekap pengeluaran');
+        Route::get('/export', [RekapPengeluaranController::class, 'export'])->name('export')->middleware('permission:manage rekap pengeluaran');
+        Route::put('/password', [RekapPengeluaranController::class, 'updatePassword'])->name('password')->middleware('permission:manage rekap pengeluaran');
+        Route::put('/{mutasiKas}', [RekapPengeluaranController::class, 'update'])->name('update')->middleware('permission:manage rekap pengeluaran');
+        Route::delete('/{mutasiKas}', [RekapPengeluaranController::class, 'destroy'])->name('destroy')->middleware('permission:manage rekap pengeluaran');
     });
 
     // ============================================================
@@ -554,14 +586,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // ============================================================
-// REKAP PUBLIK (TANPA LOGIN - password sederhana via session)
-// Bisa diakses siapa pun; pengguna login juga boleh buka.
+// REKAP PENGELUARAN PUBLIK (TD-D3, TANPA LOGIN - password
+// sederhana via session). Bisa diakses siapa pun; pengguna
+// login juga boleh buka. Halaman lama /rekap-publik dihapus,
+// semua URL lama dialihkan 301 (TD-D3).
 // ============================================================
-Route::prefix('rekap-publik')->name('rekap-publik.')->group(function () {
-    Route::get('/', [RekapPublikController::class, 'index'])->name('index');
-    Route::post('/unlock', [RekapPublikController::class, 'unlock'])->name('unlock');
-    Route::post('/lock', [RekapPublikController::class, 'lock'])->name('lock');
-    Route::get('/export', [RekapPublikController::class, 'export'])->name('export');
+Route::get('rekap-publik/{any?}', function (Request $request) {
+    return redirect()->to(route('rekap-pengeluaran-publik.index', $request->query()), 301);
+})->where('any', '.*');
+
+Route::prefix('rekap-pengeluaran-publik')->name('rekap-pengeluaran-publik.')->group(function () {
+    Route::get('/', [RekapPengeluaranPublikController::class, 'index'])->name('index');
+    Route::post('/unlock', [RekapPengeluaranPublikController::class, 'unlock'])->name('unlock');
+    Route::post('/lock', [RekapPengeluaranPublikController::class, 'lock'])->name('lock');
+    Route::get('/export', [RekapPengeluaranPublikController::class, 'export'])->name('export');
 });
 
 // ============================================================

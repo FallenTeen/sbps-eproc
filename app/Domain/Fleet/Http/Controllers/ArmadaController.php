@@ -34,7 +34,7 @@ class ArmadaController extends Controller
         $this->authorize('viewAny', Armada::class);
 
         $user = $request->user();
-        $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan']);
+        $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan', 'diperbaruiOleh:id,name']);
 
         if (! $user->hasRole('Owner')) {
             $gcs = UnitBisnis::where('kode', 'GCS')->first();
@@ -53,6 +53,7 @@ class ArmadaController extends Controller
             'titik' => ['relation' => 'titik', 'column' => 'id', 'type' => 'exact'],
             'driver' => ['relation' => 'currentDriver.karyawan', 'column' => 'nama', 'type' => 'like'],
             'status' => ['type' => 'exact'],
+            'data_diperbarui_pada' => ['type' => 'exact'],
         ];
 
         $sort = $this->applyTableQuery($query, $request, $columns, 'kode_unit');
@@ -118,8 +119,21 @@ class ArmadaController extends Controller
             'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
+            'foto_unit' => 'nullable|image|max:10240',
+            'tara_master_kg' => 'nullable|numeric|min:0',
         ]);
-        Armada::create($validated);
+
+        $validated['data_diperbarui_pada'] = now();
+        $validated['data_diperbarui_oleh'] = $request->user()?->id;
+        if (! empty($validated['tara_master_kg'])) {
+            $validated['tara_diperbarui_pada'] = now();
+        }
+
+        $armada = Armada::create(\Illuminate\Support\Arr::except($validated, ['foto_unit']));
+
+        if ($request->hasFile('foto_unit')) {
+            $armada->addMediaFromRequest('foto_unit')->toMediaCollection('foto_unit');
+        }
 
         return redirect()->route('fleet.armada.index')->with('success', 'Armada berhasil ditambahkan.');
     }
@@ -219,8 +233,23 @@ class ArmadaController extends Controller
             'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
+            'foto_unit' => 'nullable|image|max:10240',
+            'tara_master_kg' => 'nullable|numeric|min:0',
         ]);
-        $armada->update($validated);
+
+        $validated['data_diperbarui_pada'] = now();
+        $validated['data_diperbarui_oleh'] = $request->user()?->id;
+
+        if ($request->has('tara_master_kg') && (float) $request->input('tara_master_kg') !== (float) $armada->tara_master_kg) {
+            $validated['tara_diperbarui_pada'] = now();
+        }
+
+        $armada->update(\Illuminate\Support\Arr::except($validated, ['foto_unit']));
+
+        if ($request->hasFile('foto_unit')) {
+            $armada->clearMediaCollection('foto_unit');
+            $armada->addMediaFromRequest('foto_unit')->toMediaCollection('foto_unit');
+        }
 
         return redirect()->route('fleet.armada.index')->with('success', 'Armada diperbarui.');
     }

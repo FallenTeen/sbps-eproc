@@ -14,7 +14,7 @@ class ScheduleDeliveryAction
             'driver_karyawan_id' => $data['driver_karyawan_id'] ?? null,
             'tujuan_alamat' => $data['tujuan_alamat'],
             'waktu_muat' => $data['waktu_muat'],
-            'catatan' => $data['catatan'],
+            'catatan' => $data['catatan'] ?? null,
             'status' => 'dijadwalkan',
         ]);
     }

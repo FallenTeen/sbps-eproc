@@ -302,6 +302,12 @@ class BbmLogController extends Controller
             $prev = $sortedLogs[$i - 1];
             $curr = $sortedLogs[$i];
 
+            // TD-A: baris tanpa liter (pengisian solar belum dilengkapi) belum
+            // bisa dianalisis - diberi catatan di halaman Index, bukan anomali.
+            if ($curr->liter === null) {
+                continue;
+            }
+
             $ritasesPeriode = Ritase::where('armada_id', $armadaId)
                 ->whereBetween('tanggal', [$prev->tanggal, $curr->tanggal])
                 ->with('ruteTarif')
@@ -370,7 +376,7 @@ class BbmLogController extends Controller
             $prev = $sortedLogs[$i - 1];
             $curr = $sortedLogs[$i];
 
-            if ($curr->jam_operasional_saat_isi === null || $prev->jam_operasional_saat_isi === null) {
+            if ($curr->liter === null || $curr->jam_operasional_saat_isi === null || $prev->jam_operasional_saat_isi === null) {
                 continue;
             }
 

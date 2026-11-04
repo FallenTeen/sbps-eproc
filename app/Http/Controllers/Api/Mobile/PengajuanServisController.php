@@ -8,8 +8,11 @@ use App\Domain\Fleet\Actions\CompletePengajuanServisAction;
 use App\Domain\Fleet\Actions\RejectPengajuanServisAction;
 use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
+use App\Domain\Fleet\Actions\SubmitServisEksternalAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\ServisEksternalDetail;
+use App\Domain\Fleet\Models\ServisEksternalNota;
 use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -53,6 +56,10 @@ class PengajuanServisController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
+        }
+
+        if ($request->filled('tipe_servis')) {
+            $query->where('tipe_servis', $request->query('tipe_servis'));
         }
 
         $perPage = min((int) $request->query('per_page', 15), 50);
@@ -121,7 +128,7 @@ class PengajuanServisController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts', 'workshopTodos'])
+        $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts', 'workshopTodos', 'eksternalDetail', 'eksternalNotas'])
             ->findOrFail($id);
 
         $user = $request->user();
@@ -136,6 +143,11 @@ class PengajuanServisController extends Controller
         $payload['todos'] = $pengajuan->workshopTodos
             ->map(fn (WorkshopTodo $t) => $this->mapTodo($t, $pengajuan->id))
             ->values();
+
+        // Append foto hasil kerja (Spatie Media) as flat URL array
+        if ($pengajuan->tipe_servis === 'eksternal') {
+            $payload['foto_hasil_urls'] = $pengajuan->foto_hasil_urls;
+        }
 
         return $this->success($payload, 'Detail servis armada.');
     }
@@ -332,6 +344,156 @@ class PengajuanServisController extends Controller
             'Request sparepart dikirim ke inventory.',
             201,
         );
+    }
+
+    // ── TD-B Servis Eksternal ─────────────────────────────────────────────
+
+    /**
+     * POST /api/mobile/servis-armada/eksternal
+     * TD-B1/B2/B5: Ajukan servis eksternal. Status langsung 'dikerjakan'.
+     */
+    public function storeEksternal(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|exists:armadas,id',
+            'nama_bengkel' => 'required|string|max:255',
+            'alamat_bengkel' => 'nullable|string|max:2000',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'rincian_pekerjaan' => 'nullable|string|max:2000',
+            'total_biaya_estimasi' => 'nullable|numeric|min:0',
+            'odometer_saat_ajuan' => 'nullable|numeric',
+            'jam_operasional_saat_ajuan' => 'nullable|numeric',
+            'foto_bengkel' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_nota' => 'nullable|array|max:5',
+            'foto_nota.*' => 'image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $user = $request->user();
+
+        if (! ArmadaOwnership::isManager($user) && ! ArmadaOwnership::holds($user, $validated['armada_id'])) {
+            return $this->error('Anda tidak berhak mengajukan servis untuk armada ini.', 403);
+        }
+
+        $pengajuan = app(SubmitServisEksternalAction::class)->execute(
+            $user,
+            $validated,
+            $request->file('foto_bengkel'),
+            $request->file('foto_nota') ?? [],
+        );
+
+        return $this->success($pengajuan, 'Servis eksternal berhasil diajukan.', 201);
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/eksternal/nota
+     * TD-B4/B5: Tambah foto nota bengkel.
+     */
+    public function storeEksternalNota(Request $request, $id)
+    {
+        $request->validate([
+            'foto_nota' => 'required|array|min:1|max:5',
+            'foto_nota.*' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if ($pengajuan->tipe_servis !== 'eksternal') {
+            return $this->error('Pengajuan ini bukan tipe servis eksternal.', 422);
+        }
+
+        $user = $request->user();
+        $created = [];
+        foreach ($request->file('foto_nota') as $file) {
+            $path = $file->store('servis_eksternal/nota/'.now()->format('Y/m'), 'public');
+            $created[] = ServisEksternalNota::create([
+                'pengajuan_id' => $pengajuan->id,
+                'foto_nota' => $path,
+                'diinput_oleh' => $user->id,
+                'tanggal_nota' => now()->toDateString(),
+            ]);
+        }
+
+        return $this->success($created, 'Foto nota berhasil diunggah.', 201);
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/foto-hasil
+     * TD-B4/B5: Upload foto hasil pengerjaan (Spatie Media Collection).
+     */
+    public function storeFotoHasil(Request $request, $id)
+    {
+        $request->validate([
+            'foto_hasil' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if ($pengajuan->tipe_servis !== 'eksternal') {
+            return $this->error('Pengajuan ini bukan tipe servis eksternal.', 422);
+        }
+
+        $pengajuan->addMedia($request->file('foto_hasil'))
+            ->toMediaCollection('foto_hasil_kerja');
+
+        return $this->success([
+            'foto_hasil_urls' => $pengajuan->fresh()->foto_hasil_urls,
+        ], 'Foto hasil pengerjaan berhasil diunggah.', 201);
+    }
+
+    /**
+     * POST /api/mobile/workshop/servis-eksternal/{id}/verifikasi
+     * TD-B7: Workshop memverifikasi servis eksternal (terverifikasi/bermasalah).
+     */
+    public function verifikasiServisEksternal(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:terverifikasi,bermasalah',
+            'catatan' => 'nullable|string|max:2000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::where('tipe_servis', 'eksternal')->findOrFail($id);
+        $detail = $pengajuan->eksternalDetail;
+
+        if (! $detail) {
+            return $this->error('Detail servis eksternal tidak ditemukan.', 404);
+        }
+
+        $detail->update([
+            'verifikasi_workshop' => $validated['status'],
+            'verifikasi_workshop_oleh' => $request->user()->id,
+            'verifikasi_workshop_pada' => now(),
+            'verifikasi_workshop_catatan' => $validated['catatan'] ?? null,
+        ]);
+
+        return $this->success(
+            $pengajuan->fresh(['eksternalDetail', 'eksternalNotas', 'armada']),
+            $validated['status'] === 'terverifikasi'
+                ? 'Servis eksternal terverifikasi.'
+                : 'Servis eksternal ditandai bermasalah.',
+        );
+    }
+
+    /**
+     * GET /api/mobile/workshop/servis-eksternal
+     * TD-B7: Daftar servis eksternal yang perlu diverifikasi workshop.
+     */
+    public function workshopServisEksternalList(Request $request)
+    {
+        $query = PengajuanServisArmada::with(['armada', 'eksternalDetail', 'eksternalNotas', 'diajukanOleh'])
+            ->where('tipe_servis', 'eksternal')
+            ->latest('created_at');
+
+        if ($request->filled('verifikasi')) {
+            $query->whereHas('eksternalDetail', function ($q) use ($request) {
+                $q->where('verifikasi_workshop', $request->query('verifikasi'));
+            });
+        }
+
+        $perPage = min((int) $request->query('per_page', 15), 50);
+        $paginated = $query->paginate($perPage);
+
+        return $this->success($paginated, 'Daftar servis eksternal.');
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────

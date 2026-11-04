@@ -25,21 +25,13 @@
         <env name="CACHE_STORE" value="array"/>
 
         <!-- ======================================================= -->
-        <!-- KONFIGURASI DATABASE UNTUK TESTING (MySQL)              -->
-        <!-- ======================================================= -->
-        <!-- HAPUS/COMMENT baris SQLite di bawah ini -->
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
-        <!-- <env name="DB_URL" value=""/> -->
-
-        <!-- PAKAI MySQL -->
-        <env name="DB_CONNECTION" value="mysql"/>
-        <env name="DB_HOST" value="127.0.0.1"/>
-        <env name="DB_PORT" value="3306"/>
-        <env name="DB_DATABASE" value="sbps_ops_db_test"/>
-        <env name="DB_USERNAME" value="root"/>
-        <env name="DB_PASSWORD" value=""/>
+        <!-- KONFIGURASI DATABASE UNTUK TESTING (SQLite in-memory) -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <ini name="memory_limit" value="1024M"/>
+
+        <!-- PAKAI MySQL (jika tersedia) -->
 
         <!-- Konfigurasi lain tetap -->
         <env name="MAIL_MAILER" value="array"/>

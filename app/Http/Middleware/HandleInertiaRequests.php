@@ -85,6 +85,7 @@ class HandleInertiaRequests extends Middleware
         'fleet.service-history.index' => 'Service History',
         'fleet.checklist-harian.index' => 'Checklist Harian',
         'fleet.bbm.index' => 'Log BBM',
+        'fleet.pengisian-solar.index' => 'Pengisian Solar',
         'fleet.downtime.index' => 'Downtime Log',
         'fleet.monitoring-armada.index' => 'Monitoring Armada',
 
@@ -147,6 +148,7 @@ class HandleInertiaRequests extends Middleware
         'finance.invoice.aging' => 'Aging Piutang',
         'finance.laporan-keuangan.index' => 'Laporan Keuangan',
         'finance.rekap-kas.index' => 'Rekap Pemasukan & Pengeluaran',
+        'finance.rekap-pengeluaran.index' => 'Rekap Pengeluaran',
         'finance.laporan-keuangan.rab-realisasi' => 'RAB vs Realisasi',
         'finance.laporan-keuangan.laba-rugi' => 'Laporan Laba Rugi',
 

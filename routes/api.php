@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
 use App\Http\Controllers\Api\Mobile\InventoryController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
+use App\Http\Controllers\Api\Mobile\LogistikController;
 use App\Http\Controllers\Api\Mobile\MasterDataController;
 use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\Mobile\PendingSummaryController;
 use App\Http\Controllers\Api\Mobile\PengajuanServisController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
+use App\Http\Controllers\Api\Mobile\SecurityController;
 use App\Http\Controllers\Api\Mobile\TitikMapController;
 use App\Http\Controllers\Api\Mobile\TrackingController;
 use App\Http\Controllers\Api\Mobile\UploadController;
@@ -43,6 +45,7 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('logout-all-devices', [AuthController::class, 'logoutAllDevices'])->name('logout-all-devices');
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
+        Route::post('change-password', [AuthController::class, 'changePassword'])->name('change-password');
 
         // Penugasan User
         Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
@@ -155,6 +158,18 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])
             ->name('workshop.job.todo.photo')->middleware('idempotency');
 
+        // TD-B: Servis Eksternal (mobile)
+        Route::post('servis-armada/eksternal', [PengajuanServisController::class, 'storeEksternal'])
+            ->name('servis-armada.store-eksternal')->middleware('idempotency');
+        Route::post('servis-armada/{id}/eksternal/nota', [PengajuanServisController::class, 'storeEksternalNota'])
+            ->name('servis-armada.eksternal-nota')->middleware('idempotency');
+        Route::post('servis-armada/{id}/foto-hasil', [PengajuanServisController::class, 'storeFotoHasil'])
+            ->name('servis-armada.foto-hasil')->middleware('idempotency');
+        Route::post('workshop/servis-eksternal/{id}/verifikasi', [PengajuanServisController::class, 'verifikasiServisEksternal'])
+            ->name('workshop.servis-eksternal.verifikasi')->middleware('idempotency');
+        Route::get('workshop/servis-eksternal', [PengajuanServisController::class, 'workshopServisEksternalList'])
+            ->name('workshop.servis-eksternal.index');
+
         // v6 (21.7 & 14d) - Modul Inventory (stok, request sparepart, opname)
         Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
         Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
@@ -167,6 +182,27 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
         Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])
             ->name('inventory.opname')->middleware('idempotency');
+
+        // TD-E: Modul Logistik & Timbang
+        Route::get('logistik/ritase/antrean', [LogistikController::class, 'antrean'])->name('logistik.ritase.antrean');
+        Route::post('logistik/ritase/{id}/verifikasi', [LogistikController::class, 'verifikasi'])
+            ->name('logistik.ritase.verifikasi')->middleware('idempotency');
+        Route::get('logistik/tara-master', [LogistikController::class, 'taraMaster'])->name('logistik.tara-master');
+        Route::put('logistik/tara-master/{armada}', [LogistikController::class, 'updateTaraMaster'])->name('logistik.tara-master.update');
+
+        // TD-F: Modul Security
+        Route::get('security/buku-tamu/hari-ini', [SecurityController::class, 'bukuTamuHariIni'])->name('security.buku-tamu.hari-ini');
+        Route::post('security/buku-tamu', [SecurityController::class, 'storeBukuTamu'])
+            ->name('security.buku-tamu.store')->middleware('idempotency');
+        Route::post('security/buku-tamu/keluar', [SecurityController::class, 'keluarBukuTamu'])
+            ->name('security.buku-tamu.keluar')->middleware('idempotency');
+        Route::post('security/checklist', [SecurityController::class, 'submitChecklist'])
+            ->name('security.checklist')->middleware('idempotency');
+        Route::post('security/darurat', [SecurityController::class, 'submitDarurat'])
+            ->name('security.darurat')->middleware('idempotency');
+        Route::get('security/ritase/antrean', [SecurityController::class, 'antreanRitase'])->name('security.ritase.antrean');
+        Route::post('security/ritase/{id}/verifikasi', [SecurityController::class, 'verifikasiRitase'])
+            ->name('security.ritase.verifikasi')->middleware('idempotency');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

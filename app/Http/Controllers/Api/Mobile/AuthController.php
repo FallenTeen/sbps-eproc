@@ -91,6 +91,49 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/mobile/change-password
+     *
+     * Ubah password pengguna mobile (TD-G2).
+     */
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+            'logout_other_devices' => 'nullable|boolean',
+        ]);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return $this->error('Password saat ini tidak sesuai.', 422, [
+                'current_password' => ['Password saat ini tidak sesuai.'],
+            ]);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        if (! empty($validated['logout_other_devices'])) {
+            $currentTokenId = $user->currentAccessToken()?->id;
+            $user->tokens()
+                ->where('id', '!=', $currentTokenId)
+                ->delete();
+        }
+
+        app(\App\Domain\Shared\Actions\RecordAuditLogAction::class)->execute(
+            "Mengubah password akun mobile ({$user->email})",
+            $user,
+            'updated',
+            ['logout_other_devices' => ! empty($validated['logout_other_devices'])],
+            'auth'
+        );
+
+        return $this->success(null, 'Password berhasil diubah.');
+    }
+
+    /**
      * POST /api/mobile/logout
      */
     public function logout(Request $request)

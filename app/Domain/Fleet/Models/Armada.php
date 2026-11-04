@@ -4,14 +4,18 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Models\User;
 use Database\Factories\ArmadaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Armada extends Model
+class Armada extends Model implements HasMedia
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia;
 
     protected $table = 'armadas';
 
@@ -28,13 +32,53 @@ class Armada extends Model
         'titik_id',
         'tanggal_mulai_pakai',
         'tanggal_servis_terakhir',
+        'data_diperbarui_pada',
+        'data_diperbarui_oleh',
+        'tara_master_kg',
+        'tara_diperbarui_pada',
     ];
 
     protected $casts = [
         'tahun' => 'integer',
         'tanggal_mulai_pakai' => 'date',
         'tanggal_servis_terakhir' => 'date',
+        'data_diperbarui_pada' => 'datetime',
+        'tara_master_kg' => 'decimal:2',
+        'tara_diperbarui_pada' => 'datetime',
     ];
+
+    protected $appends = [
+        'foto_url',
+        'foto_thumb_url',
+    ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('foto_unit')->singleFile();
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(320)
+            ->height(200)
+            ->nonQueued();
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('foto_unit') ?: null;
+    }
+
+    public function getFotoThumbUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('foto_unit', 'thumb') ?: $this->foto_url;
+    }
+
+    public function diperbaruiOleh()
+    {
+        return $this->belongsTo(User::class, 'data_diperbarui_oleh');
+    }
 
     protected static function newFactory()
     {
@@ -66,6 +110,11 @@ class Armada extends Model
     public function checklistAkhirs()
     {
         return $this->hasMany(ArmadaChecklistAkhir::class);
+    }
+
+    public function dokumenBerkalas()
+    {
+        return $this->hasMany(ArmadaDokumenBerkala::class);
     }
 
     public function pengisianSolars()
@@ -107,6 +156,11 @@ class Armada extends Model
     public function driverAssignments()
     {
         return $this->hasMany(ArmadaDriver::class);
+    }
+
+    public function drivers()
+    {
+        return $this->driverAssignments();
     }
 
     public function currentDriver()

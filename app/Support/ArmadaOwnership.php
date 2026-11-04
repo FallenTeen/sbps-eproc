@@ -55,7 +55,17 @@ class ArmadaOwnership
             ->where('status', 'aktif')
             ->pluck('armada_id');
 
-        return $picIds->merge($driverIds)->unique()->values()->all();
+        $ids = $picIds->merge($driverIds)->unique()->values()->all();
+
+        if ($user && $user->hasRole('Operator Alat Berat') && ! self::isManager($user)) {
+            return \App\Domain\Fleet\Models\Armada::query()
+                ->whereIn('id', $ids)
+                ->where('tipe_unit', 'alat_berat')
+                ->pluck('id')
+                ->all();
+        }
+
+        return $ids;
     }
 
     public static function holds(?User $user, string $armadaId): bool

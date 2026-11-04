@@ -5,10 +5,6 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Download,
-    ExternalLink,
-    Eye,
-    EyeOff,
-    Lock,
     Pencil,
     Plus,
     Trash2,
@@ -75,18 +71,12 @@ export default function Index({
     akunKasList = [],
     filters = {},
     periode_label = "",
-    publik = {},
 }) {
-    const { flash, auth } = usePage().props;
-    const canChangePassword = (auth?.permissions || []).includes(
-        "manage rekap keuangan",
-    );
+    const { flash } = usePage().props;
 
     const [modalOpen, setModalOpen] = useState(false);
     const [form, setForm] = useState(emptyForm);
     const [errors, setErrors] = useState({});
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
 
     const handleFilterChange = (key, value) => {
         router.get(route("finance.rekap-kas.index"), {
@@ -141,15 +131,6 @@ export default function Index({
     const deleteRow = (row) => {
         if (!confirm("Hapus transaksi rekap ini?")) return;
         router.delete(route("finance.rekap-kas.destroy", row.id), { preserveScroll: true });
-    };
-
-    const submitPassword = (e) => {
-        e.preventDefault();
-        router.post((route("finance.rekap-kas.password")), { password, _method: "PUT" }, {
-            preserveScroll: true,
-            onSuccess: () => setPassword(""),
-            onError: (err) => setErrors((prev) => ({ ...prev, ...err })),
-        });
     };
 
     const exportHref = useMemo(() => {
@@ -415,106 +396,7 @@ export default function Index({
                     </div>
                 </div>
 
-                {/* Halaman Publik & Password */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                        <Lock className="w-4 h-4" /> Akses Publik
-                    </h3>
-                    <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-                        <div className="text-sm text-gray-600 space-y-1">
-                            <p className="flex items-center gap-1">
-                                <ExternalLink className="w-4 h-4 text-gray-400" />
-                                <a
-                                    href={publik.url || "/rekap-publik"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-indigo-600 hover:underline"
-                                >
-                                    {publik.url || "/rekap-publik"}
-                                </a>
-                            </p>
-                            <p className="flex flex-wrap items-center gap-2">
-                                Password:{" "}
-                                {publik.requires_password ? (
-                                    <span className="inline-flex items-center gap-2">
-                                        {publik.revealable ? (
-                                            <span className="font-mono text-base tracking-widest">
-                                                {showPassword
-                                                    ? publik.password || ""
-                                                    : "\u2022".repeat(
-                                                          Math.max(
-                                                              publik.password_length ||
-                                                                  6,
-                                                              0,
-                                                          ),
-                                                      )}
-                                            </span>
-                                        ) : (
-                                            <span className="font-mono text-base tracking-widest">
-                                                {"\u2022".repeat(6)}
-                                                <span className="ml-2 font-sans text-xs text-amber-600">
-                                                    (password lama tidak bisa
-                                                    ditampilkan, silakan ganti)
-                                                </span>
-                                            </span>
-                                        )}
-                                        {publik.revealable && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setShowPassword((s) => !s)
-                                                }
-                                                className="text-gray-500 hover:text-gray-800"
-                                                title={
-                                                    showPassword
-                                                        ? "Sembunyikan password"
-                                                        : "Tampilkan password"
-                                                }
-                                            >
-                                                {showPassword ? (
-                                                    <EyeOff className="w-4 h-4" />
-                                                ) : (
-                                                    <Eye className="w-4 h-4" />
-                                                )}
-                                            </button>
-                                        )}
-                                    </span>
-                                ) : (
-                                    <strong className="font-sans">
-                                        belum diatur password
-                                    </strong>
-                                )}
-                            </p>
-                        </div>
-                        {canChangePassword && (
-                            <form
-                                onSubmit={submitPassword}
-                                className="flex items-center gap-2"
-                            >
-                                <input
-                                    type="text"
-                                    required
-                                    minLength={6}
-                                    placeholder="Password publik baru (min 6 karakter)"
-                                    className="border-gray-300 rounded-md text-sm w-72 focus:ring-indigo-500 focus:border-indigo-500"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                                <button
-                                    type="submit"
-                                    className="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black"
-                                >
-                                    Ganti Password
-                                </button>
-                            </form>
-                        )}
-                    </div>
-                    {errors.password && (
-                        <p className="mt-2 text-sm text-red-600">
-                            {errors.password}
-                        </p>
-                    )}
-                </div>
+                {/* Rekap Kas bersifat internal (TD-D5): halaman & panel sandi publik ada di menu Rekap Pengeluaran */}
             </div>
 
             {/* Modal Form */}

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Tempat password halaman publik /rekap-publik (terenkripsi
+     * Tempat password halaman publik /rekap-pengeluaran-publik (terenkripsi
      * reversible via Crypt). Bisa diganti sendiri oleh pemegang
      * permission 'manage rekap keuangan'.
      * Jika belum diatur (password kosong), halaman publik bebas diakses.

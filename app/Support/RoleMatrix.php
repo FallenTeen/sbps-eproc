@@ -56,6 +56,7 @@ class RoleMatrix
         'record ritase',
         'record sewa',
         'manage helper armada',
+        'manage pengisian solar',   // lengkapi liter/nota pengisian solar (TD-A4)
 
         // Fleet Service (Sistem Servis Armada, 21.8)
         'view fleet service',
@@ -87,6 +88,7 @@ class RoleMatrix
         'manage invoice',
         'view invoice',
         'manage rekap keuangan',
+        'manage rekap pengeluaran',
 
         // Lapangan
         'manage presensi',
@@ -110,6 +112,19 @@ class RoleMatrix
         'manage finance division',
         'approve expense division',
         'approve payroll division',
+
+        // Dokumen berkala armada (TD-C3)
+        'manage dokumen armada',
+
+        // Logistik & Timbang (TD-E)
+        'verify ritase logistik',
+        'manage timbang',
+
+        // Security Modul (TD-F)
+        'manage security buku tamu',
+        'manage security checklist',
+        'manage security darurat',
+        'verify ritase security',
     ];
 
     /**
@@ -118,6 +133,8 @@ class RoleMatrix
      * [DIVISI_AUGMENTS] - keduanya di-union saat disync (tidak menghapus).
      */
     public const ROLES = [
+        'user' => [],
+
         // ─── Super Admin ───────────────────────────────────────────────
         // Mobile: semua 9 modul (produksi, qc, tracking, dashboard,
         // keuangan, armada, kontraktor, workshop, inventory).
@@ -129,15 +146,17 @@ class RoleMatrix
             'approve procurement fleet', 'approve procurement produksi', 'approve procurement kontrak', 'approve procurement keuangan',
             'manage inventory', 'view inventory', 'manage stok opname', 'view stok opname',
             'manage fleet', 'view fleet', 'record ritase', 'record sewa',
-            'manage helper armada',
+            'manage helper armada', 'manage pengisian solar', 'manage dokumen armada',
             'view fleet service', 'manage fleet service', 'approve fleet service', 'submit fleet service', 'manage sparepart', 'view sparepart',
             'manage production', 'manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc',
             'manage hr', 'view hr', 'manage payroll', 'view payroll',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
-            'manage rekap keuangan',
+            'manage rekap keuangan', 'manage rekap pengeluaran',
             'manage presensi', 'manage formulir lapangan',
             'view kontraktor', 'manage kontraktor',
             'manage app version',
+            'verify ritase logistik', 'manage timbang',
+            'manage security buku tamu', 'manage security checklist', 'manage security darurat', 'verify ritase security',
         ],
 
         // ─── Admin & Koordinator ───────────────────────────────────────
@@ -147,11 +166,12 @@ class RoleMatrix
             'manage user',
             'approve procurement', 'pay procurement', 'approve procurement keuangan', 'view procurement',
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
-            'manage rekap keuangan',
+            'manage rekap keuangan', 'manage rekap pengeluaran',
             'manage rab', 'view rab', 'view proyek', 'view fleet',
             'view production',
             'manage payroll', 'view payroll',
             'view kontraktor',
+            'manage pengisian solar',
         ],
         'Koordinator Procurement' => [
             'manage procurement', 'view procurement', 'receive procurement',
@@ -169,6 +189,20 @@ class RoleMatrix
             'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
             'view fleet service', 'manage sparepart', 'view sparepart', 'view fleet',
             'view proyek', 'view rab',
+        ],
+        'Logistik' => [
+            'manage inventory', 'view inventory',
+            'manage stok opname', 'view stok opname',
+            'manage procurement', 'view procurement', 'receive procurement',
+            'manage bahan baku', 'view bahan baku', 'manage supplier', 'view supplier',
+            'view fleet service', 'manage sparepart', 'view sparepart', 'view fleet',
+            'view proyek', 'view rab',
+            'verify ritase logistik', 'manage timbang',
+        ],
+        'Security' => [
+            'manage presensi', 'manage formulir lapangan',
+            'manage security buku tamu', 'manage security checklist', 'manage security darurat',
+            'verify ritase security',
         ],
         'Workshop' => [
             'view fleet service', 'manage fleet service', 'submit fleet service',
@@ -204,13 +238,13 @@ class RoleMatrix
         // ─── Ketua Divisi ──────────────────────────────────────────────
         'Ketua Divisi Keuangan' => [
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
-            'manage rekap keuangan',
+            'manage rekap keuangan', 'manage rekap pengeluaran',
             'manage rab', 'view rab', 'view proyek',
             'approve procurement keuangan', 'pay procurement',
         ],
         'Ketua Divisi Finance' => [
             'manage finance', 'view finance', 'manage kas', 'manage invoice', 'view invoice',
-            'manage rekap keuangan',
+            'manage rekap keuangan', 'manage rekap pengeluaran',
             'manage rab', 'view rab', 'view proyek',
             'approve procurement keuangan', 'pay procurement',
         ],
@@ -219,19 +253,19 @@ class RoleMatrix
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
-            'manage helper armada',
+            'manage helper armada', 'manage pengisian solar', 'manage dokumen armada',
         ],
         'Kepala Divisi Armada' => [
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
-            'manage helper armada',
+            'manage helper armada', 'manage pengisian solar', 'manage dokumen armada',
         ],
         'Ketua Armada' => [
             'manage fleet', 'view fleet', 'record ritase', 'record sewa', 'view proyek',
             'approve procurement fleet',
             'view fleet service', 'manage fleet service', 'approve fleet service',
-            'manage helper armada',
+            'manage helper armada', 'manage pengisian solar', 'manage dokumen armada',
         ],
         'Ketua Divisi Produksi CBP' => [
             'manage production', 'manage production cbp', 'view production',
@@ -266,6 +300,10 @@ class RoleMatrix
             'manage presensi', 'manage formulir lapangan',
         ],
         'Driver Standby' => [
+            'view proyek', 'manage formulir lapangan', 'manage presensi',
+            'view fleet service', 'submit fleet service',
+        ],
+        'Operator Alat Berat' => [
             'view proyek', 'manage formulir lapangan', 'manage presensi',
             'view fleet service', 'submit fleet service',
         ],

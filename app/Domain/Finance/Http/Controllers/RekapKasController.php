@@ -7,12 +7,10 @@ use App\Domain\Finance\Exports\RekapKasExport;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
 use App\Domain\Finance\Models\RekapManual;
-use App\Domain\Finance\Models\RekapPublikSetting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -31,9 +29,6 @@ class RekapKasController extends Controller
             $filters['bulan'],
             $filters['tahun'],
         );
-
-        $setting = RekapPublikSetting::current();
-        $plain = $this->decryptPublikPassword($setting);
 
         return Inertia::render('Finance/RekapKas/Index', [
             'transaksi' => $rekap['transaksi'],
@@ -58,13 +53,6 @@ class RekapKasController extends Controller
                 'tahun' => $filters['tahun'] ? (string) $filters['tahun'] : '',
             ],
             'periode_label' => $rekap['periode_label'],
-            'publik' => [
-                'requires_password' => $setting->requires_password,
-                'revealable' => $plain !== null,
-                'password' => $plain,
-                'password_length' => $plain !== null ? strlen($plain) : 6,
-                'url' => route('rekap-publik.index'),
-            ],
         ]);
     }
 
@@ -162,28 +150,6 @@ class RekapKasController extends Controller
         );
     }
 
-    /**
-     * Ganti password halaman publik (siapa pun yang memegang
-     * permission 'manage rekap keuangan': Owner, Admin Keuangan,
-     * Ketua Divisi Keuangan/Finance).
-     * Disimpan terenkripsi (bukan hash) supaya bisa ditampilkan
-     * kembali sebagai pengingat lewat toggle di halaman admin.
-     */
-    public function updatePassword(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'password' => 'required|string|min:6|max:64',
-        ]);
-
-        $setting = RekapPublikSetting::current();
-        $setting->password = Crypt::encryptString($validated['password']);
-        $setting->updated_by = Auth::id();
-        $setting->save();
-
-        return redirect()->route('finance.rekap-kas.index')
-            ->with('success', 'Password halaman publik berhasil diperbarui.');
-    }
-
     protected function validateMutasi(Request $request): array
     {
         return $request->validate([
@@ -212,25 +178,6 @@ class RekapKasController extends Controller
             'bulan' => $bulan >= 1 && $bulan <= 12 ? $bulan : null,
             'tahun' => $tahun >= 2000 && $tahun <= 2100 ? $tahun : null,
         ];
-    }
-
-    /**
-     * Dekripsi password publik; null jika belum diatur / tidak
-     * bisa didekripsi (password legacy berformat hash lama hanya
-     * bisa difungsikan untuk gate, tidak untuk direveal - ganti
-     * password untuk membuatnya terlihat).
-     */
-    protected function decryptPublikPassword(RekapPublikSetting $setting): ?string
-    {
-        if (! $setting->requires_password) {
-            return null;
-        }
-
-        try {
-            return Crypt::decryptString($setting->password);
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     /**

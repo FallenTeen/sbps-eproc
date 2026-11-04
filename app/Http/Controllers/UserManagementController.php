@@ -7,7 +7,9 @@ use App\Domain\Shared\Actions\RecordAuditLogAction;
 use App\Models\User;
 use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
@@ -55,40 +57,75 @@ class UserManagementController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $roles = Role::pluck('name');
         $karyawans = $this->karyawansTanpaAkun();
+        $roles = Role::where('guard_name', 'web')->orderBy('name')->pluck('name');
+        if (! $roles->contains('user')) {
+            $roles->prepend('user');
+        }
+        $jabatanOptions = Karyawan::query()
+            ->whereNotNull('jabatan')
+            ->where('jabatan', '<>', '')
+            ->distinct()
+            ->orderBy('jabatan')
+            ->pluck('jabatan');
 
         return Inertia::render('UserManagement/Create', [
-            'roles' => $roles,
             'karyawans' => $karyawans,
+            'roles' => $roles->values(),
+            'jabatanOptions' => $jabatanOptions,
         ]);
     }
 
     /**
-     * Store a newly created user, dengan opsi tautan karyawan:
-     * pilih karyawan yang sudah ada (belum punya akun) ATAU buat
-     * data karyawan baru yang tertaut ke akun ini (boleh dua-duanya kosong).
+     * Create an account with the no-permission "user" role. Its display name
+     * comes from a linked/new employee or, for account-only creation, the email.
      */
     public function store(Request $request)
     {
-        $validated = $request->validate(array_merge([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|exists:roles,name',
-            'is_active' => 'sometimes|boolean',
-        ], $this->karyawanLinkRules(false)));
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_active' => $request->is_active ?? true,
+        $defaultRole = Role::firstOrCreate([
+            'name' => 'user',
+            'guard_name' => 'web',
         ]);
+        $defaultRole->syncPermissions([]);
 
-        $user->assignRole($validated['role']);
+        $hasEmployee = $request->filled('karyawan_id') || $request->filled('new_karyawan');
+        $rules = [
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'is_active' => 'sometimes|boolean',
+        ];
+        if ($hasEmployee) {
+            $rules['role'] = [
+                'required',
+                'string',
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
+            ];
+        }
 
-        $karyawan = $this->resolveKaryawanLink($request, $user);
+        $validated = $request->validate(array_merge($rules, $this->karyawanLinkRules(false)));
+
+        $role = $validated['role'] ?? $defaultRole;
+
+        [$user, $karyawan] = DB::transaction(function () use ($request, $validated, $role) {
+            $karyawanTerpilih = isset($validated['karyawan_id'])
+                ? Karyawan::findOrFail($validated['karyawan_id'])
+                : null;
+
+            $name = $karyawanTerpilih?->nama
+                ?? ($validated['new_karyawan']['nama']
+                    ?? Str::before($validated['email'], '@'));
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'is_active' => $request->is_active ?? true,
+            ]);
+
+            $user->assignRole($role);
+
+            return [$user, $this->resolveKaryawanLink($request, $user)];
+        });
 
         $pesan = 'User berhasil dibuat.';
         if ($karyawan) {

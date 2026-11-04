@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
-import PrimaryButton from "@/Components/PrimaryButton";
 import { Save, ArrowLeft, User, CreditCard } from "lucide-react";
 
-export default function Create({ auth }) {
+const JABATAN_LAINNYA = "__jabatan_lainnya__";
+
+export default function Create({ jabatanOptions = [], roles = ["user"] }) {
+    const [jabatanLainnya, setJabatanLainnya] = useState(false);
     const { data, setData, post, processing, errors } = useForm({
         nama: "",
         tipe: "tetap",
@@ -21,7 +22,13 @@ export default function Create({ auth }) {
         no_bpjs_ketenagakerjaan: "",
         status_ptkp: "",
         status: "aktif",
+        create_account: false,
+        account_email: "",
+        account_password: "",
+        account_password_confirmation: "",
+        account_role: "user",
     });
+    const isCreatingWithAccount = data.create_account;
 
     const submit = (e) => {
         e.preventDefault();
@@ -134,19 +141,60 @@ export default function Create({ auth }) {
                                     Jabatan{" "}
                                     <span className="text-red-500">*</span>
                                 </label>
-                                <TextInput
+                                <select
                                     id="jabatan"
                                     className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
                                         errors.jabatan
                                             ? "border-red-500 focus:ring-red-100"
                                             : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
                                     }`}
-                                    value={data.jabatan}
-                                    onChange={(e) =>
-                                        setData("jabatan", e.target.value)
+                                    value={
+                                        jabatanLainnya
+                                            ? JABATAN_LAINNYA
+                                            : data.jabatan
                                     }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setJabatanLainnya(
+                                            value === JABATAN_LAINNYA,
+                                        );
+                                        setData(
+                                            "jabatan",
+                                            value === JABATAN_LAINNYA
+                                                ? ""
+                                                : value,
+                                        );
+                                    }}
                                     required
-                                />
+                                >
+                                    <option value="">Pilih jabatan</option>
+                                    {jabatanOptions.map((jabatan) => (
+                                        <option key={jabatan} value={jabatan}>
+                                            {jabatan}
+                                        </option>
+                                    ))}
+                                    <option value={JABATAN_LAINNYA}>
+                                        Jabatan lainnya
+                                    </option>
+                                </select>
+                                {jabatanLainnya && (
+                                    <TextInput
+                                        id="jabatan-lainnya"
+                                        className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                                            errors.jabatan
+                                                ? "border-red-500 focus:ring-red-100"
+                                                : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                        }`}
+                                        value={data.jabatan}
+                                        onChange={(e) =>
+                                            setData("jabatan", e.target.value)
+                                        }
+                                        placeholder="Masukkan jabatan"
+                                        maxLength={255}
+                                        required
+                                        aria-label="Jabatan lainnya"
+                                    />
+                                )}
                                 <InputError
                                     className="mt-1.5 text-xs text-red-600"
                                     message={errors.jabatan}
@@ -414,6 +462,176 @@ export default function Create({ auth }) {
                                 message={errors.no_bpjs_ketenagakerjaan}
                             />
                         </div>
+
+                        <label className="flex items-center gap-3 py-2">
+                            <input
+                                id="account_checkbox"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                checked={isCreatingWithAccount}
+                                onChange={(e) => {
+                                    const enabled = e.target.checked;
+                                    setData("create_account", enabled);
+                                    if (!enabled) {
+                                        setData("account_email", "");
+                                        setData("account_password", "");
+                                        setData(
+                                            "account_password_confirmation",
+                                            "",
+                                        );
+                                        setData("account_role", "user");
+                                    }
+                                }}
+                            />
+                            <span className="text-sm font-medium text-gray-800">
+                                Buat akun login untuk karyawan ini
+                            </span>
+                        </label>
+
+                        {/* Section 3: Opsi Akun (Opsional) */}
+                        {isCreatingWithAccount && (
+                            <section className="rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                                <div className="mb-5">
+                                    <h2 className="flex items-center gap-2 text-lg font-semibold text-blue-800">
+                                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100">
+                                            <User className="h-5 w-5 text-blue-600" />
+                                        </span>
+                                        Opsi Akun
+                                    </h2>
+                                    <p className="mt-2 text-sm text-blue-600">
+                                        Nama akun otomatis mengikuti nama
+                                        karyawan. Pilih role untuk menentukan
+                                        izin akses akun.
+                                    </p>
+                                </div>
+
+                                <div className="mb-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    <div>
+                                        <label
+                                            htmlFor="account_email"
+                                            className="mb-2 block text-sm font-medium text-blue-700"
+                                        >
+                                            Email Akun{" "}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <TextInput
+                                            id="account_email"
+                                            type="email"
+                                            className="w-full rounded-lg border border-blue-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            value={data.account_email}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "account_email",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="contoh@email.com"
+                                            required
+                                        />
+                                        <InputError
+                                            className="mt-1.5 text-xs text-red-600"
+                                            message={errors.account_email}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            htmlFor="account_role"
+                                            className="mb-2 block text-sm font-medium text-blue-700"
+                                        >
+                                            Role akun (izin akses){" "}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            id="account_role"
+                                            className="w-full rounded-lg border border-blue-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            value={data.account_role}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "account_role",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            required
+                                        >
+                                            {roles.map((role) => (
+                                                <option key={role} value={role}>
+                                                    {role}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p className="mt-1.5 text-sm text-blue-800">
+                                            Berbeda dari jabatan karyawan.
+                                        </p>
+                                        <InputError
+                                            className="mt-1.5 text-xs text-red-600"
+                                            message={errors.account_role}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mb-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    <div>
+                                        <label
+                                            htmlFor="account_password"
+                                            className="mb-2 block text-sm font-medium text-blue-700"
+                                        >
+                                            Password{" "}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <TextInput
+                                            id="account_password"
+                                            type="password"
+                                            className="w-full rounded-lg border border-blue-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            value={data.account_password}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "account_password",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Minimal 8 karakter"
+                                            minLength={8}
+                                            required
+                                        />
+                                        <InputError
+                                            className="mt-1.5 text-xs text-red-600"
+                                            message={errors.account_password}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor="account_password_confirmation"
+                                            className="mb-2 block text-sm font-medium text-blue-700"
+                                        >
+                                            Konfirmasi Password{" "}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <TextInput
+                                            id="account_password_confirmation"
+                                            type="password"
+                                            className="w-full rounded-lg border border-blue-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            value={data.account_password_confirmation}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "account_password_confirmation",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Ulangi password"
+                                            required
+                                        />
+                                        <InputError
+                                            className="mt-1.5 text-xs text-red-600"
+                                            message={
+                                                errors.account_password_confirmation
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                            </section>
+                        )}
 
                         {/* Tombol Aksi */}
                         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">

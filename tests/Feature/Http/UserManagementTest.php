@@ -39,14 +39,10 @@ test('normal user cannot view user management', function () {
         ->assertStatus(403);
 });
 
-test('owner can create user with role', function () {
+test('owner can create a regular user with only email and password', function () {
     $data = [
-        'name' => 'New User',
         'email' => 'newuser@example.com',
         'password' => 'password123',
-        'password_confirmation' => 'password123',
-        'role' => 'Koordinator GCS',
-        'is_active' => true,
     ];
 
     $this->actingAs($this->owner)
@@ -55,7 +51,24 @@ test('owner can create user with role', function () {
 
     $user = User::where('email', 'newuser@example.com')->first();
     expect($user)->not->toBeNull();
-    expect($user->hasRole('Koordinator GCS'))->toBeTrue();
+    expect($user->name)->toBe('newuser');
+    expect($user->hasRole('user'))->toBeTrue();
+    expect($user->getAllPermissions())->toBeEmpty();
+});
+
+test('account-only creation cannot assign a privileged role', function () {
+    $this->actingAs($this->owner)
+        ->post(route('users.store'), [
+            'email' => 'limited@example.com',
+            'password' => 'password123',
+            'role' => 'Owner',
+        ])
+        ->assertRedirect();
+
+    $user = User::where('email', 'limited@example.com')->first();
+    expect($user->hasRole('user'))->toBeTrue();
+    expect($user->hasRole('Owner'))->toBeFalse();
+    expect($user->getAllPermissions())->toBeEmpty();
 });
 
 test('owner can update user role', function () {
@@ -127,6 +140,8 @@ test('owner can create user linked to existing karyawan', function () {
 
     $user = User::where('email', 'karyawan-link@example.com')->first();
     expect($user->karyawan()->whereKey($karyawan->id)->exists())->toBeTrue();
+    expect($user->name)->toBe($karyawan->nama);
+    expect($user->hasRole('Koordinator GCS'))->toBeTrue();
 
     $karyawan->refresh();
     expect((string) $karyawan->user_id)->toBe((string) $user->id);
@@ -154,6 +169,7 @@ test('owner can create user with new karyawan data', function () {
     expect($karyawan)->not->toBeNull();
     expect($karyawan->nama)->toBe('Budi Santoso');
     expect($karyawan->tipe)->toBe('harian');
+    expect($user->name)->toBe('Budi Santoso');
 });
 
 test('cannot create user linking karyawan owned by another account', function () {
@@ -171,6 +187,7 @@ test('cannot create user linking karyawan owned by another account', function ()
         ])
         ->assertSessionHasErrors('karyawan_id');
 
+    expect(User::where('email', 'try-link@example.com')->exists())->toBeFalse();
     $karyawan->refresh();
     expect((string) $karyawan->user_id)->toBe((string) $existingUser->id);
 });
@@ -178,15 +195,13 @@ test('cannot create user linking karyawan owned by another account', function ()
 test('owner can create user without karyawan data (karyawan tidak wajib punya akun)', function () {
     $this->actingAs($this->owner)
         ->post(route('users.store'), [
-            'name' => 'Tanpa Karyawan',
             'email' => 'tanpa-karyawan@example.com',
             'password' => 'password123',
-            'password_confirmation' => 'password123',
-            'role' => 'Koordinator GCS',
         ])
         ->assertRedirect();
 
     $user = User::where('email', 'tanpa-karyawan@example.com')->first();
+    expect($user->name)->toBe('tanpa-karyawan');
     expect($user->karyawan()->exists())->toBeFalse();
     expect(Karyawan::where('user_id', $user->id)->exists())->toBeFalse();
 });

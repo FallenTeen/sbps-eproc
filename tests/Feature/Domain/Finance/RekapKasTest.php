@@ -4,10 +4,8 @@ use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
 use App\Domain\Finance\Models\RekapManual;
-use App\Domain\Finance\Models\RekapPublikSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -152,84 +150,20 @@ test('export excel berisi rekap', function () {
         ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
 
-test('halaman publik terkunci oleh password setelah diatur owner', function () {
-    // Belum ada password → bebas akses
-    $this->get(route('rekap-publik.index'))->assertOk();
-
-    // Owner set password
-    $this->actingAs($this->owner)
-        ->put(route('finance.rekap-kas.password'), ['password' => 'rahasia123'])
-        ->assertRedirect();
-
-    expect(RekapPublikSetting::current()->requires_password)->toBeTrue();
-
-    // Sekarang terkunci (session baru / browser fresh)
-    $this->withSession([])->get(route('rekap-publik.index'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('locked', true));
-
-    // Password salah → tidak terbuka
-    $this->post(route('rekap-publik.unlock'), ['password' => 'salah'])
-        ->assertRedirect()
-        ->assertSessionHasErrors('password');
-
-    // Password benar → terbuka
-    $this->post(route('rekap-publik.unlock'), ['password' => 'rahasia123'])
-        ->assertRedirect()
-        ->assertSessionHas('rekap_publik_unlocked');
-
-    $this->get(route('rekap-publik.index'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('locked', false));
-
-    // Lock kembali
-    $this->post(route('rekap-publik.lock'))->assertRedirect();
-
-    $this->get(route('rekap-publik.index'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('locked', true));
-});
-
-test('admin keuangan juga bisa mengganti password publik', function () {
+test('rekap kas bersifat internal murni (TD-D5): tanpa panel sandi & tanpa rute publik', function () {
+    // Halaman rekap kas tidak lagi mengirim props panel sandi publik
     $this->actingAs($this->keuangan)
-        ->put(route('finance.rekap-kas.password'), ['password' => 'kunciku123'])
-        ->assertRedirect();
-
-    expect(RekapPublikSetting::current()->requires_password)->toBeTrue();
-
-    $this->withSession([])
-        ->get(route('rekap-publik.index'))
+        ->get(route('finance.rekap-kas.index'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('locked', true));
-});
+        ->assertInertia(fn ($page) => $page
+            ->component('Finance/RekapKas/Index')
+            ->missing('publik'));
 
-test('role lain tidak bisa mengganti password publik', function () {
-    $this->actingAs($this->orangLain)
-        ->put(route('finance.rekap-kas.password'), ['password' => 'coba123'])
-        ->assertForbidden();
+    // Rute ganti password sudah pindah ke Rekap Pengeluaran
+    $this->actingAs($this->keuangan)
+        ->put(route('finance.rekap-pengeluaran.password'), ['password' => 'rahasia123'])
+        ->assertRedirect(route('finance.rekap-pengeluaran.index'));
 
-    expect(RekapPublikSetting::current()->requires_password)->toBeFalse();
-});
-
-test('password legacy berformat hash tetap bisa membuka gate', function () {
-    RekapPublikSetting::create([
-        'password' => Hash::make('rahasia123'),
-        'updated_by' => $this->owner->id,
-    ]);
-
-    $this->post(route('rekap-publik.unlock'), ['password' => 'rahasia123'])
-        ->assertRedirect()
-        ->assertSessionHas('rekap_publik_unlocked');
-});
-
-test('export publik ditolak saat masih terkunci', function () {
-    $this->actingAs($this->owner)
-        ->put(route('finance.rekap-kas.password'), ['password' => 'rahasia123'])->assertRedirect();
-
-    $this->get(route('rekap-publik.export'))->assertForbidden();
-});
-
-test('halaman publik tidak butuh login', function () {
-    // Tanpa actingAs sama sekali
-    $this->get(route('rekap-publik.index'))->assertOk()->assertInertia(fn ($page) => $page->component('Public/RekapPublik'));
+    // Rute lama /rekap-publik tidak ada lagi (dialihkan 301)
+    $this->get('/rekap-publik')->assertStatus(301);
 });

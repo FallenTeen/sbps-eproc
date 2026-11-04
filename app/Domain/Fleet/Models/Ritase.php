@@ -29,6 +29,9 @@ class Ritase extends Model
         'tarif_per_rit_snapshot',
         'nominal',
         'total_upah_rit',
+        'sumber_angka_resmi',
+        'wajib_jembatan_timbang',
+        'ada_selisih',
         'proyek_id',
         'titik_id',
         'customer',
@@ -43,7 +46,18 @@ class Ritase extends Model
         'tarif_per_rit_snapshot' => 'float',
         'nominal' => 'float',
         'total_upah_rit' => 'float',
+        'wajib_jembatan_timbang' => 'boolean',
+        'ada_selisih' => 'boolean',
     ];
+
+    public function getJumlahResmiAttribute(): float
+    {
+        if ($this->sumber_angka_resmi === 'logistik' && $this->verifikasiLogistik?->jumlah_verifikasi !== null) {
+            return (float) $this->verifikasiLogistik->jumlah_verifikasi;
+        }
+
+        return (float) ($this->jumlah_volume ?: $this->jumlah_rit);
+    }
 
     public function getTotalUpahRitAttribute(): float
     {
@@ -80,6 +94,31 @@ class Ritase extends Model
     public function biayaLain()
     {
         return $this->hasMany(RitaseBiayaLain::class);
+    }
+
+    public function muatan()
+    {
+        return $this->hasOne(RitaseMuatan::class);
+    }
+
+    public function verifikasis()
+    {
+        return $this->hasMany(RitaseVerifikasi::class);
+    }
+
+    public function verifikasiLogistik()
+    {
+        return $this->hasOne(RitaseVerifikasi::class)->where('tahap', 'logistik')->latestOfMany();
+    }
+
+    public function verifikasiSecurity()
+    {
+        return $this->hasOne(RitaseVerifikasi::class)->where('tahap', 'security')->latestOfMany();
+    }
+
+    public function timbang()
+    {
+        return $this->hasOne(RitaseTimbang::class);
     }
 
     public function invoiceItems()

@@ -6,6 +6,7 @@ use App\Domain\Finance\Models\Invoice;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
 use Carbon\Carbon;
@@ -99,6 +100,34 @@ class NotificationController extends Controller
                 ]);
 
             foreach ($kondisiBuruk->concat($kondisiBurukAkhir) as $notification) {
+                $notifications[] = $notification;
+            }
+        }
+
+        // ─── 2c. Pengisian Solar Tanpa Nota (TD-A5) ──────────────────────────
+        if ($user->hasAnyPermission(['manage pengisian solar', 'manage fleet'])) {
+            $hari = (int) config('fleet.nota_reminder_days', 3);
+
+            $tanpaNota = ArmadaPengisianSolar::with('armada')
+                ->where('nota_lengkap', false)
+                ->whereDate('tanggal', '<=', now()->subDays($hari))
+                ->orderByDesc('tanggal')
+                ->take(5)
+                ->get()
+                ->map(fn ($pengisian) => [
+                    'id' => 'solar_nota_'.$pengisian->id,
+                    'type' => 'solar_nota_belum_lengkap',
+                    'title' => 'Pengisian Solar: Nota Belum Lengkap',
+                    'body' => ($pengisian->armada?->kode_unit ?? '-')
+                        ." - tanggal {$pengisian->tanggal?->format('d M Y')} (Rp "
+                        .number_format($pengisian->nominal_rp ?? 0, 0, ',', '.')
+                        ."), lebih dari {$hari} hari tanpa nota",
+                    'action_url' => '/fleet/pengisian-solar',
+                    'is_read' => false,
+                    'time_ago' => Carbon::parse($pengisian->tanggal)->diffForHumans(),
+                ]);
+
+            foreach ($tanpaNota as $notification) {
                 $notifications[] = $notification;
             }
         }

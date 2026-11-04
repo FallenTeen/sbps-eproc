@@ -29,12 +29,17 @@ class ArmadaPengisianSolar extends Model
         'foto_odo',
         'foto_odo_metadata',
         'liter',
+        'liter_sumber',
+        'ocr_status',
+        'nota_lengkap',
         'nominal_rp',
         'harga_per_liter',
         'foto_nota',
         'foto_nota_metadata',
         'catatan',
         'client_uuid',
+        'diperbarui_oleh_id',
+        'diverifikasi_pada',
     ];
 
     protected $casts = [
@@ -43,8 +48,10 @@ class ArmadaPengisianSolar extends Model
         'foto_nota_metadata' => 'array',
         'odo_atau_hm' => 'float',
         'liter' => 'float',
+        'nota_lengkap' => 'boolean',
         'nominal_rp' => 'float',
         'harga_per_liter' => 'float',
+        'diverifikasi_pada' => 'datetime',
     ];
 
     /** URL foto ikut terkirim ke web tanpa perlu dipanggil manual. */
@@ -68,6 +75,11 @@ class ArmadaPengisianSolar extends Model
     public function dicatatOleh()
     {
         return $this->belongsTo(User::class, 'dicatat_oleh');
+    }
+
+    public function diperbaruiOleh()
+    {
+        return $this->belongsTo(User::class, 'diperbarui_oleh_id');
     }
 
     public function getFotoOdoUrlAttribute(): ?string

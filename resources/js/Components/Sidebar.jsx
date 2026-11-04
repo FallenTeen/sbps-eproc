@@ -85,19 +85,29 @@ function getAllMenus() {
                 { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
+                {
+                    title: 'BBM & Solar',
+                    icon: Smartphone,
+                    href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'),
+                    routeName: 'fleet.bbm.*',
+                    permission: ['manage fleet', 'view fleet'],
+                    items: [
+                        { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Pengisian Solar', href: safeRoute('fleet.pengisian-solar.index', {}, '/fleet/pengisian-solar'), routeName: 'fleet.pengisian-solar.*', permission: ['manage pengisian solar'] },
+                    ],
+                },
                 { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Monitoring Armada', href: safeRoute('fleet.monitoring-armada.index', {}, '/fleet/monitoring-armada'), routeName: 'fleet.monitoring-armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
-            ],
-        },
-        {
-            title: 'Helper Armada',
-            icon: Users,
-            permission: ['manage helper armada'],
-            items: [
-                { title: 'Kelola Helper', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
+                {
+                    title: 'Helper Armada',
+                    icon: Users,
+                    permission: ['manage helper armada'],
+                    items: [
+                        { title: 'Kelola Helper', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
+                    ],
+                },
             ],
         },
         {
@@ -152,6 +162,7 @@ function getAllMenus() {
                 { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: ['finance.invoice.*', '!finance.invoice.outstanding', '!finance.invoice.aging'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: ['finance.invoice.outstanding', 'finance.invoice.aging', 'finance.pembayaran-klien.*'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Rekap Pemasukan & Pengeluaran', href: safeRoute('finance.rekap-kas.index', {}, '/finance/rekap-kas'), routeName: ['finance.rekap-kas.*'], permission: ['manage rekap keuangan'] },
+                { title: 'Rekap Pengeluaran', href: safeRoute('finance.rekap-pengeluaran.index', {}, '/finance/rekap-pengeluaran'), routeName: ['finance.rekap-pengeluaran.*'], permission: ['manage rekap pengeluaran'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
             ],
         },
@@ -358,7 +369,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         const isSubOpen = openSubmenu[item.title] ?? item.items?.some((sub) => isRouteActive(sub.routeName));
                         const active = !hasSub
                             ? isRouteActive(item.routeName)
-                            : item.items.some((sub) => isRouteActive(sub.routeName));
+                            : isRouteActive(item.routeName) || item.items.some((sub) => isRouteActive(sub.routeName));
 
                         return (
                             <div key={idx} className="space-y-1">
@@ -375,24 +386,41 @@ export default function Sidebar({ isOpen, onClose }) {
                                     </Link>
                                 ) : (
                                     <div>
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSubmenu(item.title)}
+                                        <div
                                             className={`group flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold transition-all border-2 ${active
                                                 ? 'bg-white text-ink.DEFAULT border-black shadow-bw-sm font-black'
                                                 : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
-                                                <span>{item.title}</span>
-                                            </div>
-                                            {isSubOpen ? (
-                                                <ChevronDown className="h-4 w-4 text-ink.DEFAULT" />
+                                            {item.href ? (
+                                                <Link href={item.href} className="flex flex-1 items-center gap-3">
+                                                    <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
+                                                    <span>{item.title}</span>
+                                                </Link>
                                             ) : (
-                                                <ChevronRight className="h-4 w-4 text-ink.DEFAULT" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleSubmenu(item.title)}
+                                                    className="flex flex-1 items-center gap-3 text-left"
+                                                >
+                                                    <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
+                                                    <span>{item.title}</span>
+                                                </button>
                                             )}
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleSubmenu(item.title)}
+                                                aria-label={`${isSubOpen ? 'Tutup' : 'Buka'} submenu ${item.title}`}
+                                                aria-expanded={isSubOpen}
+                                                className="ml-2"
+                                            >
+                                                {isSubOpen ? (
+                                                    <ChevronDown className="h-4 w-4 text-ink.DEFAULT" />
+                                                ) : (
+                                                    <ChevronRight className="h-4 w-4 text-ink.DEFAULT" />
+                                                )}
+                                            </button>
+                                        </div>
 
                                         {isSubOpen && (
                                             <div className="mt-1 ml-4 border-l-2 border-black pl-3 space-y-1">

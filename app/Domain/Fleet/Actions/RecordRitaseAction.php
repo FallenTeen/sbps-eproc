@@ -36,6 +36,14 @@ class RecordRitaseAction
         // Rekomendasi nominal dari rute (bisa di-override form/proses panggilan)
         $rekomendasi = $jumlahRit * $tarif;
 
+        $isWajibTimbang = false;
+        if (! empty($data['rute_tarif_id']) && isset($rute)) {
+            $asalLower = strtolower($rute->lokasi_asal ?? '');
+            if (str_contains($asalLower, 'kantor pusat') || str_contains($asalLower, 'pusat')) {
+                $isWajibTimbang = true;
+            }
+        }
+
         // Normalkan total_upah_rit
         if ($satuan === 'ritase') {
             $totalUpah = $jumlahRit * $tarif;
@@ -44,7 +52,7 @@ class RecordRitaseAction
             $totalUpah = (float) ($data['nominal'] ?? $rekomendasi);
         }
 
-        return DB::transaction(function () use ($data, $tarif, $jumlahRit, $satuan, $totalUpah, $rekomendasi) {
+        return DB::transaction(function () use ($data, $tarif, $jumlahRit, $satuan, $totalUpah, $rekomendasi, $isWajibTimbang) {
             $ritase = Ritase::create([
                 'armada_id' => $data['armada_id'],
                 'driver_karyawan_id' => $data['driver_karyawan_id'],
@@ -58,10 +66,21 @@ class RecordRitaseAction
                 'tarif_per_rit_snapshot' => $tarif,
                 'nominal' => $data['nominal'] ?? $rekomendasi,
                 'total_upah_rit' => $totalUpah,
+                'sumber_angka_resmi' => 'driver',
+                'wajib_jembatan_timbang' => $isWajibTimbang,
+                'ada_selisih' => false,
                 'proyek_id' => $data['proyek_id'] ?? null,
                 'titik_id' => $data['titik_id'] ?? null,
                 'customer' => $data['customer'] ?? null,
                 'catatan' => $data['catatan'] ?? null,
+            ]);
+
+            // Catat data muatan driver (TD-E3)
+            $ritase->muatan()->create([
+                'jenis_muatan' => $data['material'] ?? $data['kategori'] ?? 'Umum',
+                'jumlah_driver' => $data['jumlah_volume'] ?? $jumlahRit,
+                'satuan' => $satuan,
+                'dicatat_oleh' => auth()->id(),
             ]);
 
             // Simpan biaya lain jika ada
