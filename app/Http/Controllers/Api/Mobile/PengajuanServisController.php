@@ -140,13 +140,34 @@ class PengajuanServisController extends Controller
         }
 
         $payload = $pengajuan->toArray();
+
+        if (isset($payload['eksternal_detail'])) {
+            $fotoBengkel = $payload['eksternal_detail']['foto_bengkel'] ?? null;
+            $payload['eksternal_detail']['foto_bengkel_url'] = $fotoBengkel
+                ? array_map(fn ($path) => asset('storage/'.$path), explode(',', $fotoBengkel))
+                : [];
+        }
+
+        foreach ($payload['eksternal_notas'] ?? [] as $index => $nota) {
+            $fotoNota = $nota['foto_nota'] ?? null;
+            $payload['eksternal_notas'][$index]['foto_nota_url'] = $fotoNota
+                ? array_map(fn ($path) => asset('storage/'.$path), explode(',', $fotoNota))
+                : [];
+        }
+
         $payload['todos'] = $pengajuan->workshopTodos
             ->map(fn (WorkshopTodo $t) => $this->mapTodo($t, $pengajuan->id))
             ->values();
 
         // Append foto hasil kerja (Spatie Media) as flat URL array
         if ($pengajuan->tipe_servis === 'eksternal') {
-            $payload['foto_hasil_urls'] = $pengajuan->foto_hasil_urls;
+            $baseUrl = request()->getSchemeAndHttpHost();
+            $payload['foto_hasil_urls'] = array_map(
+                fn ($path) => str_starts_with($path, 'http')
+                    ? preg_replace('#^https?://(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?#i', $baseUrl, $path)
+                    : $baseUrl.'/storage/'.ltrim($path, '/'),
+                $pengajuan->foto_hasil_urls ?? [],
+            );
         }
 
         return $this->success($payload, 'Detail servis armada.');
