@@ -133,7 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
         Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
 
-        // Versi Aplikasi Mobile (version-gate / Shorebird - docs/TODO-SHOREBIRD-WEB.md W2)
+        // Versi Aplikasi Mobile (version-gate / Shorebird - docs/SYSTEM_DOCUMENTATION.md 6.6)
         Route::prefix('app-version')->name('app-version.')->middleware('permission:manage app version')->group(function () {
             Route::get('/', [AppVersionController::class, 'index'])->name('index');
             Route::put('{appVersion}', [AppVersionController::class, 'update'])->name('update');

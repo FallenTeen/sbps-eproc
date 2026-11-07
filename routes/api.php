@@ -171,49 +171,60 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
             ->name('workshop.servis-eksternal.index');
 
         // v6 (21.7 & 14d) - Modul Inventory (stok, request sparepart, opname)
-        Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
-        Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
-        Route::get('inventory/materials/{id}/mutasi', [InventoryController::class, 'materialMutasi'])->name('inventory.material-mutasi');
-        Route::get('inventory/mutasi', [InventoryController::class, 'mutasi'])->name('inventory.mutasi');
-        Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
-        Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
+        Route::middleware('permission:manage inventory|view inventory|manage sparepart|view sparepart|manage procurement|view procurement')->group(function () {
+            Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
+            Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
+            Route::get('inventory/materials/{id}/mutasi', [InventoryController::class, 'materialMutasi'])->name('inventory.material-mutasi');
+            Route::get('inventory/mutasi', [InventoryController::class, 'mutasi'])->name('inventory.mutasi');
+            Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
+            Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
+        });
         Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])
-            ->name('inventory.request.proses')->middleware('idempotency');
-        Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
-        Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])
-            ->name('inventory.opname')->middleware('idempotency');
+            ->name('inventory.request.proses')
+            ->middleware(['idempotency', 'permission:manage inventory|manage sparepart|manage procurement']);
+        Route::middleware('permission:manage stok opname|view stok opname')->group(function () {
+            Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
+            Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])
+                ->name('inventory.opname')->middleware('idempotency');
+        });
 
         // TD-E: Modul Logistik & Timbang
-        Route::get('logistik/ritase/antrean', [LogistikController::class, 'antrean'])->name('logistik.ritase.antrean');
-        Route::post('logistik/ritase/{id}/verifikasi', [LogistikController::class, 'verifikasi'])
-            ->name('logistik.ritase.verifikasi')->middleware('idempotency');
-        Route::get('logistik/tara-master', [LogistikController::class, 'taraMaster'])->name('logistik.tara-master');
-        Route::put('logistik/tara-master/{armada}', [LogistikController::class, 'updateTaraMaster'])->name('logistik.tara-master.update');
+        Route::middleware('permission:verify ritase logistik|manage timbang')->group(function () {
+            Route::get('logistik/ritase/antrean', [LogistikController::class, 'antrean'])->name('logistik.ritase.antrean');
+            Route::post('logistik/ritase/{id}/verifikasi', [LogistikController::class, 'verifikasi'])
+                ->name('logistik.ritase.verifikasi')->middleware('idempotency');
+            Route::get('logistik/tara-master', [LogistikController::class, 'taraMaster'])->name('logistik.tara-master');
+            Route::put('logistik/tara-master/{armada}', [LogistikController::class, 'updateTaraMaster'])->name('logistik.tara-master.update');
+        });
 
         // TD-F: Modul Security
-        Route::get('security/buku-tamu/hari-ini', [SecurityController::class, 'bukuTamuHariIni'])->name('security.buku-tamu.hari-ini');
-        Route::post('security/buku-tamu', [SecurityController::class, 'storeBukuTamu'])
-            ->name('security.buku-tamu.store')->middleware('idempotency');
-        Route::post('security/buku-tamu/keluar', [SecurityController::class, 'keluarBukuTamu'])
-            ->name('security.buku-tamu.keluar')->middleware('idempotency');
-        Route::post('security/checklist', [SecurityController::class, 'submitChecklist'])
-            ->name('security.checklist')->middleware('idempotency');
-        Route::post('security/darurat', [SecurityController::class, 'submitDarurat'])
-            ->name('security.darurat')->middleware('idempotency');
-        Route::get('security/ritase/antrean', [SecurityController::class, 'antreanRitase'])->name('security.ritase.antrean');
-        Route::post('security/ritase/{id}/verifikasi', [SecurityController::class, 'verifikasiRitase'])
-            ->name('security.ritase.verifikasi')->middleware('idempotency');
+        Route::middleware('permission:manage security buku tamu|manage security checklist|manage security darurat|verify ritase security')->group(function () {
+            Route::get('security/buku-tamu/hari-ini', [SecurityController::class, 'bukuTamuHariIni'])->name('security.buku-tamu.hari-ini');
+            Route::post('security/buku-tamu', [SecurityController::class, 'storeBukuTamu'])
+                ->name('security.buku-tamu.store')->middleware('idempotency');
+            Route::post('security/buku-tamu/keluar', [SecurityController::class, 'keluarBukuTamu'])
+                ->name('security.buku-tamu.keluar')->middleware('idempotency');
+            Route::post('security/checklist', [SecurityController::class, 'submitChecklist'])
+                ->name('security.checklist')->middleware('idempotency');
+            Route::post('security/darurat', [SecurityController::class, 'submitDarurat'])
+                ->name('security.darurat')->middleware('idempotency');
+            Route::get('security/ritase/antrean', [SecurityController::class, 'antreanRitase'])->name('security.ritase.antrean');
+            Route::post('security/ritase/{id}/verifikasi', [SecurityController::class, 'verifikasiRitase'])
+                ->name('security.ritase.verifikasi')->middleware('idempotency');
+        });
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         // Portal Kontraktor
-        Route::get('kontraktor/proyek', [KontraktorController::class, 'proyekList'])->name('kontraktor.proyek');
-        Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
-        Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
-        Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])
-            ->name('kontraktor.komunikasi')->middleware('idempotency');
+        Route::middleware('permission:view kontraktor|manage kontraktor')->group(function () {
+            Route::get('kontraktor/proyek', [KontraktorController::class, 'proyekList'])->name('kontraktor.proyek');
+            Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
+            Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
+            Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])
+                ->name('kontraktor.komunikasi')->middleware('idempotency');
+        });
 
         // Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1)
         Route::get('me/pending-summary', PendingSummaryController::class)->name('me.pending-summary');

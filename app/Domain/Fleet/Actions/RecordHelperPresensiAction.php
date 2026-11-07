@@ -21,9 +21,9 @@ class RecordHelperPresensiAction
      */
     public function execute(HelperArmada $helper, User $pic, array $data): PresensiHelper
     {
-        if (! $helper->armada->isActivePicFor($pic->karyawan)) {
+        if (! $this->bolehMencatat($helper, $pic)) {
             throw ValidationException::withMessages([
-                'helper_armada_id' => 'User bukan PIC aktif armada helper ini.',
+                'helper_armada_id' => 'User tidak berhak mencatat presensi helper ini.',
             ]);
         }
 
@@ -59,5 +59,31 @@ class RecordHelperPresensiAction
         $presensi->save();
 
         return $presensi;
+    }
+
+    /**
+     * Samakan dengan HelperArmadaPolicy::presensi: pemegang `manage helper
+     * armada`, PIC aktif, atau driver aktif armada terkait.
+     */
+    private function bolehMencatat(HelperArmada $helper, User $pic): bool
+    {
+        if ($pic->can('manage helper armada')) {
+            return true;
+        }
+
+        $karyawan = $pic->karyawan;
+
+        if (! $karyawan) {
+            return false;
+        }
+
+        if ($helper->armada->isActivePicFor($karyawan)) {
+            return true;
+        }
+
+        return $helper->armada->driverAssignments()
+            ->where('karyawan_id', $karyawan->id)
+            ->where('status', 'aktif')
+            ->exists();
     }
 }

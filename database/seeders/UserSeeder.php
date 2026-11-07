@@ -16,6 +16,7 @@ class UserSeeder extends Seeder
      * mengoperasikan aplikasi. Email memakai domain @real.com (bukan dummy).
      * Identitas pribadi dapat disesuaikan manual saat data asli tersedia.
      */
+    // INI DIBUTUHKAN SELURUH ROLE TAPI HANYA UNTUK SEEDER, JANGAN DIPAKAI DI PRODUCTION
     private array $essential = [
         'owner' => ['name' => 'Owner Utama', 'nama_lengkap' => 'Bapak Owner Holding', 'jabatan' => 'Owner / Direktur Utama', 'role' => 'Owner', 'unit_bisnis_kode' => null, 'divisi' => 'Manajemen'],
         'adminkeug' => ['name' => 'Admin Keuangan', 'nama_lengkap' => 'Ibu Admin Keuangan Pusat', 'jabatan' => 'Admin Keuangan & RAB', 'role' => 'Admin Keuangan', 'unit_bisnis_kode' => null, 'divisi' => 'Finance'],
