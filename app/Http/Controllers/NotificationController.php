@@ -9,6 +9,8 @@ use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaPengisianSolar;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Procurement\Models\Supplier;
+use App\Domain\Security\Models\SecurityChecklistRun;
+use App\Domain\Security\Models\SecurityChecklistTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +59,7 @@ class NotificationController extends Controller
                     'id' => 'servis_'.$armada->id,
                     'type' => 'servis_jatuh_tempo',
                     'title' => 'Armada Perlu Diservis',
-                    'body' => "{$armada->nama_unit} ({$armada->nomor_polisi}) - servis terakhir: ".Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
+                    'body' => "{$armada->kode_unit} ({$armada->plat_nomor}) - servis terakhir: ".Carbon::parse($armada->tanggal_servis_terakhir)->format('d M Y'),
                     'action_url' => "/fleet/armada/{$armada->id}",
                     'is_read' => false,
                     'time_ago' => 'sekarang',
@@ -129,6 +131,44 @@ class NotificationController extends Controller
 
             foreach ($tanpaNota as $notification) {
                 $notifications[] = $notification;
+            }
+        }
+
+        // ─── 2d. Checklist Security Belum Dijalankan (TD-F3) ──────────────────
+        // Template aktif yang batas waktu (`jam_selesai`) hari ini sudah lewat
+        // tetapi belum ada run dengan periode yang sama pada tanggal ini.
+        if ($user->hasPermissionTo('manage security checklist')) {
+            $nowTime = now()->format('H:i');
+            $hariIni = strtolower(now()->locale('id')->isoFormat('dddd'));
+
+            $templates = SecurityChecklistTemplate::where('aktif', true)
+                ->whereNotNull('jam_selesai')
+                ->where('jam_selesai', '<', $nowTime)
+                ->get();
+
+            $runPeriodes = SecurityChecklistRun::whereDate('tanggal', now()->toDateString())
+                ->pluck('periode')
+                ->all();
+
+            foreach ($templates as $template) {
+                if (in_array($template->periode, $runPeriodes, true)) {
+                    continue;
+                }
+
+                $hari = is_array($template->hari) ? array_map('strtolower', $template->hari) : [];
+                if (! empty($hari) && ! in_array($hariIni, $hari, true)) {
+                    continue;
+                }
+
+                $notifications[] = [
+                    'id' => 'security_checklist_'.$template->id.'_'.now()->toDateString(),
+                    'type' => 'security_checklist_belum',
+                    'title' => 'Checklist Security Belum Dijalankan',
+                    'body' => "Template \"{$template->nama}\" (periode {$template->periode}) belum dijalankan; batas waktu pukul {$template->jam_selesai}.",
+                    'action_url' => '/security/checklist-template',
+                    'is_read' => false,
+                    'time_ago' => 'sekarang',
+                ];
             }
         }
 

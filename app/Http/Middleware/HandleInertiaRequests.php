@@ -40,8 +40,6 @@ class HandleInertiaRequests extends Middleware
         'core.rab.create' => 'Tambah RAB',
         'core.rab.show' => 'Detail RAB',
         'core.rab.edit' => 'Edit RAB',
-        'core.rab.realisasi' => 'Realisasi RAB',
-        'core.rab.compare' => 'RAB vs Realisasi',
 
         'core.app-version.index' => 'Versi Aplikasi Mobile',
 
@@ -188,8 +186,6 @@ class HandleInertiaRequests extends Middleware
         'core.rab.create' => 'core.rab.index',
         'core.rab.show' => 'core.rab.index',
         'core.rab.edit' => 'core.rab.index',
-        'core.rab.realisasi' => 'core.rab.index',
-        'core.rab.compare' => 'core.rab.index',
 
         'procurement.bahan-baku.create' => 'procurement.bahan-baku.index',
         'procurement.bahan-baku.show' => 'procurement.bahan-baku.index',

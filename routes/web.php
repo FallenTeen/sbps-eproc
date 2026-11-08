@@ -33,6 +33,10 @@ use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
 use App\Domain\Fleet\Http\Controllers\HelperArmadaController;
 use App\Domain\Fleet\Http\Controllers\MonitoringArmadaController;
 use App\Domain\Fleet\Http\Controllers\PengajuanServisArmadaController;
+use App\Domain\Logistik\Http\Controllers\LogistikController;
+use App\Domain\Security\Http\Controllers\BukuTamuController;
+use App\Domain\Security\Http\Controllers\ChecklistTemplateController;
+use App\Domain\Security\Http\Controllers\DaruratController;
 use App\Domain\Fleet\Http\Controllers\PengisianSolarController;
 use App\Domain\Fleet\Http\Controllers\RitaseController;
 use App\Domain\Fleet\Http\Controllers\RuteTarifController;
@@ -130,8 +134,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // RAB
         Route::resource('rab', RabController::class)->except(['index']);
         Route::get('proyek/{proyek}/rab', [RabController::class, 'index'])->name('rab.index');
-        Route::get('rab/{rab}/realisasi', [RabController::class, 'realisasi'])->name('rab.realisasi');
-        Route::get('proyek/{proyek}/rab-vs-realisasi', [RabController::class, 'compare'])->name('rab.compare');
 
         // Versi Aplikasi Mobile (version-gate / Shorebird - docs/SYSTEM_DOCUMENTATION.md 6.6)
         Route::prefix('app-version')->name('app-version.')->middleware('permission:manage app version')->group(function () {
@@ -215,10 +217,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('armada/{armada}/downtime/{downtime}/end', [ArmadaController::class, 'endDowntime'])->name('armada.end-downtime');
 
         // TD-C3-C7: Dokumen Berkala Armada (Pajak/STNK/KIR)
-        Route::post('armada/{armada}/dokumen-berkala', [ArmadaDokumenBerkalaController::class, 'store'])->name('armada.dokumen-berkala.store');
-        Route::put('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'update'])->name('armada.dokumen-berkala.update');
-        Route::post('armada/{armada}/dokumen-berkala/{dokumen}/perpanjang', [ArmadaDokumenBerkalaController::class, 'perpanjang'])->name('armada.dokumen-berkala.perpanjang');
-        Route::delete('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'destroy'])->name('armada.dokumen-berkala.destroy');
+        // TD-C5: manajemen reminder lintas armada (daftar + atur reminder massal)
+        Route::get('dokumen-berkala', [ArmadaDokumenBerkalaController::class, 'index'])->name('dokumen-berkala.index');
+        Route::middleware('permission:manage fleet|manage dokumen armada')->group(function () {
+            Route::post('dokumen-berkala/bulk-reminder', [ArmadaDokumenBerkalaController::class, 'bulkReminder'])->name('dokumen-berkala.bulk-reminder');
+            Route::post('armada/{armada}/dokumen-berkala', [ArmadaDokumenBerkalaController::class, 'store'])->name('armada.dokumen-berkala.store');
+            Route::put('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'update'])->name('armada.dokumen-berkala.update');
+            Route::post('armada/{armada}/dokumen-berkala/{dokumen}/perpanjang', [ArmadaDokumenBerkalaController::class, 'perpanjang'])->name('armada.dokumen-berkala.perpanjang');
+            Route::delete('armada/{armada}/dokumen-berkala/{dokumen}', [ArmadaDokumenBerkalaController::class, 'destroy'])->name('armada.dokumen-berkala.destroy');
+        });
 
         // Service History (polymorphic)
         Route::resource('service-history', ServiceHistoryController::class)->except(['index']);
@@ -330,6 +337,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('sparepart/record', [WorkshopController::class, 'sparepartRecord'])->name('sparepart.record');
         Route::get('riwayat', [WorkshopController::class, 'riwayat'])->name('riwayat.index');
         Route::get('monitoring', [WorkshopController::class, 'monitoring'])->name('monitoring.index');
+
+        // TD-B6 - verifikasi servis eksternal (bengkel luar) oleh Workshop
+        Route::get('servis-eksternal', [WorkshopController::class, 'servisEksternal'])->name('servis-eksternal.index');
+        Route::post('servis-eksternal/{pengajuan}/verifikasi', [WorkshopController::class, 'verifikasiServisEksternal'])->name('servis-eksternal.verifikasi');
     });
 
     // ============================================================
@@ -429,6 +440,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ============================================================
+    // TD-E2/TD-E9 - Logistik: antrean verifikasi ritase (timbang + checklist) & Tara Master.
+    Route::prefix('logistik')->name('logistik.')->middleware('permission:verify ritase logistik|manage timbang')->group(function () {
+        Route::get('ritase-verifikasi', [LogistikController::class, 'antrean'])->name('ritase-verifikasi.index');
+        Route::post('ritase/{ritase}/verifikasi', [LogistikController::class, 'verifikasi'])->name('ritase-verifikasi.verifikasi');
+        Route::get('tara-master', [LogistikController::class, 'taraMaster'])->name('tara-master.index');
+        Route::put('tara-master/{armada}', [LogistikController::class, 'updateTara'])->name('tara-master.update');
+    });
+
+    // TD-F2/F3/F4 - Security: buku tamu (+export), template checklist kantor, laporan darurat.
+    Route::prefix('security')->name('security.')->group(function () {
+        Route::middleware('permission:manage security buku tamu')->group(function () {
+            Route::get('buku-tamu', [BukuTamuController::class, 'index'])->name('buku-tamu.index');
+            Route::get('buku-tamu/export', [BukuTamuController::class, 'export'])->name('buku-tamu.export');
+            Route::post('buku-tamu/{bukuTamu}/keluar', [BukuTamuController::class, 'keluar'])->name('buku-tamu.keluar');
+        });
+        Route::middleware('permission:manage security checklist')->group(function () {
+            Route::get('checklist-template', [ChecklistTemplateController::class, 'index'])->name('checklist-template.index');
+            Route::post('checklist-template', [ChecklistTemplateController::class, 'store'])->name('checklist-template.store');
+            Route::put('checklist-template/{template}', [ChecklistTemplateController::class, 'update'])->name('checklist-template.update');
+            Route::delete('checklist-template/{template}', [ChecklistTemplateController::class, 'destroy'])->name('checklist-template.destroy');
+        });
+        Route::middleware('permission:manage security darurat')->group(function () {
+            Route::get('darurat', [DaruratController::class, 'index'])->name('darurat.index');
+            Route::post('darurat/{darurat}/tangani', [DaruratController::class, 'tangani'])->name('darurat.tangani');
+        });
+    });
+
     // ATTENDANCE MODULE (Presensi & Formulir Lapangan)
     // ============================================================
     Route::prefix('attendance')->name('attendance.')->middleware(['permission:manage hr|manage presensi|manage formulir lapangan'])->group(function () {

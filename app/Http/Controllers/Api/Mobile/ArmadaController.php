@@ -485,6 +485,10 @@ class ArmadaController extends Controller
             'client_uuid' => 'nullable|string|max:36',
         ]);
 
+        if ($this->adaKondisiBermasalahTanpaCatatan($validated['items'])) {
+            return $this->error('Kondisi "perlu perhatian"/"rusak" wajib disertai catatan.', 422, ['items' => ['Kondisi bermasalah wajib catatan.']]);
+        }
+
         $karyawan = $this->currentKaryawan($request);
         if (! $karyawan) {
             return $this->error('Akun tidak terhubung ke data karyawan.', 403);
@@ -568,6 +572,10 @@ class ArmadaController extends Controller
             'hm_akhir' => 'nullable|numeric|min:0',
             'client_uuid' => 'nullable|string|max:36',
         ]);
+
+        if ($this->adaKondisiBermasalahTanpaCatatan($validated['items'])) {
+            return $this->error('Kondisi "perlu perhatian"/"rusak" wajib disertai catatan.', 422, ['items' => ['Kondisi bermasalah wajib catatan.']]);
+        }
 
         $karyawan = $this->currentKaryawan($request);
         if (! $karyawan) {
@@ -799,6 +807,18 @@ class ArmadaController extends Controller
             ->where('karyawan_id', $karyawanId)
             ->where('status', 'aktif')
             ->exists();
+    }
+
+    private function adaKondisiBermasalahTanpaCatatan(array $items): bool
+    {
+        foreach ($items as $item) {
+            $kondisi = $item['kondisi'] ?? null;
+            if (in_array($kondisi, ['perlu_perhatian', 'rusak'], true) && empty($item['catatan'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

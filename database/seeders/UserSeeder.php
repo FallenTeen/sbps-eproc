@@ -34,6 +34,9 @@ class UserSeeder extends Seeder
         'mandor' => ['name' => 'Mandor Proyek', 'nama_lengkap' => 'Mandor Lapangan Utama', 'jabatan' => 'Site Supervisor', 'role' => 'Mandor Proyek', 'unit_bisnis_kode' => null, 'divisi' => 'Lapangan'],
         'operator.mesin' => ['name' => 'Operator Mesin', 'nama_lengkap' => 'Operator Batching & Crusher', 'jabatan' => 'Operator Mesin', 'role' => 'Operator Mesin', 'unit_bisnis_kode' => 'CBP', 'divisi' => 'Produksi'],
         'workshop' => ['name' => 'Teknisi Workshop', 'nama_lengkap' => 'Teknisi & Mekanik Workshop', 'jabatan' => 'Workshop Technician', 'role' => 'Workshop', 'unit_bisnis_kode' => 'GCS', 'divisi' => 'Armada'],
+        'security' => ['name' => 'Petugas Security', 'nama_lengkap' => 'Petugas Security Kantor Pusat', 'jabatan' => 'Security Kantor Pusat', 'role' => 'Security', 'unit_bisnis_kode' => null, 'divisi' => 'Security'],
+        'logistik' => ['name' => 'Petugas Logistik', 'nama_lengkap' => 'Petugas Logistik & Timbang', 'jabatan' => 'Logistik & Timbang', 'role' => 'Logistik', 'unit_bisnis_kode' => null, 'divisi' => 'Logistik'],
+        'operator.berat' => ['name' => 'Operator Alat Berat', 'nama_lengkap' => 'Operator Alat Berat GCS', 'jabatan' => 'Operator Alat Berat', 'role' => 'Operator Alat Berat', 'unit_bisnis_kode' => 'GCS', 'divisi' => 'Armada'],
     ];
 
     /**

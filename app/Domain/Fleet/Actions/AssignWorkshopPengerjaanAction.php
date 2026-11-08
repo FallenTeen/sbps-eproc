@@ -5,9 +5,11 @@ namespace App\Domain\Fleet\Actions;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\PengajuanServisPersonel;
 use App\Domain\Fleet\States\Dikerjakan;
+use App\Domain\Fleet\States\Disetujui;
 use App\Domain\Fleet\States\MenungguSparepart;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Bagian 21.8 #3 - Workshop mulai kerjakan (assign personel, catat pengerjaan).
@@ -17,6 +19,12 @@ class AssignWorkshopPengerjaanAction
 {
     public function execute(PengajuanServisArmada $pengajuan, User $user, array $data): PengajuanServisArmada
     {
+        if (! ($pengajuan->status instanceof Disetujui || $pengajuan->status instanceof Dikerjakan)) {
+            throw ValidationException::withMessages([
+                'status' => 'Pengerjaan hanya dapat dimulai dari pengajuan yang sudah disetujui.',
+            ]);
+        }
+
         DB::transaction(function () use ($pengajuan, $data) {
             $pengajuan->update([
                 'tanggal_mulai_kerja' => $data['tanggal_mulai_kerja'] ?? now()->toDateString(),

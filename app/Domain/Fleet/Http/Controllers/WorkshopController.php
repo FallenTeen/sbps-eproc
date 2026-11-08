@@ -108,4 +108,78 @@ class WorkshopController extends Controller
             ],
         ]);
     }
+
+    /**
+     * TD-B6 - Web verifikasi servis eksternal: daftar servis yang dikerjakan
+     * bengkel luar beserta status verifikasi Workshop.
+     */
+    public function servisEksternal(Request $request)
+    {
+        $this->authorize('viewAny', PengajuanServisArmada::class);
+
+        $verifikasi = $request->query('verifikasi');
+
+        $query = PengajuanServisArmada::with([
+            'armada',
+            'diajukanOleh',
+            'eksternalDetail.verifikasiWorkshopOleh',
+            'eksternalNotas',
+        ])->where('tipe_servis', 'eksternal')->latest('created_at');
+
+        if (in_array($verifikasi, ['belum', 'terverifikasi', 'bermasalah'], true)) {
+            $query->whereHas('eksternalDetail', function ($q) use ($verifikasi) {
+                $verifikasi === 'belum'
+                    ? $q->whereNull('verifikasi_workshop')
+                    : $q->where('verifikasi_workshop', $verifikasi);
+            });
+        }
+
+        $items = $query->paginate(20)->withQueryString();
+
+        $base = PengajuanServisArmada::where('tipe_servis', 'eksternal');
+        $counts = [
+            'belum' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->whereNull('verifikasi_workshop'))->count(),
+            'terverifikasi' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->where('verifikasi_workshop', 'terverifikasi'))->count(),
+            'bermasalah' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->where('verifikasi_workshop', 'bermasalah'))->count(),
+        ];
+
+        $user = $request->user();
+
+        return Inertia::render('Fleet/Workshop/ServisEksternal', [
+            'items' => $items,
+            'filters' => ['verifikasi' => $verifikasi],
+            'counts' => $counts,
+            'canVerify' => $user->hasRole('Owner') || $user->hasPermissionTo('manage fleet service'),
+        ]);
+    }
+
+    /**
+     * TD-B6/B7 - Workshop menandai servis eksternal terverifikasi / bermasalah.
+     */
+    public function verifikasiServisEksternal(Request $request, PengajuanServisArmada $pengajuan)
+    {
+        $this->authorize('verifikasiEksternal', $pengajuan);
+
+        $validated = $request->validate([
+            'status' => 'required|in:terverifikasi,bermasalah',
+            'catatan' => 'nullable|string|max:2000',
+        ]);
+
+        $detail = $pengajuan->eksternalDetail;
+
+        if (! $detail) {
+            return back()->with('error', 'Detail servis eksternal tidak ditemukan.');
+        }
+
+        $detail->update([
+            'verifikasi_workshop' => $validated['status'],
+            'verifikasi_workshop_oleh' => $request->user()->id,
+            'verifikasi_workshop_pada' => now(),
+            'verifikasi_workshop_catatan' => $validated['catatan'] ?? null,
+        ]);
+
+        return back()->with('success', $validated['status'] === 'terverifikasi'
+            ? 'Servis eksternal terverifikasi.'
+            : 'Servis eksternal ditandai bermasalah.');
+    }
 }

@@ -16,6 +16,7 @@ import {
     Users,
     Truck,
     Edit,
+    FileText,
 } from "lucide-react";
 
 const JENIS = {
@@ -101,6 +102,253 @@ function Tabs({ tabs, active, onChange }) {
                     </button>
                 ))}
             </nav>
+        </div>
+    );
+}
+
+function DokumenSection({ armada, canManage }) {
+    const [viewing, setViewing] = useState(null);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        jenis: "pajak_tahunan",
+        nomor_dokumen: "",
+        tanggal_terbit: "",
+        tanggal_jatuh_tempo: "",
+        nominal_biaya: "",
+        scan_dokumen: null,
+    });
+
+    const submit = (event) => {
+        event.preventDefault();
+        post(route("fleet.armada.dokumen-berkala.store", armada.id), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () =>
+                reset(
+                    "nomor_dokumen",
+                    "tanggal_terbit",
+                    "tanggal_jatuh_tempo",
+                    "nominal_biaya",
+                    "scan_dokumen",
+                ),
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            {canManage && (
+                <form
+                    onSubmit={submit}
+                    className="rounded-lg bg-white p-6 shadow"
+                >
+                    <h2 className="mb-4 text-lg font-semibold">
+                        Input Dokumen Armada
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <Field label="Jenis Dokumen" error={errors.jenis}>
+                            <select
+                                value={data.jenis}
+                                onChange={(e) => setData("jenis", e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="pajak_tahunan">Pajak Tahunan</option>
+                                <option value="stnk_5_tahunan">STNK 5 Tahunan</option>
+                                <option value="kir">KIR</option>
+                            </select>
+                        </Field>
+                        <Field label="Nomor Dokumen" error={errors.nomor_dokumen}>
+                            <input
+                                value={data.nomor_dokumen}
+                                onChange={(e) =>
+                                    setData("nomor_dokumen", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Tanggal Terbit" error={errors.tanggal_terbit}>
+                            <input
+                                type="date"
+                                value={data.tanggal_terbit}
+                                onChange={(e) =>
+                                    setData("tanggal_terbit", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field
+                            label="Tanggal Jatuh Tempo"
+                            error={errors.tanggal_jatuh_tempo}
+                        >
+                            <input
+                                type="date"
+                                value={data.tanggal_jatuh_tempo}
+                                onChange={(e) =>
+                                    setData("tanggal_jatuh_tempo", e.target.value)
+                                }
+                                className={inputClass}
+                                required
+                            />
+                        </Field>
+                        <Field label="Biaya (Rp)" error={errors.nominal_biaya}>
+                            <input
+                                type="number"
+                                min="0"
+                                value={data.nominal_biaya}
+                                onChange={(e) =>
+                                    setData("nominal_biaya", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Scan Dokumen (PDF/JPG/PNG)" error={errors.scan_dokumen}>
+                            <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={(e) =>
+                                    setData("scan_dokumen", e.target.files[0] || null)
+                                }
+                                className="w-full text-sm"
+                            />
+                        </Field>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className={`${btnPrimary} mt-4`}
+                    >
+                        Simpan Dokumen
+                    </button>
+                </form>
+            )}
+
+            <div className="overflow-x-auto rounded-lg bg-white shadow">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-sm">Jenis</th>
+                            <th className="px-4 py-3 text-left text-sm">Nomor</th>
+                            <th className="px-4 py-3 text-left text-sm">Terbit</th>
+                            <th className="px-4 py-3 text-left text-sm">Jatuh Tempo</th>
+                            <th className="px-4 py-3 text-left text-sm">Status</th>
+                            <th className="px-4 py-3 text-left text-sm">Dokumen</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {armada.dokumen_berkalas?.length ? (
+                            armada.dokumen_berkalas.map((dokumen) => (
+                                <tr key={dokumen.id}>
+                                    <td className="px-4 py-3 text-sm">
+                                        {dokumen.jenis_label}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        {dokumen.nomor_dokumen || "-"}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        {dokumen.tanggal_terbit || "-"}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        {dokumen.tanggal_jatuh_tempo}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        {dokumen.status_dokumen?.replaceAll("_", " ")}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <button
+                                            type="button"
+                                            onClick={() => setViewing(dokumen)}
+                                            className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900"
+                                        >
+                                            <FileText className="h-4 w-4" />
+                                            Lihat Dokumen
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan="6"
+                                    className="px-4 py-8 text-center text-sm text-gray-500"
+                                >
+                                    Belum ada dokumen untuk unit armada ini.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            <Link
+                href={route("fleet.dokumen-berkala.index")}
+                className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900"
+            >
+                <FileText className="h-4 w-4" />
+                Buka pemantauan semua dokumen armada
+            </Link>
+            {viewing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="armada-dokumen-detail-title"
+                        className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg"
+                    >
+                        <div className="mb-5 flex items-start justify-between">
+                            <div>
+                                <h2
+                                    id="armada-dokumen-detail-title"
+                                    className="text-lg font-semibold text-gray-900"
+                                >
+                                    Detail Dokumen Armada
+                                </h2>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    {viewing.jenis_label}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setViewing(null)}
+                                aria-label="Tutup detail dokumen"
+                                className="text-gray-500 hover:text-gray-900"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <dl className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <dt className="text-gray-500">Nomor Dokumen</dt>
+                                <dd className="mt-1 font-medium text-gray-900">
+                                    {viewing.nomor_dokumen || "-"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-gray-500">Jatuh Tempo</dt>
+                                <dd className="mt-1 font-medium text-gray-900">
+                                    {viewing.tanggal_jatuh_tempo || "-"}
+                                </dd>
+                            </div>
+                            <div className="col-span-2">
+                                <dt className="text-gray-500">Scan Dokumen</dt>
+                                <dd className="mt-1">
+                                    {viewing.scan_dokumen_url ? (
+                                        <a
+                                            href={viewing.scan_dokumen_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
+                                        >
+                                            <FileText className="h-4 w-4" />
+                                            Buka scan dokumen
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-500">
+                                            Scan dokumen belum diunggah.
+                                        </span>
+                                    )}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -2208,6 +2456,11 @@ export default function Show({ armada, options, can }) {
                   },
               ]
             : []),
+        {
+            key: "dokumen",
+            label: "Dokumen",
+            icon: <FileText className="w-4 h-4" />,
+        },
     ];
 
     return (
@@ -2326,6 +2579,12 @@ export default function Show({ armada, options, can }) {
             )}
             {tab === "helper" && can.helper && (
                 <HelperSection armada={armada} />
+            )}
+            {tab === "dokumen" && (
+                <DokumenSection
+                    armada={armada}
+                    canManage={can.manageDocuments}
+                />
             )}
         </Layout>
     );

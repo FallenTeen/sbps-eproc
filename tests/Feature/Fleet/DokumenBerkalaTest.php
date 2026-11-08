@@ -202,6 +202,18 @@ test('web route CRUD dokumen berkala berfungsi', function () {
     $doc = ArmadaDokumenBerkala::where('nomor_dokumen', 'KIR-WEB')->first();
     expect($doc)->not->toBeNull();
 
+    $doc->addMedia(UploadedFile::fake()->create('scan.pdf', 10, 'application/pdf'))
+        ->toMediaCollection('scan_dokumen');
+    expect($doc->fresh()->scan_dokumen_url)->not->toBeNull();
+
+    $this->actingAs($this->owner)
+        ->get(route('fleet.armada.show', $this->armada))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Fleet/Armada/Show')
+            ->has('armada.dokumen_berkalas', 1)
+            ->where('can.manageDocuments', true));
+
     // Update
     $this->actingAs($this->owner)
         ->put(route('fleet.armada.dokumen-berkala.update', [$this->armada, $doc]), [
@@ -228,4 +240,24 @@ test('web route CRUD dokumen berkala berfungsi', function () {
         ->assertRedirect();
 
     expect(ArmadaDokumenBerkala::where('id', $doc->id)->exists())->toBeFalse();
+});
+
+test('dokumen berkala tidak dapat diubah lewat armada lain', function () {
+    $otherArmada = Armada::factory()->for($this->unit)->create([
+        'kode_unit' => 'GCS-DOC-OTHER',
+        'plat_nomor' => 'B 4321 DOC',
+    ]);
+    $doc = $otherArmada->dokumenBerkalas()->create([
+        'jenis' => 'kir',
+        'tanggal_jatuh_tempo' => now()->addMonths(6)->toDateString(),
+    ]);
+
+    $this->actingAs($this->owner)
+        ->put(route('fleet.armada.dokumen-berkala.update', [$this->armada, $doc]), [
+            'tanggal_jatuh_tempo' => now()->addYear()->toDateString(),
+        ])
+        ->assertNotFound();
+
+    expect($doc->fresh()->tanggal_jatuh_tempo->toDateString())
+        ->toBe(now()->addMonths(6)->toDateString());
 });

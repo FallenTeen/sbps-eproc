@@ -146,6 +146,7 @@ class ArmadaController extends Controller
             'unitBisnis',
             'titik',
             'serviceHistories',
+            'dokumenBerkalas' => fn ($q) => $q->orderBy('tanggal_jatuh_tempo'),
             'checklists' => fn ($q) => $q->with(['dicatatOleh', 'akhir'])->latest('tanggal')->limit(30),
             'checklistAkhirs' => fn ($q) => $q->with(['dicatatOleh', 'awal'])->latest('tanggal')->limit(30),
             'pengisianSolars' => fn ($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
@@ -191,6 +192,7 @@ class ArmadaController extends Controller
                 'startDowntime' => $canUpdate,
                 'assignDriver' => $canUpdate,
                 'helper' => $canManageHelper,
+                'manageDocuments' => $user->hasRole('Owner') || $user->hasAnyPermission(['manage fleet', 'manage dokumen armada']),
             ],
         ]);
     }

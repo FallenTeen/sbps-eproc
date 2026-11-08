@@ -82,32 +82,17 @@ function getAllMenus() {
             permission: ['manage fleet', 'view fleet'],
             items: [
                 { title: 'Unit Armada', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Dokumen Armada', href: safeRoute('fleet.dokumen-berkala.index', {}, '/fleet/dokumen-berkala'), routeName: 'fleet.dokumen-berkala.*', permission: ['manage fleet', 'view fleet', 'manage dokumen armada'] },
                 { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
-                {
-                    title: 'BBM & Solar',
-                    icon: Smartphone,
-                    href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'),
-                    routeName: 'fleet.bbm.*',
-                    permission: ['manage fleet', 'view fleet'],
-                    items: [
-                        { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
-                        { title: 'Pengisian Solar', href: safeRoute('fleet.pengisian-solar.index', {}, '/fleet/pengisian-solar'), routeName: 'fleet.pengisian-solar.*', permission: ['manage pengisian solar'] },
-                    ],
-                },
+                { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Pengisian Solar', href: safeRoute('fleet.pengisian-solar.index', {}, '/fleet/pengisian-solar'), routeName: 'fleet.pengisian-solar.*', permission: ['manage pengisian solar'] },
                 { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Monitoring Armada', href: safeRoute('fleet.monitoring-armada.index', {}, '/fleet/monitoring-armada'), routeName: 'fleet.monitoring-armada.*', permission: ['manage fleet', 'view fleet'] },
                 { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
-                {
-                    title: 'Helper Armada',
-                    icon: Users,
-                    permission: ['manage helper armada'],
-                    items: [
-                        { title: 'Kelola Helper', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
-                    ],
-                },
+                { title: 'Helper Armada', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
             ],
         },
         {
@@ -119,6 +104,26 @@ function getAllMenus() {
                 { title: 'Ajuan Sparepart', href: safeRoute('fleet.workshop.sparepart.index', {}, '/fleet/workshop/sparepart'), routeName: 'fleet.workshop.sparepart.*', permission: ['view fleet service', 'manage sparepart', 'view sparepart'] },
                 { title: 'Riwayat Servis', href: safeRoute('fleet.workshop.riwayat.index', {}, '/fleet/workshop/riwayat'), routeName: 'fleet.workshop.riwayat.*', permission: ['view fleet service', 'manage fleet service'] },
                 { title: 'Monitoring Kondisi', href: safeRoute('fleet.workshop.monitoring.index', {}, '/fleet/workshop/monitoring'), routeName: 'fleet.workshop.monitoring.*', permission: ['view fleet service', 'view fleet', 'view production'] },
+                { title: 'Verifikasi Servis Eksternal', href: safeRoute('fleet.workshop.servis-eksternal.index', {}, '/fleet/workshop/servis-eksternal'), routeName: 'fleet.workshop.servis-eksternal.*', permission: ['manage fleet service', 'view fleet service'] },
+            ],
+        },
+        {
+            title: 'Logistik',
+            icon: Truck,
+            permission: ['verify ritase logistik', 'manage timbang'],
+            items: [
+                { title: 'Antrean Verifikasi Ritase', href: safeRoute('logistik.ritase-verifikasi.index', {}, '/logistik/ritase-verifikasi'), routeName: 'logistik.ritase-verifikasi.*', permission: ['verify ritase logistik', 'manage timbang'] },
+                { title: 'Tara Master', href: safeRoute('logistik.tara-master.index', {}, '/logistik/tara-master'), routeName: 'logistik.tara-master.*', permission: ['verify ritase logistik', 'manage timbang'] },
+            ],
+        },
+        {
+            title: 'Security',
+            icon: ShieldCheck,
+            permission: ['manage security buku tamu', 'manage security checklist', 'manage security darurat', 'verify ritase security'],
+            items: [
+                { title: 'Buku Tamu', href: safeRoute('security.buku-tamu.index', {}, '/security/buku-tamu'), routeName: 'security.buku-tamu.*', permission: ['manage security buku tamu'] },
+                { title: 'Checklist Kantor', href: safeRoute('security.checklist-template.index', {}, '/security/checklist-template'), routeName: 'security.checklist-template.*', permission: ['manage security checklist'] },
+                { title: 'Laporan Darurat', href: safeRoute('security.darurat.index', {}, '/security/darurat'), routeName: 'security.darurat.*', permission: ['manage security darurat'] },
             ],
         },
         {

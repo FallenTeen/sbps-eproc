@@ -154,6 +154,62 @@ class SecurityController extends Controller
         return $this->success($laporan, 'Laporan darurat berhasil dikirim.', 201);
     }
 
+    /**
+     * GET /api/mobile/security/darurat?status=baru
+     * Daftar laporan darurat untuk penanganan (KDA/Ketua Armada/Owner/Security).
+     */
+    public function daftarDarurat(Request $request)
+    {
+        if (! $this->bolehTanganiDarurat($request->user())) {
+            return $this->error('Anda tidak berhak melihat laporan darurat.', 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'nullable|in:baru,ditangani,selesai',
+        ]);
+
+        $items = SecurityLaporanDarurat::with('pelapor:id,name')
+            ->when($validated['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
+            ->latest('created_at')
+            ->take(100)
+            ->get();
+
+        return $this->success($items, 'Daftar laporan darurat.');
+    }
+
+    /**
+     * POST /api/mobile/security/darurat/{id}/tangani
+     * Tindak lanjut laporan darurat (status + catatan + penanggung jawab).
+     */
+    public function tanganiDarurat(Request $request, string $id)
+    {
+        if (! $this->bolehTanganiDarurat($request->user())) {
+            return $this->error('Anda tidak berhak menangani laporan darurat.', 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:ditangani,selesai',
+            'catatan_penanganan' => 'nullable|string|max:2000',
+        ]);
+
+        $laporan = SecurityLaporanDarurat::findOrFail($id);
+        $laporan->update([
+            'status' => $validated['status'],
+            'catatan_penanganan' => $validated['catatan_penanganan'] ?? $laporan->catatan_penanganan,
+            'ditangani_oleh' => $request->user()->id,
+        ]);
+
+        return $this->success($laporan->fresh('pelapor'), 'Laporan darurat diperbarui.');
+    }
+
+    private function bolehTanganiDarurat(?object $user): bool
+    {
+        return $user !== null && (
+            $user->can('manage security darurat')
+            || $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner'])
+        );
+    }
+
     // ── 4. Verifikasi Ritase Security (TD-E10, TD-F5) ────────────────────────
 
     public function antreanRitase(Request $request)

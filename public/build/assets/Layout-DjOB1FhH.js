@@ -1,0 +1,1 @@
+import{n as e}from"./app-L3zyDOHo.js";import{t}from"./AuthenticatedLayout-BctLa8Bc.js";var n=e();function r({header:e,children:r}){return(0,n.jsx)(t,{header:e,children:r})}export{r as t};

@@ -100,6 +100,15 @@ class PengajuanServisPolicy
     }
 
     /**
+     * TD-B6/B7 - Workshop memverifikasi hasil servis eksternal.
+     */
+    public function verifikasiEksternal(User $user, PengajuanServisArmada $pengajuan): bool
+    {
+        return $user->hasPermissionTo('manage fleet service')
+            && $pengajuan->tipe_servis === 'eksternal';
+    }
+
+    /**
      * Selesai - Workshop (atau approver) menutup servis.
      */
     public function complete(User $user, PengajuanServisArmada $pengajuan): bool

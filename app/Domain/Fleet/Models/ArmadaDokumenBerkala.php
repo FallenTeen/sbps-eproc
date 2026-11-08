@@ -40,7 +40,7 @@ class ArmadaDokumenBerkala extends Model implements HasMedia
         'meta' => 'array',
     ];
 
-    protected $appends = ['status_dokumen'];
+    protected $appends = ['status_dokumen', 'scan_dokumen_url'];
 
     // ── Status turunan ──────────────────────────────────────────────────
 
@@ -78,6 +78,11 @@ class ArmadaDokumenBerkala extends Model implements HasMedia
             'kir'             => 'KIR',
             default           => $this->jenis ?? '-',
         };
+    }
+
+    public function getScanDokumenUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('scan_dokumen') ?: null;
     }
 
     // ── Media ───────────────────────────────────────────────────────────

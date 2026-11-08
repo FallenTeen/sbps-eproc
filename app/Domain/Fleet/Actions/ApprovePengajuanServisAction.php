@@ -29,6 +29,12 @@ class ApprovePengajuanServisAction
                 'tanggal_acc' => now()->toDateString(),
             ]);
             $pengajuan->status->transitionTo(Disetujui::class);
+
+            activity('fleet')
+                ->causedBy($user)
+                ->performedOn($pengajuan)
+                ->withProperties(['status' => 'disetujui', 'catatan' => $catatan])
+                ->log('Menyetujui ajuan servis armada');
         });
 
         return $pengajuan->fresh();

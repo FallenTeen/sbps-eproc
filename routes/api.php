@@ -66,12 +66,18 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('formulir/hari-ini', [FormulirController::class, 'hariIni'])->name('formulir.hari-ini');
         Route::get('formulir/riwayat', [FormulirController::class, 'riwayat'])->name('formulir.riwayat');
 
-        // Laporan Produksi Harian
-        Route::post('produksi/mulai', [ProduksiController::class, 'mulai'])->name('produksi.mulai');
-        Route::post('produksi/selesai/{sessionId}', [ProduksiController::class, 'selesai'])->name('produksi.selesai');
-        Route::get('produksi/sesi-aktif', [ProduksiController::class, 'sesiAktif'])->name('produksi.sesi-aktif');
-        Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
-        Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
+        // Laporan Produksi Harian (fitur sesi produksi: role/permission lain tertolak 403)
+        Route::middleware('permission:start session')->group(function () {
+            Route::post('produksi/mulai', [ProduksiController::class, 'mulai'])->name('produksi.mulai');
+        });
+        Route::middleware('permission:end session')->group(function () {
+            Route::post('produksi/selesai/{sessionId}', [ProduksiController::class, 'selesai'])->name('produksi.selesai');
+        });
+        Route::middleware('permission:view production')->group(function () {
+            Route::get('produksi/sesi-aktif', [ProduksiController::class, 'sesiAktif'])->name('produksi.sesi-aktif');
+            Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
+            Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
+        });
 
         // Master Data (mesin, produk, bahan baku, armada)
         Route::get('master/mesin', [MasterDataController::class, 'mesin'])->name('master.mesin');
@@ -98,14 +104,23 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('dashboard/armada-status', [DashboardController::class, 'armadaStatus'])->name('dashboard.armada-status');
         Route::get('dashboard/armada-monitoring', [DashboardController::class, 'armadaMonitoring'])->name('dashboard.armada-monitoring');
         Route::get('dashboard/kehadiran-divisi', [DashboardController::class, 'kehadiranDivisi'])->name('dashboard.kehadiran-divisi');
-        Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
-        Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
 
-        // Quality Control
-        Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
-        Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
-        Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
-        Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
+        // Endpoint finansial: hanya role keuangan/owner; role lain 403.
+        Route::middleware('permission:view owner dashboard|view finance|manage finance')->group(function () {
+            Route::get('dashboard/chart/keuangan', [DashboardController::class, 'chartKeuangan'])->name('dashboard.chart-keuangan');
+            Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
+            Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
+        });
+
+        // Quality Control (catatan QC: hanya role QC/produksi)
+        Route::middleware('permission:manage qc')->group(function () {
+            Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
+            Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
+        });
+        Route::middleware('permission:manage qc|view production')->group(function () {
+            Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
+            Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
+        });
 
         // Armada (driver)
         Route::get('armada/saya', [ArmadaController::class, 'saya'])->name('armada.saya');
@@ -212,6 +227,11 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
             Route::post('security/ritase/{id}/verifikasi', [SecurityController::class, 'verifikasiRitase'])
                 ->name('security.ritase.verifikasi')->middleware('idempotency');
         });
+
+        // Tindak lanjut laporan darurat (KDA/Ketua Armada/Owner/Security)
+        Route::get('security/darurat', [SecurityController::class, 'daftarDarurat'])->name('security.darurat.index');
+        Route::post('security/darurat/{id}/tangani', [SecurityController::class, 'tanganiDarurat'])
+            ->name('security.darurat.tangani')->middleware('idempotency');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

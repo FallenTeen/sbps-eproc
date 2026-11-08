@@ -7,9 +7,90 @@ use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaDokumenBerkala;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ArmadaDokumenBerkalaController extends Controller
 {
+    /**
+     * TD-C5 - Manajemen reminder dokumen lintas armada: daftar semua dokumen
+     * berkala, filter status jatuh tempo, atur reminder massal, dan perpanjang.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $scope = function ($query) use ($user) {
+            if ($user->unit_bisnis_id) {
+                $query->whereHas('armada', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+            }
+        };
+
+        $query = ArmadaDokumenBerkala::query()->with(['armada', 'riwayats']);
+        $scope($query);
+
+        $status = $request->query('status');
+        $jenis = $request->query('jenis');
+        $q = $request->query('q');
+
+        if (in_array($jenis, ['pajak_tahunan', 'stnk_5_tahunan', 'kir'], true)) {
+            $query->where('jenis', $jenis);
+        }
+
+        if ($q) {
+            $query->whereHas('armada', function ($aq) use ($q) {
+                $aq->where('plat_nomor', 'like', "%{$q}%")
+                    ->orWhere('kode_unit', 'like', "%{$q}%");
+            });
+        }
+
+        match ($status) {
+            'lewat' => $query->where('tanggal_jatuh_tempo', '<', now()->startOfDay()),
+            'akan_jatuh_tempo' => $query->whereBetween('tanggal_jatuh_tempo', [now()->startOfDay(), now()->addDays(30)]),
+            'aktif' => $query->where('tanggal_jatuh_tempo', '>', now()->addDays(30)),
+            default => null,
+        };
+
+        $items = $query->orderBy('tanggal_jatuh_tempo')->paginate(20)->withQueryString();
+
+        $base = ArmadaDokumenBerkala::query();
+        $scope($base);
+        $counts = [
+            'lewat' => (clone $base)->where('tanggal_jatuh_tempo', '<', now()->startOfDay())->count(),
+            'akan_jatuh_tempo' => (clone $base)->whereBetween('tanggal_jatuh_tempo', [now()->startOfDay(), now()->addDays(30)])->count(),
+            'aktif' => (clone $base)->where('tanggal_jatuh_tempo', '>', now()->addDays(30))->count(),
+        ];
+
+        return Inertia::render('Fleet/Armada/DokumenBerkala', [
+            'items' => $items,
+            'filters' => ['status' => $status, 'jenis' => $jenis, 'q' => $q],
+            'counts' => $counts,
+            'canManage' => $user->hasRole('Owner') || $user->hasAnyPermission(['manage fleet', 'manage dokumen armada']),
+        ]);
+    }
+
+    /**
+     * TD-C5 - Atur `reminder_hari_sebelum` untuk banyak dokumen sekaligus.
+     */
+    public function bulkReminder(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'uuid|exists:armada_dokumen_berkalas,id',
+            'reminder_hari_sebelum' => 'required|array|min:1',
+            'reminder_hari_sebelum.*' => 'integer|min:1|max:365',
+        ]);
+
+        $hari = array_values(array_unique(array_map('intval', $validated['reminder_hari_sebelum'])));
+        rsort($hari);
+
+        $count = ArmadaDokumenBerkala::whereIn('id', $validated['ids'])->update([
+            'reminder_hari_sebelum' => json_encode($hari),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', "Reminder {$count} dokumen berhasil diperbarui.");
+    }
+
     public function store(Request $request, Armada $armada)
     {
         $validated = $request->validate([
@@ -56,6 +137,8 @@ class ArmadaDokumenBerkalaController extends Controller
 
     public function update(Request $request, Armada $armada, ArmadaDokumenBerkala $dokumen)
     {
+        abort_unless($dokumen->armada_id === $armada->id, 404);
+
         $validated = $request->validate([
             'nomor_dokumen' => 'nullable|string|max:255',
             'tanggal_terbit' => 'nullable|date',
@@ -98,6 +181,8 @@ class ArmadaDokumenBerkalaController extends Controller
 
     public function perpanjang(Request $request, Armada $armada, ArmadaDokumenBerkala $dokumen)
     {
+        abort_unless($dokumen->armada_id === $armada->id, 404);
+
         $validated = $request->validate([
             'tanggal_jatuh_tempo_baru' => 'required|date|after:today',
             'nominal_biaya' => 'nullable|numeric|min:0',
@@ -118,6 +203,8 @@ class ArmadaDokumenBerkalaController extends Controller
 
     public function destroy(Armada $armada, ArmadaDokumenBerkala $dokumen)
     {
+        abort_unless($dokumen->armada_id === $armada->id, 404);
+
         $dokumen->delete();
 
         return back()->with('success', 'Dokumen berkala berhasil dihapus.');

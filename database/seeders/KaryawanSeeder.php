@@ -28,6 +28,9 @@ class KaryawanSeeder extends Seeder
         $cbp = User::where('email', 'cbp@real.com')->firstOrFail();
         $amp = User::where('email', 'amp@real.com')->firstOrFail();
         $operatorMesin = User::where('email', 'operator.mesin@real.com')->first();
+        $security = User::where('email', 'security@real.com')->first();
+        $logistik = User::where('email', 'logistik@real.com')->first();
+        $operatorBerat = User::where('email', 'operator.berat@real.com')->first();
 
         // ───────────────────────── KARYAWAN ─────────────────────────
         $karyawans = [
@@ -45,6 +48,9 @@ class KaryawanSeeder extends Seeder
             ['user_id' => null, 'nama' => 'Budi Santoso', 'tipe' => 'tetap', 'jabatan' => 'Mekanik Armada', 'rate_gaji_pokok' => 5_500_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0012', 'alias' => 'BUDI'],
             ['user_id' => null, 'nama' => 'Eko Prasetyo', 'tipe' => 'harian', 'jabatan' => 'Operator Loader', 'rate_gaji_pokok' => null, 'rate_harian' => 190_000, 'no_hp' => '0812-1000-0013', 'alias' => 'EKO'],
             ['user_id' => null, 'nama' => 'Wahyu Nugroho', 'tipe' => 'harian', 'jabatan' => 'Kenek Dump Truck', 'rate_gaji_pokok' => null, 'rate_harian' => 120_000, 'no_hp' => '0812-1000-0014', 'alias' => 'WAHYU'],
+            ['user_id' => $security?->id, 'nama' => 'Petugas Security', 'tipe' => 'tetap', 'jabatan' => 'Security Kantor Pusat', 'rate_gaji_pokok' => 4_500_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0015', 'alias' => 'SEC'],
+            ['user_id' => $logistik?->id, 'nama' => 'Petugas Logistik', 'tipe' => 'tetap', 'jabatan' => 'Logistik & Timbang', 'rate_gaji_pokok' => 5_500_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0016', 'alias' => 'LGS'],
+            ['user_id' => $operatorBerat?->id, 'nama' => 'Operator Alat Berat', 'tipe' => 'tetap', 'jabatan' => 'Operator Alat Berat', 'rate_gaji_pokok' => 7_000_000, 'rate_harian' => null, 'no_hp' => '0812-1000-0017', 'alias' => 'OAB'],
         ];
 
         $karyawanIds = [];
