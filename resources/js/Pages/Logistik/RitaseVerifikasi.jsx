@@ -175,7 +175,7 @@ export default function RitaseVerifikasi({ rows, filters }) {
                 <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                            <h1 className="text-2xl font-bold">
                                 Antrean Verifikasi Ritase (Logistik)
                             </h1>
                             <p className="text-sm text-gray-500 mt-1">
