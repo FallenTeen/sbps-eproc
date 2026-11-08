@@ -6,11 +6,28 @@ import {
     Clipboard,
     ClipboardCheck,
     Save,
-    Settings,
     Truck,
 } from "lucide-react";
 
 export default function Edit({ armada, titiks }) {
+    const formatDateForInput = (value) => {
+        if (!value) return "";
+
+        if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return value;
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 10);
+    };
+
     const { data, setData, put, errors, processing } = useForm({
         plat_nomor: armada.plat_nomor || "",
         kode_unit: armada.kode_unit || "",
@@ -21,7 +38,7 @@ export default function Edit({ armada, titiks }) {
         kapasitas: armada.kapasitas || "",
         titik_id: armada.titik_id || "",
         status: armada.status || "aktif",
-        tanggal_mulai_pakai: armada.tanggal_mulai_pakai || "",
+        tanggal_mulai_pakai: formatDateForInput(armada.tanggal_mulai_pakai),
     });
 
     const handleSubmit = (e) => {
@@ -353,7 +370,7 @@ export default function Edit({ armada, titiks }) {
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <Link
                             href={route("fleet.armada.index")}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                            className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Batal
