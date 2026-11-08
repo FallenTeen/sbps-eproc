@@ -23,6 +23,7 @@ class CleanDataSeeder extends Seeder
         'invoices',
         'transfer_antar_kas',
         'mutasi_kas_banks',
+        'rekap_manuals',
 
         // Procurement (referensi ke purchase_orders)
         'pembayarans',
@@ -52,6 +53,8 @@ class CleanDataSeeder extends Seeder
         'checklist_serah_terima_armada',
         'pengajuan_servis_spareparts',
         'pengajuan_servis_personels',
+        'servis_eksternal_notas',
+        'servis_eksternal_detail',
         'pengajuan_servis_armadas',
         'workshop_todos',
         'presensi_helpers',
@@ -59,6 +62,9 @@ class CleanDataSeeder extends Seeder
         'armada_odo_awal_proyeks',
         'armada_penanggung_jawabs',
         'ritase_biaya_lains',
+        'ritase_verifikasis',
+        'ritase_timbangs',
+        'ritase_muatans',
         'ritases',
         'sewa_alat_jams',
         'armada_checklist_akhirs',
@@ -66,6 +72,8 @@ class CleanDataSeeder extends Seeder
         'downtime_logs',
         'service_intervals',
         'armada_drivers',
+        'armada_dokumen_berkala_riwayats',
+        'armada_dokumen_berkalas',
         'armadas',
         'rute_tarifs',
         'stok_opnames',
@@ -80,6 +88,12 @@ class CleanDataSeeder extends Seeder
         // Attendance
         'formulir_lapangans',
         'presensis',
+        'security_checklist_run_items',
+        'security_checklist_runs',
+        'security_checklist_template_items',
+        'security_checklist_templates',
+        'security_laporan_darurats',
+        'buku_tamus',
 
         // Core
         'komunikasi_logs',

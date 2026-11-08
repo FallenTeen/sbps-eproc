@@ -29,20 +29,27 @@ class CreateStokOpnameAction
 
                 $saldoSistem = (float) $getSaldo->execute($bahanBaku, $titikId, $tanggal);
 
-                $opname = StokOpname::updateOrCreate(
-                    [
+                $opname = StokOpname::query()
+                    ->where('bahan_baku_id', $bahanBaku->id)
+                    ->where('titik_id', $titikId)
+                    ->whereDate('tanggal', $tanggal)
+                    ->first();
+
+                if (! $opname) {
+                    $opname = new StokOpname([
                         'bahan_baku_id' => $bahanBaku->id,
                         'titik_id' => $titikId,
                         'tanggal' => $tanggal,
-                    ],
-                    [
-                        'saldo_sistem' => $saldoSistem,
-                        'saldo_fisik' => $saldoFisik,
-                        'selisih' => $saldoFisik - $saldoSistem,
-                        'catatan' => $item['catatan'] ?? null,
-                        'dicatat_oleh' => $user->id,
-                    ]
-                );
+                    ]);
+                }
+
+                $opname->fill([
+                    'saldo_sistem' => $saldoSistem,
+                    'saldo_fisik' => $saldoFisik,
+                    'selisih' => $saldoFisik - $saldoSistem,
+                    'catatan' => $item['catatan'] ?? null,
+                    'dicatat_oleh' => $user->id,
+                ])->save();
 
                 $created[] = $opname;
             }

@@ -6,7 +6,7 @@ namespace App\Support;
  * Matriks role & permission KANONIK (single source of truth).
  *
  * Dipakai oleh RolePermissionSeeder, DivisiRoleSeeder, dan
- * app:seed-production. Setiap perubahan privilege role HARUS lewat sini
+ * ProductionSeeder. Setiap perubahan privilege role HARUS lewat sini
  * agar staging (migrate:fresh --seed) dan production consumen matriks
  * yang sama.
  *

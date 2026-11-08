@@ -27,17 +27,8 @@ class StagingSeeder extends Seeder
             KaryawanSeeder::class,
             AkunKasBankSeeder::class,
             FleetDataSeeder::class,
-            ArmadaDokumenBerkalaSeeder::class,
-            SecurityDemoSeeder::class,
-            LogistikDemoSeeder::class,
-            ProcurementDataSeeder::class,
-            ProductionDataSeeder::class,
-            FinanceDataSeeder::class,
-            AttendanceDataSeeder::class,
             AppVersionSeeder::class,
-            MobileTestUserSeeder::class,
-            MobileDemoDataSeeder::class,
-            MobileArmadaDemoSeeder::class,
+            DemoSeeder::class,
         ]);
     }
 }

@@ -3,12 +3,15 @@
 namespace Database\Seeders;
 
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
+    private const PRODUCTION_PASSWORD_ENV = 'PRODUCTION_USER_PASSWORD';
+
     /**
      * User ESENSIAL untuk production & staging.
      *
@@ -16,7 +19,7 @@ class UserSeeder extends Seeder
      * mengoperasikan aplikasi. Email memakai domain @real.com (bukan dummy).
      * Identitas pribadi dapat disesuaikan manual saat data asli tersedia.
      */
-    // INI DIBUTUHKAN SELURUH ROLE TAPI HANYA UNTUK SEEDER, JANGAN DIPAKAI DI PRODUCTION
+    // ProductionSeeder selects the operational bootstrap accounts; staging also seeds the demo roles.
     private array $essential = [
         'owner' => ['name' => 'Owner Utama', 'nama_lengkap' => 'Bapak Owner Holding', 'jabatan' => 'Owner / Direktur Utama', 'role' => 'Owner', 'unit_bisnis_kode' => null, 'divisi' => 'Manajemen'],
         'adminkeug' => ['name' => 'Admin Keuangan', 'nama_lengkap' => 'Ibu Admin Keuangan Pusat', 'jabatan' => 'Admin Keuangan & RAB', 'role' => 'Admin Keuangan', 'unit_bisnis_kode' => null, 'divisi' => 'Finance'],
@@ -57,37 +60,76 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $production = app()->environment('production');
+        $essential = $this->essential;
 
-        foreach ($this->essential as $email => $data) {
-            $this->upsertUser($email.'@real.com', $data);
+        if ($production) {
+            $essential = array_intersect_key($essential, array_flip([
+                'owner',
+                'procurement',
+                'security',
+                'logistik',
+                'operator.berat',
+            ]));
+
+            if ($this->productionPassword() === 'password') {
+                $this->command?->warn('[UserSeeder] Password default dipakai untuk akun produksi. Atur env '.self::PRODUCTION_PASSWORD_ENV.' sebelum seeding.');
+            }
+        }
+
+        foreach ($essential as $email => $data) {
+            $this->upsertUser($email.'@real.com', $data, $production);
         }
 
         if (! $production) {
             foreach ($this->demo as $email => $data) {
-                $this->upsertUser($email.'@dummy.com', $data);
+                $this->upsertUser($email.'@dummy.com', $data, false);
             }
         }
     }
 
-    private function upsertUser(string $email, array $data): void
+    private function upsertUser(string $email, array $data, bool $production): void
     {
         $unitBisnisId = $data['unit_bisnis_kode']
             ? UnitBisnis::where('kode', $data['unit_bisnis_kode'])->value('id')
             : null;
 
         $role = $data['role'];
+        $name = $data['name'];
+        $jabatan = $data['jabatan'];
         unset($data['role'], $data['unit_bisnis_kode']);
 
-        $user = User::updateOrCreate(
-            ['email' => $email],
-            array_merge($data, [
-                'unit_bisnis_id' => $unitBisnisId,
-                'is_active' => true,
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ])
-        );
+        $user = User::firstOrNew(['email' => $email]);
+        $isNew = ! $user->exists;
+        $user->fill(array_merge($data, [
+            'unit_bisnis_id' => $unitBisnisId,
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]));
+
+        if ($isNew || ! $production) {
+            $password = $production ? $this->productionPassword() : 'password';
+            $user->password = Hash::make($password);
+        }
+
+        $user->save();
 
         $user->syncRoles([$role]);
+
+        if ($production && in_array($role, ['Security', 'Logistik', 'Operator Alat Berat'], true)) {
+            Karyawan::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nama' => $name,
+                    'tipe' => 'tetap',
+                    'jabatan' => $jabatan,
+                    'status' => 'aktif',
+                ]
+            );
+        }
+    }
+
+    private function productionPassword(): string
+    {
+        return (string) env(self::PRODUCTION_PASSWORD_ENV, env('NEW_ROLE_PASSWORD', 'password'));
     }
 }

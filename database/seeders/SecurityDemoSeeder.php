@@ -3,8 +3,11 @@
 namespace Database\Seeders;
 
 use App\Domain\Security\Models\BukuTamu;
+use App\Domain\Security\Models\SecurityChecklistRun;
+use App\Domain\Security\Models\SecurityChecklistRunItem;
 use App\Domain\Security\Models\SecurityChecklistTemplate;
 use App\Domain\Security\Models\SecurityLaporanDarurat;
+use App\Models\User;
 use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
@@ -60,6 +63,50 @@ class SecurityDemoSeeder extends Seeder
             }
         }
 
+        $security = User::where('email', 'test.security@dummy.com')->first();
+        $checklistExamples = [
+            [
+                'template' => 'Demo - Checklist Keamanan Siang',
+                'tanggal' => today(),
+                'jam_pantau' => '10:00',
+                'catatan' => 'DATA DEMO SECURITY - checklist siang.',
+                'done_count' => 3,
+            ],
+            [
+                'template' => 'Demo - Checklist Keamanan Malam',
+                'tanggal' => today()->subDay(),
+                'jam_pantau' => '21:00',
+                'catatan' => 'DATA DEMO SECURITY - checklist malam.',
+                'done_count' => 2,
+            ],
+        ];
+
+        foreach ($checklistExamples as $example) {
+            $template = SecurityChecklistTemplate::where('nama', $example['template'])->firstOrFail();
+            $templateItems = $template->items()->orderBy('urutan')->get();
+            $run = SecurityChecklistRun::updateOrCreate(
+                ['catatan' => $example['catatan']],
+                [
+                    'tanggal' => $example['tanggal']->toDateString(),
+                    'periode' => $template->periode,
+                    'jam_pantau' => $example['jam_pantau'],
+                    'security_id' => $security?->id,
+                    'items' => $templateItems->map(fn ($item) => $item->teks)->all(),
+                ]
+            );
+
+            foreach ($templateItems as $index => $item) {
+                SecurityChecklistRunItem::updateOrCreate(
+                    ['run_id' => $run->id, 'template_item_id' => $item->id],
+                    [
+                        'done' => $index < $example['done_count'],
+                        'catatan' => 'DATA DEMO SECURITY.',
+                        'waktu' => $run->tanggal->copy()->setTimeFromTimeString($example['jam_pantau']),
+                    ]
+                );
+            }
+        }
+
         BukuTamu::firstOrCreate(
             ['nama' => '[DEMO] Budi Santoso', 'catatan' => 'DATA DEMO SECURITY'],
             [
@@ -70,10 +117,11 @@ class SecurityDemoSeeder extends Seeder
                 'plat_nomor' => 'B 0000 DEMO',
                 'waktu_masuk' => now()->subHours(2),
                 'waktu_keluar' => now()->subHour(),
+                'dicatat_oleh' => $security?->id,
             ]
         );
 
-        SecurityLaporanDarurat::firstOrCreate(
+        SecurityLaporanDarurat::updateOrCreate(
             ['judul' => '[DEMO] Simulasi laporan keadaan darurat'],
             [
                 'kategori' => 'simulasi',
@@ -81,9 +129,10 @@ class SecurityDemoSeeder extends Seeder
                 'lokasi_ruangan' => 'Area simulasi',
                 'tingkat' => 'rendah',
                 'status' => 'baru',
+                'pelapor_id' => $security?->id,
             ]
         );
 
-        $this->command?->info('[SecurityDemoSeeder] Template checklist dan data contoh Security disiapkan.');
+        $this->command?->info('[SecurityDemoSeeder] Template, riwayat checklist, dan data contoh Security disiapkan.');
     }
 }

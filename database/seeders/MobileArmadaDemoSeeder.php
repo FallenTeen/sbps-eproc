@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Fleet\Actions\RecordPengisianSolarAction;
 use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistAkhir;
@@ -16,6 +17,7 @@ use App\Domain\Fleet\Models\ChecklistSerahTerima;
 use App\Domain\Fleet\Models\ChecklistSerahTerimaDetail;
 use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\PengajuanServisPersonel;
 use App\Domain\Fleet\Models\PengajuanServisSparepart;
 use App\Domain\Fleet\Models\PresensiHelper;
 use App\Domain\Fleet\Models\SewaAlatJam;
@@ -24,6 +26,7 @@ use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Data demo armada untuk pengujian aplikasi mobile di staging.
@@ -277,8 +280,8 @@ class MobileArmadaDemoSeeder extends Seeder
         );
 
         if (! ArmadaPengisianSolar::where('armada_id', $armada->id)->whereDate('tanggal', $tanggal)->exists()) {
-            app(\App\Domain\Fleet\Actions\RecordPengisianSolarAction::class)->execute($armada, [
-                'client_uuid' => (string) \Illuminate\Support\Str::uuid(),
+            app(RecordPengisianSolarAction::class)->execute($armada, [
+                'client_uuid' => (string) Str::uuid(),
                 'tanggal' => $tanggal,
                 'odo_atau_hm' => 12470.0,
                 'liter' => 40.0,
@@ -343,7 +346,7 @@ class MobileArmadaDemoSeeder extends Seeder
         ]);
 
         // Servis 3: Sedang dikerjakan oleh workshop
-        $this->createServis($armada, $submitter, [
+        $servis3 = $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-003',
             'tanggal_ajuan' => now()->subDays(5)->toDateString(),
             'catatan_ajuan' => 'Ban belakang kiri bocor & aus parah, perlu penggantian ban baru.',
@@ -354,6 +357,12 @@ class MobileArmadaDemoSeeder extends Seeder
             'catatan_pengerjaan' => 'Sedang proses penggantian ban dan balancing.',
             'butuh_sparepart' => true,
         ]);
+        if ($servis3) {
+            $this->seedServicePersonnel($servis3, [
+                ['nama_personel' => 'Dedi Teknisi Demo', 'peran' => 'Teknisi mekanik'],
+                ['nama_personel' => 'Rudi Mekanik Demo', 'peran' => 'Mekanik'],
+            ]);
+        }
 
         // Servis 4: Selesai (dengan rincian sparepart & biaya)
         $servis4 = $this->createServis($armada, $submitter, [
@@ -371,6 +380,11 @@ class MobileArmadaDemoSeeder extends Seeder
         ]);
 
         if ($servis4) {
+            $this->seedServicePersonnel($servis4, [
+                ['nama_personel' => 'Dedi Teknisi Demo', 'peran' => 'Teknisi mekanik'],
+                ['nama_personel' => 'Rudi Mekanik Demo', 'peran' => 'Mekanik'],
+            ]);
+
             PengajuanServisSparepart::firstOrCreate(
                 [
                     'pengajuan_servis_armada_id' => $servis4->id,
@@ -419,6 +433,19 @@ class MobileArmadaDemoSeeder extends Seeder
             'tanggal_acc' => now()->subDays(6)->toDateString(),
             'catatan_acc' => 'Ditolak: Retak minor tidak mengganggu pandangan operasional. Ajukan kembali saat jadwal servis berkala.',
         ]);
+    }
+
+    private function seedServicePersonnel(PengajuanServisArmada $servis, array $personels): void
+    {
+        foreach ($personels as $personel) {
+            PengajuanServisPersonel::firstOrCreate(
+                [
+                    'pengajuan_servis_armada_id' => $servis->id,
+                    'nama_personel' => $personel['nama_personel'],
+                ],
+                ['peran' => $personel['peran']]
+            );
+        }
     }
 
     private function createServis(Armada $armada, User $user, array $data): ?PengajuanServisArmada
