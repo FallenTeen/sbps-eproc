@@ -10,6 +10,7 @@ import {
     TrendingDown,
     TrendingUp,
     Check,
+    RefreshCw,
 } from "lucide-react";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SecondaryButton from "@/Components/SecondaryButton";
@@ -24,11 +25,31 @@ export default function Show({
     total_gaji,
 }) {
     const [confirmingPay, setConfirmingPay] = useState(false);
+    const [recalculating, setRecalculating] = useState(false);
 
     const getBulanName = (bulanNumber) => {
         const date = new Date();
         date.setMonth(bulanNumber - 1);
         return date.toLocaleString("id-ID", { month: "long" });
+    };
+
+    const handleRecalcLembur = () => {
+        if (
+            !confirm(
+                "Hitung ulang komponen lembur semua karyawan periode ini ke tarif saran terbaru? Baris yang diedit manual juga akan direset.",
+            )
+        ) {
+            return;
+        }
+        setRecalculating(true);
+        router.post(
+            route("hr.payroll.recalc-lembur", { bulan, tahun }),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setRecalculating(false),
+            },
+        );
     };
 
     const formatCurrency = (amount) => {
@@ -62,6 +83,17 @@ export default function Show({
                         Detail Payroll: {getBulanName(bulan)} {tahun}
                     </h2>
                     <div className="flex gap-2">
+                        {status === "draft" && (
+                            <button
+                                type="button"
+                                onClick={handleRecalcLembur}
+                                disabled={recalculating}
+                                className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100 disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${recalculating ? "animate-spin" : ""}`} />
+                                Hitung Ulang Lembur Otomatis
+                            </button>
+                        )}
                         <div className="flex gap-2">
                             <Link href={route("hr.payroll.index")}>
                                 <SecondaryButton>

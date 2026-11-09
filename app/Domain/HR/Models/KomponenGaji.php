@@ -12,9 +12,24 @@ class KomponenGaji extends Model
 
     protected $table = 'komponen_gajis';
 
-    protected $fillable = ['gaji_periode_id', 'jenis', 'jumlah', 'keterangan'];
+    protected $fillable = [
+        'gaji_periode_id',
+        'jenis',
+        'jumlah',
+        'keterangan',
+        'lembur_tanggal',
+        'lembur_jam_menit',
+        'lembur_tarif_jam',
+        'diedit_manual',
+    ];
 
-    protected $casts = ['jumlah' => 'float'];
+    protected $casts = [
+        'jumlah' => 'float',
+        'lembur_tanggal' => 'date',
+        'lembur_jam_menit' => 'integer',
+        'lembur_tarif_jam' => 'float',
+        'diedit_manual' => 'boolean',
+    ];
 
     // Relasi
     public function gajiPeriode()

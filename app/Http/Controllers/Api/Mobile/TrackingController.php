@@ -59,8 +59,11 @@ class TrackingController extends Controller
             ], 'Batch lokasi sudah diproses sebelumnya.');
         }
 
+        // Presensi terbuka dalam 36 jam terakhir. Bukan whereDate check-in
+        // supaya shift malam (check-in 22:00, kirim lokasi sampai check-out
+        // esok pagi - BK-6) tetap diterima setelah ganti tanggal.
         $presensi = Presensi::byKaryawan($karyawan->id)
-            ->whereDate('check_in', now()->toDateString())
+            ->where('check_in', '>=', now()->subHours(36))
             ->whereNull('check_out')
             ->latest('check_in')
             ->first();
@@ -69,19 +72,13 @@ class TrackingController extends Controller
             return $this->error('Tracking hanya aktif saat check-in.', 422);
         }
 
-        $cutoff = Carbon::parse(now()->toDateString().' '.config('mobile.tracking.auto_cutoff', '18:00'));
-
         $received = count($validated['locations']);
         $saved = 0;
 
         try {
-            DB::transaction(function () use ($validated, $karyawan, $presensi, $cutoff, $received, &$saved) {
+            DB::transaction(function () use ($validated, $karyawan, $presensi, $received, &$saved) {
                 foreach ($validated['locations'] as $loc) {
                     $recordedAt = Carbon::parse($loc['timestamp']);
-
-                    if ($recordedAt->greaterThan($cutoff)) {
-                        continue;
-                    }
 
                     MobileTrackingLocation::create([
                         'karyawan_id' => $karyawan->id,

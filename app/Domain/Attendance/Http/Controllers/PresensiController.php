@@ -3,6 +3,7 @@
 namespace App\Domain\Attendance\Http\Controllers;
 
 use App\Domain\Attendance\Actions\ValidateLocationCheckInAction;
+use App\Domain\Attendance\Actions\ValidateLocationCheckoutAction;
 use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Attendance\Services\TrackingTimelineService;
 use App\Domain\Core\Models\Proyek;
@@ -243,7 +244,7 @@ class PresensiController extends Controller
             ->with('success', 'Presensi check-in berhasil dicatat.');
     }
 
-    public function show(Presensi $presensi, TrackingTimelineService $trackingService)
+    public function show(Request $request, Presensi $presensi, TrackingTimelineService $trackingService)
     {
         $this->authorize('view', $presensi);
 
@@ -253,7 +254,12 @@ class PresensiController extends Controller
 
         // Linimasa tracking HANYA untuk Owner (jangan hanya disembunyikan di frontend).
         if (auth()->user()->hasRole('Owner')) {
-            $props['tracking'] = $trackingService->forPresensi($presensi);
+            $bucket = in_array((string) $request->input('bucket'), ['5', '10', '15', '30', '60', 'all'], true)
+                ? (string) $request->input('bucket')
+                : '30';
+
+            $props['tracking'] = $trackingService->forPresensi($presensi, $bucket);
+            $props['bucketDipilih'] = $bucket;
         }
 
         return Inertia::render('Attendance/Presensi/Show', $props);
@@ -268,10 +274,18 @@ class PresensiController extends Controller
             'check_out_lng' => 'required|numeric',
         ]);
 
+        $presensi->loadMissing('titik');
+        $checkOutStatus = (new ValidateLocationCheckoutAction)->execute(
+            $presensi,
+            (float) $validated['check_out_lat'],
+            (float) $validated['check_out_lng']
+        );
+
         $presensi->update([
             'check_out' => now(),
             'check_out_lat' => $validated['check_out_lat'],
             'check_out_lng' => $validated['check_out_lng'],
+            'check_out_status' => $checkOutStatus,
         ]);
 
         return back()->with('success', 'Check-out berhasil dicatat.');
@@ -306,6 +320,9 @@ class PresensiController extends Controller
             'valid' => $items->where('status_validasi', 'valid')->count(),
             'luar_radius' => $items->where('status_validasi', 'luar_radius')->count(),
             'tidak_valid' => $items->where('status_validasi', 'tidak_valid')->count(),
+            'lembur_menit' => $items->filter(
+                fn (Presensi $p) => $p->status_validasi === 'valid'
+            )->sum(fn (Presensi $p) => $p->lembur_menit ?? 0),
         ];
     }
 

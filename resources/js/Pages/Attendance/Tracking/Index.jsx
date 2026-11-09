@@ -6,6 +6,15 @@ import { Search, MapPin, Clock, Satellite, Navigation, User, RefreshCw } from "l
 
 const STALE_MINUTES = 10;
 
+const BUCKET_OPTIONS = [
+    { value: "5", label: "5 menit" },
+    { value: "10", label: "10 menit" },
+    { value: "15", label: "15 menit" },
+    { value: "30", label: "30 menit" },
+    { value: "60", label: "1 jam" },
+    { value: "all", label: "Semua titik" },
+];
+
 function freshness(lastSeen) {
     if (!lastSeen) {
         return { label: "Tanpa GPS", className: "bg-gray-100 text-gray-600 border border-gray-200" };
@@ -30,14 +39,21 @@ function formatJam(value, withDate = false) {
 export default function Index({ rows = [], selected = null, karyawan = [], filters = {} }) {
     const [tanggal, setTanggal] = useState(filters.tanggal || "");
     const [karyawanId, setKaryawanId] = useState(filters.karyawan_id || "");
+    const [bucket, setBucket] = useState(filters.bucket || "30");
 
     const apply = (overrides = {}) => {
         const params = {
             tanggal: overrides.tanggal ?? tanggal,
             karyawan_id: overrides.karyawanId ?? karyawanId,
+            bucket: overrides.bucket ?? bucket,
             presensi_id: overrides.presensiId ?? "",
         };
         router.get(route("attendance.tracking.index"), params, { preserveScroll: true });
+    };
+
+    const gantiBucket = (value) => {
+        setBucket(value);
+        apply({ bucket: value, presensiId: filters.presensi_id || "" });
     };
 
     const openPresensi = (id) => {
@@ -55,7 +71,7 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tracking Linimasa</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Linimasa lokasi GPS karyawan per hari (khusus Owner). Titik disampling tiap 30 menit untuk tampilan.
+                        Linimasa lokasi GPS karyawan per hari (khusus Owner) — pilih timeframe sampling di filter.
                     </p>
                 </div>
                 <button
@@ -92,6 +108,18 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                             <option value="">Semua</option>
                             {karyawan.map((k) => (
                                 <option key={k.id} value={k.id}>{k.nama}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Timeframe Sampling</label>
+                        <select
+                            value={String(bucket)}
+                            onChange={(e) => gantiBucket(e.target.value)}
+                            className="border border-gray-300 rounded-md px-3 py-2"
+                        >
+                            {BUCKET_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
                             ))}
                         </select>
                     </div>
@@ -178,6 +206,7 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                                 </div>
                                 <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                                     <Navigation className="w-3.5 h-3.5" />
+                                    Timeframe {BUCKET_OPTIONS.find((o) => o.value === String(bucket))?.label || bucket} •{" "}
                                     {selectedTracking?.raw_count ?? 0} titik GPS mentah
                                 </span>
                             </div>

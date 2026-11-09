@@ -30,6 +30,13 @@ const GROUP_OPTIONS = [
     { value: "role", label: "Per Role" },
 ];
 
+const formatDurasi = (menit) => {
+    if (menit === null || menit === undefined) return "-";
+    const j = Math.floor(menit / 60);
+    const m = menit % 60;
+    return `${j}j ${m}m`;
+};
+
 export default function Index({
     mode,
     summary,
@@ -185,6 +192,25 @@ export default function Index({
                 ),
         },
         {
+            key: "durasi",
+            label: "Durasi",
+            search: false,
+            sortable: false,
+            render: (p) =>
+                p.durasi_menit === null ? (
+                    "-"
+                ) : (
+                    <span className="inline-flex flex-col gap-0.5">
+                        <span className="text-gray-900">{formatDurasi(p.durasi_menit)}</span>
+                        {p.lembur_menit > 0 && (
+                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                Lembur {formatDurasi(p.lembur_menit)}
+                            </span>
+                        )}
+                    </span>
+                ),
+        },
+        {
             key: "status_validasi",
             label: "Status",
             type: "select",
@@ -196,6 +222,11 @@ export default function Index({
             render: (p) => (
                 <>
                     <StatusBadge status={p.status_validasi} />
+                    {p.check_out_status === "luar_radius" && (
+                        <span className="inline-flex mt-1 w-fit items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 border border-red-200">
+                            Check-out luar radius
+                        </span>
+                    )}
                     {p.catatan_override && (
                         <p className="text-xs text-gray-500 mt-1">
                             Catatan: {p.catatan_override}
@@ -488,6 +519,9 @@ export default function Index({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                                         Tidak Valid
                                     </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                                        Lembur
+                                    </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">
                                         Aksi
                                     </th>
@@ -497,7 +531,7 @@ export default function Index({
                                 {groups.length === 0 || summary.total === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan="7"
+                                            colSpan="8"
                                             className="px-6 py-4 text-center text-gray-500"
                                         >
                                             Tidak ada data presensi pada rentang
@@ -555,6 +589,15 @@ export default function Index({
                                                     <XCircle className="w-4 h-4 text-red-600" />
                                                     {g.tidak_valid}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {g.lembur_menit > 0 ? (
+                                                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                                        {formatDurasi(g.lembur_menit)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">-</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                 {g.total > 0 ? (

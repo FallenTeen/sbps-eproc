@@ -3,6 +3,7 @@
 namespace App\Domain\HR\Actions;
 
 use App\Domain\Attendance\Models\Presensi;
+use App\Domain\Attendance\Services\LemburService;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\HR\Models\GajiPeriode;
 use App\Domain\HR\Models\Karyawan;
@@ -73,6 +74,76 @@ class CalculateSalaryAction
             $periode->komponen()->create($k);
         }
 
+        if (in_array($karyawan->tipe, ['harian', 'tetap'], true)) {
+            $this->syncLembur($periode, $karyawan, $bulan, $tahun);
+        }
+
         return $periode;
+    }
+
+    /**
+     * Komponen `lembur` per TANGGAL presensi (BK-10).
+     *
+     * - Baris sudah ada & diedit_manual => dibiarkan utuh.
+     * - Baris sudah ada (auto)          => jumlah = tarif snapshot TERSIMPAN x jam terkini.
+     *   (tarif snapshot TIDAK diikuti saran terbaru - reset hanya via
+     *    tombol "Hitung ulang otomatis".)
+     * - Tanggal baru ditambahkan (tarif = saran saat ini).
+     * - Tanggal yang presensisinya sudah tidak valid => baris auto dihapus.
+     * - Tombol "Hitung ulang otomatis" di UI payroll: hapus semua baris
+     *   lembur periode lalu panggil ulang method ini.
+     */
+    public function syncLembur(GajiPeriode $periode, Karyawan $karyawan, int $bulan, int $tahun): void
+    {
+        $lemburExist = $periode->komponen()
+            ->where('jenis', 'lembur')
+            ->orderBy('lembur_tanggal')
+            ->get()
+            ->keyBy(fn ($k) => $k->lembur_tanggal?->toDateString());
+
+        $hitung = (new LemburService)->lemburPerTanggal($karyawan->id, $bulan, $tahun);
+
+        foreach ($hitung as $tanggal => $data) {
+            $existing = $lemburExist->get($tanggal);
+
+            if ($existing) {
+                if (! $existing->diedit_manual) {
+                    $menit = (int) $data['menit'];
+                    [$j, $m] = [intdiv($menit, 60), $menit % 60];
+                    $existing->update([
+                        'lembur_jam_menit' => $menit,
+                        'jumlah' => round($menit / 60 * (float) $existing->lembur_tarif_jam, 2),
+                        'keterangan' => "Lembur {$tanggal}: {$j}j {$m}m x Rp "
+                            . number_format((float) $existing->lembur_tarif_jam, 0, ',', '.'),
+                    ]);
+                }
+
+                continue;
+            }
+
+            $tarifSaran = (new LemburService)->tarifSaran($karyawan);
+            $menit = (int) $data['menit'];
+            [$j, $m] = [intdiv($menit, 60), $menit % 60];
+
+            $periode->komponen()->create([
+                'jenis' => 'lembur',
+                'jumlah' => round($menit / 60 * $tarifSaran, 2),
+                'keterangan' => "Lembur {$tanggal}: {$j}j {$m}m x Rp "
+                    . number_format($tarifSaran, 0, ',', '.'),
+                'lembur_tanggal' => $tanggal,
+                'lembur_jam_menit' => $menit,
+                'lembur_tarif_jam' => $tarifSaran,
+                'diedit_manual' => false,
+            ]);
+        }
+
+        // Hapus baris auto milik tanggal yang tidak lagi punya presensi valid.
+        $lemburExist
+            ->filter(fn ($k) => ! $k->diedit_manual)
+            ->each(function ($k) use ($hitung) {
+                if (! $hitung->has($k->lembur_tanggal?->toDateString())) {
+                    $k->delete();
+                }
+            });
     }
 }

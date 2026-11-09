@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Clock, MapPin, LogIn, LogOut, Navigation } from 'lucide-react';
+import { Clock, MapPin, LogIn, LogOut, Navigation, TriangleAlert } from 'lucide-react';
 
 function isValidCoord(lat, lng) {
     const nLat = Number(lat);
@@ -19,6 +19,7 @@ const KIND_META = {
     check_in: { color: '#16a34a', label: 'Check-in' },
     check_out: { color: '#dc2626', label: 'Check-out' },
     track: { color: '#111827', label: 'Titik' },
+    gap: { color: '#d97706', label: 'Gap' },
 };
 
 function markerIcon(nomor, jenis) {
@@ -63,6 +64,7 @@ function MapEffects({ points, focusIndex }) {
 export default function TrackingTimelineMap({ tracking, titik = null, height = '460px' }) {
     const rawPoints = Array.isArray(tracking?.points) ? tracking.points : [];
     const rawCount = tracking?.raw_count ?? 0;
+    const truncated = Boolean(tracking?.truncated);
 
     const points = useMemo(
         () =>
@@ -71,6 +73,24 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
                 .map((p, i) => ({ ...p, nomor: i + 1 })),
         [rawPoints]
     );
+
+    const gapEntries = useMemo(
+        () => rawPoints.filter((p) => p.jenis === 'gap'),
+        [rawPoints]
+    );
+
+    const gapSegments = useMemo(() => {
+        const segments = [];
+        gapEntries.forEach((gap, gIdx) => {
+            const gPos = rawPoints.indexOf(gap);
+            const prev = [...rawPoints.slice(0, gPos)].reverse().find((p) => isValidCoord(p.lat, p.lng));
+            const next = rawPoints.slice(gPos + 1).find((p) => isValidCoord(p.lat, p.lng));
+            if (prev && next) {
+                segments.push({ key: `gap-${gIdx}`, positions: [[prev.lat, prev.lng], [next.lat, next.lng]] });
+            }
+        });
+        return segments;
+    }, [rawPoints, gapEntries]);
 
     const [focusIndex, setFocusIndex] = useState(null);
 
@@ -92,7 +112,9 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
                 >
                     {points.length === 0 && (
                         <div className="absolute top-2 left-2 z-[1000] bg-white/90 border border-gray-300 px-3 py-1.5 rounded text-xs text-gray-600 shadow">
-                            Tidak ada titik GPS tercatat untuk presensi ini.
+                            {rawCount > 0
+                                ? 'Titik GPS ada, namun dikosongkan karena terlalu banyak (data tidak valid).'
+                                : 'Tidak ada titik GPS tercatat untuk presensi ini.'}
                         </div>
                     )}
                     <MapContainer
@@ -129,6 +151,21 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
                                 pathOptions={{ color: '#111827', weight: 3, opacity: 0.7 }}
                             />
                         )}
+
+                        {gapSegments.map((seg) => (
+                            <Polyline
+                                key={seg.key}
+                                positions={seg.positions}
+                                pathOptions={{
+                                    color: '#d97706',
+                                    weight: 3,
+                                    opacity: 0.8,
+                                    dashArray: '2, 8',
+                                    lineCap: 'round',
+                                }}
+                                interactive={false}
+                            />
+                        ))}
 
                         {points.map((p, i) => (
                             <Marker
@@ -168,11 +205,42 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
                         </span>
                     </div>
 
+                    {truncated && (
+                        <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-2 mb-3">
+                            <TriangleAlert className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-amber-800">
+                                Linimasa dipotong — hanya {points.length} titik pertama dari {rawCount} yang ditampilkan.
+                            </p>
+                        </div>
+                    )}
+
                     {points.length === 0 ? (
-                        <p className="text-sm text-gray-500">Belum ada data lokasi.</p>
+                        <p className="text-sm text-gray-500">
+                            {rawCount > 0
+                                ? 'Data GPS terlalu banyak untuk ditampilkan.'
+                                : 'Belum ada data lokasi.'}
+                        </p>
                     ) : (
                         <ol className="space-y-1 max-h-[380px] overflow-y-auto pr-1">
-                            {points.map((p, i) => {
+                            {rawPoints.map((p, i) => {
+                                if (p.jenis === 'gap') {
+                                    return (
+                                        <li key={`gap-${i}`}>
+                                            <div className="flex items-center gap-2 px-2 py-1">
+                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 border border-amber-300 text-amber-700 text-[10px] shrink-0">
+                                                    <Navigation className="w-3 h-3" />
+                                                </span>
+                                                <span className="text-xs font-medium text-amber-700">
+                                                    Gap {p.label_jam}
+                                                </span>
+                                                <span className="text-[10px] text-amber-600">
+                                                    {p.durasi_menit} mnt tanpa data
+                                                </span>
+                                            </div>
+                                        </li>
+                                    );
+                                }
+                                if (!isValidCoord(p.lat, p.lng)) return null;
                                 const meta = KIND_META[p.jenis] || KIND_META.track;
                                 const active = focusIndex === i;
                                 const Icon = p.jenis === 'check_in' ? LogIn : p.jenis === 'check_out' ? LogOut : MapPin;

@@ -12,6 +12,11 @@ const GROUP_NAMES = {
     role: "Role",
 };
 
+const formatDurasi = (menit) => {
+    if (menit === null || menit === undefined) return "-";
+    return `${Math.floor(menit / 60)}j ${menit % 60}m`;
+};
+
 export default function RekapDetail({ presensis, group_by, group_key, group_label, filters, karyawan }) {
     const [status, setStatus] = useState(filters.status_validasi || "");
     const [karyawanId, setKaryawanId] = useState("");
@@ -109,6 +114,7 @@ export default function RekapDetail({ presensis, group_by, group_key, group_labe
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Titik</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-In</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Check-Out</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Durasi</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Foto</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Formulir</th>
@@ -118,7 +124,7 @@ export default function RekapDetail({ presensis, group_by, group_key, group_labe
                     <tbody className="bg-white divide-y divide-gray-200">
                         {presensis.data.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
+                                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">Tidak ada data</td>
                             </tr>
                         ) : (
                             presensis.data.map((p) => (
@@ -144,7 +150,24 @@ export default function RekapDetail({ presensis, group_by, group_key, group_labe
                                         ) : "-"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
+                                        {p.durasi_menit === null ? "-" : (
+                                            <span className="inline-flex flex-col gap-0.5">
+                                                <span className="text-gray-900">{formatDurasi(p.durasi_menit)}</span>
+                                                {p.lembur_menit > 0 && (
+                                                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                                        Lembur {formatDurasi(p.lembur_menit)}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={p.status_validasi} />
+                                        {p.check_out_status === "luar_radius" && (
+                                            <span className="inline-flex mt-1 w-fit items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 border border-red-200">
+                                                Check-out luar radius
+                                            </span>
+                                        )}
                                         {p.catatan_override && (
                                             <p className="text-xs text-gray-500 mt-1">Catatan: {p.catatan_override}</p>
                                         )}

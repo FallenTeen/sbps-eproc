@@ -433,8 +433,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/generate', [PayrollController::class, 'generate'])->name('generate');
             Route::get('/periode/{bulan}/{tahun}', [PayrollController::class, 'show'])->name('show');
             Route::post('/periode/{bulan}/{tahun}/pay', [PayrollController::class, 'pay'])->name('pay');
+            Route::post('/periode/{bulan}/{tahun}/recalc-lembur', [PayrollController::class, 'recalcLembur'])->name('recalc-lembur');
             Route::get('/review/{periode}', [PayrollController::class, 'review'])->name('review');
             Route::post('/{periode}/komponen', [PayrollController::class, 'addKomponen'])->name('add-komponen');
+            Route::put('/komponen/{komponen}', [PayrollController::class, 'updateKomponen'])->name('update-komponen');
             Route::delete('/komponen/{komponen}', [PayrollController::class, 'deleteKomponen'])->name('delete-komponen');
         });
     });
