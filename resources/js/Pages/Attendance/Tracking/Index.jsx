@@ -90,11 +90,7 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tracking Linimasa</h1>
                     <p className="mt-1 text-sm text-gray-500">
-<<<<<<< HEAD
-                        Linimasa lokasi GPS karyawan per hari (khusus Owner). Titik disampling tiap 5 menit untuk tampilan.
-=======
                         Linimasa lokasi GPS karyawan per hari (khusus Owner) — pilih timeframe sampling di filter.
->>>>>>> 1bd0312d1ff7f342e825cc737f476a76a97c5bbc
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
