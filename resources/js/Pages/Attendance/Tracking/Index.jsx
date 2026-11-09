@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TrackingTimelineMap from "@/Components/TrackingTimelineMap";
@@ -40,6 +40,25 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
     const [tanggal, setTanggal] = useState(filters.tanggal || "");
     const [karyawanId, setKaryawanId] = useState(filters.karyawan_id || "");
     const [bucket, setBucket] = useState(filters.bucket || "30");
+    const [auto, setAuto] = useState(true);
+    const [lastRefresh, setLastRefresh] = useState(null);
+
+    // Pemantauan live: muat ulang props rows/selected tiap 30 detik tanpa
+    // menyentuh state filter di komponen ini (preserveState) sehingga
+    // Owner melihat titik GPS baru tanpa klik "Muat Ulang".
+    useEffect(() => {
+        if (!auto) return;
+        const id = setInterval(() => {
+            if (document.hidden) return;
+            router.reload({
+                only: ["rows", "selected"],
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setLastRefresh(new Date()),
+            });
+        }, 30000);
+        return () => clearInterval(id);
+    }, [auto]);
 
     const apply = (overrides = {}) => {
         const params = {
@@ -74,13 +93,33 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                         Linimasa lokasi GPS karyawan per hari (khusus Owner) — pilih timeframe sampling di filter.
                     </p>
                 </div>
-                <button
-                    onClick={() => apply()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                    <RefreshCw className="w-4 h-4" />
-                    Muat Ulang
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setAuto((v) => !v)}
+                        title="Muat ulang otomatis tiap 30 detik"
+                        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                            auto
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-gray-300 bg-white text-gray-500"
+                        }`}
+                    >
+                        <span className={`h-2 w-2 rounded-full ${auto ? "bg-green-500" : "bg-gray-400"}`} />
+                        Auto 30d {auto ? "Aktif" : "Mati"}
+                        {lastRefresh && (
+                            <span className="font-normal opacity-70">
+                                {lastRefresh.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => apply()}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Muat Ulang
+                    </button>
+                </div>
             </div>
 
             {/* Filter */}
@@ -210,7 +249,7 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                                     {selectedTracking?.raw_count ?? 0} titik GPS mentah
                                 </span>
                             </div>
-                            <TrackingTimelineMap tracking={selectedTracking} titik={selected.titik} />
+                            <TrackingTimelineMap tracking={selectedTracking} titik={selected.titik} presensiId={selected.id} />
                         </div>
                     ) : (
                         <div className="h-full min-h-[460px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-gray-300 text-gray-400">

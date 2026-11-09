@@ -45,36 +45,47 @@ function markerIcon(nomor, jenis, active) {
     });
 }
 
-function MapEffects({ points, focusCoordinate, isFull }) {
+function MapEffects({ points, focusAt, focusCoordinate, isFull }) {
     const map = useMap();
+    const lastFocusRef = useRef(null);
 
     useEffect(() => {
         const t = setTimeout(() => map.invalidateSize(), 150);
         return () => clearTimeout(t);
     }, [map, isFull]);
 
+    // Fly ke titik fokus HANYA saat identitas fokus berubah - bukan tiap
+    // auto-refresh data (polling 30 detik) yang membuat peta melompat.
     useEffect(() => {
-        if (focusCoordinate) {
-            map.flyTo(
-                focusCoordinate,
-                Math.max(map.getZoom(), 16),
-                { duration: 0.8 }
-            );
+        if (!focusCoordinate) {
+            lastFocusRef.current = null;
             return;
         }
+        if (lastFocusRef.current === focusAt) return;
+        lastFocusRef.current = focusAt;
+        map.flyTo(focusCoordinate, Math.max(map.getZoom(), 16), { duration: 0.8 });
+    }, [focusAt, focusCoordinate, map]);
 
+    // Fit bounds hanya saat jumlah/ujung titik berubah & tidak sedang fokus.
+    const sig =
+        points.length === 0
+            ? "0"
+            : `${points.length}|${points[0].recorded_at}|${points[points.length - 1].recorded_at}`;
+
+    useEffect(() => {
+        if (focusCoordinate) return;
         const coords = points.map((p) => [p.lat, p.lng]);
         if (coords.length === 1) {
             map.setView(coords[0], 15);
         } else if (coords.length > 1) {
             map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 16 });
         }
-    }, [points, focusCoordinate, map]);
+    }, [sig, map]);
 
     return null;
 }
 
-export default function TrackingTimelineMap({ tracking, titik = null, height = '460px' }) {
+export default function TrackingTimelineMap({ tracking, titik = null, presensiId = null, height = '460px' }) {
     const rawPoints = Array.isArray(tracking?.points) ? tracking.points : [];
     const rawCount = tracking?.raw_count ?? 0;
     const truncated = Boolean(tracking?.truncated);
@@ -113,7 +124,7 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
 
     useEffect(() => {
         setFocusAt(null);
-    }, [tracking]);
+    }, [presensiId]);
 
     const focusIdx = focusAt == null ? -1 : points.findIndex((p) => p.recorded_at === focusAt);
     const focus = focusIdx >= 0 ? points[focusIdx] : null;
@@ -236,6 +247,7 @@ export default function TrackingTimelineMap({ tracking, titik = null, height = '
 
                         <MapEffects
                             points={points}
+                            focusAt={focusAt}
                             focusCoordinate={focusCoordinate}
                             isFull={isFull}
                         />
