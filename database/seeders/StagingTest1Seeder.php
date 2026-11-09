@@ -138,13 +138,16 @@ class StagingTest1Seeder extends Seeder
      * merujuk padanya, agar sesi uji coba presensi user asli besok mulai nol.
      *
      * `formulir_lapangans` dihapus lebih dulu (anak), lalu `presensis`.
-     * `mobile_tracking_locations.presensi_id` (FK `on delete set null`) ikut
-     * menjadi NULL otomatis - titik tracking itu sendiri tidak dihapus.
+     * `mobile_tracking_locations` (GPS presensi hari ini, dibuat
+     * AttendanceDataSeeder / MobileDemoDataSeeder) ikut dibuang - titiknya
+     * jadi yatim (FK `on delete set null`) dan hanya menumpuk tanpa presensi,
+     * selain itu sesi uji coba Kartu GPS juga dimulai dari nol.
      */
     private function purgeAttendance(): void
     {
         DB::table('formulir_lapangans')->delete();
         DB::table('presensis')->delete();
+        DB::table('mobile_tracking_locations')->whereNull('presensi_id')->delete();
     }
 
     /**

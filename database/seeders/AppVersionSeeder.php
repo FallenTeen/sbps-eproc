@@ -9,26 +9,16 @@ class AppVersionSeeder extends Seeder
 {
     public function run(): void
     {
-        $rows = [
-            ['app' => 'presensi', 'platform' => 'android'],
-            ['app' => 'presensi', 'platform' => 'ios'],
-            ['app' => 'proyek', 'platform' => 'android'],
-            ['app' => 'proyek', 'platform' => 'ios'],
-            ['app' => 'mobile', 'platform' => 'android'],
-            ['app' => 'mobile', 'platform' => 'ios'],
-        ];
+        AppVersion::query()->delete();
 
-        foreach ($rows as ['app' => $app, 'platform' => $platform]) {
-            AppVersion::updateOrCreate(
-                ['app' => $app, 'platform' => $platform],
-                [
-                    'min_version' => '1.0.0',
-                    'latest_version' => '1.0.0',
-                    'force_update' => false,
-                    'update_url' => "https://sistem.sbpscorp.com/downloads/{$app}-{$platform}/latest",
-                    'changelog' => null,
-                ],
-            );
-        }
+        AppVersion::create([
+            'app' => 'mobile',
+            'platform' => 'android',
+            'min_version' => '0.9.0',
+            'latest_version' => '0.9.0',
+            'force_update' => false,
+            'update_url' => 'https://sistem.sbpscorp.com/downloads/mobile-android/latest',
+            'changelog' => null,
+        ]);
     }
 }

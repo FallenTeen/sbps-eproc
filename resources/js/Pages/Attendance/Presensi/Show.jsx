@@ -14,7 +14,21 @@ import {
     X,
 } from "lucide-react";
 
-export default function Show({ presensi, tracking }) {
+const formatDurasi = (menit) => {
+    if (menit === null || menit === undefined) return "-";
+    return `${Math.floor(menit / 60)}j ${menit % 60}m`;
+};
+
+const BUCKET_OPTIONS = [
+    { value: "5", label: "5 menit" },
+    { value: "10", label: "10 menit" },
+    { value: "15", label: "15 menit" },
+    { value: "30", label: "30 menit" },
+    { value: "60", label: "1 jam" },
+    { value: "all", label: "Semua titik" },
+];
+
+export default function Show({ presensi, tracking, bucketDipilih = "30" }) {
     const [checkout, setCheckout] = useState({
         check_out_lat: "",
         check_out_lng: "",
@@ -139,6 +153,24 @@ export default function Show({ presensi, tracking }) {
                         <StatusBadge status={presensi.status_validasi} />
                     </div>
 
+                    <div className="flex flex-wrap gap-2">
+                        {presensi.durasi_menit !== null && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                                Durasi {formatDurasi(presensi.durasi_menit)}
+                            </span>
+                        )}
+                        {presensi.lembur_menit > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                                Lembur {formatDurasi(presensi.lembur_menit)}
+                            </span>
+                        )}
+                        {presensi.check_out_status === "luar_radius" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 border border-red-200">
+                                Check-out di luar radius titik
+                            </span>
+                        )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
                         <div className="flex items-start gap-3">
                             <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
@@ -224,10 +256,32 @@ export default function Show({ presensi, tracking }) {
                     {/* Tracking Lokasi - linimasa GPS, khusus Owner */}
                     {tracking && (
                         <div className="border-t border-gray-100 pt-4">
-                            <p className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-gray-400" />
-                                Tracking Lokasi
-                            </p>
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-gray-400" />
+                                    Tracking Lokasi
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs text-gray-500">Timeframe</label>
+                                    <select
+                                        value={String(bucketDipilih)}
+                                        onChange={(e) =>
+                                            router.get(
+                                                route("attendance.presensi.show", presensi.id),
+                                                { bucket: e.target.value },
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="border border-gray-300 rounded-md px-2 py-1 text-xs"
+                                    >
+                                        {BUCKET_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>
+                                                {o.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
                             <TrackingTimelineMap
                                 tracking={tracking}
                                 titik={presensi.titik}

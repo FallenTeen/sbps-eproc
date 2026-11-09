@@ -1,4 +1,3 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Components/Sidebar';
 import NotificationBell from '@/Components/NotificationBell';

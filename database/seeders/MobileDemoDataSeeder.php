@@ -409,7 +409,8 @@ class MobileDemoDataSeeder extends Seeder
         }
 
         // Simulasikan jejak konvo (bergeser sedikit dari titik) per ±25 menit
-        // antara 07:00 s.d. 15:00 (sebelum cutoff tracking 18:00).
+        // antara 07:00 s.d. 15:00 (cutoff jam sudah dihapus - BK-6; tracking
+        // berjalan selama presensi terbuka).
         $offset = 0.0;
         $start = now()->startOfDay()->addHours(7);
 

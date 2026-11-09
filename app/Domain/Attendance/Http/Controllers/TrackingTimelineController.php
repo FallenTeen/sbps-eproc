@@ -22,6 +22,10 @@ class TrackingTimelineController extends Controller
         $karyawanId = $request->input('karyawan_id');
         $presensiId = $request->input('presensi_id');
 
+        $bucket = in_array((string) $request->input('bucket'), ['5', '10', '15', '30', '60', 'all'], true)
+            ? (string) $request->input('bucket')
+            : '30';
+
         $query = Presensi::with(['karyawan', 'titik'])->whereDate('check_in', $tanggal);
         if ($karyawanId) {
             $query->where('karyawan_id', $karyawanId);
@@ -56,6 +60,15 @@ class TrackingTimelineController extends Controller
             'point_count' => (int) ($pointCounts[$p->karyawan_id] ?? 0),
         ])->values();
 
+        // Auto-pilih presensi agar peta & linimasa langsung tampil (bukan
+        // layar "Pilih karyawan"). Prioritas: baris yang PUNYA titik GPS,
+        // baru baris pertama sebagai fallback.
+        if (! $presensiId) {
+            $presensiId = $rows->first(fn (array $r) => ($r['point_count'] ?? 0) > 0)['id']
+                ?? $rows->first()['id']
+                ?? null;
+        }
+
         $selected = null;
         if ($presensiId) {
             $target = $presensis->firstWhere('id', $presensiId)
@@ -71,7 +84,7 @@ class TrackingTimelineController extends Controller
                         'longitude' => $target->titik->longitude,
                         'radius_presensi_meter' => $target->titik->radius_presensi_meter,
                     ] : null,
-                    'tracking' => $service->forPresensi($target),
+                    'tracking' => $service->forPresensi($target, $bucket),
                 ];
             }
         }
@@ -80,10 +93,12 @@ class TrackingTimelineController extends Controller
             'rows' => $rows,
             'selected' => $selected,
             'karyawan' => Karyawan::aktif()->get(['id', 'nama']),
+            'bucketDipilih' => $bucket,
             'filters' => [
                 'tanggal' => $tanggal,
                 'karyawan_id' => $karyawanId,
                 'presensi_id' => $presensiId,
+                'bucket' => $bucket,
             ],
         ]);
     }

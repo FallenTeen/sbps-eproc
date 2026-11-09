@@ -9,6 +9,9 @@ import {
     TrendingDown,
     TrendingUp,
     Wallet,
+    Pencil,
+    RefreshCw,
+    Clock,
 } from "lucide-react";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SecondaryButton from "@/Components/SecondaryButton";
@@ -19,6 +22,9 @@ import InputError from "@/Components/InputError";
 
 export default function Review({ auth, periode, netto }) {
     const [showingAddModal, setShowingAddModal] = useState(false);
+    const [editingLembur, setEditingLembur] = useState(null);
+    const [tarifEdit, setTarifEdit] = useState("");
+    const [processingLembur, setProcessingLembur] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         jenis: "tunjangan",
@@ -38,6 +44,47 @@ export default function Review({ auth, periode, netto }) {
             style: "currency",
             currency: "IDR",
         }).format(amount);
+    };
+
+    const formatJamLembur = (menit) => {
+        const m = parseInt(menit || 0, 10);
+        if (m <= 0) return "-";
+        return `${Math.floor(m / 60)}j ${m % 60}m`;
+    };
+
+    const bukaEditLembur = (k) => {
+        setEditingLembur(k);
+        setTarifEdit(String(k.lembur_tarif_jam ?? ""));
+    };
+
+    const submitEditLembur = (e) => {
+        e.preventDefault();
+        if (!editingLembur) return;
+        setProcessingLembur(true);
+        router.put(route("hr.payroll.update-komponen", editingLembur.id), {
+            lembur_tarif_jam: tarifEdit,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditingLembur(null);
+                setTarifEdit("");
+            },
+            onFinish: () => setProcessingLembur(false),
+        });
+    };
+
+    const recalcLembur = () => {
+        if (!confirm("Hitung ulang semua komponen lembur periode ini ke tarif saran terbaru? Baris yang diedit manual juga akan direset.")) {
+            return;
+        }
+        router.post(
+            route("hr.payroll.recalc-lembur", {
+                bulan: periode.periode_bulan,
+                tahun: periode.periode_tahun,
+            }),
+            {},
+            { preserveScroll: true }
+        );
     };
 
     const submitAddKomponen = (e) => {
@@ -120,14 +167,24 @@ export default function Review({ auth, periode, netto }) {
                         </div>
 
                         {periode?.status === "draft" && (
-                            <button
-                                type="button"
-                                onClick={() => setShowingAddModal(true)}
-                                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Tambah Komponen Manual
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={recalcLembur}
+                                    className="flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100"
+                                >
+                                    <RefreshCw className="h-4 w-4" />
+                                    Hitung Ulang Lembur Otomatis
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowingAddModal(true)}
+                                    className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Tambah Komponen Manual
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -195,17 +252,50 @@ export default function Review({ auth, periode, netto }) {
                                     className="flex items-center justify-between p-4 transition hover:bg-slate-50"
                                 >
                                     <div>
-                                        <div className="text-sm font-semibold capitalize text-slate-800">
-                                            {k.jenis?.replace("_", " ")}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold capitalize text-slate-800 flex items-center gap-1.5">
+                                                {k.jenis === "lembur" && (
+                                                    <Clock className="h-3.5 w-3.5 text-amber-600" />
+                                                )}
+                                                {k.jenis?.replace("_", " ")}
+                                            </span>
+                                            {k.jenis === "lembur" &&
+                                                k.lembur_tanggal && (
+                                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                                                        {k.lembur_tanggal}
+                                                    </span>
+                                                )}
+                                            {k.diedit_manual === 1 && (
+                                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
+                                                    Edit manual
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="mt-0.5 text-xs text-slate-500">
-                                            {k.keterangan || "-"}
+                                            {k.jenis === "lembur"
+                                                ? `${formatJamLembur(k.lembur_jam_menit)} @ ${formatCurrency(k.lembur_tarif_jam)}/jam${
+                                                      k.keterangan ? ` • ${k.keterangan}` : ""
+                                                  }`
+                                                : k.keterangan || "-"}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="text-sm font-bold text-slate-800">
                                             {formatCurrency(k.jumlah)}
                                         </span>
+                                        {periode?.status === "draft" &&
+                                            k.jenis === "lembur" && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        bukaEditLembur(k)
+                                                    }
+                                                    title="Koreksi tarif lembur manual"
+                                                    className="text-amber-600 hover:text-amber-800"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </button>
+                                            )}
                                         {periode?.status === "draft" && (
                                             <button
                                                 type="button"
@@ -397,6 +487,89 @@ export default function Review({ auth, periode, netto }) {
                                 {processing
                                     ? "Menyimpan..."
                                     : "Simpan Komponen"}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+
+                {/* Modal Koreksi Tarif Lembur */}
+                <Modal
+                    show={Boolean(editingLembur)}
+                    onClose={() => setEditingLembur(null)}
+                >
+                    <form onSubmit={submitEditLembur} className="p-6">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 border-b border-slate-100 pb-4 mb-5">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                                <Clock className="h-4 w-4 text-amber-600" />
+                            </span>
+                            Koreksi Lembur
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1">
+                                <p className="text-xs text-slate-600">
+                                    Tanggal:{" "}
+                                    <strong className="text-slate-800">
+                                        {editingLembur?.lembur_tanggal || "-"}
+                                    </strong>
+                                </p>
+                                <p className="text-xs text-slate-600">
+                                    Durasi:{" "}
+                                    <strong className="text-slate-800">
+                                        {formatJamLembur(editingLembur?.lembur_jam_menit)}
+                                    </strong>
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-1">
+                                    Tarif di luar saran sistem tidak ikut
+                                    tergantikan bila payroll di-refresh — hanya
+                                    tombol &ldquo;Hitung Ulang Lembur
+                                    Otomatis&rdquo; yang me-reset ke tarif saran.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="lembur_tarif_jam"
+                                    className="mb-1.5 block text-xs font-medium text-gray-700"
+                                >
+                                    Tarif per Jam (Rp){" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">
+                                        Rp
+                                    </div>
+                                    <input
+                                        id="lembur_tarif_jam"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        value={tarifEdit}
+                                        onChange={(e) =>
+                                            setTarifEdit(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                            <SecondaryButton
+                                type="button"
+                                onClick={() => setEditingLembur(null)}
+                            >
+                                Batal
+                            </SecondaryButton>
+                            <button
+                                type="submit"
+                                disabled={processingLembur}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
+                            >
+                                {processingLembur
+                                    ? "Menyimpan..."
+                                    : "Simpan Tarif"}
                             </button>
                         </div>
                     </form>

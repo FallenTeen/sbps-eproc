@@ -156,6 +156,7 @@ class ArmadaController extends Controller
             'sewaAlatJams' => fn ($q) => $q->with('proyek')->latest('tanggal')->limit(50),
             'driverAssignments' => fn ($q) => $q->with('karyawan')->latest('tanggal_mulai'),
             'helperArmadas' => fn ($q) => $q->with('presensis')->latest('durasi_mulai'),
+            'dokumenBerkalas',
         ]);
 
         $user = auth()->user();
@@ -192,7 +193,7 @@ class ArmadaController extends Controller
                 'startDowntime' => $canUpdate,
                 'assignDriver' => $canUpdate,
                 'helper' => $canManageHelper,
-                'manageDocuments' => $user->hasRole('Owner') || $user->hasAnyPermission(['manage fleet', 'manage dokumen armada']),
+                'manageDocuments' => $user->can('manage fleet') || $user->can('manage dokumen armada'),
             ],
         ]);
     }

@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TrackingTimelineMap from "@/Components/TrackingTimelineMap";
 import { Search, MapPin, Clock, Satellite, Navigation, User, RefreshCw } from "lucide-react";
 
 const STALE_MINUTES = 10;
+
+const BUCKET_OPTIONS = [
+    { value: "5", label: "5 menit" },
+    { value: "10", label: "10 menit" },
+    { value: "15", label: "15 menit" },
+    { value: "30", label: "30 menit" },
+    { value: "60", label: "1 jam" },
+    { value: "all", label: "Semua titik" },
+];
 
 function freshness(lastSeen) {
     if (!lastSeen) {
@@ -30,14 +39,40 @@ function formatJam(value, withDate = false) {
 export default function Index({ rows = [], selected = null, karyawan = [], filters = {} }) {
     const [tanggal, setTanggal] = useState(filters.tanggal || "");
     const [karyawanId, setKaryawanId] = useState(filters.karyawan_id || "");
+    const [bucket, setBucket] = useState(filters.bucket || "30");
+    const [auto, setAuto] = useState(true);
+    const [lastRefresh, setLastRefresh] = useState(null);
+
+    // Pemantauan live: muat ulang props rows/selected tiap 30 detik tanpa
+    // menyentuh state filter di komponen ini (preserveState) sehingga
+    // Owner melihat titik GPS baru tanpa klik "Muat Ulang".
+    useEffect(() => {
+        if (!auto) return;
+        const id = setInterval(() => {
+            if (document.hidden) return;
+            router.reload({
+                only: ["rows", "selected"],
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setLastRefresh(new Date()),
+            });
+        }, 30000);
+        return () => clearInterval(id);
+    }, [auto]);
 
     const apply = (overrides = {}) => {
         const params = {
             tanggal: overrides.tanggal ?? tanggal,
             karyawan_id: overrides.karyawanId ?? karyawanId,
+            bucket: overrides.bucket ?? bucket,
             presensi_id: overrides.presensiId ?? "",
         };
         router.get(route("attendance.tracking.index"), params, { preserveScroll: true });
+    };
+
+    const gantiBucket = (value) => {
+        setBucket(value);
+        apply({ bucket: value, presensiId: filters.presensi_id || "" });
     };
 
     const openPresensi = (id) => {
@@ -55,16 +90,40 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tracking Linimasa</h1>
                     <p className="mt-1 text-sm text-gray-500">
+<<<<<<< HEAD
                         Linimasa lokasi GPS karyawan per hari (khusus Owner). Titik disampling tiap 5 menit untuk tampilan.
+=======
+                        Linimasa lokasi GPS karyawan per hari (khusus Owner) — pilih timeframe sampling di filter.
+>>>>>>> 1bd0312d1ff7f342e825cc737f476a76a97c5bbc
                     </p>
                 </div>
-                <button
-                    onClick={() => apply()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                    <RefreshCw className="w-4 h-4" />
-                    Muat Ulang
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setAuto((v) => !v)}
+                        title="Muat ulang otomatis tiap 30 detik"
+                        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                            auto
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-gray-300 bg-white text-gray-500"
+                        }`}
+                    >
+                        <span className={`h-2 w-2 rounded-full ${auto ? "bg-green-500" : "bg-gray-400"}`} />
+                        Auto 30d {auto ? "Aktif" : "Mati"}
+                        {lastRefresh && (
+                            <span className="font-normal opacity-70">
+                                {lastRefresh.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => apply()}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Muat Ulang
+                    </button>
+                </div>
             </div>
 
             {/* Filter */}
@@ -92,6 +151,18 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                             <option value="">Semua</option>
                             {karyawan.map((k) => (
                                 <option key={k.id} value={k.id}>{k.nama}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Timeframe Sampling</label>
+                        <select
+                            value={String(bucket)}
+                            onChange={(e) => gantiBucket(e.target.value)}
+                            className="border border-gray-300 rounded-md px-3 py-2"
+                        >
+                            {BUCKET_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
                             ))}
                         </select>
                     </div>
@@ -178,10 +249,11 @@ export default function Index({ rows = [], selected = null, karyawan = [], filte
                                 </div>
                                 <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                                     <Navigation className="w-3.5 h-3.5" />
+                                    Timeframe {BUCKET_OPTIONS.find((o) => o.value === String(bucket))?.label || bucket} •{" "}
                                     {selectedTracking?.raw_count ?? 0} titik GPS mentah
                                 </span>
                             </div>
-                            <TrackingTimelineMap tracking={selectedTracking} titik={selected.titik} />
+                            <TrackingTimelineMap tracking={selectedTracking} titik={selected.titik} presensiId={selected.id} />
                         </div>
                     ) : (
                         <div className="h-full min-h-[460px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-gray-300 text-gray-400">

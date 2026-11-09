@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Domain\Attendance\Actions\ValidateLocationCheckInAction;
+use App\Domain\Attendance\Actions\ValidateLocationCheckoutAction;
 use App\Domain\Attendance\Models\Presensi;
 use App\Domain\Core\Models\Titik;
 use App\Http\Controllers\Api\ApiResponse;
@@ -113,8 +114,10 @@ class PresensiController extends Controller
             'photo_metadata.longitude' => 'nullable|numeric',
         ]);
 
+        // Presensi terbuka 36 jam terakhir (dukung shift malam: check-in 22:00,
+        // check-out besok pagi - whereDate saja akan gagal saat ganti tanggal).
         $presensi = Presensi::byKaryawan($karyawan->id)
-            ->whereDate('check_in', now()->toDateString())
+            ->where('check_in', '>=', now()->subHours(36))
             ->whereNull('check_out')
             ->latest('check_in')
             ->first();
@@ -125,17 +128,25 @@ class PresensiController extends Controller
 
         $photoPath = $request->file('photo')->store('presensi/check-out', 'public');
 
+        $checkOutStatus = (new ValidateLocationCheckoutAction)->execute(
+            $presensi->loadMissing('titik'),
+            (float) $validated['latitude'],
+            (float) $validated['longitude']
+        );
+
         $presensi->update([
             'check_out' => now(),
             'check_out_lat' => $validated['latitude'],
             'check_out_lng' => $validated['longitude'],
             'check_out_photo' => $photoPath,
             'check_out_photo_metadata' => $validated['photo_metadata'] ?? null,
+            'check_out_status' => $checkOutStatus,
         ]);
 
         return $this->success([
             'presensi_id' => $presensi->id,
             'check_out' => $presensi->fresh()->check_out->toIso8601String(),
+            'check_out_status' => $checkOutStatus,
             'status' => 'selesai',
         ], 'Check-out berhasil dicatat.');
     }
@@ -171,6 +182,9 @@ class PresensiController extends Controller
             'check_out' => $presensi->check_out?->toIso8601String(),
             'status' => $presensi->check_out ? 'selesai' : 'menunggu_check_out',
             'status_validasi' => $presensi->status_validasi,
+            'check_out_status' => $presensi->check_out_status,
+            'durasi_menit' => $presensi->durasi_menit,
+            'lembur_menit' => $presensi->lembur_menit,
             'titik' => $presensi->titik
                 ? ['id' => $presensi->titik->id, 'nama' => $presensi->titik->nama]
                 : null,
@@ -217,6 +231,10 @@ class PresensiController extends Controller
                 'check_in' => $p->check_in?->toIso8601String(),
                 'check_out' => $p->check_out?->toIso8601String(),
                 'status_validasi' => $p->status_validasi,
+                'check_out_status' => $p->check_out_status,
+                'durasi_menit' => $p->durasi_menit,
+                'lembur_menit' => $p->lembur_menit,
+                'lembur_label' => $p->lembur_label,
                 'status' => $p->check_out ? 'selesai' : 'menunggu_check_out',
             ]),
             'pagination' => [

@@ -65,7 +65,7 @@ class TitikController extends Controller
             'nama' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'radius_presensi_meter' => 'nullable|integer|min:0',
+            'radius_presensi_meter' => 'nullable|integer|min:1',
             'status' => 'required|in:aktif,nonaktif',
         ]);
 
@@ -110,7 +110,7 @@ class TitikController extends Controller
             'nama' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'radius_presensi_meter' => 'nullable|integer|min:0',
+            'radius_presensi_meter' => 'nullable|integer|min:1',
             'status' => 'required|in:aktif,nonaktif',
         ]);
 
