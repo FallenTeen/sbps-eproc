@@ -238,7 +238,12 @@ export default function Welcome({
                                 );
                             }}
                         >
-                            <span className="brand-mark">S</span>
+                            <img
+                                src="/main-logo.png"
+                                alt=""
+                                aria-hidden="true"
+                                className="brand-mark"
+                            />
                             <span>
                                 <b>{shortName}</b>
                                 <small>{companyName}</small>
@@ -642,7 +647,8 @@ html{scroll-behavior:smooth}section[id]{scroll-margin-top:84px}
 .header{position:sticky;top:0;z-index:50;background:var(--bg);color:var(--tx);border-bottom:4px solid var(--r)}
 .header-in{display:flex;align-items:center;justify-content:space-between;height:72px;gap:20px}
 .brand{display:flex;align-items:center;gap:12px}
-.brand-mark{display:grid;place-items:center;width:42px;height:42px;background:var(--r);color:#fff;font:800 26px 'Barlow Condensed',sans-serif;border-radius:4px}
+.brand-mark{width:42px;height:42px;object-fit:contain;flex:none}
+.sbps-dark .brand-mark{filter:brightness(0) invert(1)}
 .brand b{display:block;font:800 24px/1 'Barlow Condensed',sans-serif;letter-spacing:.04em}
 .brand small{display:block;font-size:11px;color:var(--tx);margin-top:2px}
 .nav{display:flex;gap:28px;font-weight:600;font-size:15px}.nav a:hover{color:var(--r-l)}

@@ -329,12 +329,15 @@ export default function Sidebar({ isOpen, onClose }) {
             >
                 <div className="flex h-16 items-center justify-between bg-white px-4">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold text-sm border-2 border-white shadow-md">
-                            S
-                        </div>
+                        <img
+                            src="/main-logo.png"
+                            alt=""
+                            aria-hidden="true"
+                            className="h-9 w-9 shrink-0 object-contain"
+                        />
                         <div>
                             <span className="text-base font-black tracking-tight text-black">SBPS System</span>
-                            <span className="block text-[10px] font-semibold text-blaxk/70">Multi-Unit Bisnis v5</span>
+                            <span className="block text-[10px] font-semibold text-black/70">Multi-Unit Bisnis</span>
                         </div>
                     </Link>
                 </div>
