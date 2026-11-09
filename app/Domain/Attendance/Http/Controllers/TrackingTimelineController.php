@@ -32,6 +32,12 @@ class TrackingTimelineController extends Controller
         }
         $presensis = $query->orderByDesc('check_in')->get();
 
+        // Auto-pilih presensi pertama agar peta & linimasa langsung tampil
+        // (bukan layar "Pilih karyawan" blank).
+        if (! $presensiId) {
+            $presensiId = $presensis->first()?->id;
+        }
+
         $karyawanIds = $presensis->pluck('karyawan_id')->filter()->unique()->values();
 
         $lastSeen = MobileTrackingLocation::query()
