@@ -40,7 +40,7 @@ class ArmadaDokumenBerkala extends Model implements HasMedia
         'meta' => 'array',
     ];
 
-    protected $appends = ['status_dokumen', 'scan_dokumen_url'];
+    protected $appends = ['status_dokumen', 'jenis_label', 'scan_dokumen_url'];
 
     // ── Status turunan ──────────────────────────────────────────────────
 
