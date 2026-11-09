@@ -86,6 +86,7 @@ class CleanDataSeeder extends Seeder
         'karyawans',
 
         // Attendance
+        'mobile_tracking_locations',
         'formulir_lapangans',
         'presensis',
         'security_checklist_run_items',
