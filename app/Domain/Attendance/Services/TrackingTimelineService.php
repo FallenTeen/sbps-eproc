@@ -46,8 +46,10 @@ class TrackingTimelineService
                 ->get(['latitude', 'longitude', 'recorded_at']);
         }
 
-        // Tidak ada data GPS sama sekali: bukan "gap", cukup raw_count=0 di UI.
-        if ($locations->isEmpty()) {
+        // Lokasi kosong TIDAK langsung return: titik check-in/check-out tetap
+        // disisipkan sebagai ujung linimasa supaya peta punya acuan (raw_count
+        // tetap 0 sehingga UI tetap jujur menyebut "tanpa GPS").
+        if (! $p->check_in) {
             return ['points' => [], 'raw_count' => 0, 'truncated' => false];
         }
 
@@ -55,10 +57,6 @@ class TrackingTimelineService
             ->filter(fn ($l) => $p->check_in && $l->recorded_at->gte($p->check_in))
             ->filter(fn ($l) => ! $p->check_out || $l->recorded_at->lte($p->check_out))
             ->values();
-
-        if (! $p->check_in) {
-            return ['points' => [], 'raw_count' => 0, 'truncated' => false];
-        }
 
         $points = $isAll
             ? $raw->map(fn ($loc) => $this->point(

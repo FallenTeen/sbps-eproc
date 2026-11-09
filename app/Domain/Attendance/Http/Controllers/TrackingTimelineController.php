@@ -32,12 +32,6 @@ class TrackingTimelineController extends Controller
         }
         $presensis = $query->orderByDesc('check_in')->get();
 
-        // Auto-pilih presensi pertama agar peta & linimasa langsung tampil
-        // (bukan layar "Pilih karyawan" blank).
-        if (! $presensiId) {
-            $presensiId = $presensis->first()?->id;
-        }
-
         $karyawanIds = $presensis->pluck('karyawan_id')->filter()->unique()->values();
 
         $lastSeen = MobileTrackingLocation::query()
@@ -65,6 +59,15 @@ class TrackingTimelineController extends Controller
                 : null,
             'point_count' => (int) ($pointCounts[$p->karyawan_id] ?? 0),
         ])->values();
+
+        // Auto-pilih presensi agar peta & linimasa langsung tampil (bukan
+        // layar "Pilih karyawan"). Prioritas: baris yang PUNYA titik GPS,
+        // baru baris pertama sebagai fallback.
+        if (! $presensiId) {
+            $presensiId = $rows->first(fn (array $r) => ($r['point_count'] ?? 0) > 0)['id']
+                ?? $rows->first()['id']
+                ?? null;
+        }
 
         $selected = null;
         if ($presensiId) {
