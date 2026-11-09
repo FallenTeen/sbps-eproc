@@ -36,6 +36,12 @@ const JENIS_DOKUMEN = {
     kir: "KIR",
 };
 
+const STATUS_DOKUMEN = {
+    aktif: "bg-green-50 text-green-700 border-green-200",
+    akan_jatuh_tempo: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    lewat: "bg-red-50 text-red-700 border-red-200",
+};
+
 const MODEL_TARIF = {
     ritase: "Ritase",
     sewa_jam: "Sewa / Jam",
@@ -167,18 +173,56 @@ function Tabs({ tabs, active, onChange }) {
 function DokumenSection({ armada, canManage }) {
     const [viewing, setViewing] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editing, setEditing] = useState(null);
+    const [perpanjang, setPerpanjang] = useState(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
         jenis: "pajak_tahunan",
         nomor_dokumen: "",
         tanggal_terbit: "",
         tanggal_jatuh_tempo: "",
         nominal_biaya: "",
+        wilayah: "",
+        tempat_pembayaran: "",
+        teknis_pembayaran: "",
+        reminder: "30,14,7",
+        catatan: "",
         scan_dokumen: null,
     });
 
+    const editForm = useForm({
+        nomor_dokumen: "",
+        tanggal_terbit: "",
+        tanggal_jatuh_tempo: "",
+        nominal_biaya: "",
+        wilayah: "",
+        tempat_pembayaran: "",
+        teknis_pembayaran: "",
+        catatan: "",
+        scan_dokumen: null,
+    });
+
+    const pjForm = useForm({
+        tanggal_jatuh_tempo_baru: "",
+        nominal_biaya: "",
+        nomor_dokumen_baru: "",
+        catatan: "",
+        scan_dokumen: null,
+    });
+
+    const hariKeJSON = (v) =>
+        String(v || "")
+            .split(",")
+            .map((s) => parseInt(s.trim(), 10))
+            .filter((n) => Number.isInteger(n) && n > 0);
+
     const submit = (event) => {
         event.preventDefault();
+        transform((d) => ({
+            ...d,
+            reminder_hari_sebelum: hariKeJSON(d.reminder),
+        }));
         post(route("fleet.armada.dokumen-berkala.store", armada.id), {
             forceFormData: true,
             preserveScroll: true,
@@ -188,11 +232,90 @@ function DokumenSection({ armada, canManage }) {
                     "tanggal_terbit",
                     "tanggal_jatuh_tempo",
                     "nominal_biaya",
+                    "wilayah",
+                    "tempat_pembayaran",
+                    "teknis_pembayaran",
+                    "catatan",
+                    "reminder",
                     "scan_dokumen",
                 );
                 setIsModalOpen(false);
             },
         });
+    };
+
+    const bukaEdit = (dokumen) => {
+        setEditing(dokumen);
+        editForm.setData({
+            nomor_dokumen: dokumen.nomor_dokumen || "",
+            tanggal_terbit: dokumen.tanggal_terbit?.substring(0, 10) || "",
+            tanggal_jatuh_tempo:
+                dokumen.tanggal_jatuh_tempo?.substring(0, 10) || "",
+            nominal_biaya: dokumen.nominal_biaya ?? "",
+            wilayah: dokumen.wilayah || "",
+            tempat_pembayaran: dokumen.tempat_pembayaran || "",
+            teknis_pembayaran: dokumen.teknis_pembayaran || "",
+            catatan: dokumen.catatan || "",
+            scan_dokumen: null,
+        });
+    };
+
+    const simpanEdit = (event) => {
+        event.preventDefault();
+        editForm.post(
+            route("fleet.armada.dokumen-berkala.update", {
+                armada: armada.id,
+                dokumen: editing.id,
+            }),
+            {
+                method: "put",
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => setEditing(null),
+            },
+        );
+    };
+
+    const bukaPerpanjang = (dokumen) => {
+        setPerpanjang(dokumen);
+        pjForm.setData({
+            tanggal_jatuh_tempo_baru: "",
+            nominal_biaya: dokumen.nominal_biaya ?? "",
+            nomor_dokumen_baru: dokumen.nomor_dokumen || "",
+            catatan: "",
+            scan_dokumen: null,
+        });
+    };
+
+    const simpanPerpanjang = (event) => {
+        event.preventDefault();
+        pjForm.post(
+            route("fleet.armada.dokumen-berkala.perpanjang", {
+                armada: armada.id,
+                dokumen: perpanjang.id,
+            }),
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => setPerpanjang(null),
+            },
+        );
+    };
+
+    const hapusDokumen = (dokumen) => {
+        if (
+            !window.confirm(
+                `Hapus dokumen ${dokumen.jenis_label} (${dokumen.nomor_dokumen || "tanpa nomor"})?`,
+            )
+        )
+            return;
+        router.delete(
+            route("fleet.armada.dokumen-berkala.destroy", {
+                armada: armada.id,
+                dokumen: dokumen.id,
+            }),
+            { preserveScroll: true },
+        );
     };
 
     return (
@@ -300,6 +423,69 @@ function DokumenSection({ armada, canManage }) {
                                 className={inputClass}
                             />
                         </Field>
+                        <Field label="Wilayah" error={errors.wilayah}>
+                            <input
+                                value={data.wilayah}
+                                onChange={(e) =>
+                                    setData("wilayah", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field
+                            label="Tempat Pembayaran"
+                            error={errors.tempat_pembayaran}
+                        >
+                            <input
+                                value={data.tempat_pembayaran}
+                                onChange={(e) =>
+                                    setData(
+                                        "tempat_pembayaran",
+                                        e.target.value,
+                                    )
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field
+                            label="Pengingat (Hari, pisah koma)"
+                            error={errors["reminder_hari_sebelum.0"]}
+                        >
+                            <input
+                                value={data.reminder}
+                                placeholder="30,14,7"
+                                onChange={(e) =>
+                                    setData("reminder", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field
+                            label="Teknis Pembayaran"
+                            error={errors.teknis_pembayaran}
+                        >
+                            <textarea
+                                rows={2}
+                                value={data.teknis_pembayaran}
+                                onChange={(e) =>
+                                    setData(
+                                        "teknis_pembayaran",
+                                        e.target.value,
+                                    )
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Catatan" error={errors.catatan}>
+                            <textarea
+                                rows={2}
+                                value={data.catatan}
+                                onChange={(e) =>
+                                    setData("catatan", e.target.value)
+                                }
+                                className={inputClass}
+                            />
+                        </Field>
                         <Field
                             label="Scan Dokumen (PDF/JPG/PNG)"
                             error={errors.scan_dokumen}
@@ -356,8 +542,16 @@ function DokumenSection({ armada, canManage }) {
                                 Status
                             </th>
                             <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Biaya
+                            </th>
+                            <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Dokumen
                             </th>
+                            {canManage && (
+                                <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Aksi
+                                </th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -388,14 +582,9 @@ function DokumenSection({ armada, canManage }) {
                                     <td className="px-4 py-3 text-sm">
                                         <span
                                             className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                                                dokumen.status_dokumen
-                                                    ?.toLowerCase()
-                                                    .includes("akan")
-                                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                                    : dokumen.status_dokumen?.toLowerCase() ===
-                                                        "aktif"
-                                                      ? "bg-green-50 text-green-700 border-green-200"
-                                                      : "bg-blue-50 text-blue-700 border-blue-200"
+                                                STATUS_DOKUMEN[
+                                                    dokumen.status_dokumen
+                                                ] || STATUS_DOKUMEN.aktif
                                             }`}
                                         >
                                             {dokumen.status_dokumen?.replaceAll(
@@ -403,6 +592,11 @@ function DokumenSection({ armada, canManage }) {
                                                 " ",
                                             )}
                                         </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">
+                                        {dokumen.nominal_biaya
+                                            ? `Rp ${Number(dokumen.nominal_biaya).toLocaleString("id-ID")}`
+                                            : "-"}
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         <button
@@ -414,12 +608,45 @@ function DokumenSection({ armada, canManage }) {
                                             Lihat Dokumen
                                         </button>
                                     </td>
+                                    {canManage && (
+                                        <td className="px-4 py-3 text-sm">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        bukaEdit(dokumen)
+                                                    }
+                                                    className="font-medium text-blue-600 hover:text-blue-800"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        bukaPerpanjang(dokumen)
+                                                    }
+                                                    className="font-medium text-amber-600 hover:text-amber-800"
+                                                >
+                                                    Perpanjang
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        hapusDokumen(dokumen)
+                                                    }
+                                                    className="font-medium text-red-600 hover:text-red-800"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         ) : (
                             <tr>
                                 <td
-                                    colSpan="6"
+                                    colSpan={canManage ? 8 : 7}
                                     className="px-4 py-8 text-center text-sm text-gray-500"
                                 >
                                     Belum ada dokumen untuk unit armada ini.
@@ -482,6 +709,270 @@ function DokumenSection({ armada, canManage }) {
                             </div>
                         </dl>
                     </div>
+                )}
+            </Modal>
+
+            {/* Modal Edit Dokumen */}
+            <Modal
+                isOpen={!!editing}
+                onClose={() => setEditing(null)}
+                title="Edit Dokumen Armada"
+                maxWidth="max-w-2xl"
+            >
+                {editing && (
+                    <form onSubmit={simpanEdit} className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Field label="Nomor Dokumen">
+                                <input
+                                    value={editForm.data.nomor_dokumen}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "nomor_dokumen",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Biaya (Rp)">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={editForm.data.nominal_biaya}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "nominal_biaya",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Tanggal Terbit">
+                                <input
+                                    type="date"
+                                    value={editForm.data.tanggal_terbit}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "tanggal_terbit",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Tanggal Jatuh Tempo">
+                                <input
+                                    type="date"
+                                    value={editForm.data.tanggal_jatuh_tempo}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "tanggal_jatuh_tempo",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                            </Field>
+                            <Field label="Wilayah">
+                                <input
+                                    value={editForm.data.wilayah}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "wilayah",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Tempat Pembayaran">
+                                <input
+                                    value={editForm.data.tempat_pembayaran}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "tempat_pembayaran",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field
+                                label="Teknis Pembayaran"
+                                error={editForm.errors.teknis_pembayaran}
+                            >
+                                <textarea
+                                    rows={2}
+                                    value={editForm.data.teknis_pembayaran}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "teknis_pembayaran",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Catatan" error={editForm.errors.catatan}>
+                                <textarea
+                                    rows={2}
+                                    value={editForm.data.catatan}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "catatan",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field
+                                label="Ganti Scan Dokumen (opsional)"
+                                error={editForm.errors.scan_dokumen}
+                            >
+                                <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "scan_dokumen",
+                                            e.target.files[0] || null,
+                                        )
+                                    }
+                                    className="w-full text-sm border border-gray-300 rounded-lg p-2 bg-gray-50"
+                                />
+                            </Field>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className={btnPrimary}
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan Perubahan"}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
+
+            {/* Modal Perpanjang Dokumen */}
+            <Modal
+                isOpen={!!perpanjang}
+                onClose={() => setPerpanjang(null)}
+                title="Perpanjang Dokumen"
+                maxWidth="max-w-lg"
+            >
+                {perpanjang && (
+                    <form onSubmit={simpanPerpanjang} className="space-y-4">
+                        <p className="text-sm text-gray-500">
+                            {perpanjang.jenis_label}{" "}
+                            {perpanjang.nomor_dokumen
+                                ? `- ${perpanjang.nomor_dokumen}`
+                                : ""}{" "}
+                            · jatuh tempo{" "}
+                            {formatTanggal(perpanjang.tanggal_jatuh_tempo)}
+                        </p>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Field
+                                label="Tanggal Jatuh Tempo Baru"
+                                error={pjForm.errors.tanggal_jatuh_tempo_baru}
+                            >
+                                <input
+                                    type="date"
+                                    value={
+                                        pjForm.data.tanggal_jatuh_tempo_baru
+                                    }
+                                    min={
+                                        new Date()
+                                            .toISOString()
+                                            .split("T")[0]
+                                    }
+                                    onChange={(e) =>
+                                        pjForm.setData(
+                                            "tanggal_jatuh_tempo_baru",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                            </Field>
+                            <Field
+                                label="Nomor Dokumen Baru"
+                                error={pjForm.errors.nomor_dokumen_baru}
+                            >
+                                <input
+                                    value={pjForm.data.nomor_dokumen_baru}
+                                    onChange={(e) =>
+                                        pjForm.setData(
+                                            "nomor_dokumen_baru",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field
+                                label="Biaya (Rp)"
+                                error={pjForm.errors.nominal_biaya}
+                            >
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={pjForm.data.nominal_biaya}
+                                    onChange={(e) =>
+                                        pjForm.setData(
+                                            "nominal_biaya",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field label="Catatan" error={pjForm.errors.catatan}>
+                                <input
+                                    value={pjForm.data.catatan}
+                                    onChange={(e) =>
+                                        pjForm.setData(
+                                            "catatan",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                            <button
+                                type="button"
+                                onClick={() => setPerpanjang(null)}
+                                className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={pjForm.processing}
+                                className={btnPrimary}
+                            >
+                                {pjForm.processing
+                                    ? "Memproses..."
+                                    : "Perpanjang"}
+                            </button>
+                        </div>
+                    </form>
                 )}
             </Modal>
         </div>
