@@ -16,9 +16,17 @@ import {
 } from "lucide-react";
 
 const statusBadge = (status) =>
-    status === "terverifikasi" ? (
+    status === "disetujui" ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Terverifikasi
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Disetujui
+        </span>
+    ) : status === "draft" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-600" /> Draft
+        </span>
+    ) : status === "ditagih" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 border border-red-200">
+            <AlertTriangle className="w-3 h-3 text-red-600" /> Ditagih
         </span>
     ) : (
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
@@ -71,6 +79,7 @@ function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-xl" }) {
 }
 
 export default function RitaseVerifikasi({ rows, filters }) {
+    console.log(rows.data?.map((row) => row.status));
     const { flash } = usePage().props;
     const [cari, setCari] = useState(filters?.cari ?? "");
     const [selectedItem, setSelectedItem] = useState(null);
@@ -266,10 +275,9 @@ export default function RitaseVerifikasi({ rows, filters }) {
                                         )}
                                     </td>
                                     <td className="px-5 py-4">
-                                        {statusBadge(
-                                            r.verifikasi_logistik?.status ??
-                                                "menunggu",
-                                        )}
+                                        {
+                                            statusBadge(r.status)
+                                        }
                                     </td>
                                     <td className="px-5 py-4 text-right">
                                         <button
