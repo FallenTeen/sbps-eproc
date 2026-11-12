@@ -1,1 +1,0 @@
-import{n as e}from"./app-DSkU724f.js";var t=e();function n({className:e=``,...n}){return(0,t.jsx)(`img`,{src:`/main-logo.png`,alt:`SBPS`,...n,className:`object-contain ${e}`})}export{n as t};
