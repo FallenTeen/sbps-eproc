@@ -28,7 +28,10 @@ const KONDISI_LABEL = {
 function itemPhotoUrl(foto) {
     if (!foto) return null;
     if (/^https?:\/\//i.test(foto)) return foto;
-    return `/storage/${foto}`;
+    // Hanya path tersimpan server (armada/...) yang punya URL publik. Foto
+    // lama berupa path perangkat tidak ditampilkan agar tidak rusak.
+    if (foto.startsWith("armada/")) return `/storage/${foto}`;
+    return null;
 }
 
 function ItemTable({ items }) {
@@ -38,17 +41,31 @@ function ItemTable({ items }) {
 
     return (
         <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-            {items.map((it, idx) => (
-                <div key={idx} className="flex items-center justify-between gap-3 px-3 py-2">
-                    <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{it.bagian || "-"}</p>
-                        {it.catatan && <p className="text-xs text-gray-500">{it.catatan}</p>}
+            {items.map((it, idx) => {
+                const fotoUrl = itemPhotoUrl(it.foto);
+                return (
+                    <div key={idx} className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{it.bagian || "-"}</p>
+                            {it.catatan && <p className="text-xs text-gray-500">{it.catatan}</p>}
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                            {fotoUrl && (
+                                <a href={fotoUrl} target="_blank" rel="noreferrer" title="Lihat foto">
+                                    <img
+                                        src={fotoUrl}
+                                        alt={`Foto ${it.bagian || ""}`}
+                                        className="w-12 h-12 rounded-md object-cover border border-gray-200"
+                                    />
+                                </a>
+                            )}
+                            <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${KONDISI_STYLE[it.kondisi] || "bg-gray-100 text-gray-700"}`}>
+                                {KONDISI_LABEL[it.kondisi] || it.kondisi}
+                            </span>
+                        </div>
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${KONDISI_STYLE[it.kondisi] || "bg-gray-100 text-gray-700"}`}>
-                        {KONDISI_LABEL[it.kondisi] || it.kondisi}
-                    </span>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }

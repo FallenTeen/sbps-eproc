@@ -26,6 +26,8 @@ use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -473,7 +475,8 @@ class ArmadaController extends Controller
             'items.*.bagian' => 'required|string|max:100',
             'items.*.kondisi' => 'required|in:baik,perlu_perhatian,rusak',
             'items.*.catatan' => 'nullable|string',
-            'items.*.foto' => 'nullable|string',
+            // Foto item: file upload (app baru) atau string path (app lama).
+            'items.*.foto' => 'nullable',
             'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
             'foto_stok_solar' => 'nullable|image|max:5120',
             'foto_stok_solar_metadata' => 'nullable',
@@ -511,6 +514,13 @@ class ArmadaController extends Controller
             );
         }
 
+        // Foto item: konversi upload file ke path tersimpan. Bila client
+        // mengirim file (app baru), kondisi bermasalah wajib berfoto.
+        $itemResult = $this->processItemFotos($validated['items']);
+        if ($itemResult['has_file'] && $this->adaKondisiBermasalahTanpaFoto($itemResult['items'])) {
+            return $this->error('Foto wajib untuk kondisi bermasalah.', 422, ['items' => ['Setiap kondisi perlu perhatian/rusak wajib disertai foto.']]);
+        }
+
         $fotoStok = $this->storeFoto($request->file('foto_stok_solar') ?? $validated['foto_stok_solar'] ?? null, 'armada/checklist');
         $fotoOdo = $this->storeFoto($request->file('foto_odo_pagi') ?? $validated['foto_odo_pagi'] ?? null, 'armada/checklist');
 
@@ -526,7 +536,7 @@ class ArmadaController extends Controller
         try {
             $checklist = app(RecordChecklistAwalAction::class)->execute($armada, [
                 'tanggal' => $today,
-                'items' => $validated['items'],
+                'items' => $itemResult['items'],
                 'stok_solar' => $validated['stok_solar'],
                 'foto_stok_solar' => $fotoStok,
                 'foto_stok_solar_metadata' => $this->decodeMetadata($validated['foto_stok_solar_metadata'] ?? null),
@@ -561,7 +571,8 @@ class ArmadaController extends Controller
             'items.*.bagian' => 'required|string|max:100',
             'items.*.kondisi' => 'required|in:baik,perlu_perhatian,rusak',
             'items.*.catatan' => 'nullable|string',
-            'items.*.foto' => 'nullable|string',
+            // Foto item: file upload (app baru) atau string path (app lama).
+            'items.*.foto' => 'nullable',
             'stok_solar' => 'required|in:'.implode(',', StokSolar::values()),
             'foto_stok_solar' => 'nullable|image|max:5120',
             'foto_stok_solar_metadata' => 'nullable',
@@ -588,6 +599,13 @@ class ArmadaController extends Controller
             return $this->error('Armada bukan milik driver ini.', 403);
         }
 
+        // Foto item: konversi upload file ke path tersimpan. Bila client
+        // mengirim file (app baru), kondisi bermasalah wajib berfoto.
+        $itemResult = $this->processItemFotos($validated['items']);
+        if ($itemResult['has_file'] && $this->adaKondisiBermasalahTanpaFoto($itemResult['items'])) {
+            return $this->error('Foto wajib untuk kondisi bermasalah.', 422, ['items' => ['Setiap kondisi perlu perhatian/rusak wajib disertai foto.']]);
+        }
+
         $fotoStok = $this->storeFoto($request->file('foto_stok_solar') ?? $validated['foto_stok_solar'] ?? null, 'armada/checklist');
         $fotoOdo = $this->storeFoto($request->file('foto_odo_akhir') ?? $validated['foto_odo_akhir'] ?? null, 'armada/checklist');
 
@@ -601,7 +619,7 @@ class ArmadaController extends Controller
         try {
             $akhir = app(RecordChecklistAkhirAction::class)->execute($armada, [
                 'tanggal' => now()->toDateString(),
-                'items' => $validated['items'],
+                'items' => $itemResult['items'],
                 'stok_solar' => $validated['stok_solar'],
                 'foto_stok_solar' => $fotoStok,
                 'foto_stok_solar_metadata' => $this->decodeMetadata($validated['foto_stok_solar_metadata'] ?? null),
@@ -814,6 +832,49 @@ class ArmadaController extends Controller
         foreach ($items as $item) {
             $kondisi = $item['kondisi'] ?? null;
             if (in_array($kondisi, ['perlu_perhatian', 'rusak'], true) && empty($item['catatan'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Olah foto item checklist: file upload divalidasi lalu disimpan ke
+     * storage; string path (app lama) dilewatkan apa adanya.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array{items: array<int, array<string, mixed>>, has_file: bool}
+     */
+    private function processItemFotos(array $items): array
+    {
+        $hasFile = false;
+
+        foreach ($items as $i => $item) {
+            $foto = $item['foto'] ?? null;
+            if (! $foto instanceof UploadedFile) {
+                continue;
+            }
+
+            $hasFile = true;
+            Validator::make(['foto' => $foto], [
+                'foto' => 'image|max:5120',
+            ], [
+                'foto.image' => 'Foto item harus berupa gambar.',
+                'foto.max' => 'Foto item maksimal 5 MB.',
+            ])->validate();
+
+            $items[$i]['foto'] = $this->storeFoto($foto, 'armada/checklist');
+        }
+
+        return ['items' => $items, 'has_file' => $hasFile];
+    }
+
+    private function adaKondisiBermasalahTanpaFoto(array $items): bool
+    {
+        foreach ($items as $item) {
+            $kondisi = $item['kondisi'] ?? null;
+            if (in_array($kondisi, ['perlu_perhatian', 'rusak'], true) && empty($item['foto'] ?? null)) {
                 return true;
             }
         }
