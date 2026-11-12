@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -408,7 +409,7 @@ class ArmadaController extends Controller
             'checklist_id' => $awal->id,
             'kondisi_baik' => $awal->kondisi_baik,
             'item_bermasalah' => $awal->item_bermasalah,
-            'items' => $awal->items,
+            'items' => $this->itemsDenganFotoUrl($awal->items),
             'stok_solar' => $awal->stok_solar?->value,
             'stok_solar_label' => $awal->stok_solar?->label(),
             'foto_stok_solar' => $awal->foto_stok_solar,
@@ -429,7 +430,7 @@ class ArmadaController extends Controller
             'checklist_akhir_id' => $akhir->id,
             'kondisi_baik' => $akhir->kondisi_baik,
             'item_bermasalah' => $akhir->item_bermasalah,
-            'items' => $akhir->items,
+            'items' => $this->itemsDenganFotoUrl($akhir->items),
             'stok_solar' => $akhir->stok_solar?->value,
             'stok_solar_label' => $akhir->stok_solar?->label(),
             'foto_stok_solar' => $akhir->foto_stok_solar,
@@ -441,6 +442,22 @@ class ArmadaController extends Controller
             'hm_akhir' => $akhir->hm_akhir,
             'odo_anomali' => $akhir->odo_anomali,
         ];
+    }
+
+    /**
+     * Tambahkan foto_url untuk tiap item checklist (path "armada/...").
+     * Mapping bersifat aditif: key lama tidak diubah.
+     */
+    private function itemsDenganFotoUrl(?array $items): array
+    {
+        return collect($items ?? [])->map(function ($item) {
+            $foto = $item['foto'] ?? null;
+            $item['foto_url'] = (is_string($foto) && str_starts_with($foto, 'armada/'))
+                ? Storage::disk('public')->url($foto)
+                : null;
+
+            return $item;
+        })->all();
     }
 
     private function pengisianPayload(ArmadaPengisianSolar $p): array

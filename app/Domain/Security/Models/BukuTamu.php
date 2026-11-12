@@ -26,6 +26,7 @@ class BukuTamu extends Model
         'waktu_keluar',
         'catatan',
         'dicatat_oleh',
+        'titik_id',
     ];
 
     protected $casts = [

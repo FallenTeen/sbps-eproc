@@ -36,7 +36,8 @@ class PengajuanServisController extends Controller
      * Riwayat pengajuan servis armada (paginasi & filter status).
      *
      * Non-manajer hanya melihat ajuan miliknya sendiri atau untuk armada yang
-     * diampu (PIC/driver). Manajer melihat semua.
+     * diampu (PIC/driver). Role Workshop juga melihat ajuan berstatus
+     * disetujui/dikerjakan. Manajer melihat semua.
      */
     public function index(Request $request)
     {
@@ -48,9 +49,16 @@ class PengajuanServisController extends Controller
 
         if (! ArmadaOwnership::isManager($user)) {
             $heldIds = ArmadaOwnership::heldIds($user);
-            $query->where(function ($q) use ($user, $heldIds) {
-                $q->where('diajukan_oleh', $user->id)
-                    ->orWhereIn('armada_id', $heldIds);
+            $isWorkshop = $user->hasRole('Workshop');
+            $query->where(function ($q) use ($user, $heldIds, $isWorkshop) {
+                $q->where(function ($own) use ($user, $heldIds) {
+                    $own->where('diajukan_oleh', $user->id)
+                        ->orWhereIn('armada_id', $heldIds);
+                });
+
+                if ($isWorkshop) {
+                    $q->orWhereIn('status', ['disetujui', 'dikerjakan']);
+                }
             });
         }
 

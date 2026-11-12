@@ -47,7 +47,7 @@ beforeEach(function () {
 });
 
 test('foto item bermasalah diunggah sebagai file dan tersimpan', function () {
-    $this->withToken($this->token)
+    $response = $this->withToken($this->token)
         ->post('/api/mobile/armada/checklist/awal', [
             'armada_id' => $this->armada->id,
             'items' => [
@@ -71,6 +71,11 @@ test('foto item bermasalah diunggah sebagai file dan tersimpan', function () {
 
     expect($foto)->toStartWith('armada/checklist/');
     Storage::disk('public')->assertExists($foto);
+
+    $itemFotoUrl = collect($response->json('data.awal.items'))
+        ->firstWhere('bagian', 'Rem')['foto_url'];
+    expect($itemFotoUrl)->not->toBeNull();
+    expect($itemFotoUrl)->toContain('/storage/armada/checklist');
 });
 
 test('client baru (kirim file item) tanpa foto pada kondisi bermasalah ditolak 422', function () {

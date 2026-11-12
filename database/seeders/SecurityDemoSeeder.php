@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Core\Models\Titik;
+use App\Domain\HR\Models\KaryawanTitikAssignment;
 use App\Domain\Security\Models\BukuTamu;
 use App\Domain\Security\Models\SecurityChecklistRun;
 use App\Domain\Security\Models\SecurityChecklistRunItem;
 use App\Domain\Security\Models\SecurityChecklistTemplate;
 use App\Domain\Security\Models\SecurityLaporanDarurat;
 use App\Models\User;
+use App\Support\KaryawanTitikScope;
 use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
@@ -64,6 +67,29 @@ class SecurityDemoSeeder extends Seeder
         }
 
         $security = User::where('email', 'test.security@dummy.com')->first();
+
+        // ── titik_id (scoping F3) ─────────────────────────────────────
+        // Runtime menyimpan titik dari penugasan aktif karyawan saat submit
+        // (lihat SecurityController::titikAktifKaryawan). Seeder meniru
+        // logika yang sama; fallback ke Kantor Pusat agar data demo tetap
+        // punya titik meski user belum punya penugasan.
+        $activeIds = KaryawanTitikScope::activeTitikIds($security);
+        $titikId = $activeIds[0]
+            ?? Titik::where('nama', 'Kantor Pusat')->first()?->id;
+
+        // Bila belum ada penugasan aktif, buat satu agar submit runtime
+        // oleh test.security menyimpan titik yang sama dengan data demo
+        // dan demo scoping daftar (buku tamu / antrean) bisa dicoba.
+        if ($titikId !== null && $activeIds === [] && $security?->karyawan) {
+            KaryawanTitikAssignment::create([
+                'karyawan_id' => $security->karyawan->id,
+                'titik_id' => $titikId,
+                'tanggal_mulai' => now()->startOfMonth()->toDateString(),
+                'tanggal_selesai' => null,
+                'status' => 'aktif',
+            ]);
+        }
+
         $checklistExamples = [
             [
                 'template' => 'Demo - Checklist Keamanan Siang',
@@ -91,6 +117,7 @@ class SecurityDemoSeeder extends Seeder
                     'periode' => $template->periode,
                     'jam_pantau' => $example['jam_pantau'],
                     'security_id' => $security?->id,
+                    'titik_id' => $titikId,
                     'items' => $templateItems->map(fn ($item) => $item->teks)->all(),
                 ]
             );
@@ -107,7 +134,7 @@ class SecurityDemoSeeder extends Seeder
             }
         }
 
-        BukuTamu::firstOrCreate(
+        BukuTamu::updateOrCreate(
             ['nama' => '[DEMO] Budi Santoso', 'catatan' => 'DATA DEMO SECURITY'],
             [
                 'jumlah_orang' => 2,
@@ -118,6 +145,7 @@ class SecurityDemoSeeder extends Seeder
                 'waktu_masuk' => now()->subHours(2),
                 'waktu_keluar' => now()->subHour(),
                 'dicatat_oleh' => $security?->id,
+                'titik_id' => $titikId,
             ]
         );
 

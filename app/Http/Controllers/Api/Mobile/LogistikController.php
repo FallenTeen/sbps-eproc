@@ -8,6 +8,7 @@ use App\Domain\Fleet\Models\RitaseTimbang;
 use App\Domain\Fleet\Models\RitaseVerifikasi;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Support\KaryawanTitikScope;
 use Illuminate\Http\Request;
 
 class LogistikController extends Controller
@@ -20,7 +21,10 @@ class LogistikController extends Controller
      */
     public function antrean(Request $request)
     {
+        $titikIds = KaryawanTitikScope::activeTitikIds($request->user());
+
         $ritases = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik', 'muatan', 'verifikasiLogistik', 'timbang', 'driver'])
+            ->when($titikIds, fn ($q, $ids) => $q->whereIn('titik_id', $ids))
             ->where(function ($q) {
                 $q->where('wajib_jembatan_timbang', true)
                     ->orWhereDoesntHave('verifikasiLogistik')

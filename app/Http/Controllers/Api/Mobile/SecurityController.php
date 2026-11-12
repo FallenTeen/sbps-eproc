@@ -9,6 +9,7 @@ use App\Domain\Security\Models\SecurityChecklistRun;
 use App\Domain\Security\Models\SecurityLaporanDarurat;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Support\KaryawanTitikScope;
 use Illuminate\Http\Request;
 
 class SecurityController extends Controller
@@ -19,7 +20,12 @@ class SecurityController extends Controller
 
     public function bukuTamuHariIni(Request $request)
     {
+        $titikIds = KaryawanTitikScope::activeTitikIds($request->user());
+
         $tamus = BukuTamu::whereDate('waktu_masuk', now()->toDateString())
+            ->when($titikIds, fn ($q, $ids) => $q->where(
+                fn ($w) => $w->whereIn('titik_id', $ids)->orWhereNull('titik_id')
+            ))
             ->latest('waktu_masuk')
             ->get();
 
@@ -70,6 +76,7 @@ class SecurityController extends Controller
             'waktu_masuk' => now(),
             'catatan' => $validated['catatan'] ?? null,
             'dicatat_oleh' => $request->user()->id,
+            'titik_id' => $this->titikAktifKaryawan($request->user()),
         ]);
 
         return $this->success($tamu, 'Buku tamu berhasil dicatat.', 201);
@@ -111,6 +118,7 @@ class SecurityController extends Controller
             'items' => $items,
             'catatan' => $validated['catatan'] ?? null,
             'security_id' => $request->user()->id,
+            'titik_id' => $this->titikAktifKaryawan($request->user()),
         ]);
 
         if ($request->hasFile('foto')) {
@@ -210,11 +218,24 @@ class SecurityController extends Controller
         );
     }
 
+    /**
+     * Titik aktif karyawan user (via KaryawanTitikAssignment aktif), atau null.
+     */
+    private function titikAktifKaryawan(?object $user): ?string
+    {
+        $titikIds = KaryawanTitikScope::activeTitikIds($user);
+
+        return $titikIds[0] ?? null;
+    }
+
     // ── 4. Verifikasi Ritase Security (TD-E10, TD-F5) ────────────────────────
 
     public function antreanRitase(Request $request)
     {
+        $titikIds = KaryawanTitikScope::activeTitikIds($request->user());
+
         $ritases = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik', 'muatan', 'verifikasiLogistik', 'verifikasiSecurity', 'timbang'])
+            ->when($titikIds, fn ($q, $ids) => $q->whereIn('titik_id', $ids))
             ->where(function ($q) {
                 $q->whereHas('verifikasiLogistik', fn ($v) => $v->where('status', 'terverifikasi'))
                     ->orWhere('wajib_jembatan_timbang', true);

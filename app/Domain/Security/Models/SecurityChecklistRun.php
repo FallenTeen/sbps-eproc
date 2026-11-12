@@ -22,6 +22,7 @@ class SecurityChecklistRun extends Model implements HasMedia
         'items',
         'catatan',
         'security_id',
+        'titik_id',
     ];
 
     protected $casts = [
