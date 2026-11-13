@@ -199,6 +199,22 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/mobile/push-token
+     *
+     * Simpan token FCM terbaru (rotasi token oleh aplikasi mobile).
+     */
+    public function updatePushToken(Request $request)
+    {
+        $validated = $request->validate([
+            'device_token' => 'required|string|max:255',
+        ]);
+
+        $request->user()->forceFill(['device_token' => $validated['device_token']])->save();
+
+        return $this->success(['device_token' => $validated['device_token']], 'Push token berhasil diperbarui.');
+    }
+
+    /**
      * GET /api/mobile/assignments
      * Daftar titik yang ditugaskan ke user (karyawan terkait).
      * Filter: ?status=aktif (default) | semua

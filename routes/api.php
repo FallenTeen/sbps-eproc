@@ -46,6 +46,7 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
         Route::post('change-password', [AuthController::class, 'changePassword'])->name('change-password');
+        Route::post('push-token', [AuthController::class, 'updatePushToken'])->name('push-token');
 
         // Penugasan User
         Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
