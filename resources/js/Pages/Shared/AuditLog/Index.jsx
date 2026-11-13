@@ -1,8 +1,10 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DataTable from '@/Components/DataTable';
-import { Eye, Download } from 'lucide-react';
+import { ArrowDownToLine, ArrowRight } from 'lucide-react';
+import { formatTanggalWaktu } from '@/utils/date';
+import { getAuditActionLabel, getAuditSubjectLabel } from '@/utils/auditLog';
 
 export default function Index({ logs, modelTypes = [], filters, sort, direction }) {
     const handleExport = () => {
@@ -16,57 +18,66 @@ export default function Index({ logs, modelTypes = [], filters, sort, direction 
             updated: 'bg-blue-200 text-blue-800',
             deleted: 'bg-red-200 text-red-800',
         };
-        return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colors[action] || 'bg-gray-200 text-gray-800'}`}>{action}</span>;
+        return (
+            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${colors[action] || 'bg-gray-200 text-gray-800'}`}>
+                {getAuditActionLabel(action)}
+            </span>
+        );
     };
 
     const columns = [
         {
             key: 'created_at',
-            label: 'Waktu',
+            label: 'Tanggal dan waktu',
             type: 'dateRange',
-            render: (item) => new Date(item.created_at).toLocaleString('id-ID'),
+            render: (item) => formatTanggalWaktu(item.created_at),
         },
         {
             key: 'user',
-            label: 'User',
+            label: 'Dilakukan oleh',
             type: 'text',
-            render: (item) => item.causer?.name || 'System',
+            placeholder: 'Cari nama pengguna',
+            render: (item) => item.causer?.name || item.causer?.nama_lengkap || 'Sistem',
         },
         {
             key: 'model_type',
-            label: 'Model',
+            label: 'Bagian data',
             type: 'select',
-            options: modelTypes.map((m) => ({ value: m, label: m.split('\\').pop() })),
-            render: (item) => item.subject_type?.split('\\').pop() || '-',
+            options: modelTypes.map((type) => ({ value: type, label: getAuditSubjectLabel(type) })),
+            render: (item) => getAuditSubjectLabel(item.subject_type),
         },
         {
             key: 'event',
-            label: 'Aksi',
+            label: 'Perubahan',
             type: 'select',
             options: [
-                { value: 'created', label: 'Created' },
-                { value: 'updated', label: 'Updated' },
-                { value: 'deleted', label: 'Deleted' },
+                { value: 'created', label: 'Data dibuat' },
+                { value: 'updated', label: 'Data diubah' },
+                { value: 'deleted', label: 'Data dihapus' },
             ],
             render: (item) => getActionBadge(item.event),
         },
         {
             key: 'description',
-            label: 'Deskripsi',
+            label: 'Keterangan',
             type: 'text',
-            cellClassName: 'px-4 py-3 text-sm text-gray-600 max-w-xs truncate',
-            render: (item) => item.description || '-',
+            placeholder: 'Cari keterangan',
+            cellClassName: 'px-4 py-3 text-sm text-gray-700 max-w-sm',
+            render: (item) => item.description || `${getAuditActionLabel(item.event)} — ${getAuditSubjectLabel(item.subject_type)}`,
         },
         {
             key: 'detail',
-            label: 'Detail',
+            label: 'Rincian',
             search: false,
             sortable: false,
             align: 'right',
             cellClassName: 'px-4 py-3 text-right text-sm',
             render: (item) => (
-                <Link href={route('audit.logs.show', item.id)} className="text-blue-600 hover:text-blue-900">
-                    <Eye className="w-4 h-4" />
+                <Link
+                    href={route('audit.logs.show', item.id)}
+                    className="inline-flex items-center gap-1 font-semibold text-gray-900 hover:underline"
+                >
+                    Lihat perubahan <ArrowRight className="w-4 h-4" />
                 </Link>
             ),
         },
@@ -74,13 +85,24 @@ export default function Index({ logs, modelTypes = [], filters, sort, direction 
 
     return (
         <AuthenticatedLayout>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
+            <Head title="Riwayat Perubahan" />
+
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Riwayat Perubahan</h1>
+                    <p className="mt-1 max-w-2xl text-sm text-gray-600">
+                        Lihat siapa yang membuat, mengubah, atau menghapus data dan kapan hal itu terjadi.
+                        Buka rincian untuk melihat informasi yang dicatat pada setiap aktivitas.
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-gray-800" aria-live="polite">
+                        {Number(logs?.total || 0).toLocaleString('id-ID')} aktivitas tercatat
+                    </p>
+                </div>
                 <button
                     onClick={handleExport}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-1 text-sm font-semibold"
+                    className="inline-flex min-h-10 items-center justify-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 >
-                    <Download className="w-4 h-4" /> Export
+                    <ArrowDownToLine className="h-4 w-4" /> Unduh Excel
                 </button>
             </div>
 
@@ -91,6 +113,7 @@ export default function Index({ logs, modelTypes = [], filters, sort, direction 
                 filters={filters}
                 sort={sort}
                 direction={direction}
+                emptyMessage="Belum ada aktivitas yang cocok. Coba ubah kata pencarian atau rentang tanggal."
             />
         </AuthenticatedLayout>
     );

@@ -6,6 +6,7 @@ use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Domain\Core\Services\OwnerInsightsService;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
@@ -24,9 +25,12 @@ use App\Domain\Production\Models\Pengiriman;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
+
 use App\Models\User;
 use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\Cache;
+
 
 /**
  * Aggregator dashboard web (/dashboard).
@@ -40,6 +44,9 @@ use Spatie\Activitylog\Models\Activity;
  */
 class OwnerDashboardAggregatorService
 {
+    public function __construct(private OwnerInsightsService $insights)
+    {
+    }
     public function aggregate(?User $user = null): array
     {
         $user ??= auth()->user();
@@ -92,7 +99,7 @@ class OwnerDashboardAggregatorService
             $proyekQuery->whereIn('id', $visibleProyekIds);
         }
         $proyekList = $proyekQuery->get()
-            ->map(fn ($p) => [
+            ->map(fn($p) => [
                 'id' => $p->id,
                 'nama' => $p->nama,
                 'kode_proyek' => $p->kode_proyek,
@@ -108,23 +115,30 @@ class OwnerDashboardAggregatorService
         // 2. (summary_today dibangun oleh buildSummary() di bawah)
 
         // 3. RAB vs Realisasi Semua Proyek Aktif (Ringkas) - DISCALING ke user
-        $proyekAktif = Proyek::where('status', 'aktif')->with('rab');
-        if ($visibleProyekIds !== null) {
-            $proyekAktif->whereIn('id', $visibleProyekIds);
-        }
-        $proyekAktif = $proyekAktif->get();
+        $proyekAktif = Proyek::where('status', 'aktif')
+            ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('id', $visibleProyekIds))
+            ->with('rab')
+            ->get();
 
-        $totalRencanaRab = 0;
-        $totalRealisasiRab = 0;
-        $getRabAction = new GetRABRealisasiAction;
-
-        foreach ($proyekAktif as $proyek) {
-            foreach ($proyek->rab as $rabItem) {
-                $totalRencanaRab += (float) $rabItem->rencana;
-                $totalRealisasiRab += (float) $getRabAction->execute($rabItem);
+        // Realisasi RAB dihitung per item (berat), jadi di-cache 2 menit per user.
+        $rabPerProyek = Cache::remember('owner-dash:rab:' . ($user?->id ?? 0), 120, function () use ($proyekAktif) {
+            $action = new GetRABRealisasiAction;
+            $hasil = [];
+            foreach ($proyekAktif as $proyek) {
+                $rencana = 0.0;
+                $realisasi = 0.0;
+                foreach ($proyek->rab as $item) {
+                    $rencana += (float) $item->rencana;
+                    $realisasi += (float) $action->execute($item);
+                }
+                $hasil[$proyek->id] = ['rencana' => $rencana, 'realisasi' => $realisasi];
             }
-        }
 
+            return $hasil;
+        });
+
+        $totalRencanaRab = array_sum(array_column($rabPerProyek, 'rencana'));
+        $totalRealisasiRab = array_sum(array_column($rabPerProyek, 'realisasi'));
         $persentaseRab = $totalRencanaRab > 0 ? round(($totalRealisasiRab / $totalRencanaRab) * 100, 1) : 0;
 
         // 4. Grafik Tren 6 Bulan Terakhir (produksi & pengeluaran, difilter
@@ -143,6 +157,7 @@ class OwnerDashboardAggregatorService
             ],
             'tren_bulanan' => $trenBulanan,
             'widgets' => $this->buildWidgets($user, $visibleProyekIds, $visibleTitikIds),
+            'insights' => $this->insights->build($user, $visibleProyekIds, $visibleTitikIds, $rabPerProyek),
             'access' => [
                 'can_manage_users' => $this->can($user, ['manage role'], ['Owner', 'Admin Keuangan']),
                 'can_view_audit' => $user?->hasRole('Owner') ?? false,
@@ -176,18 +191,18 @@ class OwnerDashboardAggregatorService
                 : $query->whereIn('titik_id', $visibleTitikIds);
         };
 
-        // ── Procurement (PO pending) ────────────────────────────────
+        // ── Procurement (PO pending)
         if ($this->can($user, ['view procurement', 'approve procurement'])) {
             $summary['po_pending_approval'] = PurchaseOrder::query()
-                ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
-                ->WhereIn('status', ['menunggu_approval_finance', 'menunggu_approval_owner'])
+                ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+                ->whereIn('status', ['menunggu_approval_finance', 'menunggu_approval_owner'])
                 ->count();
         }
 
-        // ── Finance (kas, invoice, piutang) ─────────────────────────
+        // ── Finance (kas, invoice, piutang)
         if ($this->can($user, ['manage finance', 'view finance'])) {
             $summary['pengeluaran'] = (float) Pembayaran::query()
-                ->when($visibleProyekIds !== null, fn ($q) => $q->whereHas('purchaseOrder', fn ($po) => $po->whereIn('proyek_id', $visibleProyekIds)))
+                ->when($visibleProyekIds !== null, fn($q) => $q->whereHas('purchaseOrder', fn($po) => $po->whereIn('proyek_id', $visibleProyekIds)))
                 ->whereDate('created_at', $today)
                 ->sum('jumlah');
 
@@ -196,9 +211,7 @@ class OwnerDashboardAggregatorService
                 ->groupBy('akun_kas_bank_id')
                 ->pluck('saldo', 'akun_kas_bank_id');
 
-            $summary['saldo_kas'] = (float) AkunKasBank::aktif()
-                ->get()
-                ->sum(fn ($a) => (float) $a->saldo_awal + (float) ($saldoMutasi[$a->id] ?? 0));
+            $summary['saldo_kas'] = $this->insights->saldoKas($user);
 
             $invoiceQuery = Invoice::belumLunas()
                 ->withSum('items as total_tagihan', 'subtotal')
@@ -209,30 +222,34 @@ class OwnerDashboardAggregatorService
             }
 
             $summary['invoice_terbit'] = Invoice::query()
-                ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+                ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+                ->where('status', '!=', 'draft')
                 ->count();
 
             $summary['piutang_outstanding'] = $invoiceQuery->get()
-                ->sum(fn ($inv) => max(0, (float) $inv->total_tagihan) - max(0, (float) $inv->total_bayar));
+                ->sum(fn($inv) => max(0, (float) $inv->total_tagihan) - max(0, (float) $inv->total_bayar));
         }
 
-        // ── Fleet / Armada ──────────────────────────────────────────
+        // ── Fleet / Armada
         if ($this->can($user, ['manage fleet', 'view fleet'])) {
-            $summary['armada_aktif'] = Armada::where('status', 'aktif')->count();
-            $summary['ritase_today'] = Ritase::whereDate('tanggal', $today)->count();
-            $summary['unit_servis_jatuh_tempo'] = Armada::where('status', 'servis')->count();
-            $summary['downtime_aktif'] = DowntimeLog::aktif()->count();
+            $armadaIds = $user?->unit_bisnis_id ? Armada::byUnit($user->unit_bisnis_id)->pluck('id')->all() : null;
+            $byArmada = fn($q, $col = 'id') => $armadaIds === null ? $q : $q->whereIn($col, $armadaIds);
+
+            $summary['armada_aktif'] = $byArmada(Armada::where('status', 'aktif'))->count();
+            $summary['ritase_today'] = $byArmada(Ritase::whereDate('tanggal', $today), 'armada_id')->count();
+            $summary['unit_servis_jatuh_tempo'] = $this->insights->servisTerlambatCount($user);
+            $summary['downtime_aktif'] = $byArmada(DowntimeLog::aktif()->where('serviceable_type', Armada::class), 'serviceable_id')->count();
         }
 
-        // ── Produksi (output, mesin, QC, pengiriman) ────────────────
+        // ── Produksi (output, mesin, QC, pengiriman)
         if ($this->can($user, ['manage production', 'view production', 'manage production cbp', 'manage production amp'])) {
             $produksiQuery = $scopeTitik(ProductionSession::query());
             $pengirimanQuery = Pengiriman::query();
             $qcQuery = QCSample::query();
 
             if ($visibleTitikIds !== null) {
-                $pengirimanQuery->whereHas('session', fn ($q) => $q->whereIn('titik_id', $visibleTitikIds));
-                $qcQuery->whereHas('session', fn ($q) => $q->whereIn('titik_id', $visibleTitikIds));
+                $pengirimanQuery->whereHas('session', fn($q) => $q->whereIn('titik_id', $visibleTitikIds));
+                $qcQuery->whereHas('session', fn($q) => $q->whereIn('titik_id', $visibleTitikIds));
             }
 
             $summary['produksi_output'] = (float) $produksiQuery
@@ -249,7 +266,7 @@ class OwnerDashboardAggregatorService
                 ->count();
         }
 
-        // ── SDM / HR ────────────────────────────────────────────────
+        // ── SDM / HR
         if ($this->can($user, ['manage hr', 'view hr', 'manage payroll', 'view payroll'])) {
             $summary['total_karyawan'] = (int) Karyawan::where('status', 'aktif')->count();
             $summary['cuti_pending'] = (int) Cuti::diajukan()->count();
@@ -257,7 +274,7 @@ class OwnerDashboardAggregatorService
             $summary['payroll_periode'] = (int) GajiPeriode::byPeriode((int) now()->month, (int) now()->year)->count();
         }
 
-        // ── Manajemen User & Audit Log (terbatas) ───────────────────
+        // ── Manajemen User & Audit Log (terbatas)
         if ($this->can($user, ['manage role'], ['Owner', 'Admin Keuangan'])) {
             $summary['total_users'] = (int) User::count();
         }
@@ -266,22 +283,22 @@ class OwnerDashboardAggregatorService
             $summary['audit_log_count'] = (int) Activity::count();
         }
 
-        // ── Portal Kontraktor (scoped ke proyek miliknya) ───────────
+        // ── Portal Kontraktor (scoped ke proyek miliknya)
         if ($user?->hasRole('Kontraktor')) {
             $summary['proyek_aktif'] = $proyekList
                 ->where('status', 'aktif')
                 ->where('tipe_proyek', 'kontrak_klien')
                 ->count();
             $summary['invoice_count'] = (int) Invoice::query()
-                ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+                ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('proyek_id', $visibleProyekIds))
                 ->count();
             $summary['piutang_outstanding'] = $summary['piutang_outstanding']
                 ?? (Invoice::belumLunas()
-                    ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+                    ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('proyek_id', $visibleProyekIds))
                     ->withSum('items as total_tagihan', 'subtotal')
                     ->withSum('pembayaranKlien as total_bayar', 'jumlah')
                     ->get()
-                    ->sum(fn ($inv) => max(0, (float) $inv->total_tagihan) - max(0, (float) $inv->total_bayar)));
+                    ->sum(fn($inv) => max(0, (float) $inv->total_tagihan) - max(0, (float) $inv->total_bayar)));
         }
 
         return $summary;
@@ -292,34 +309,34 @@ class OwnerDashboardAggregatorService
      */
     protected function buildTrenBulanan(Carbon $today, ?User $user, ?array $visibleProyekIds, ?array $visibleTitikIds): array
     {
+        $awal = $today->copy()->startOfMonth()->subMonths(5);
+
+        $produksi = $this->can($user, ['manage production', 'view production', 'manage production cbp', 'manage production amp'])
+            ? ProductionSession::query()
+                ->when($visibleTitikIds !== null, fn($q) => $q->whereIn('titik_id', $visibleTitikIds))
+                ->where('mulai', '>=', $awal)
+                ->selectRaw('DATE_FORMAT(mulai, "%Y-%m") as ym, SUM(hasil_output) as v')
+                ->groupBy('ym')->pluck('v', 'ym')
+            : null;
+
+        $pengeluaran = $this->can($user, ['manage finance', 'view finance'])
+            ? Pembayaran::query()
+                ->when($visibleProyekIds !== null, fn($q) => $q->whereHas('purchaseOrder', fn($po) => $po->whereIn('proyek_id', $visibleProyekIds)))
+                ->where('created_at', '>=', $awal)
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as ym, SUM(jumlah) as v')
+                ->groupBy('ym')->pluck('v', 'ym')
+            : null;
+
         $tren = [];
-        $showProduksi = $this->can($user, ['manage production', 'view production', 'manage production cbp', 'manage production amp']);
-        $showFinance = $this->can($user, ['manage finance', 'view finance']);
-
         for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::today()->subMonths($i);
-            $label = $date->format('M Y');
-
-            $baris = ['bulan' => $label];
-
-            if ($showProduksi) {
-                $prod = ProductionSession::query()
-                    ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
-                    ->whereYear('mulai', $date->year)
-                    ->whereMonth('mulai', $date->month)
-                    ->sum('hasil_output');
-                $baris['produksi'] = (float) $prod;
+            $bulan = $today->copy()->startOfMonth()->subMonths($i);
+            $baris = ['bulan' => $bulan->format('M Y')];
+            if ($produksi !== null) {
+                $baris['produksi'] = (float) ($produksi[$bulan->format('Y-m')] ?? 0);
             }
-
-            if ($showFinance) {
-                $exp = Pembayaran::query()
-                    ->when($visibleProyekIds !== null, fn ($q) => $q->whereHas('purchaseOrder', fn ($po) => $po->whereIn('proyek_id', $visibleProyekIds)))
-                    ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->sum('jumlah');
-                $baris['pengeluaran'] = (float) $exp;
+            if ($pengeluaran !== null) {
+                $baris['pengeluaran'] = (float) ($pengeluaran[$bulan->format('Y-m')] ?? 0);
             }
-
             $tren[] = $baris;
         }
 
@@ -362,7 +379,7 @@ class OwnerDashboardAggregatorService
 
     protected function canSeeProyekInsights(?User $user): bool
     {
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
@@ -381,20 +398,20 @@ class OwnerDashboardAggregatorService
         $armadaScopeIds = $unitBisnisId ? Armada::byUnit($unitBisnisId)->pluck('id')->all() : null;
 
         $aktifList = Armada::with(['unitBisnis:id,nama', 'titik:id,nama', 'penanggungJawabs.karyawan:id,nama'])
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('id', $armadaScopeIds))
             ->aktif()
             ->orderBy('kode_unit')
             ->limit(6)
             ->get()
             ->map(function (Armada $a) {
                 $pic = $a->penanggungJawabs
-                    ->filter(fn ($pj) => $pj->sampai === null)
+                    ->filter(fn($pj) => $pj->sampai === null)
                     ->sortByDesc('mulai_dari')
-                    ->first(fn ($pj) => $pj->peran === 'utama');
+                    ->first(fn($pj) => $pj->peran === 'utama');
                 $pic = $pic ?: $a->penanggungJawabs
-                    ->filter(fn ($pj) => $pj->sampai === null)
+                    ->filter(fn($pj) => $pj->sampai === null)
                     ->sortByDesc('mulai_dari')
-                    ->first(fn ($pj) => $pj->peran === 'cadangan');
+                    ->first(fn($pj) => $pj->peran === 'cadangan');
 
                 return [
                     'id' => $a->id,
@@ -412,13 +429,13 @@ class OwnerDashboardAggregatorService
 
         // Servis jatuh tempo - heuristik sama dgn NotificationController (90 hari).
         $servisDue = Armada::query()
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('id', $armadaScopeIds))
             ->where('status', 'aktif')
-            ->whereNotNull('tanggal_servis_terakhir')
+            ->whereDate('tanggal_servis_terakhir', '<', Carbon::today()->subDays(90)->toDateString())
             ->orderBy('tanggal_servis_terakhir')
+            ->limit(6)
             ->get()
-            ->filter(fn ($a) => Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->startOfDay()->isBefore(Carbon::today()->startOfDay()))
-            ->take(6)
+            ->values()
             ->values()
             ->map(function ($a) use ($today) {
                 $tenggat = Carbon::parse($a->tanggal_servis_terakhir)->addDays(90)->startOfDay();
@@ -436,19 +453,19 @@ class OwnerDashboardAggregatorService
 
         $ritaseList = Ritase::with(['armada:id,kode_unit,plat_nomor', 'titik:id,nama', 'ruteTarif:id,lokasi_asal,lokasi_tujuan', 'proyek:id,nama', 'driver:id,nama'])
             ->whereDate('tanggal', $today)
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('armada_id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('armada_id', $armadaScopeIds))
             ->latest()
             ->limit(6)
             ->get()
             ->map(function ($r) {
                 $rute = $r->ruteTarif
-                    ? $r->ruteTarif->lokasi_asal.' → '.$r->ruteTarif->lokasi_tujuan
+                    ? $r->ruteTarif->lokasi_asal . ' → ' . $r->ruteTarif->lokasi_tujuan
                     : ($r->titik?->nama ?: ($r->proyek?->nama ?: $r->customer));
 
                 return [
                     'id' => $r->id,
                     'armada_id' => $r->armada_id,
-                    'armada' => trim(($r->armada?->kode_unit ?? '').' '.($r->armada?->plat_nomor ?? '')),
+                    'armada' => trim(($r->armada?->kode_unit ?? '') . ' ' . ($r->armada?->plat_nomor ?? '')),
                     'rute' => $rute,
                     'driver' => $r->driver?->nama,
                     'jumlah_rit' => (float) $r->jumlah_rit,
@@ -463,7 +480,7 @@ class OwnerDashboardAggregatorService
         $downtimeList = DowntimeLog::with(['serviceable:id,kode_unit,plat_nomor'])
             ->aktif()
             ->where('serviceable_type', Armada::class)
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
             ->latest('mulai')
             ->limit(6)
             ->get()
@@ -471,7 +488,7 @@ class OwnerDashboardAggregatorService
                 return [
                     'id' => $d->id,
                     'armada_id' => $d->serviceable_id,
-                    'armada' => trim(($d->serviceable?->kode_unit ?? '').' '.($d->serviceable?->plat_nomor ?? '')),
+                    'armada' => trim(($d->serviceable?->kode_unit ?? '') . ' ' . ($d->serviceable?->plat_nomor ?? '')),
                     'penyebab' => $d->penyebab,
                     'kategori' => $d->kategori,
                     'mulai' => $d->mulai?->toIso8601String(),
@@ -482,10 +499,10 @@ class OwnerDashboardAggregatorService
 
         $bbmById = BbmLog::where('serviceable_type', Armada::class)
             ->whereDate('tanggal', $today)
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('serviceable_id', $armadaScopeIds))
             ->get(['serviceable_id', 'liter', 'biaya'])
             ->groupBy('serviceable_id')
-            ->map(fn ($logs) => [
+            ->map(fn($logs) => [
                 'liter' => round((float) $logs->sum('liter'), 2),
                 'biaya' => (float) $logs->sum('biaya'),
             ]);
@@ -493,8 +510,8 @@ class OwnerDashboardAggregatorService
             ? Armada::whereIn('id', $bbmById->keys())->pluck('kode_unit', 'id')
             : collect();
         $bbmChart = $bbmById
-            ->map(fn ($agg, $armadaId) => [
-                'armada' => $bbmNames[$armadaId] ?? 'Unit '.substr((string) $armadaId, 0, 8),
+            ->map(fn($agg, $armadaId) => [
+                'armada' => $bbmNames[$armadaId] ?? 'Unit ' . substr((string) $armadaId, 0, 8),
                 'liter' => $agg['liter'],
                 'biaya' => $agg['biaya'],
             ])
@@ -504,15 +521,15 @@ class OwnerDashboardAggregatorService
             ->all();
 
         $statusDist = Armada::query()
-            ->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))
+            ->when($armadaScopeIds !== null, fn($q) => $q->whereIn('id', $armadaScopeIds))
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
             ->get()
-            ->map(fn ($row) => ['status' => $row->status, 'total' => (int) $row->total])
+            ->map(fn($row) => ['status' => $row->status, 'total' => (int) $row->total])
             ->all();
 
         return [
-            'total_armada' => (int) Armada::query()->when($armadaScopeIds !== null, fn ($q) => $q->whereIn('id', $armadaScopeIds))->count(),
+            'total_armada' => (int) Armada::query()->when($armadaScopeIds !== null, fn($q) => $q->whereIn('id', $armadaScopeIds))->count(),
             'aktif_list' => $aktifList,
             'servis_due_list' => $servisDue,
             'ritase_today_list' => $ritaseList,
@@ -534,7 +551,7 @@ class OwnerDashboardAggregatorService
         ];
 
         return PurchaseOrder::with(['proyek:id,nama,kode_proyek', 'supplier:id,nama'])
-            ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('proyek_id', $visibleProyekIds))
+            ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('proyek_id', $visibleProyekIds))
             ->whereIn('status', ['menunggu_approval_finance', 'menunggu_approval_owner'])
             ->orderByDesc('created_at')
             ->limit(5)
@@ -559,14 +576,15 @@ class OwnerDashboardAggregatorService
     protected function buildUnitSummary(?User $user, ?array $visibleProyekIds): array
     {
         $unitBisnisId = $user?->unit_bisnis_id;
-        $units = UnitBisnis::when($unitBisnisId, fn ($q) => $q->where('id', $unitBisnisId))
+        $units = UnitBisnis::when($unitBisnisId, fn($q) => $q->where('id', $unitBisnisId))
             ->orderBy('nama')
             ->get(['id', 'nama']);
 
         return $units
             ->map(function (UnitBisnis $u) use ($visibleProyekIds) {
                 $proyekIds = Proyek::where('unit_bisnis_id', $u->id)
-                    ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('id', $visibleProyekIds))
+                    ->where('status', 'aktif')
+                    ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('id', $visibleProyekIds))
                     ->pluck('id');
 
                 return [
@@ -586,7 +604,7 @@ class OwnerDashboardAggregatorService
         $today = Carbon::today()->startOfDay();
 
         return Proyek::with('unitBisnis:id,nama')
-            ->when($visibleProyekIds !== null, fn ($q) => $q->whereIn('id', $visibleProyekIds))
+            ->when($visibleProyekIds !== null, fn($q) => $q->whereIn('id', $visibleProyekIds))
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_selesai_rencana')
             ->whereDate('tanggal_selesai_rencana', '>=', $today->format('Y-m-d'))
@@ -616,12 +634,13 @@ class OwnerDashboardAggregatorService
             ->latest()
             ->limit(5)
             ->get()
-            ->map(fn ($log) => [
+            ->map(fn($log) => [
                 'id' => $log->id,
                 'description' => $log->description,
+                'subject_type' => $log->subject_type,
                 'causer' => $log->causer?->nama_lengkap ?? $log->causer?->name,
                 'event' => $log->event,
-                'created_at' => $log->created_at?->diffForHumans(),
+                'created_at' => $log->created_at?->locale('id')->diffForHumans(),
             ])
             ->all();
     }
@@ -635,12 +654,12 @@ class OwnerDashboardAggregatorService
         $today = Carbon::today();
 
         $sesiList = ProductionSession::with(['produk:id,nama,satuan_output', 'mesin:id,nama', 'titik:id,nama'])
-            ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+            ->when($visibleTitikIds !== null, fn($q) => $q->whereIn('titik_id', $visibleTitikIds))
             ->berjalan()
             ->latest('mulai')
             ->limit(5)
             ->get()
-            ->map(fn ($s) => [
+            ->map(fn($s) => [
                 'id' => $s->id,
                 'produk' => $s->produk?->nama,
                 'mesin' => $s->mesin?->nama,
@@ -653,11 +672,11 @@ class OwnerDashboardAggregatorService
         $qcList = QCSample::with(['session:id,titik_id,produk_id,mulai', 'session.produk:id,nama', 'session.titik:id,nama'])
             ->where('jenis_uji', 'uji_tekan')
             ->whereNull('hasil_uji_tekan')
-            ->when($visibleTitikIds !== null, fn ($q) => $q->whereHas('session', fn ($s) => $s->whereIn('titik_id', $visibleTitikIds)))
+            ->when($visibleTitikIds !== null, fn($q) => $q->whereHas('session', fn($s) => $s->whereIn('titik_id', $visibleTitikIds)))
             ->latest()
             ->limit(5)
             ->get()
-            ->map(fn ($q) => [
+            ->map(fn($q) => [
                 'id' => $q->id,
                 'session_id' => $q->production_session_id,
                 'produk' => $q->session?->produk?->nama,
@@ -669,16 +688,16 @@ class OwnerDashboardAggregatorService
 
         $pengirimanList = Pengiriman::with(['session.produk:id,nama', 'session.titik:id,nama', 'armada:id,kode_unit,plat_nomor', 'driver:id,nama'])
             ->whereDate('waktu_muat', $today)
-            ->when($visibleTitikIds !== null, fn ($q) => $q->whereHas('session', fn ($s) => $s->whereIn('titik_id', $visibleTitikIds)))
+            ->when($visibleTitikIds !== null, fn($q) => $q->whereHas('session', fn($s) => $s->whereIn('titik_id', $visibleTitikIds)))
             ->latest('waktu_muat')
             ->limit(5)
             ->get()
-            ->map(fn ($p) => [
+            ->map(fn($p) => [
                 'id' => $p->id,
                 'produk' => $p->session?->produk?->nama,
                 'titik' => $p->session?->titik?->nama,
                 'tujuan' => $p->tujuan_alamat,
-                'armada' => trim(($p->armada?->kode_unit ?? '').' '.($p->armada?->plat_nomor ?? '')),
+                'armada' => trim(($p->armada?->kode_unit ?? '') . ' ' . ($p->armada?->plat_nomor ?? '')),
                 'driver' => $p->driver?->nama,
                 'status' => $p->status,
                 'waktu_muat' => $p->waktu_muat?->toIso8601String(),
@@ -686,7 +705,7 @@ class OwnerDashboardAggregatorService
             ->all();
 
         $outputByProduk = ProductionSession::query()
-            ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+            ->when($visibleTitikIds !== null, fn($q) => $q->whereIn('titik_id', $visibleTitikIds))
             ->whereDate('mulai', $today)
             ->selectRaw('produk_id, SUM(hasil_output) as total')
             ->groupBy('produk_id')
@@ -715,7 +734,7 @@ class OwnerDashboardAggregatorService
             $trenHari[] = [
                 'tanggal' => $date->format('Y-m-d'),
                 'output' => (float) ProductionSession::query()
-                    ->when($visibleTitikIds !== null, fn ($q) => $q->whereIn('titik_id', $visibleTitikIds))
+                    ->when($visibleTitikIds !== null, fn($q) => $q->whereIn('titik_id', $visibleTitikIds))
                     ->whereDate('mulai', $date)
                     ->sum('hasil_output'),
             ];
@@ -735,7 +754,7 @@ class OwnerDashboardAggregatorService
      */
     protected function can(?User $user, array $permissions, array $roles = []): bool
     {
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 

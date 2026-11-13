@@ -245,6 +245,7 @@ test('owner menerima widget admin: PO pending, unit summary, audit & deadline', 
 
 test('unit summary berisi volume per unit bisnis (proyek/titik/armada) dengan total konsisten', function () {
     Armada::factory()->for($this->unit)->create();
+    Proyek::factory()->for($this->unit)->create(['status' => 'selesai']);
 
     $response = $this->actingAs($this->owner)
         ->get(route('dashboard'))
@@ -254,6 +255,7 @@ test('unit summary berisi volume per unit bisnis (proyek/titik/armada) dengan to
     $unitSummary = $assert->toArray()['props']['ownerData']['widgets']['admin']['unit_summary'] ?? [];
 
     expect(count($unitSummary))->toBe(2);
+    expect($unitSummary[0])->toHaveKey('pengguna');
 
     // Unit pertama 3 proyek (milik+orang+internal), unit kedua 1 proyek.
     $byProyek = collect($unitSummary)

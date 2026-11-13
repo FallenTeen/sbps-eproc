@@ -229,6 +229,7 @@ function ColumnFilter({ column, value, onApply }) {
     if (type === "select") {
         return (
             <select
+                aria-label={`Saring berdasarkan ${column.label}`}
                 value={value ?? ""}
                 onChange={(e) => onApply(e.target.value)}
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
@@ -249,12 +250,14 @@ function ColumnFilter({ column, value, onApply }) {
             <div className="flex gap-1">
                 <input
                     type="date"
+                    aria-label={`Tanggal mulai untuk ${column.label}`}
                     value={range.from ?? ""}
                     onChange={(e) => onApply({ from: e.target.value, to: range.to ?? "" })}
                     className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                     type="date"
+                    aria-label={`Tanggal akhir untuk ${column.label}`}
                     value={range.to ?? ""}
                     onChange={(e) => onApply({ from: range.from ?? "", to: e.target.value })}
                     className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-blue-500 focus:border-blue-500"
@@ -264,11 +267,16 @@ function ColumnFilter({ column, value, onApply }) {
     }
 
     return (
-        <TextFilter value={value ?? ""} onApply={onApply} placeholder={column.placeholder ?? "Cari..."} />
+        <TextFilter
+            value={value ?? ""}
+            onApply={onApply}
+            placeholder={column.placeholder ?? "Cari..."}
+            ariaLabel={`Cari ${column.label}`}
+        />
     );
 }
 
-function TextFilter({ value, onApply, placeholder }) {
+function TextFilter({ value, onApply, placeholder, ariaLabel }) {
     const [local, setLocal] = useState(value);
     const debounced = useDebouncedValue(local, 450);
     const isFirst = useRef(true);
@@ -292,6 +300,7 @@ function TextFilter({ value, onApply, placeholder }) {
     return (
         <input
             type="text"
+            aria-label={ariaLabel}
             value={local}
             onChange={(e) => setLocal(e.target.value)}
             placeholder={placeholder}

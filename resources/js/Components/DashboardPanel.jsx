@@ -38,32 +38,30 @@ export default function DashboardPanel({
     const color = accentMap[accent] || accentMap.indigo;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col">
+        <section className="flex flex-col self-start border border-gray-300 bg-white p-5">
             <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-3">
-                    <span className={`p-2 rounded-lg ${accentMap[accent]?.badge || accentMap.indigo.badge}`}>
-                        <Icon className="w-5 h-5" />
-                    </span>
+                <div className="flex min-w-0 items-start gap-3">
+                    {Icon && <Icon aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" />}
                     <div>
-                        <h4 className={`font-semibold text-gray-900 leading-tight ${color.header}`}>{title}</h4>
-                        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+                        <h2 className="font-semibold leading-tight text-gray-900">{title}</h2>
+                        {subtitle && <p className="mt-1 text-sm leading-5 text-gray-600">{subtitle}</p>}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    {badge != null && badge !== 0 && badge !== '' && (
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${color.badge}`}>{badge}</span>
+                    {badge != null && badge !== '' && (
+                        <span className={`px-2.5 py-1 text-sm font-semibold ${color.badge}`}>{badge}</span>
                     )}
                     {href && (
                         <Link
                             href={href}
-                            className={`text-xs font-semibold inline-flex items-center gap-1 hover:underline ${color.header}`}
+                            className="inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-gray-900 hover:underline focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                         >
-                            {hrefLabel} <ArrowRight className="w-3.5 h-3.5" />
+                            {hrefLabel} <ArrowRight aria-hidden="true" className="h-4 w-4" />
                         </Link>
                     )}
                 </div>
             </div>
             <div className="flex-1 min-h-0">{children}</div>
-        </div>
+        </section>
     );
 }
