@@ -624,13 +624,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 });
-
-// ============================================================
-// REKAP PENGELUARAN PUBLIK (TD-D3, TANPA LOGIN - password
-// sederhana via session). Bisa diakses siapa pun; pengguna
-// login juga boleh buka. Halaman lama /rekap-publik dihapus,
-// semua URL lama dialihkan 301 (TD-D3).
-// ============================================================
 Route::get('rekap-publik/{any?}', function (Request $request) {
     return redirect()->to(route('rekap-pengeluaran-publik.index', $request->query()), 301);
 })->where('any', '.*');
@@ -650,6 +643,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/portal', [PortalController::class, 'index'])->name('portal');
     Route::get('/login/{portal}', [PortalController::class, 'login'])->name('portal.login');
     Route::post('/login/{portal}', [PortalController::class, 'store'])->name('portal.login.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/portal-pilih', [PortalController::class, 'pilihIndex'])->name('portal.pilih.index');
+    Route::post('/portal-pilih/{portal}', [PortalController::class, 'pilih'])->name('portal.pilih');
 });
 
 // Auth routes (disediakan oleh Breeze)
