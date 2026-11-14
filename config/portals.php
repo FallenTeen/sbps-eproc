@@ -16,23 +16,23 @@ return [
 
         'admin' => [
             'name' => 'Admin',
-            'description' => 'Manajemen sistem, user, procurement, audit log, dan pengaturan global.',
+            'description' => 'Kelola pengguna, pengadaan, pengaturan sistem, dan keamanan kantor.',
             'icon' => 'Shield',
             'color' => 'red',
-            'roles' => ['Owner', 'Koordinator Procurement', 'Inventory', 'Logistik', 'Workshop'],
+            'roles' => ['Owner', 'Koordinator Procurement', 'Inventory', 'Logistik', 'Workshop', 'Security'],
         ],
 
         'armada' => [
             'name' => 'Armada',
-            'description' => 'Manajemen kendaraan, ritase harian, BBM, checklist, dan sewa alat.',
+            'description' => 'Kelola kendaraan, ritase harian, BBM, dan sewa alat.',
             'icon' => 'Truck',
             'color' => 'blue',
-            'roles' => ['Koordinator GCS', 'Ketua Divisi Armada'],
+            'roles' => ['Koordinator GCS', 'Ketua Divisi Armada', 'Kepala Divisi Armada', 'Ketua Armada'],
         ],
 
         'produksi' => [
             'name' => 'Produksi',
-            'description' => 'Dashboard produksi CBP/AMP, mesin, sesi, QC, pengiriman, RAB, dan kontraktor.',
+            'description' => 'Pantau produksi CBP/AMP, pengiriman, RAB, dan kontraktor.',
             'icon' => 'Factory',
             'color' => 'green',
             'roles' => [
@@ -47,7 +47,7 @@ return [
 
         'keuangan' => [
             'name' => 'Keuangan',
-            'description' => 'Kas & bank, invoice, piutang, laporan keuangan, dan approval procurement.',
+            'description' => 'Kelola kas, bank, invoice, piutang, dan persetujuan pengadaan.',
             'icon' => 'Wallet',
             'color' => 'amber',
             'roles' => ['Admin Keuangan', 'Ketua Divisi Keuangan', 'Ketua Divisi Finance'],
@@ -55,7 +55,7 @@ return [
 
         'sdm' => [
             'name' => 'SDM',
-            'description' => 'Data karyawan, pengajuan cuti, payroll, presensi, dan formulir lapangan.',
+            'description' => 'Kelola data karyawan, cuti, gaji, dan presensi.',
             'icon' => 'Users',
             'color' => 'purple',
             'roles' => ['Koordinator SDM'],
@@ -63,7 +63,7 @@ return [
 
         'kontraktor' => [
             'name' => 'Kontraktor',
-            'description' => 'Portal klien - proyek kontrak, progress produksi, invoice, dan komunikasi.',
+            'description' => 'Pantau proyek, progres produksi, dan invoice Anda.',
             'icon' => 'ClipboardList',
             'color' => 'teal',
             'roles' => ['Kontraktor'],

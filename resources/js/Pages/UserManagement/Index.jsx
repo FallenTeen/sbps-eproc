@@ -16,6 +16,7 @@ export default function Index({ users, roles, filters, sort, direction }) {
         const colors = {
             // Portal Admin / Owner (Merah)
             Owner: "bg-red-600 text-white",
+            Security: "bg-red-600 text-white",
 
             // Portal Keuangan (Kuning / Amber)
             "Admin Keuangan": "bg-amber-500 text-white",
@@ -27,6 +28,7 @@ export default function Index({ users, roles, filters, sort, direction }) {
 
             // Portal Armada (Biru)
             "Ketua Divisi Armada": "bg-blue-600 text-white",
+            "Kepala Divisi Armada": "bg-blue-600 text-white",
             "Ketua Armada": "bg-blue-600 text-white",
             "Driver Armada": "bg-blue-600 text-white",
             "Driver Kondisional": "bg-blue-600 text-white",
