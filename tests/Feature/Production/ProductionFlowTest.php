@@ -191,8 +191,13 @@ class ProductionFlowTest extends TestCase
             'status' => 'selesai',
             'hasil_output' => 10,
         ]);
+        $this->assertNotEmpty($session->kode_sesi);
 
-        $response = $this->actingAs($this->user)->post(route('production.qc.store'), [
+        $this->actingAs($this->user)
+            ->get(route('production.qc.create'))
+            ->assertOk();
+
+        $response = $this->post(route('production.qc.store'), [
             'production_session_id' => $session->id,
             'jenis_uji' => 'uji_tekan',
             'umur_uji' => 28,

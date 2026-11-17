@@ -8,6 +8,7 @@ use App\Domain\HR\Models\Karyawan;
 use App\Domain\Procurement\Models\StokMutasi;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class ProductionSession extends Model
 {
@@ -16,6 +17,7 @@ class ProductionSession extends Model
     protected $table = 'production_sessions';
 
     protected $fillable = [
+        'kode_sesi',
         'mesin_id',
         'titik_id',
         'produk_id',
@@ -27,6 +29,15 @@ class ProductionSession extends Model
         'status',
         'catatan',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $session): void {
+            if (blank($session->kode_sesi)) {
+                $session->kode_sesi = 'SPS-'.strtoupper((string) Str::uuid());
+            }
+        });
+    }
 
     protected $casts = [
         'mulai' => 'datetime',
