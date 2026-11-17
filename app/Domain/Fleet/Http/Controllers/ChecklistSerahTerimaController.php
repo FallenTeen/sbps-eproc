@@ -58,13 +58,19 @@ class ChecklistSerahTerimaController extends Controller
             'items.*.item' => 'required|string|max:255',
             'items.*.kondisi' => ['required', Rule::in(['baik', 'rusak'])],
             'items.*.catatan' => 'nullable|string|max:1000',
+            'existing_fotos' => 'nullable|array|max:6',
+            'existing_fotos.*' => 'string|max:500',
             'foto_kondisi' => 'nullable|array|max:6',
             'foto_kondisi.*' => 'image|mimes:jpeg,png,jpg|max:4096',
         ]);
 
-        $fotoPaths = [];
+        $fotoPaths = collect($validated['existing_fotos'] ?? [])
+            ->filter(fn($path) => is_string($path) && str_starts_with($path, 'armada/serah-terima/'))
+            ->values()
+            ->all();
+
         foreach ($request->file('foto_kondisi', []) as $foto) {
-            if ($foto) {
+            if ($foto && count($fotoPaths) < 6) {
                 $fotoPaths[] = $foto->store('armada/serah-terima', 'public');
             }
         }
@@ -78,7 +84,7 @@ class ChecklistSerahTerimaController extends Controller
             'foto_kondisi' => $fotoPaths,
         ], $request->user());
 
-        return back()->with('success', 'Checklist '.$validated['tipe'].' berhasil disimpan.');
+        return back()->with('success', 'Checklist ' . $validated['tipe'] . ' berhasil disimpan.');
     }
 
     public function print(Request $request, SewaAlatJam $sewaAlat)
@@ -87,6 +93,6 @@ class ChecklistSerahTerimaController extends Controller
 
         $pdf = app(GenerateChecklistSerahTerimaPdfAction::class)->execute($sewaAlat);
 
-        return $pdf->stream('checklist-serah-terima-'.$sewaAlat->armada->kode_unit.'-'.$sewaAlat->tanggal->format('Ymd').'.pdf');
+        return $pdf->stream('checklist-serah-terima-' . $sewaAlat->armada->kode_unit . '-' . $sewaAlat->tanggal->format('Ymd') . '.pdf');
     }
 }
