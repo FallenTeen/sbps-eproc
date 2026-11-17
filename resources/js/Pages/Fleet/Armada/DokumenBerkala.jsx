@@ -16,7 +16,6 @@ import {
     CheckCircle2,
     ExternalLink,
     Filter,
-    Checkbox,
 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
 
