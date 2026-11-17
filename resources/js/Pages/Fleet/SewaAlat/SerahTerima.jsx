@@ -1,327 +1,876 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, usePage, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Plus, Calendar, CheckCircle, Trash, Printer, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Head, Link, usePage, router } from "@inertiajs/react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import {
+    Plus,
+    Edit,
+    Calendar,
+    CheckCircle2,
+    Printer,
+    X,
+    Truck,
+    User,
+    Gauge,
+    Clock,
+    FileText,
+    Camera,
+    AlertCircle,
+    Building,
+    ArrowLeft,
+} from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
-const STATUS_COLOR = {
-    baik:   'bg-green-100 text-green-800',
-    rusak:  'bg-red-100 text-red-800',
+const STATUS_BADGE = {
+    baik: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    rusak: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-function StatCard({ label, value, sub, color = 'blue' }) {
-    const colors = {
-        blue:   'from-blue-600 to-blue-700',
-        green:  'from-green-600 to-green-700',
-        amber:  'from-amber-500 to-amber-700',
-        purple: 'from-purple-600 to-purple-700',
+const formatInputDate = (tanggal) => {
+    const pad = (n) => String(n).padStart(2, "0");
+    const formatLocal = (d) =>
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (!tanggal) return formatLocal(new Date());
+
+    if (
+        typeof tanggal === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(tanggal.trim())
+    ) {
+        return tanggal.trim();
+    }
+
+    const date = tanggal.toDate ? tanggal.toDate() : new Date(tanggal);
+    if (isNaN(date.getTime())) return formatLocal(new Date());
+
+    return formatLocal(date);
+};
+
+function InfoCard({ label, value, sub, icon: Icon, accent = "blue" }) {
+    const accents = {
+        blue: "bg-blue-50 text-blue-600 border-blue-100",
+        emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+        amber: "bg-amber-50 text-amber-600 border-amber-100",
+        purple: "bg-purple-50 text-purple-600 border-purple-100",
+        slate: "bg-slate-100 text-slate-600 border-slate-200",
     };
+
     return (
-        <div className={`rounded-xl bg-gradient-to-br ${colors[color]} text-white p-4 shadow-md text-sm`}
-            style={{ maxWidth: '200px' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{label}</p>
-            <p className="text-xl font-bold mt-1">{value}</p>
-            {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
+        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-start justify-between gap-3">
+            <div className="min-w-0">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    {label}
+                </p>
+                <p
+                    className="text-lg font-bold text-slate-800 mt-1 truncate"
+                    title={String(value)}
+                >
+                    {value}
+                </p>
+                {sub && (
+                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                        {sub}
+                    </p>
+                )}
+            </div>
+            {Icon && (
+                <div
+                    className={`p-2.5 rounded-lg border shrink-0 ${accents[accent]}`}
+                >
+                    <Icon className="w-4 h-4" />
+                </div>
+            )}
         </div>
     );
 }
 
-export default function SewaAlatSerahTerima({ auth, sewa, berangkat, kembali, pemakaian, defaultItems, can }) {
+function ChecklistSection({ title, tipe, data, pemakaian, onOpenModal }) {
+    const isBerangkat = tipe === "berangkat";
+    const badgeColor = isBerangkat
+        ? "bg-blue-50 text-blue-700 border-blue-200"
+        : "bg-indigo-50 text-indigo-700 border-indigo-200";
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+            {/* Card Header */}
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                    <span
+                        className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${badgeColor}`}
+                    >
+                        {isBerangkat ? "01" : "02"}
+                    </span>
+                    <h2 className="text-base font-bold text-slate-800">
+                        {title}
+                    </h2>
+                </div>
+
+                {data && (
+                    <button
+                        type="button"
+                        onClick={() => onOpenModal(tipe)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-blue-600 transition shadow-xs"
+                    >
+                        <Edit className="w-3.5 h-3.5" /> Edit Data
+                    </button>
+                )}
+            </div>
+
+            {/* Card Body */}
+            <div className="p-6 flex-1 flex flex-col">
+                {data ? (
+                    <div className="space-y-6 flex-1">
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/70 p-4 rounded-xl border border-slate-100">
+                            <div>
+                                <span className="text-xs text-slate-400 block">
+                                    Tanggal Serah Terima
+                                </span>
+                                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mt-0.5">
+                                    <Calendar className="w-3.5 h-3.5 text-green-400" />
+                                    {formatTanggal(data.tanggal)}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-xs text-slate-400 block">
+                                    Odometer / Hour Meter
+                                </span>
+                                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mt-0.5">
+                                    <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                                    {data.odo_atau_hm ?? "-"} HM
+                                    {!isBerangkat && pemakaian > 0 && (
+                                        <span className="ml-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                            +
+                                            {pemakaian.toLocaleString("id-ID", {
+                                                minimumFractionDigits: 1,
+                                                maximumFractionDigits: 1,
+                                            })}{" "}
+                                            HM
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-xs text-slate-400 block">
+                                    Penyewa / Perusahaan
+                                </span>
+                                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mt-0.5">
+                                    <Building className="w-3.5 h-3.5 text-blue-400" />
+                                    {data?.data_penyewa?.nama ?? "-"}{" "}
+                                    {data?.data_penyewa?.pt
+                                        ? ` (${data.data_penyewa.pt})`
+                                        : ""}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-xs text-slate-400 block">
+                                    Dicatat / Ditandatangani
+                                </span>
+                                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mt-0.5">
+                                    <User className="w-3.5 h-3.5 text-purple-400" />
+                                    {data?.dicatatOleh?.name ??
+                                        data?.ditandatangani_oleh ??
+                                        "-"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Catatan */}
+                        {data?.catatan && (
+                            <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-3.5">
+                                <span className="text-xs font-semibold text-amber-800 flex items-center gap-1.5 mb-1">
+                                    <FileText className="w-3.5 h-3.5" /> Catatan
+                                    Tambahan
+                                </span>
+                                <p className="text-sm text-slate-700 leading-relaxed">
+                                    {data.catatan}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Daftar Item Checklist */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    Rincian Pengecekan (
+                                    {data?.details?.length ?? 0} Item)
+                                </h3>
+                            </div>
+                            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+                                {data?.details?.length > 0 ? (
+                                    data.details.map((detail, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="px-3.5 py-2.5 flex items-center justify-between gap-3 text-sm bg-white hover:bg-slate-50/60"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-slate-700 truncate">
+                                                    {detail.item}
+                                                </p>
+                                                {detail.catatan && (
+                                                    <p className="text-xs text-slate-400 truncate mt-0.5">
+                                                        {detail.catatan}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <span
+                                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize shrink-0 ${STATUS_BADGE[detail.kondisi] ?? "bg-slate-100 text-slate-600"}`}
+                                            >
+                                                {detail.kondisi}
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="p-4 text-xs text-slate-400 text-center">
+                                        Tidak ada rincian item.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Lampiran Foto */}
+                        {data?.foto_kondisi?.length > 0 && (
+                            <div>
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                                    <Camera className="w-3.5 h-3.5" /> Lampiran
+                                    Foto ({data.foto_kondisi.length})
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {data.foto_kondisi.map((foto, idx) => {
+                                        const fotoPath =
+                                            typeof foto === "string"
+                                                ? foto
+                                                : (foto.path ?? foto.url ?? "");
+                                        const storagePath = fotoPath.replace(
+                                            /^(public\/|storage\/)/,
+                                            "",
+                                        );
+                                        const fotoUrl = /^https?:\/\//i.test(
+                                            fotoPath,
+                                        )
+                                            ? fotoPath
+                                            : `/storage/${storagePath}`;
+
+                                        return (
+                                            <a
+                                                key={idx}
+                                                href={fotoUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center justify-center rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:bg-slate-200 transition"
+                                            >
+                                                <img
+                                                    src={fotoUrl}
+                                                    alt={`Foto ${idx + 1}`}
+                                                    className="w-12 h-12 object-cover block"
+                                                />
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* Empty State */
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-10 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/40">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                            <AlertCircle className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700">
+                            Belum ada data checklist {tipe}
+                        </p>
+                        <p className="text-xs text-slate-400 max-w-xs mt-1 mb-4">
+                            Lengkapi formulir pengecekan kondisi unit sebelum
+                            atau sesudah masa sewa berlangsung.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => onOpenModal(tipe)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" /> Isi Checklist {title}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function SewaAlatSerahTerima({
+    auth,
+    sewa,
+    berangkat,
+    kembali,
+    pemakaian,
+    defaultItems,
+    can,
+}) {
     const { flash } = usePage().props;
     const [showFlash, setShowFlash] = useState(!!flash?.success);
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalTipe, setModalTipe] = useState('berangkat');
-    const [formOdo, setFormOdo] = useState('');
-    const [formTanggal, setFormTanggal] = useState(new Date().toISOString().split('T')[0]);
-    const [formCatatan, setFormCatatan] = useState('');
-    const [formDitandatangani, setFormDitandatangani] = useState('');
+    const [modalTipe, setModalTipe] = useState("berangkat");
+    const [processing, setProcessing] = useState(false);
+
+    const [formOdo, setFormOdo] = useState("");
+    const [formTanggal, setFormTanggal] = useState(() => formatInputDate());
+    const [formCatatan, setFormCatatan] = useState("");
+    const [formDitandatangani, setFormDitandatangani] = useState("");
     const [formItems, setFormItems] = useState([]);
     const [formFoto, setFormFoto] = useState([]);
+    const [existingFotos, setExistingFotos] = useState([]);
 
     useEffect(() => {
-        if (modalTipe === 'berangkat' && berangkat) {
-            setFormOdo(berangkat.odo_atau_hm ?? '');
-            setFormTanggal(berangkat.tanggal?.format('YYYY-MM-DD') ?? new Date().toISOString().split('T')[0]);
-            setFormCatatan(berangkat?.catatan ?? '');
-            setFormDitandatangani(berangkat?.ditandatangani_oleh?.name ?? '');
-            setFormItems(berangkat?.details?.map(d => ({ item: d.item, kondisi: d.kondisi, catatan: d.catatan })) ?? []);
-            setFormFoto(berangkat?.foto_kondisi ?? []);
-        } else if (modalTipe === 'kembali' && kembali) {
-            setFormOdo(kembali.odo_atau_hm ?? '');
-            setFormTanggal(kembali.tanggal?.format('YYYY-MM-DD') ?? new Date().toISOString().split('T')[0]);
-            setFormCatatan(kembali?.catatan ?? '');
-            setFormDitandatangani(kembali?.ditandatangani_oleh?.name ?? '');
-            setFormItems(kembali?.details?.map(d => ({ item: d.item, kondisi: d.kondisi, catatan: d.catatan })) ?? []);
-            setFormFoto(kembali?.foto_kondisi ?? []);
+        if (flash?.success) setShowFlash(true);
+    }, [flash]);
+
+    const openModal = (tipe) => {
+        setModalTipe(tipe);
+        const source = tipe === "berangkat" ? berangkat : kembali;
+
+        if (source) {
+            setFormOdo(source.odo_atau_hm ?? "");
+            setFormTanggal(formatInputDate(source.tanggal));
+            setFormCatatan(source.catatan ?? "");
+            setFormDitandatangani(
+                source.ditandatangani_oleh?.name ??
+                    source.ditandatangani_oleh ??
+                    "",
+            );
+            setFormItems(
+                source.details?.length > 0
+                    ? source.details.map((d) => ({
+                          item: d.item,
+                          kondisi: d.kondisi,
+                          catatan: d.catatan ?? "",
+                      }))
+                    : defaultItems.map((item) => ({
+                          item,
+                          kondisi: "baik",
+                          catatan: "",
+                      })),
+            );
+            setExistingFotos(source.foto_kondisi ?? []);
+            setFormFoto([]);
         } else {
-            setFormItems(defaultItems.map(item => ({ item, kondisi: 'baik', catatan: '' })));
+            setFormOdo("");
+            setFormTanggal(formatInputDate());
+            setFormCatatan("");
+            setFormDitandatangani("");
+            setFormItems(
+                defaultItems.map((item) => ({
+                    item,
+                    kondisi: "baik",
+                    catatan: "",
+                })),
+            );
+            setExistingFotos([]);
+            setFormFoto([]);
         }
-    }, [modalTipe, berangkat, kembali]);
+
+        setModalOpen(true);
+    };
 
     const closeModal = () => {
         setModalOpen(false);
-        setModalTipe('berangkat');
-        setFormOdo('');
-        setFormTanggal(new Date().toISOString().split('T')[0]);
-        setFormCatatan('');
-        setFormDitandatangani('');
-        setFormItems(defaultItems.map(item => ({ item, kondisi: 'baik', catatan: '' })));
-        setFormFoto([]);
+        setProcessing(false);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        const itemsWithFoto = formItems.map((it, i) => ({
-            item: it.item,
-            kondisi: it.kondisi,
-            catatan: it.catatan,
-        }));
+        setProcessing(true);
 
         const payload = {
             tipe: modalTipe,
-            odo_atau_hm: parseFloat(formOdo) || null,
+            sewa_id: sewa.id,
+            odo_atau_hm: formOdo !== "" ? parseFloat(formOdo) : null,
             tanggal: formTanggal,
-            catatan: formCatatan ?? null,
-            ditandatangani_oleh: formDitandatangani ?? null,
-            items: itemsWithFoto,
+            catatan: formCatatan || null,
+            ditandatangani_oleh: formDitandatangani || null,
+            items: formItems.map((it) => ({
+                item: it.item,
+                kondisi: it.kondisi,
+                catatan: it.catatan,
+            })),
+            existing_fotos: existingFotos,
             foto_kondisi: formFoto,
         };
 
-        await router.post(route('sewa-alat.serah-terima.store', sewa.id), payload);
-        closeModal();
-        router.visit(route('fleet.sewa-alat.serah-terima.show', sewa.id));
+        router.post(
+            route("fleet.sewa-alat.serah-terima.store", sewa.id),
+            payload,
+            {
+                forceFormData: true,
+                onSuccess: () => {
+                    closeModal();
+                },
+                onFinish: () => {
+                    setProcessing(false);
+                },
+            },
+        );
+    };
+
+    const updateItemField = (idx, field, value) => {
+        setFormItems((prev) => {
+            const updated = [...prev];
+            updated[idx] = { ...updated[idx], [field]: value };
+            return updated;
+        });
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title={`Checklist Serah Terima - ${sewa.armada?.kode_unit}`} />
+            <Head
+                title={`Checklist Serah Terima - ${sewa.armada?.kode_unit ?? ""}`}
+            />
 
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Checklist Serah Terima</h1>
-                <div>
-                    <StatCard label="Pemakaian HM" value={pemakaian > 0 ? pemakaian + ' HM' : '-'} color="blue" />
-                    <StatCard label="Status" value={sewa.status} color="purple" />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <StatCard label="Arma" value={`${sewa.armada?.kode_unit} / ${sewa.armada?.plat_nomor}`} color="blue" />
-                <StatCard label="Penyewa" value={sewa.penyewa_nama ?? '-'} color="purple" />
-                <StatCard label="HM Awal" value={sewa.hm_awal ?? '-'} color="green" />
-                <StatCard label="HM Akhir" value={sewa.hm_akhir ?? '-'} color="green" />
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
-                <div className="px-5 py-4 border-b border-slate-200">
-                    <h2 className="font-semibold text-slate-800">Berangkat</h2>
-                </div>
-                <div className={`p-5 ${berangkat ? '' : 'text-slate-400 opacity-50'}`}
-                    style={{ minHeight: berangkat ? '200px' : '100px' }}>
-                    {berangkat ? (
-                        <div>
-                            <p className="text-sm text-slate-600 mb-2">Tanggal: {berangkat.tanggal ? berangkat.tanggal.format('d F Y') : '-'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {berangkat.odo_atau_hm ?? '-'} HM</p>
-                            <p className="text-sm text-slate-600 mb-2">Penyewa: {(berangkat?.data_penyewa?.nama ?? '-') + ' - ' + (berangkat?.data_penyewa?.pt ?? '')}</p>
-                            <p className="text-sm text-slate-600 mb-2">Ditandatangani Oleh: {berangkat?.dicatatOleh?.name ?? '-'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Catatan: {berangkat?.catatan ?? '-'}</p>
-                            <p className="text-xs text-slate-500">Item checklist: {berangkat?.details?.length ?? 0} item</p>
-                            {berangkat?.foto_kondisi?.length > 0 && (
-                                <p className="text-xs text-slate-500">Foto: {berangkat.foto_kondisi.map(f => f.split('/').pop()).join(', ')}</p>
-                            )}
-                            <button
-                                onClick={() => setModalTipe('berangkat')}
-                                className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200">
-                                <Plus className="w-3.5 h-3.5" /> Ubah Checklist Berangkat
-                            </button>
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Flash Message */}
+                {showFlash && flash?.success && (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-xs">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{flash.success}</span>
                         </div>
-                    ) : (
-                        <p className="text-sm text-slate-500 opacity-70">Belum ada checklist berangkat. <button
-                                onClick={() => setModalTipe('berangkat')}
-                                className="ml-1 text-blue-600 underline underline-offset-2 hover:text-blue-800">
-                                Isi Checklist Berangkat
-                        </button></p>
-                    )}
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
-                <div className="px-5 py-4 border-b border-slate-200">
-                    <h2 className="font-semibold text-slate-800">Kembali</h2>
-                </div>
-                <div className={`p-5 ${kembali ? '' : 'text-slate-400 opacity-50'}`}
-                    style={{ minHeight: kembali ? '200px' : '100px' }}>
-                    {kembali ? (
-                        <div>
-                            <p className="text-sm text-slate-600 mb-2">Tanggal: {kembali.tanggal ? kembali.tanggal.format('d F Y') : '-'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Odo / HM: {kembali.odo_atau_hm ?? '-'} HM</p>
-                            <p className="text-sm text-slate-600 mb-2">Pemakaian: {pemakaian > 0 ? pemakaian.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' HM' : '-'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Penyewa: {(kembali.data_penyewa?.nama ?? '-') + ' - ' + (kembali.data_penyewa?.pt ?? '')}</p>
-                            <p className="text-sm text-slate-600 mb-2">Ditandatangani Oleh: {kembali.dicatatOleh?.name ?? '-'}</p>
-                            <p className="text-sm text-slate-600 mb-2">Catatan: {kembali?.catatan ?? '-'}</p>
-                            <p className="text-xs text-slate-500">Item checklist: {kembali.details?.length ?? 0} item</p>
-                            {kembali?.foto_kondisi?.length > 0 && (
-                                <p className="text-xs text-slate-500">Foto: {kembali.foto_kondisi.map(f => f.split('/').pop()).join(', ')}</p>
-                            )}
-                            <button
-                                onClick={() => setModalTipe('kembali')}
-                                className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200">
-                                <Plus className="w-3.5 h-3.5" /> Ubah Checklist Kembali
-                            </button>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-slate-500 opacity-70">Belum ada checklist kembali. <button
-                                onClick={() => setModalTipe('kembali')}
-                                className="ml-1 text-blue-600 underline underline-offset-2 hover:text-blue-800">
-                                Isi Checklist Kembali
-                        </button></p>
-                    )}
-                </div>
-            </div>
-
-            {berangkat && kembali && (
-                <div className="mt-6">
-                    <Link href={route('sewa-alat.serah-terima.print', sewa.id)}
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">
-                        <Printer className="w-3.5 h-3.5" /> Cetak PDF
-                    </Link>
-                </div>
-            )}
-
-            {modalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-2xl relative">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4">{modalTipe === 'berangkat' ? 'Isi Checklist Berangkat' : 'Isi Checklist Kembali'}</h2>
                         <button
-                            onClick={closeModal}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                            onClick={() => setShowFlash(false)}
+                            className="text-emerald-600 hover:text-emerald-800"
+                        >
                             <X className="w-4 h-4" />
                         </button>
+                    </div>
+                )}
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input
-                                type="hidden"
-                                name="tipe"
-                                value={modalTipe}
-                                readOnly
-                            />
-                            <input
-                                type="hidden"
-                                name="sewa_id"
-                                value={sewa.id}
-                                readOnly
-                            />
+                {/* Page Header & Primary Action */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+                    <div>
+                        <div className="flex items-center gap-2.5">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                                Checklist Serah Terima
+                            </h1>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                                {sewa.status ?? "Draft"}
+                            </span>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-1">
+                            Dokumentasi kondisi unit sebelum keberangkatan dan
+                            setelah pengembalian sewa.
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Link
+                            href={route("fleet.sewa-alat.index")}
+                            className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Batal
+                        </Link>
+                        {berangkat && kembali && (
+                            <a
+                                href={route(
+                                    "fleet.sewa-alat.serah-terima.print",
+                                    sewa.id,
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition shadow-sm shrink-0"
+                            >
+                                <Printer className="w-4 h-4" /> Cetak Berita
+                                Acara (PDF)
+                            </a>
+                        )}
+                    </div>
+                </div>
 
+                {/* Summary Stat Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <InfoCard
+                        label="Unit Armada"
+                        value={sewa.armada?.kode_unit ?? "-"}
+                        sub={sewa.armada?.plat_nomor ?? "Tanpa Plat"}
+                        icon={Truck}
+                        accent="blue"
+                    />
+                    <InfoCard
+                        label="Penyewa"
+                        value={sewa.penyewa_nama ?? "-"}
+                        icon={User}
+                        accent="purple"
+                    />
+                    <InfoCard
+                        label="HM Awal"
+                        value={sewa.hm_awal ? `${sewa.hm_awal} HM` : "-"}
+                        icon={Gauge}
+                        accent="amber"
+                    />
+                    <InfoCard
+                        label="HM Akhir"
+                        value={sewa.hm_akhir ? `${sewa.hm_akhir} HM` : "-"}
+                        icon={Gauge}
+                        accent="amber"
+                    />
+                    <InfoCard
+                        label="Total Pemakaian"
+                        value={pemakaian > 0 ? `${pemakaian} HM` : "-"}
+                        icon={Clock}
+                        accent="emerald"
+                    />
+                </div>
+
+                {/* Main Content: 2-Column Side-by-Side Comparison */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                    <ChecklistSection
+                        title="Checklist Berangkat"
+                        tipe="berangkat"
+                        data={berangkat}
+                        pemakaian={pemakaian}
+                        onOpenModal={openModal}
+                    />
+                    <ChecklistSection
+                        title="Checklist Kembali"
+                        tipe="kembali"
+                        data={kembali}
+                        pemakaian={pemakaian}
+                        onOpenModal={openModal}
+                    />
+                </div>
+            </div>
+
+            {/* Modal Form */}
+            {modalOpen && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden">
+                        {/* Sticky Modal Header */}
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Odo / HM</label>
-                                <input
-                                    type="number"
-                                    name="odo_atau_hm"
-                                    value={formOdo}
-                                    onChange={(e) => setFormOdo(e.target.value)}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    min="0"
-                                />
-                                <small className="text-xs text-slate-500">Nilai HM (sebelum sewa).</small>
+                                <h2 className="text-lg font-bold text-slate-800">
+                                    {modalTipe === "berangkat"
+                                        ? "Form Checklist Berangkat"
+                                        : "Form Checklist Kembali"}
+                                </h2>
+                                <p className="text-xs text-slate-500">
+                                    Unit: {sewa.armada?.kode_unit} (
+                                    {sewa.armada?.plat_nomor})
+                                </p>
                             </div>
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal</label>
-                                <input
-                                    type="date"
-                                    name="tanggal"
-                                    value={formTanggal}
-                                    onChange={(e) => setFormTanggal(e.target.value)}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
+                        {/* Scrollable Modal Body */}
+                        <form
+                            onSubmit={handleSubmit}
+                            className="flex flex-col flex-1 overflow-hidden"
+                        >
+                            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                                            Odo / HM (
+                                            {modalTipe === "berangkat"
+                                                ? "Awal"
+                                                : "Akhir"}
+                                            )
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            min="0"
+                                            required
+                                            value={formOdo}
+                                            onChange={(e) =>
+                                                setFormOdo(e.target.value)
+                                            }
+                                            placeholder="Contoh: 1250.5"
+                                            className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
-                                <textarea
-                                    name="catatan"
-                                    value={formCatatan}
-                                    onChange={(e) => setFormCatatan(e.target.value)}
-                                    rows={3}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                ></textarea>
-                            </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                                            Tanggal Serah Terima
+                                        </label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={formTanggal}
+                                            onChange={(e) =>
+                                                setFormTanggal(e.target.value)
+                                            }
+                                            className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Tandatangani Oleh</label>
-                                <input
-                                    type="text"
-                                    name="ditandatangani_oleh"
-                                    value={formDitandatangani}
-                                    onChange={(e) => setFormDitandatangani(e.target.value)}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Ditandatangani Oleh
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formDitandatangani}
+                                        onChange={(e) =>
+                                            setFormDitandatangani(
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Nama penanggung jawab / operator lapangan"
+                                        className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Item Checklist</label>
-                                <div className="space-y-2">
-                                    {defaultItems.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                name={`kondisi_${idx}`}
-                                                value="baik"
-                                                checked={formItems[idx]?.kondisi === 'baik'}
-                                                onChange={() => {
-                                                    const newItems = [...formItems];
-                                                    newItems[idx] = { ...newItems[idx], kondisi: 'baik' };
-                                                    setFormItems(newItems);
-                                                }}
-                                            />
-                                            <span className="flex-1">{item}</span>
-                                            <input
-                                                type="radio"
-                                                name={`kondisi_${idx}`}
-                                                value="rusak"
-                                                checked={formItems[idx]?.kondisi === 'rusak'}
-                                                onChange={() => {
-                                                    const newItems = [...formItems];
-                                                    newItems[idx] = { ...newItems[idx], kondisi: 'rusak' };
-                                                    setFormItems(newItems);
-                                                }}
-                                            />
-                                            <span></span>
-                                            <input
-                                                type="text"
-                                                name={`item_catatan_${idx}`}
-                                                value={formItems[idx]?.catatan ?? ''}
-                                                onChange={(e) => {
-                                                    const newItems = [...formItems];
-                                                    newItems[idx] = { ...newItems[idx], catatan: e.target.value };
-                                                    setFormItems(newItems);
-                                                }}
-                                                className="ml-2 flex-1 text-sm border rounded w-full p-1"
-                                            />
+                                {/* Checklist Items Table */}
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                                        Pengecekan Item Fisik & Fungsi
+                                    </label>
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                        <div className="bg-slate-50 px-3.5 py-2 grid grid-cols-12 text-xs font-semibold text-slate-500">
+                                            <div className="col-span-5">
+                                                Komponen
+                                            </div>
+                                            <div className="col-span-3 text-center">
+                                                Kondisi
+                                            </div>
+                                            <div className="col-span-4">
+                                                Keterangan
+                                            </div>
                                         </div>
-                                    ))}
+
+                                        {formItems.map((itemObj, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="px-3.5 py-2.5 grid grid-cols-12 items-center gap-2 text-sm bg-white"
+                                            >
+                                                <div className="col-span-5 font-medium text-slate-700 pr-2">
+                                                    {itemObj.item}
+                                                </div>
+
+                                                <div className="col-span-3 flex items-center justify-center gap-2">
+                                                    <label
+                                                        className={`cursor-pointer px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                                                            itemObj.kondisi ===
+                                                            "baik"
+                                                                ? "bg-emerald-600 text-white border-emerald-600"
+                                                                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`kondisi_${idx}`}
+                                                            value="baik"
+                                                            checked={
+                                                                itemObj.kondisi ===
+                                                                "baik"
+                                                            }
+                                                            onChange={() =>
+                                                                updateItemField(
+                                                                    idx,
+                                                                    "kondisi",
+                                                                    "baik",
+                                                                )
+                                                            }
+                                                            className="sr-only"
+                                                        />
+                                                        Baik
+                                                    </label>
+
+                                                    <label
+                                                        className={`cursor-pointer px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                                                            itemObj.kondisi ===
+                                                            "rusak"
+                                                                ? "bg-rose-600 text-white border-rose-600"
+                                                                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`kondisi_${idx}`}
+                                                            value="rusak"
+                                                            checked={
+                                                                itemObj.kondisi ===
+                                                                "rusak"
+                                                            }
+                                                            onChange={() =>
+                                                                updateItemField(
+                                                                    idx,
+                                                                    "kondisi",
+                                                                    "rusak",
+                                                                )
+                                                            }
+                                                            className="sr-only"
+                                                        />
+                                                        Rusak
+                                                    </label>
+                                                </div>
+
+                                                <div className="col-span-4">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Opsional..."
+                                                        value={
+                                                            itemObj.catatan ??
+                                                            ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            updateItemField(
+                                                                idx,
+                                                                "catatan",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Catatan Umum
+                                    </label>
+                                    <textarea
+                                        rows={2}
+                                        value={formCatatan}
+                                        onChange={(e) =>
+                                            setFormCatatan(e.target.value)
+                                        }
+                                        placeholder="Tuliskan catatan kondisi keseluruhan unit jika ada..."
+                                        className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Foto Dokumentasi (Maksimal 6 Foto)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={(e) =>
+                                            setFormFoto(
+                                                Array.from(
+                                                    e.target.files,
+                                                ).slice(0, 6),
+                                            )
+                                        }
+                                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-200 rounded-xl p-1.5"
+                                    />
+                                    {existingFotos.length > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-xs font-medium text-slate-600">
+                                                Foto tersimpan saat ini:
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {existingFotos.map(
+                                                    (foto, i) => {
+                                                        const fotoPath =
+                                                            typeof foto ===
+                                                            "string"
+                                                                ? foto
+                                                                : (foto.path ??
+                                                                  foto.url ??
+                                                                  "");
+                                                        const storagePath =
+                                                            fotoPath.replace(
+                                                                /^(public\/|storage\/)/,
+                                                                "",
+                                                            );
+                                                        const fotoUrl =
+                                                            /^https?:\/\//i.test(
+                                                                fotoPath,
+                                                            )
+                                                                ? fotoPath
+                                                                : `/storage/${storagePath}`;
+
+                                                        return (
+                                                            <span
+                                                                key={i}
+                                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-700"
+                                                            >
+                                                                <a
+                                                                    href={
+                                                                        fotoUrl
+                                                                    }
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-1.5"
+                                                                >
+                                                                    <img
+                                                                        src={
+                                                                            fotoUrl
+                                                                        }
+                                                                        alt={`Foto ${i + 1}`}
+                                                                        className="w-10 h-10 rounded object-cover"
+                                                                    />
+                                                                </a>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setExistingFotos(
+                                                                            (
+                                                                                prev,
+                                                                            ) =>
+                                                                                prev.filter(
+                                                                                    (
+                                                                                        _,
+                                                                                        idx,
+                                                                                    ) =>
+                                                                                        idx !==
+                                                                                        i,
+                                                                                ),
+                                                                        )
+                                                                    }
+                                                                    className="text-rose-500 hover:text-rose-700 font-bold ml-1"
+                                                                    title="Hapus foto ini"
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </span>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {formFoto.length > 0 && (
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            {formFoto.length} file dipilih:{" "}
+                                            {formFoto
+                                                .map((f) => f.name)
+                                                .join(", ")}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Foto Kondisi</label>
-                                <input
-                                    type="file"
-                                    name="foto_kondisi"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={(e) => setFormFoto(Array.from(e.target.files))}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                                <p className="text-xs text-slate-500 mt-1">Maksimal 6 foto.</p>
-                            </div>
-
-                            <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={closeModal}
-                                    className="px-4 py-1 rounded bg-slate-200 text-slate-700 hover:bg-slate-300 text-sm">
+                            {/* Sticky Modal Footer */}
+                            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    disabled={processing}
+                                    className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition"
+                                >
                                     Batal
                                 </button>
-                                <button type="submit"
-                                    className="px-4 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
-                                    Simpan Checklist
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition shadow-sm"
+                                >
+                                    {processing
+                                        ? "Menyimpan..."
+                                        : "Simpan Checklist"}
                                 </button>
                             </div>
                         </form>
