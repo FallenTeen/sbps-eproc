@@ -6,11 +6,14 @@ use App\Domain\Fleet\Actions\PerpanjangDokumenBerkalaAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaDokumenBerkala;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ArmadaDokumenBerkalaController extends Controller
 {
+    use FilterableTable;
+
     /**
      * TD-C5 - Manajemen reminder dokumen lintas armada: daftar semua dokumen
      * berkala, filter status jatuh tempo, atur reminder massal, dan perpanjang.
@@ -25,32 +28,22 @@ class ArmadaDokumenBerkalaController extends Controller
             }
         };
 
+        $columns = [
+            'jenis' => ['type' => 'exact'],
+            'nomor_dokumen' => ['type' => 'like'],
+            'tanggal_jatuh_tempo' => ['type' => 'date'],
+            'reminder_hari_sebelum' => ['type' => 'like'],
+            'status_dokumen' => ['type' => 'exact'],
+            'plat_nomor' => ['type' => 'like', 'relation' => 'armada', 'column' => 'plat_nomor'],
+            'kode_unit' => ['type' => 'like', 'relation' => 'armada', 'column' => 'kode_unit'],
+        ];
+
         $query = ArmadaDokumenBerkala::query()->with(['armada', 'riwayats']);
         $scope($query);
 
-        $status = $request->query('status');
-        $jenis = $request->query('jenis');
-        $q = $request->query('q');
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal_jatuh_tempo' => 'asc']);
 
-        if (in_array($jenis, ['pajak_tahunan', 'stnk_5_tahunan', 'kir'], true)) {
-            $query->where('jenis', $jenis);
-        }
-
-        if ($q) {
-            $query->whereHas('armada', function ($aq) use ($q) {
-                $aq->where('plat_nomor', 'like', "%{$q}%")
-                    ->orWhere('kode_unit', 'like', "%{$q}%");
-            });
-        }
-
-        match ($status) {
-            'lewat' => $query->where('tanggal_jatuh_tempo', '<', now()->startOfDay()),
-            'akan_jatuh_tempo' => $query->whereBetween('tanggal_jatuh_tempo', [now()->startOfDay(), now()->addDays(30)]),
-            'aktif' => $query->where('tanggal_jatuh_tempo', '>', now()->addDays(30)),
-            default => null,
-        };
-
-        $items = $query->orderBy('tanggal_jatuh_tempo')->paginate(20)->withQueryString();
+        $items = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $base = ArmadaDokumenBerkala::query();
         $scope($base);
@@ -62,7 +55,9 @@ class ArmadaDokumenBerkalaController extends Controller
 
         return Inertia::render('Fleet/Armada/DokumenBerkala', [
             'items' => $items,
-            'filters' => ['status' => $status, 'jenis' => $jenis, 'q' => $q],
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'counts' => $counts,
             'canManage' => $user->hasRole('Owner') || $user->hasAnyPermission(['manage fleet', 'manage dokumen armada']),
         ]);

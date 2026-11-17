@@ -152,7 +152,9 @@ export default function DataTable({
                                         col.align === "right" ? "text-right" : "text-left"
                                     }`}
                                 >
-                                    {col.sortable === false ? (
+                                    {col.renderHeader ? (
+                                        col.renderHeader()
+                                    ) : col.sortable === false ? (
                                         <span>{col.label}</span>
                                     ) : (
                                         <button

@@ -7,6 +7,7 @@ use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RitaseTimbang;
 use App\Domain\Fleet\Models\RitaseVerifikasi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -19,10 +20,16 @@ class LogistikController extends Controller
 {
     public function antrean(Request $request)
     {
-        $validated = $request->validate([
-            'cari' => 'nullable|string|max:100',
-            'wajib' => 'nullable|in:0,1',
-        ]);
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'plat_nomor' => ['type' => 'like', 'relation' => 'armada', 'column' => 'plat_nomor'],
+            'driver' => ['type' => 'like', 'relation' => 'driver', 'column' => 'nama'],
+            'kategori' => ['type' => 'like'],
+            'material' => ['type' => 'like'],
+            'wajib_jembatan_timbang' => ['type' => 'boolean'],
+            'status' => ['type' => 'exact'],
+            'ada_selisih' => ['type' => 'boolean'],
+        ];
 
         $query = Ritase::with(['armada', 'driver', 'muatan', 'verifikasiLogistik', 'timbang', 'ruteTarif'])
             ->where(function ($q) {
@@ -31,22 +38,15 @@ class LogistikController extends Controller
                     ->orWhereHas('verifikasiLogistik', fn ($v) => $v->where('status', 'menunggu'));
             });
 
-        if (($validated['wajib'] ?? null) === '1') {
-            $query->where('wajib_jembatan_timbang', true);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if (! empty($validated['cari'])) {
-            $c = $validated['cari'];
-            $query->where(fn ($q) => $q->where('kategori', 'like', "%{$c}%")
-                ->orWhere('material', 'like', "%{$c}%")
-                ->orWhereHas('armada', fn ($a) => $a->where('plat_nomor', 'like', "%{$c}%")));
-        }
-
-        $rows = $query->latest('tanggal')->latest('created_at')->paginate(15)->withQueryString();
+        $rows = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Logistik/RitaseVerifikasi', [
             'rows' => $rows,
-            'filters' => $validated,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -108,18 +108,25 @@ class LogistikController extends Controller
 
     public function taraMaster(Request $request)
     {
-        $validated = $request->validate(['cari' => 'nullable|string|max:100']);
+        $columns = [
+            'plat_nomor' => ['type' => 'like'],
+            'kode_unit' => ['type' => 'like'],
+            'jenis' => ['type' => 'exact'],
+            'tara_master_kg' => ['type' => 'like'],
+            'tara_diperbarui_pada' => ['type' => 'date'],
+        ];
 
-        $query = Armada::query()->orderBy('plat_nomor');
+        $query = Armada::query();
 
-        if (! empty($validated['cari'])) {
-            $c = $validated['cari'];
-            $query->where(fn ($q) => $q->where('plat_nomor', 'like', "%{$c}%")->orWhere('kode_unit', 'like', "%{$c}%"));
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['plat_nomor' => 'asc']);
+
+        $rows = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Logistik/TaraMaster', [
-            'rows' => $query->paginate(20)->withQueryString(),
-            'filters' => $validated,
+            'rows' => $rows,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
