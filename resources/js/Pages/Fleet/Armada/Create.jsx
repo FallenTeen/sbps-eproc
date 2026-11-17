@@ -27,7 +27,7 @@ export default function Create({ unitBisnis, titiks, drivers }) {
         <AuthenticatedLayout>
             <Head title="Tambah Armada Baru" />
 
-            <div className="mx-auto max-w-4xl">
+            <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6 flex items-start gap-3">
                     <div>

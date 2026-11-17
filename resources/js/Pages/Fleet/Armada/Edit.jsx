@@ -48,7 +48,7 @@ export default function Edit({ armada, titiks }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-4xl">
+           <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div className="mb-6 flex items-center gap-3">
                     <div>
