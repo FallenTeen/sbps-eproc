@@ -18,6 +18,7 @@ use Inertia\Inertia;
  */
 class LogistikController extends Controller
 {
+    use FilterableTable;
     public function antrean(Request $request)
     {
         $columns = [
@@ -35,7 +36,7 @@ class LogistikController extends Controller
             ->where(function ($q) {
                 $q->where('wajib_jembatan_timbang', true)
                     ->orWhereDoesntHave('verifikasiLogistik')
-                    ->orWhereHas('verifikasiLogistik', fn ($v) => $v->where('status', 'menunggu'));
+                    ->orWhereHas('verifikasiLogistik', fn($v) => $v->where('status', 'menunggu'));
             });
 
         $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
@@ -66,7 +67,7 @@ class LogistikController extends Controller
 
         $fotoTiketPath = null;
         if ($request->hasFile('foto_tiket')) {
-            $fotoTiketPath = $request->file('foto_tiket')->store('logistik/tiket/'.now()->format('Y/m'), 'public');
+            $fotoTiketPath = $request->file('foto_tiket')->store('logistik/tiket/' . now()->format('Y/m'), 'public');
         }
 
         RitaseTimbang::updateOrCreate(['ritase_id' => $ritase->id], [
@@ -103,7 +104,7 @@ class LogistikController extends Controller
             'sumber_angka_resmi' => 'logistik',
         ]);
 
-        return back()->with('success', 'Verifikasi ritase logistik tersimpan'.($adaSelisih ? ' (ada selisih dengan angka driver).' : '.'));
+        return back()->with('success', 'Verifikasi ritase logistik tersimpan' . ($adaSelisih ? ' (ada selisih dengan angka driver).' : '.'));
     }
 
     public function taraMaster(Request $request)
@@ -141,6 +142,6 @@ class LogistikController extends Controller
             'data_diperbarui_oleh' => Auth::id(),
         ]);
 
-        return back()->with('success', 'Tara master '.$armada->plat_nomor.' diperbarui.');
+        return back()->with('success', 'Tara master ' . $armada->plat_nomor . ' diperbarui.');
     }
 }

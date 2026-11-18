@@ -155,7 +155,13 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
     };
 
     const columns = [
-        { key: "tanggal", label: "Tanggal", type: "date", sortable: true },
+        {
+            key: "tanggal",
+            label: "Tanggal",
+            type: "date",
+            sortable: true,
+            render: (r) => formatTanggal(r.tanggal),
+        },
         {
             key: "plat_nomor",
             label: "Armada",
@@ -181,8 +187,7 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
                     {r.muatan?.satuan ?? r.satuan_volume ?? ""}
                     {r.ada_selisih && (
                         <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 border border-red-200">
-                            <AlertTriangle className="w-3 h-3" />{" "}
-                            Selisih
+                            <AlertTriangle className="w-3 h-3" /> Selisih
                         </span>
                     )}
                 </>
@@ -231,8 +236,7 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
                     onClick={() => openVerifikasiModal(r)}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
                 >
-                    <Scale className="w-3.5 h-3.5" />{" "}
-                    Verifikasi
+                    <Scale className="w-3.5 h-3.5" /> Verifikasi
                 </button>
             ),
         },
@@ -295,7 +299,8 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
                                         Tanggal
                                     </span>
                                     <span className="font-bold text-gray-800">
-                                        {formatTanggal(selectedItem.tanggal) ?? "-"}
+                                        {formatTanggal(selectedItem.tanggal) ??
+                                            "-"}
                                     </span>
                                 </div>
                                 <div>
