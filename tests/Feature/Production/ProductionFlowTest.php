@@ -14,13 +14,13 @@ use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ProductionFlowTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected $user;
 
@@ -191,8 +191,13 @@ class ProductionFlowTest extends TestCase
             'status' => 'selesai',
             'hasil_output' => 10,
         ]);
+        $this->assertNotEmpty($session->kode_sesi);
 
-        $response = $this->actingAs($this->user)->post(route('production.qc.store'), [
+        $this->actingAs($this->user)
+            ->get(route('production.qc.create'))
+            ->assertOk();
+
+        $response = $this->post(route('production.qc.store'), [
             'production_session_id' => $session->id,
             'jenis_uji' => 'uji_tekan',
             'umur_uji' => 28,

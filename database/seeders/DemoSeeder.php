@@ -23,6 +23,7 @@ class DemoSeeder extends Seeder
             InventoryDemoSeeder::class,
             LogistikDemoSeeder::class,
             MobileTestUserSeeder::class,
+            PortalMultiRoleSeeder::class,
             SecurityDemoSeeder::class,
             MobileDemoDataSeeder::class,
             MobileArmadaDemoSeeder::class,
