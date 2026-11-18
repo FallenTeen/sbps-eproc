@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,4 +51,24 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            // Biarkan route API tetap mengembalikan JSON
+            if ($request->is('api/*')) {
+                return $response;
+            }
+
+            $status = $response->getStatusCode();
+
+            if (! app()->environment(['local', 'testing']) && in_array($status, [500, 503, 404, 403])) {
+                return Inertia::render('ErrorPage', ['status' => $status])
+                    ->toResponse($request)
+                    ->setStatusCode($status);
+            } elseif ($status === 419) {
+                return back()->with([
+                    'message' => 'Halaman kadaluarsa, silakan coba lagi.',
+                ]);
+            }
+
+            return $response;
+        });
     })->create();
