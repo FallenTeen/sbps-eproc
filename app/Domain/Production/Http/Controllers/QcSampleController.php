@@ -71,7 +71,7 @@ class QcSampleController extends Controller
 
         (new RecordQCSampleAction)->execute($validated);
 
-        return back()->with('success', 'Sample QC dicatat.');
+        return redirect()->route('production.qc.index')->with('success', 'Sample QC dicatat.');
     }
 
     public function update(Request $request, QCSample $qc)
