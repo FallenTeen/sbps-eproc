@@ -14,6 +14,7 @@ return new class extends Migration
         // production_sessions
         Schema::create('production_sessions', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('kode_sesi')->unique();
             $table->uuid('mesin_id');
             $table->uuid('titik_id');
             $table->uuid('produk_id');

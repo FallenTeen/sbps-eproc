@@ -73,7 +73,7 @@ class PortalController extends Controller
         $matchedRole = null;
 
         foreach ($portalRoles as $portalRole) {
-            if (in_array($portalRole, $userRoles)) {
+            if (\in_array($portalRole, $userRoles, true)) {
                 $matchedRole = $portalRole;
                 break;
             }
@@ -92,7 +92,7 @@ class PortalController extends Controller
         // Hitung semua portal yang role user cocok (urut sesuai config).
         $matchedPortals = $this->getMatchedPortals($user->getRoleNames()->toArray());
 
-        if (count($matchedPortals) > 1) {
+        if (\count($matchedPortals) > 1) {
             return redirect()->route('portal.pilih.index');
         }
 
@@ -107,10 +107,16 @@ class PortalController extends Controller
      */
     public function pilihIndex(): Response|RedirectResponse
     {
-        $matchedPortals = $this->getMatchedPortals(Auth::user()->getRoleNames()->toArray());
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            abort(403);
+        }
+
+        $matchedPortals = $this->getMatchedPortals($user->getRoleNames()->toArray());
 
         // User ternyata hanya cocok 1 portal → langsung set session & masuk dashboard.
-        if (count($matchedPortals) === 1) {
+        if (\count($matchedPortals) === 1) {
             $matched = $matchedPortals[0];
 
             session(['active_role' => $matched['matchedRole'], 'portal' => $matched['slug']]);
@@ -129,13 +135,18 @@ class PortalController extends Controller
     public function pilih(Request $request, string $portal): RedirectResponse
     {
         $config = $this->resolvePortal($portal);
+        $user = $request->user();
 
-        $userRoles = $request->user()->getRoleNames()->toArray();
+        if (! $user instanceof User) {
+            abort(403);
+        }
+
+        $userRoles = $user->getRoleNames()->toArray();
         $portalRoles = $config['roles'];
         $matchedRole = null;
 
         foreach ($portalRoles as $portalRole) {
-            if (in_array($portalRole, $userRoles)) {
+            if (\in_array($portalRole, $userRoles, true)) {
                 $matchedRole = $portalRole;
                 break;
             }
@@ -166,7 +177,9 @@ class PortalController extends Controller
     }
 
     /**
-     * Format portals untuk frontend (tanpa roles internal).
+     * Format portals untuk frontend.
+     * 'roles' hanya berisi nama jabatan (untuk pencarian & daftar di UI),
+     * bukan permission.
      */
     private function getPortals(): array
     {
@@ -183,6 +196,7 @@ class PortalController extends Controller
                 'icon' => $portal['icon'],
                 'color' => $portal['color'],
                 'colorClasses' => $color,
+                'roles' => array_values($portal['roles']),
             ];
         })->values()->toArray();
     }
@@ -201,7 +215,7 @@ class PortalController extends Controller
             $matchedRole = null;
 
             foreach ($portal['roles'] as $portalRole) {
-                if (in_array($portalRole, $userRoles)) {
+                if (\in_array($portalRole, $userRoles, true)) {
                     $matchedRole = $portalRole;
                     break;
                 }

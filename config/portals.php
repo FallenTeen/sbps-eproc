@@ -27,7 +27,7 @@ return [
             'description' => 'Kelola kendaraan, ritase harian, BBM, dan sewa alat.',
             'icon' => 'Truck',
             'color' => 'blue',
-            'roles' => ['Koordinator GCS', 'Ketua Divisi Armada', 'Kepala Divisi Armada', 'Ketua Armada'],
+            'roles' => ['Koordinator GCS', 'Kepala Divisi Armada'],
         ],
 
         'produksi' => [
@@ -36,10 +36,7 @@ return [
             'icon' => 'Factory',
             'color' => 'green',
             'roles' => [
-                'Koordinator CBP',
-                'Koordinator AMP',
-                'Ketua Divisi Produksi CBP',
-                'Ketua Divisi Produksi AMP',
+                'Ketua Divisi Produksi',
                 'Ketua Divisi Kontraktor',
                 'Mandor Proyek',
             ],
@@ -50,7 +47,7 @@ return [
             'description' => 'Kelola kas, bank, invoice, piutang, dan persetujuan pengadaan.',
             'icon' => 'Wallet',
             'color' => 'amber',
-            'roles' => ['Admin Keuangan', 'Ketua Divisi Keuangan', 'Ketua Divisi Finance'],
+            'roles' => ['Admin Keuangan', 'Ketua Divisi Keuangan'],
         ],
 
         'sdm' => [

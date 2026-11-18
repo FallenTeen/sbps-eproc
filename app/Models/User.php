@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -83,5 +84,20 @@ class User extends Authenticatable
             'Ketua Divisi Produksi CBP',
             'Ketua Divisi Produksi AMP',
         ]);
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    public function getRoleNames(): Collection
+    {
+        $this->loadMissing('roles');
+        $roles = $this->getRelationValue('roles');
+
+        if ($roles instanceof Collection) {
+            return $roles->pluck('name');
+        }
+
+        return collect();
     }
 }
