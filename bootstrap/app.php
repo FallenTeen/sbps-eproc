@@ -17,12 +17,13 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -49,26 +50,55 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn(Request $request) => $request->is('api/*'),
         );
-        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            // Biarkan route API tetap mengembalikan JSON
-            if ($request->is('api/*')) {
+        $exceptions->respond(
+            function (
+                Response $response,
+                Throwable $exception,
+                Request $request
+            ) {
+
+                $status = $response->getStatusCode();
+
+                if (
+                    $request->is('api/*') ||
+                    $request->expectsJson()
+                ) {
+                    return $response;
+                }
+
+                if ($status === 419) {
+                    return back()->with([
+                        'message' => 'Halaman kadaluarsa, silakan coba lagi.',
+                    ]);
+                }
+
+                if (
+                    app()->environment('staging') &&
+                    in_array($status, [403, 404, 500, 503], true)
+                ) {
+
+                    try {
+                        return Inertia::render('ErrorPage', [
+                            'status' => $status,
+                        ])
+                            ->toResponse($request)
+                            ->setStatusCode($status);
+                    } catch (Throwable $renderException) {
+
+                        Log::error('Gagal merender halaman ErrorPage', [
+                            'status' => $status,
+                            'error' => $renderException->getMessage(),
+                        ]);
+
+                        return $response;
+                    }
+                }
+
                 return $response;
             }
+        );
+    })
 
-            $status = $response->getStatusCode();
-
-            if (! app()->environment(['local', 'testing']) && in_array($status, [500, 503, 404, 403])) {
-                return Inertia::render('ErrorPage', ['status' => $status])
-                    ->toResponse($request)
-                    ->setStatusCode($status);
-            } elseif ($status === 419) {
-                return back()->with([
-                    'message' => 'Halaman kadaluarsa, silakan coba lagi.',
-                ]);
-            }
-
-            return $response;
-        });
-    })->create();
+    ->create();
