@@ -137,4 +137,23 @@ describe('Pilih Portal Multi Role', function () {
         expect(session('active_role'))->toBe('Security');
         expect(session('portal'))->toBe('admin');
     });
+
+    test('PortalMultiRoleSeeder menghasilkan user dengan lima portal yang cocok', function () {
+        $this->seed(\Database\Seeders\PortalMultiRoleSeeder::class);
+
+        $user = User::where('email', \Database\Seeders\PortalMultiRoleSeeder::TEST_EMAIL)->firstOrFail();
+        $this->actingAs($user);
+
+        $this->get(route('portal.pilih.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Portal/Select')
+                ->has('portals', 5)
+                ->where('portals.0.slug', 'admin')
+                ->where('portals.1.slug', 'armada')
+                ->where('portals.2.slug', 'produksi')
+                ->where('portals.3.slug', 'keuangan')
+                ->where('portals.4.slug', 'sdm')
+            );
+    });
 });
