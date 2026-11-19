@@ -27,9 +27,38 @@ class ArmadaOwnership
         'Ketua Armada',
     ];
 
+    public const WORKSHOP_ROLE = 'Workshop';
+
+    /** Status servis yang boleh dibuka dan dikerjakan Workshop. */
+    public const WORKSHOP_SERVIS_STATUSES = [
+        'disetujui',
+        'dikerjakan',
+        'menunggu_sparepart',
+        'sparepart_tersedia',
+        'selesai',
+    ];
+
     public static function isManager(?User $user): bool
     {
         return $user !== null && $user->hasAnyRole(self::MANAGER_ROLES);
+    }
+
+    public static function isWorkshop(?User $user): bool
+    {
+        return $user !== null && $user->hasRole(self::WORKSHOP_ROLE);
+    }
+
+    public static function canWorkOnServis(?User $user, ?string $status = null): bool
+    {
+        if (self::isManager($user)) {
+            return true;
+        }
+
+        if (! self::isWorkshop($user)) {
+            return false;
+        }
+
+        return $status === null || in_array($status, self::WORKSHOP_SERVIS_STATUSES, true);
     }
 
     /**

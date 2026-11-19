@@ -15,6 +15,13 @@ const dotStyles = {
     skipped: "bg-amber-400",
 };
 
+const stepStyles = {
+    done: "bg-emerald-500 text-white",
+    current: "bg-blue-600 text-white ring-4 ring-blue-100",
+    pending: "bg-slate-200 text-slate-500",
+    skipped: "bg-amber-400 text-white",
+};
+
 const lineStyles = {
     done: "bg-emerald-300",
     current: "bg-slate-200",
@@ -105,8 +112,16 @@ function TimelineItem({ event, isLast, busy, onAction }) {
 
     return (
         <li className="flex gap-3">
-            <div className="flex flex-col items-center w-3 shrink-0">
-                <span className={`mt-[5px] h-2.5 w-2.5 rounded-full shrink-0 ${dotStyles[state]}`} />
+            <div className="flex flex-col items-center w-6 shrink-0">
+                {event.step ? (
+                    <span
+                        className={`mt-[2px] flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${stepStyles[state]}`}
+                    >
+                        {event.step}
+                    </span>
+                ) : (
+                    <span className={`mt-[5px] h-2.5 w-2.5 rounded-full shrink-0 ${dotStyles[state]}`} />
+                )}
                 {!isLast && <span className={`mt-1 w-0.5 flex-1 rounded ${lineStyles[state]}`} />}
             </div>
 

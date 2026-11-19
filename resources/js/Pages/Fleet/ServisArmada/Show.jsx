@@ -13,6 +13,7 @@ import {
     User,
     Check,
 } from "lucide-react";
+import TimelineStrip from "@/Components/Fleet/TimelineStrip";
 import { formatTanggal } from "@/utils/date";
 
 const STATUS_META = {
@@ -54,7 +55,7 @@ function Row({ label, value }) {
     );
 }
 
-export default function Show({ pengajuan, can, masterSpareparts = [] }) {
+export default function Show({ pengajuan, timeline = [], can, masterSpareparts = [] }) {
     const meta = STATUS_META[pengajuan.status] || {
         label: pengajuan.status,
         cls: "bg-gray-100 text-gray-600",
@@ -221,6 +222,10 @@ export default function Show({ pengajuan, can, masterSpareparts = [] }) {
                         Kembali ke Daftar
                     </Link>
                 </div>
+
+                {timeline.length > 0 && (
+                    <TimelineStrip events={timeline} title="Timeline Servis" />
+                )}
 
                 {/* Main Content Sections */}
                 <div className="grid grid-cols-1 gap-6">

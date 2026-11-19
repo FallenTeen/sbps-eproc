@@ -11,6 +11,7 @@ use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Services\ServisTimelineService;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Http\Controllers\Controller;
 use App\Traits\FilterableTable;
@@ -82,6 +83,7 @@ class PengajuanServisArmadaController extends Controller
 
         return Inertia::render('Fleet/ServisArmada/Show', [
             'pengajuan' => $pengajuan->load(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts.bahanBaku']),
+            'timeline' => app(ServisTimelineService::class)->for($pengajuan),
             'masterSpareparts' => $this->masterSpareparts(),
             'can' => [
                 'approve' => $user->can('approve', $pengajuan),

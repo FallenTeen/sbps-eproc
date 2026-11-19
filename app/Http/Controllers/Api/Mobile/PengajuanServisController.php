@@ -14,6 +14,7 @@ use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\ServisEksternalDetail;
 use App\Domain\Fleet\Models\ServisEksternalNota;
 use App\Domain\Fleet\Models\WorkshopTodo;
+use App\Domain\Fleet\Services\ServisTimelineService;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Support\ArmadaOwnership;
@@ -49,7 +50,7 @@ class PengajuanServisController extends Controller
 
         if (! ArmadaOwnership::isManager($user)) {
             $heldIds = ArmadaOwnership::heldIds($user);
-            $isWorkshop = $user->hasRole('Workshop');
+            $isWorkshop = ArmadaOwnership::isWorkshop($user);
             $query->where(function ($q) use ($user, $heldIds, $isWorkshop) {
                 $q->where(function ($own) use ($user, $heldIds) {
                     $own->where('diajukan_oleh', $user->id)
@@ -57,7 +58,7 @@ class PengajuanServisController extends Controller
                 });
 
                 if ($isWorkshop) {
-                    $q->orWhereIn('status', ['disetujui', 'dikerjakan']);
+                    $q->orWhereIn('status', ArmadaOwnership::WORKSHOP_SERVIS_STATUSES);
                 }
             });
         }
@@ -84,12 +85,22 @@ class PengajuanServisController extends Controller
     {
         $user = $request->user();
         $heldIds = ArmadaOwnership::heldIds($user);
+        $isWorkshop = ArmadaOwnership::isWorkshop($user);
 
-        $servis = PengajuanServisArmada::with(['armada'])
-            ->where(function ($q) use ($user, $heldIds) {
+        $query = PengajuanServisArmada::with(['armada']);
+
+        if (! ArmadaOwnership::isManager($user)) {
+            $query->where(function ($q) use ($user, $heldIds, $isWorkshop) {
                 $q->where('diajukan_oleh', $user->id)
                     ->orWhereIn('armada_id', $heldIds);
-            })
+
+                if ($isWorkshop) {
+                    $q->orWhereIn('status', ArmadaOwnership::WORKSHOP_SERVIS_STATUSES);
+                }
+            });
+        }
+
+        $servis = $query
             ->latest('tanggal_ajuan')
             ->latest('created_at')
             ->get();
@@ -141,13 +152,12 @@ class PengajuanServisController extends Controller
 
         $user = $request->user();
 
-        if (! ArmadaOwnership::isManager($user)
-            && $pengajuan->diajukan_oleh !== $user->id
-            && ! ArmadaOwnership::holds($user, $pengajuan->armada_id)) {
+        if (! $this->canWorkOnServis($user, $pengajuan)) {
             return $this->error('Anda tidak berhak melihat pengajuan servis ini.', 403);
         }
 
         $payload = $pengajuan->toArray();
+        $payload['timeline'] = app(ServisTimelineService::class)->for($pengajuan);
 
         if (isset($payload['eksternal_detail'])) {
             $fotoBengkel = $payload['eksternal_detail']['foto_bengkel'] ?? null;
@@ -295,6 +305,12 @@ class PengajuanServisController extends Controller
      */
     public function mulai(Request $request, $id)
     {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak mengerjakan servis ini.', 403);
+        }
+
         $validated = $request->validate([
             'catatan_pengerjaan' => 'nullable|string|max:2000',
             'butuh_sparepart' => 'nullable|boolean',
@@ -302,8 +318,6 @@ class PengajuanServisController extends Controller
             'personels.*.nama_personel' => 'nullable|string|max:255',
             'personels.*.peran' => 'nullable|string|max:255',
         ]);
-
-        $pengajuan = PengajuanServisArmada::findOrFail($id);
 
         $updated = app(AssignWorkshopPengerjaanAction::class)->execute(
             $pengajuan,
@@ -320,11 +334,15 @@ class PengajuanServisController extends Controller
      */
     public function selesai(Request $request, $id)
     {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak menyelesaikan servis ini.', 403);
+        }
+
         $validated = $request->validate([
             'catatan_workshop' => 'nullable|string|max:2000',
         ]);
-
-        $pengajuan = PengajuanServisArmada::findOrFail($id);
 
         $updated = app(CompletePengajuanServisAction::class)->execute(
             $pengajuan,
@@ -342,6 +360,12 @@ class PengajuanServisController extends Controller
      */
     public function requestSparepart(Request $request, $id)
     {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak mengajukan sparepart untuk servis ini.', 403);
+        }
+
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.bahan_baku_id' => 'nullable|uuid|exists:bahan_bakus,id',
@@ -351,8 +375,6 @@ class PengajuanServisController extends Controller
             'items.*.keterangan' => 'nullable|string|max:1000',
             'catatan' => 'nullable|string|max:1000',
         ]);
-
-        $pengajuan = PengajuanServisArmada::findOrFail($id);
 
         $items = collect($validated['items'])
             ->map(fn ($item) => [
@@ -534,6 +556,16 @@ class PengajuanServisController extends Controller
      * Map satu to-do workshop ke kontrak checklist mobile
      * (`WorkshopTodoItem` Flutter).
      */
+    private function canWorkOnServis($user, PengajuanServisArmada $pengajuan): bool
+    {
+        if (ArmadaOwnership::canWorkOnServis($user, $pengajuan->status->getValue())) {
+            return true;
+        }
+
+        return $pengajuan->diajukan_oleh === $user?->id
+            || ArmadaOwnership::holds($user, $pengajuan->armada_id);
+    }
+
     private function mapTodo(WorkshopTodo $todo, string $jobId): array
     {
         return [
