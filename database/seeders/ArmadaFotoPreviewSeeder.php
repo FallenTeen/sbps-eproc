@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Domain\Fleet\Models\Armada;
 use Database\Seeders\Concerns\StagingOnly;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -31,7 +32,13 @@ class ArmadaFotoPreviewSeeder extends Seeder
             $path = 'armada/foto-preview/armada-preview-'.(($index % 3) + 1).'.png';
 
             if (! Storage::disk('public')->exists($path)) {
-                $response = Http::timeout(15)->get($url);
+                try {
+                    $response = Http::timeout(15)->get($url);
+                } catch (ConnectionException $exception) {
+                    $this->command?->warn("[ArmadaFotoPreviewSeeder] Gagal mengunduh {$url}: {$exception->getMessage()}");
+                    continue;
+                }
+
                 $contentType = $response->header('Content-Type') ?? '';
 
                 if (! $response->successful() || ! str_starts_with($contentType, 'image/png') || strlen($response->body()) > 5_000_000) {

@@ -1,8 +1,8 @@
 import React from "react";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TimelineStrip from "@/Components/Fleet/TimelineStrip";
-import { ArrowLeft, CheckCircle2, Truck } from "lucide-react";
+import { ArrowLeft, Truck } from "lucide-react";
 
 function formatDate(value) {
     if (!value) return "-";
@@ -27,17 +27,11 @@ function SummaryItem({ label, value }) {
     );
 }
 
-export default function RitaseShow({ ritase, timeline = [], can = {} }) {
-    const approve = () => {
-        router.post(route("fleet.ritase.approve", ritase.id), {}, {
-            preserveScroll: true,
-        });
-    };
-
+export default function RitaseShow({ ritase, timeline = [] }) {
     return (
         <AuthenticatedLayout>
             <Head title={`Detail Ritase ${ritase.id}`} />
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Link
@@ -53,16 +47,6 @@ export default function RitaseShow({ ritase, timeline = [], can = {} }) {
                             <p className="text-xs text-slate-500">{ritase.id}</p>
                         </div>
                     </div>
-                    {can.approve && (
-                        <button
-                            type="button"
-                            onClick={approve}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-                        >
-                            <CheckCircle2 size={16} />
-                            Setujui Ritase
-                        </button>
-                    )}
                 </div>
 
                 <section className="bg-white border border-slate-200 rounded-xl p-5">

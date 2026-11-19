@@ -240,7 +240,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('serviceable/{type}/{id}/downtime', [DowntimeLogController::class, 'index'])->name('downtime.index');
 
         Route::resource('ritase', RitaseController::class);
-        Route::post('ritase/{ritase}/approve', [RitaseController::class, 'approve'])->name('ritase.approve');
+        Route::post('ritase/{ritase}/approve-step/{step}', [RitaseController::class, 'approveStep'])->name('ritase.approve-step');
         Route::post('ritase/bulk', [RitaseController::class, 'bulkStore'])->name('ritase.bulk');
         Route::get('ritase/report/harian', [RitaseController::class, 'reportHarian'])->name('ritase.report-harian');
         Route::get('ritase/report/mingguan', [RitaseController::class, 'reportMingguan'])->name('ritase.report-mingguan');

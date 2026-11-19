@@ -1387,6 +1387,14 @@ function RitaseSection({ armada, options, can }) {
                                             {r.status}
                                         </span>
                                     </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <Link
+                                            href={route("fleet.ritase.show", r.id)}
+                                            className="text-blue-600 hover:text-blue-800 font-semibold"
+                                        >
+                                            Detail
+                                        </Link>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -1810,10 +1818,14 @@ function ServiceSection({ armada, options }) {
                                     Biaya
                                 </th>
                                 <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Notes
+                                    Status
+                                </th>
+                                <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Aksi
                                 </th>
                             </tr>
                         </thead>
+
                         <tbody className="divide-y divide-gray-100">
                             {armada.service_histories.map((s) => (
                                 <tr key={s.id} className="hover:bg-gray-50/50">

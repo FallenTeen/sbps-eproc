@@ -152,12 +152,20 @@ export default function RitaseIndex({
             sortable: false,
             cellClassName: "px-4 py-3",
             render: (r) => (
-                <Link
-                    href={route("fleet.armada.show", r.armada_id)}
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                    Detail
-                </Link>
+                <div className="flex items-center gap-3">
+                    <Link
+                        href={route("fleet.ritase.show", r.id)}
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                    >
+                        Timeline
+                    </Link>
+                    <Link
+                        href={route("fleet.armada.show", r.armada_id)}
+                        className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-800 font-semibold"
+                    >
+                        Armada
+                    </Link>
+                </div>
             ),
         },
     ];

@@ -3,7 +3,7 @@
 namespace App\Domain\Fleet\Http\Controllers;
 
 use App\Domain\Core\Models\Proyek;
-use App\Domain\Fleet\Actions\ApproveRitaseAction;
+use App\Domain\Fleet\Actions\ApproveRitaseStepAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
@@ -185,9 +185,9 @@ class RitaseController extends Controller
 
         $props = [
             'ritase' => $ritase,
-            'timeline' => app(RitaseTimelineService::class)->for($ritase),
+            'timeline' => app(RitaseTimelineService::class)->for($ritase, $request->user()),
             'can' => [
-                'approve' => $ritase->status === 'draft' && $request->user()->can('update', $ritase),
+                'approve' => false,
             ],
         ];
 
@@ -199,15 +199,23 @@ class RitaseController extends Controller
     }
 
     /**
-     * Setujui ritase (mis. oleh koordinator sebelum ditagihkan).
+     * Setujui satu tahap alur ritase.
      */
-    public function approve(Request $request, Ritase $ritase)
+    public function approveStep(Request $request, Ritase $ritase, string $step)
     {
-        $this->authorize('update', $ritase);
+        $action = app(ApproveRitaseStepAction::class);
 
-        app(ApproveRitaseAction::class)->execute($ritase, $request->user());
+        if (! $action->canApprove($step, $request->user())) {
+            abort(403);
+        }
 
-        return back()->with('success', 'Ritase disetujui.');
+        $validated = $request->validate([
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $action->execute($ritase, $step, $request->user(), $validated['catatan'] ?? null);
+
+        return back()->with('success', 'Persetujuan tahap disimpan.');
     }
 
     /**

@@ -48,7 +48,7 @@ test('store web mencatat ritase sebagai draft', function () {
     expect(Ritase::latest('created_at')->first()->status)->toBe('draft');
 });
 
-test('approve ketua armada mengubah status dan timeline memuat verifikasi skipable', function () {
+test('approve owner mengubah status tanpa menandai verifikasi lain', function () {
     $ritase = Ritase::factory()->for($this->armada)->create(['status' => 'draft']);
 
     RitaseVerifikasi::create([
@@ -68,7 +68,7 @@ test('approve ketua armada mengubah status dan timeline memuat verifikasi skipab
     ]);
 
     $this->actingAs($this->user)
-        ->post(route('fleet.ritase.approve', $ritase))
+        ->post(route('fleet.ritase.approve-step', [$ritase->id, 'owner']))
         ->assertRedirect();
 
     expect($ritase->fresh()->status)->toBe('disetujui');
@@ -92,4 +92,16 @@ test('approve ketua armada mengubah status dan timeline memuat verifikasi skipab
     expect($events[3]['state'])->toBe('done');
     expect($events[4]['state'])->toBe('pending');
     expect($events[3]['actor'])->toBe($this->user->name);
+});
+
+test('halaman detail ritase merender timeline', function () {
+    $ritase = Ritase::factory()->for($this->armada)->create(['status' => 'draft']);
+
+    $this->actingAs($this->user)
+        ->get(route('fleet.ritase.show', $ritase))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Fleet/Ritase/Show')
+            ->has('timeline', 5)
+            ->where('ritase.id', $ritase->id));
 });
