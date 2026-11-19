@@ -66,7 +66,7 @@ class LogistikController extends Controller
             'jumlah_verifikasi' => 'required|numeric|min:0',
             'berat_kosong_kg' => 'required|numeric|min:0',
             'berat_isi_kg' => 'required|numeric|min:0',
-            'berat_netto_kg' => 'required|numeric|min:0',
+            'berat_netto_kg' => 'nullable|numeric|min:0',
             'tara_sumber' => 'nullable|in:master,timbang_ulang',
             'checklist' => 'nullable',
             'nomor_tiket' => 'nullable|string|max:100',
@@ -79,10 +79,15 @@ class LogistikController extends Controller
             $fotoTiketPath = $request->file('foto_tiket')->store('logistik/tiket/' . now()->format('Y/m'), 'public');
         }
 
+        $beratNetto = $validated['berat_netto_kg'] ?? max(
+            0,
+            (float) $validated['berat_isi_kg'] - (float) $validated['berat_kosong_kg'],
+        );
+
         RitaseTimbang::updateOrCreate(['ritase_id' => $ritase->id], [
             'berat_kosong_kg' => $validated['berat_kosong_kg'],
             'berat_isi_kg' => $validated['berat_isi_kg'],
-            'berat_netto_kg' => $validated['berat_netto_kg'],
+            'berat_netto_kg' => $beratNetto,
             'tara_sumber' => $validated['tara_sumber'] ?? 'master',
             'nomor_tiket' => $validated['nomor_tiket'] ?? null,
             'foto_tiket' => $fotoTiketPath,

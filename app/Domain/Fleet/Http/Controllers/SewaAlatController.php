@@ -100,6 +100,11 @@ class SewaAlatController extends Controller
         return Inertia::render('Fleet/SewaAlat/Create', [
             'armadaList' => $armadaList,
             'proyekList' => $proyekList,
+            'formDefaults' => [
+                'tipe_sewa' => 'internal',
+                'proyek_id' => '',
+                'tanggal_mulai' => now()->toDateString(),
+            ],
         ]);
     }
 

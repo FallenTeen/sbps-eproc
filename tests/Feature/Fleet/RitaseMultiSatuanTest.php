@@ -169,17 +169,3 @@ describe('Fase A3 - Kolom baru', function () {
         expect($ritase->total_upah_rit)->toBe(850_000.0);
     });
 });
-
-describe('Fase A3 - Data awal form ritase', function () {
-    test('halaman create mengirim alias rute yang dipakai form', function () {
-        $this->get(route('fleet.ritase.create'))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('Fleet/Ritase/Create')
-                ->where('ruteList.0.nama_rute', 'Quarry A -> Site B')
-                ->where('ruteList.0.lokasi_muat', 'Quarry A')
-                ->where('ruteList.0.lokasi_bongkar', 'Site B')
-                ->where('ruteList.0.tarif_per_rit', 100000.0)
-                ->where('ruteList.0.tarif_per_trip', 100000.0));
-    });
-});

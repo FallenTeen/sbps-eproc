@@ -20,6 +20,7 @@ class RitasePolicy
     {
         return $user->hasRole([
             'Koordinator GCS',
+            'Ketua Armada',
             'Ketua Divisi Armada',
             'Admin Keuangan',
         ])
@@ -43,6 +44,7 @@ class RitasePolicy
     {
         return $user->hasRole([
             'Koordinator GCS',
+            'Ketua Armada',
             'Ketua Divisi Armada',
         ])
             || $user->hasPermissionTo('manage fleet')

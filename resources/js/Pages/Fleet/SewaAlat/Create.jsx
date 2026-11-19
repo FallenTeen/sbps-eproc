@@ -32,12 +32,14 @@ export default function SewaAlatCreate({
     auth,
     armadaList = [],
     proyekList = [],
+    formDefaults = {},
 }) {
     const { data, setData, post, processing, errors } = useForm({
         armada_id: "",
-        proyek_id: "",
+        tipe_sewa: formDefaults.tipe_sewa || "internal",
+        proyek_id: formDefaults.proyek_id || "",
         nama_pelanggan: "",
-        tanggal_mulai: new Date().toISOString().slice(0, 10),
+        tanggal_mulai: formDefaults.tanggal_mulai || new Date().toISOString().slice(0, 10),
         tanggal_selesai: "",
         hm_awal: "",
         hm_akhir: "",

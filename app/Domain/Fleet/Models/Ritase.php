@@ -108,12 +108,18 @@ class Ritase extends Model
 
     public function verifikasiLogistik()
     {
-        return $this->hasOne(RitaseVerifikasi::class)->where('tahap', 'logistik')->latestOfMany();
+        return $this->hasOne(RitaseVerifikasi::class)
+            ->where('tahap', 'logistik')
+            ->orderByDesc('diverifikasi_pada')
+            ->orderByDesc('created_at');
     }
 
     public function verifikasiSecurity()
     {
-        return $this->hasOne(RitaseVerifikasi::class)->where('tahap', 'security')->latestOfMany();
+        return $this->hasOne(RitaseVerifikasi::class)
+            ->where('tahap', 'security')
+            ->orderByDesc('diverifikasi_pada')
+            ->orderByDesc('created_at');
     }
 
     public function timbang()

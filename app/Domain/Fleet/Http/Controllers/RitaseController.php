@@ -3,10 +3,12 @@
 namespace App\Domain\Fleet\Http\Controllers;
 
 use App\Domain\Core\Models\Proyek;
+use App\Domain\Fleet\Actions\ApproveRitaseAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
+use App\Domain\Fleet\Services\RitaseTimelineService;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
 use App\Traits\FilterableTable;
@@ -119,6 +121,11 @@ class RitaseController extends Controller
             'ruteList' => $ruteList,
             'driverList' => $driverList,
             'proyekList' => $proyekList,
+            'formDefaults' => [
+                'jumlah_trip' => 1,
+                'satuan_volume' => 'ritase',
+                'tanggal' => now()->toDateString(),
+            ],
         ]);
     }
 
@@ -157,17 +164,38 @@ class RitaseController extends Controller
             'customer' => $validated['customer'] ?? null,
             'catatan' => $validated['catatan'] ?? null,
         ]);
-        $ritase->update(['status' => 'disetujui']);
 
         return redirect()->route('fleet.ritase.index')->with('success', 'Ritase harian berhasil dicatat.');
     }
 
     public function show(Request $request, string $id)
     {
-        $ritase = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek', 'biayaLain'])->findOrFail($id);
+        $ritase = Ritase::with([
+            'armada',
+            'driver',
+            'ruteTarif',
+            'proyek',
+            'biayaLain',
+            'muatan',
+            'timbang',
+            'verifikasiLogistik',
+            'verifikasiSecurity',
+        ])->findOrFail($id);
         $this->authorize('view', $ritase);
 
-        return response()->json($ritase);
+        $props = [
+            'ritase' => $ritase,
+            'timeline' => app(RitaseTimelineService::class)->for($ritase),
+            'can' => [
+                'approve' => $ritase->status === 'draft' && $request->user()->can('update', $ritase),
+            ],
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json($props);
+        }
+
+        return Inertia::render('Fleet/Ritase/Show', $props);
     }
 
     /**
@@ -177,7 +205,7 @@ class RitaseController extends Controller
     {
         $this->authorize('update', $ritase);
 
-        $ritase->update(['status' => 'disetujui']);
+        app(ApproveRitaseAction::class)->execute($ritase, $request->user());
 
         return back()->with('success', 'Ritase disetujui.');
     }
@@ -216,7 +244,7 @@ class RitaseController extends Controller
                 'jumlah_volume' => $item['jumlah_volume'] ?? null,
                 'nominal' => $item['nominal'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
-            ])->update(['status' => 'disetujui']);
+            ]);
             $saved++;
         }
 
