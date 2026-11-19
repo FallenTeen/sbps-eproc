@@ -260,3 +260,49 @@ test('halaman riwayat dan monitoring dapat diakses role Workshop', function () {
         ->get(route('fleet.workshop.monitoring.index'))
         ->assertOk();
 });
+
+test('halaman riwayat workshop menyertakan timeline tiap baris', function () {
+    $pengajuan = PengajuanServisArmada::factory()->for($this->armada)->create([
+        'status' => 'selesai',
+        'diajukan_oleh' => $this->owner->id,
+        'tanggal_selesai' => now()->toDateString(),
+        'total_biaya' => 250000,
+    ]);
+
+    ServiceHistory::create([
+        'serviceable_type' => Armada::class,
+        'serviceable_id' => $this->armada->id,
+        'tanggal' => now()->toDateString(),
+        'jenis_servis' => 'Servis rutin',
+        'biaya' => 150000,
+        'notes' => 'Ganti oli.',
+    ]);
+
+    $this->actingAs($this->workshop)
+        ->get(route('fleet.workshop.riwayat.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Fleet/Workshop/Riwayat')
+            ->has('pengajuans', 1)
+            ->has('pengajuans.0.timeline', 6)
+            ->where('pengajuans.0.id', $pengajuan->id)
+            ->has('histories', 1)
+            ->has('histories.0.timeline', 1));
+});
+
+test('halaman servis eksternal menyertakan timeline tiap baris', function () {
+    $pengajuan = PengajuanServisArmada::factory()->for($this->armada)->create([
+        'tipe_servis' => 'eksternal',
+        'diajukan_oleh' => $this->owner->id,
+    ]);
+
+    $this->actingAs($this->workshop)
+        ->get(route('fleet.workshop.servis-eksternal.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Fleet/Workshop/ServisEksternal')
+            ->has('items.data', 1)
+            ->where('items.data.0.id', $pengajuan->id)
+            ->has('items.data.0.timeline', 6)
+            ->where('items.data.0.timeline.0.detail_route', route('fleet.servis-armada.show', $pengajuan->id)));
+});
