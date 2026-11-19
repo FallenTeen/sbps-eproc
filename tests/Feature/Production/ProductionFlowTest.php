@@ -15,6 +15,7 @@ use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -110,6 +111,73 @@ class ProductionFlowTest extends TestCase
     {
         $response = $this->actingAs($this->user)->get(route('production.dashboard'));
         $response->assertStatus(200);
+    }
+
+    public function test_production_dashboard_chart_dataset_contains_satuan(): void
+    {
+        $operator = Karyawan::create([
+            'nama' => 'Operator Grafik',
+            'nik' => '123458',
+            'tipe' => 'tetap',
+            'status' => 'aktif',
+            'jabatan' => 'Operator',
+            'departemen' => 'Produksi',
+        ]);
+
+        ProductionSession::create([
+            'mesin_id' => $this->mesin->id,
+            'titik_id' => $this->titik->id,
+            'produk_id' => $this->produk->id,
+            'operator_karyawan_id' => $operator->id,
+            'mulai' => now()->subHours(2),
+            'selesai' => now(),
+            'status' => 'selesai',
+            'hasil_output' => 10,
+        ]);
+
+        $produkTon = Produk::create([
+            'unit_bisnis_id' => $this->unitBisnis->id,
+            'nama' => 'Produk Ton',
+            'kategori' => 'beton_cor',
+            'satuan_output' => 'ton',
+            'aktif' => true,
+        ]);
+
+        ProductionSession::create([
+            'mesin_id' => $this->mesin->id,
+            'titik_id' => $this->titik->id,
+            'produk_id' => $produkTon->id,
+            'operator_karyawan_id' => $operator->id,
+            'mulai' => now()->subHour(),
+            'selesai' => now(),
+            'status' => 'selesai',
+            'hasil_output' => 5,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('production.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Production/Dashboard/Index')
+                ->where('metrics.chart_data.datasets.0.label', 'Beton K-300')
+                ->where('metrics.chart_data.datasets.0.satuan', 'm3')
+                ->where('metrics.chart_data.datasets.1.label', 'Produk Ton')
+                ->where('metrics.chart_data.datasets.1.satuan', 'ton')
+            );
+    }
+
+    public function test_production_dashboard_memakai_header_standar_dan_panel_perlu_perhatian(): void
+    {
+        $source = file_get_contents(resource_path('js/Pages/Production/Dashboard/Index.jsx'));
+
+        expect($source)
+            ->toContain('AuthenticatedLayout')
+            ->toContain('flex flex-col sm:flex-row justify-between items-center gap-4 mb-6')
+            ->toContain('Perlu perhatian')
+            ->toContain('satuan')
+            ->toContain('Total')
+            ->toContain('Belum ada')
+            ->not->toContain('mx-auto max-w-');
     }
 
     public function test_can_start_production_session()
@@ -211,5 +279,26 @@ class ProductionFlowTest extends TestCase
             'production_session_id' => $session->id,
             'jenis_uji' => 'uji_tekan',
         ]);
+    }
+
+    public function test_halaman_produksi_tidak_mengandung_karakter_mojibake(): void
+    {
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(resource_path('js/Pages'))
+        );
+
+        $tersebar = [];
+        foreach ($files as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'jsx') {
+                continue;
+            }
+
+            $source = file_get_contents($file->getPathname());
+            if (str_contains($source, "\u{0393}")) {
+                $tersebar[] = $file->getFilename();
+            }
+        }
+
+        $this->assertSame([], $tersebar, 'Masih ada karakter mojibake di halaman JSX.');
     }
 }

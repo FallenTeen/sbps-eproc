@@ -86,6 +86,7 @@ class ProductionDashboardAggregator
 
             $dataset = [
                 'label' => $produk->nama,
+                'satuan' => $produk->satuan_output ?? '',
                 'data' => array_fill(0, 7, 0),
             ];
 

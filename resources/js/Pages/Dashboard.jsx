@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs';
 import DashboardPetaProyek from '@/Components/DashboardPetaProyek';
 
 /**
@@ -28,7 +28,7 @@ import DashboardPetaProyek from '@/Components/DashboardPetaProyek';
  */
 const PETA_TITIK = null;
 
-// ── Format & konstanta ──────────────────────────────────────────────
+// -- Format & konstanta ----------------------------------------------
 const compact = new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 });
 const angka = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 const rp = (n) => `Rp ${compact.format(n || 0)}`;
@@ -37,8 +37,13 @@ const tgl = (s) => (s ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : '');
 const href = (name, params, fallback = null) => {
     try { return route(name, params); } catch { return fallback; }
 };
+const labelProyek = (daftar, value) => {
+    if (value === 'semua') return 'Semua proyek';
+    const proyek = (daftar ?? []).find((p) => String(p.id) === String(value));
+    return proyek?.nama ?? 'Pilih proyek';
+};
 
-const C = { tinta: '#1E5A5C', amber: '#D99A1C', abu: '#94A3B8', merah: '#C0432F', hijau: '#2F8F6B', biru: '#3B6FA0' };
+const C = { tinta: '#DC2626', amber: '#D99A1C', abu: '#94A3B8', merah: '#DC2626', hijau: '#16A34A', biru: '#2563EB' };
 const PIE = [C.tinta, C.amber, C.merah, C.abu, C.biru, C.hijau];
 const AGING_BG = ['bg-emerald-600', 'bg-amber-500', 'bg-red-500'];
 
@@ -116,7 +121,7 @@ const TAB_META = {
     },
 };
 
-// ── Komponen kecil ──────────────────────────────────────────────────
+// -- Komponen kecil --------------------------------------------------
 function Pill({ tone = 'netral', icon = true, children }) {
     const T = TONE[tone] ?? TONE.netral;
     const Icon = icon ? T.icon : null;
@@ -131,19 +136,19 @@ function Pill({ tone = 'netral', icon = true, children }) {
 function Empty({ children, ok = false }) {
     const Icon = ok ? CheckCircle2 : Inbox;
     return (
-        <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/40 px-4 py-6 text-center">
-            <Icon className={`h-5 w-5 ${ok ? 'text-emerald-600' : 'text-muted-foreground'}`} aria-hidden="true" />
-            <p className="text-sm text-muted-foreground">{children}</p>
+        <div className="flex flex-col items-center gap-2 rounded-lg bg-gray-50 px-4 py-6 text-center dark:bg-slate-900/50">
+            <Icon className={`h-5 w-5 ${ok ? 'text-emerald-600' : 'text-gray-500 dark:text-slate-400'}`} aria-hidden="true" />
+            <p className="text-sm text-gray-600 dark:text-slate-400">{children}</p>
         </div>
     );
 }
 
 function Panel({ title, description, periode, count, action, className = '', children }) {
     return (
-        <Card className={`self-start gap-4 py-5 shadow-none ${className}`}>
+        <Card className={`self-start gap-4 border border-gray-200 bg-white py-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`}>
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5">
                 <div className="min-w-0 space-y-1">
-                    <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                    <CardTitle className="flex flex-wrap items-center gap-2 text-base text-gray-900 dark:text-slate-50">
                         {title}
                         {count > 0 && <Badge variant="secondary" className="px-1.5 font-normal tabular-nums">{count}</Badge>}
                     </CardTitle>
@@ -246,29 +251,29 @@ function AgingBar({ aging }) {
  */
 function Kpi({ label, icon: Icon, value, periode, sub, delta, spark, color, extra, to, onDetail, detailLabel = 'Lihat detail' }) {
     const footer = to
-        ? <Link href={to} className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{detailLabel}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+        ? <Link href={to} className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-[#DC2626] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] dark:text-red-400">{detailLabel}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
         : onDetail
-            ? <button type="button" onClick={onDetail} className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{detailLabel}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+            ? <button type="button" onClick={onDetail} className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-[#DC2626] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] dark:text-red-400">{detailLabel}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
             : null;
     return (
-        <Card className="h-full gap-0 py-4 shadow-none">
+        <Card className="h-full gap-0 border border-gray-200 bg-white py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <CardContent className="flex h-full flex-col gap-3 px-4">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                         {Icon && (
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#DC2626] dark:bg-red-950/40 dark:text-red-400">
                                 <Icon className="h-4 w-4" aria-hidden="true" />
                             </span>
                         )}
-                        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">{label}</p>
                     </div>
-                    {periode && <span className="shrink-0 text-xs text-muted-foreground">{periode}</span>}
+                    {periode && <span className="shrink-0 text-xs text-gray-600 dark:text-slate-400">{periode}</span>}
                 </div>
                 <div className="flex items-end justify-between gap-2">
                     <div className="min-w-0 space-y-1">
-                        <p className="break-words text-2xl font-semibold tabular-nums leading-tight">{value}</p>
+                        <p className="break-words text-2xl font-semibold tabular-nums leading-tight text-gray-950 dark:text-slate-50">{value}</p>
                         {delta}
-                        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+                        {sub && <p className="text-xs text-gray-600 dark:text-slate-400">{sub}</p>}
                     </div>
                     <Spark data={spark} color={color} />
                 </div>
@@ -315,7 +320,7 @@ function Chart({ children, tinggi = 'h-56' }) {
 const axis = { tick: { fontSize: 12 }, tickLine: false, axisLine: false };
 const tip = { contentStyle: { borderRadius: 8, fontSize: 12 }, cursor: { fill: 'rgba(148,163,184,0.12)' } };
 
-// ── Kesehatan proyek ────────────────────────────────────────────────
+// -- Kesehatan proyek ------------------------------------------------
 function Bar2({ label, v, cls, kuat = false }) {
     return (
         <div className="flex items-center gap-2 text-xs">
@@ -444,7 +449,7 @@ function TabelKesehatan({ daftar, batas }) {
     );
 }
 
-// ── Perlu keputusan ─────────────────────────────────────────────────
+// -- Perlu keputusan -------------------------------------------------
 function PerluTindakan({ items }) {
     if (!items || items.length === 0) {
         return (
@@ -499,7 +504,7 @@ function PerluTindakan({ items }) {
     );
 }
 
-// ── Heading konteks tab ─────────────────────────────────────────────
+// -- Heading konteks tab ---------------------------------------------
 function TabHeading({ meta }) {
     const Icon = meta.icon;
     return (
@@ -523,7 +528,7 @@ function TabHeading({ meta }) {
     );
 }
 
-// ── Halaman ─────────────────────────────────────────────────────────
+// -- Halaman ---------------------------------------------------------
 export default function Dashboard({ auth, ownerData = {} }) {
     const s = ownerData.summary_today ?? {};
     const ins = ownerData.insights ?? {};
@@ -595,14 +600,14 @@ export default function Dashboard({ auth, ownerData = {} }) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-semibold leading-tight text-gray-800">Ringkasan hari ini</h2>
-                        <p className="mt-1 text-sm text-gray-500">{hariIni}</p>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="w-full">
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-50">Ringkasan hari ini</h1>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{hariIni}</p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-3">
                         {auth?.active_role && (
-                            <span className="inline-flex border-2 border-black bg-surface-muted px-3 py-1 text-[10px] font-black uppercase tracking-widest text-ink-secondary">
+                            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold tracking-wide text-[#DC2626] dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
                                 {auth.active_role}
                             </span>
                         )}
@@ -619,56 +624,64 @@ export default function Dashboard({ auth, ownerData = {} }) {
             }
         >
             <Head title="Dashboard" />
-            <div className={`mx-auto max-w-screen-2xl space-y-6 transition-opacity ${memuat ? 'opacity-70' : ''}`} aria-busy={memuat}>
+            <div className={`space-y-6 transition-opacity ${memuat ? 'opacity-70' : ''}`} aria-busy={memuat}>
                 {ins.perlu_tindakan && <PerluTindakan items={ins.perlu_tindakan} />}
 
-                {/* KPI utama: hanya yang boleh dilihat user */}
-                <section aria-label="Indikator utama" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {s.saldo_kas !== undefined && (
-                        <Kpi label="Saldo kas dan bank" icon={Wallet} periode="Saat ini" value={rp(s.saldo_kas)}
-                            sub={runway != null ? 'Total semua akun aktif. Perkiraan berdasarkan pengeluaran 30 hari terakhir.' : 'Total semua akun aktif'}
-                            extra={runway != null && <Pill tone={runwayTone}>Kas bertahan sekitar {runway} hari</Pill>}
-                            onDetail={bukaTab('keuangan')} detailLabel="Lihat keuangan" />
-                    )}
-                    {s.piutang_outstanding !== undefined && (
-                        <Kpi label="Piutang belum dibayar" icon={FileText} periode="Saat ini" value={rp(s.piutang_outstanding)}
-                            sub={jumlahInvoice != null ? `${jumlahInvoice} invoice tercatat` : undefined}
-                            extra={<>
-                                <AgingBar aging={aging} />
-                                {agingLama && (agingLama.total > 0
-                                    ? <Pill tone="merah">{rp(agingLama.total)} sudah lewat 60 hari</Pill>
-                                    : <Pill tone="sehat">Tidak ada yang lewat 60 hari</Pill>)}
-                            </>}
-                            onDetail={bukaTab('keuangan')} detailLabel="Lihat umur piutang" />
-                    )}
-                    {s.pengeluaran !== undefined && (
-                        <Kpi label="Pengeluaran hari ini" icon={Receipt} periode="Hari ini" value={rp(s.pengeluaran)} spark={kpi.pengeluaran?.deret} color={C.merah}
-                            delta={kpi.pengeluaran && <Delta now={kpi.pengeluaran.hari_ini} before={kpi.pengeluaran.kemarin} naikBaik={false} />}
-                            sub={kpi.pengeluaran?.kemarin != null ? `Kemarin ${rp(kpi.pengeluaran.kemarin)}` : undefined} />
-                    )}
-                    {s.produksi_output !== undefined && (
-                        <Kpi label="Output produksi hari ini" icon={Factory} periode="Hari ini" value={angka.format(s.produksi_output)} spark={kpi.produksi?.deret} color={C.tinta}
-                            delta={kpi.produksi && <Delta now={kpi.produksi.hari_ini} before={kpi.produksi.kemarin} />}
-                            sub={ins.produksi?.output_bulan_ini != null ? `Bulan ini ${angka.format(ins.produksi.output_bulan_ini)}` : (kpi.produksi?.kemarin != null ? `Kemarin ${angka.format(kpi.produksi.kemarin)}` : undefined)}
-                            onDetail={bukaTab('produksi')} detailLabel="Lihat produksi" />
-                    )}
-                    {s.ritase_today !== undefined && (
-                        <Kpi label="Ritase hari ini" icon={Truck} periode="Hari ini" value={angka.format(s.ritase_today)} spark={kpi.ritase?.deret} color={C.biru}
-                            delta={kpi.ritase && <Delta now={kpi.ritase.hari_ini} before={kpi.ritase.kemarin} />}
-                            sub={ins.armada ? `${ins.armada.beroperasi_hari_ini} dari ${ins.armada.aktif} unit aktif beroperasi` : (kpi.ritase?.kemarin != null ? `Kemarin ${angka.format(kpi.ritase.kemarin)}` : undefined)}
-                            onDetail={bukaTab('armada')} detailLabel="Lihat armada" />
-                    )}
-                    {s.po_pending_approval !== undefined && (
-                        <Kpi label="PO menunggu approval" icon={ClipboardCheck} periode="Saat ini" value={s.po_pending_approval}
-                            sub="Antrean persetujuan finance dan owner"
-                            extra={s.po_pending_approval > 0 ? <Pill tone="kuning">Ada antrean</Pill> : <Pill tone="sehat">Antrean kosong</Pill>}
-                            to={href('purchase-orders.index')} detailLabel="Buka daftar PO" />
-                    )}
-                    {s.proyek_aktif !== undefined && <Kpi label="Proyek aktif" icon={BriefcaseBusiness} periode="Saat ini" value={s.proyek_aktif} sub="Kontrak klien Anda" onDetail={bukaTab('proyek')} detailLabel="Lihat proyek" />}
-                    {s.total_proyek !== undefined && s.proyek_aktif === undefined && (
-                        <Kpi label="Titik aktif" icon={MapPin} periode="Saat ini" value={s.total_titik_aktif} sub={`dari ${s.total_proyek} proyek`} />
-                    )}
-                </section>
+                {/* KPI keuangan: dua kartu lebar sebagai sorotan utama */}
+                {(s.saldo_kas !== undefined || s.piutang_outstanding !== undefined) && (
+                    <section aria-label="Posisi keuangan" className="grid gap-3 sm:grid-cols-2">
+                        {s.saldo_kas !== undefined && (
+                            <Kpi label="Saldo kas dan bank" icon={Wallet} periode="Saat ini" value={rp(s.saldo_kas)}
+                                sub={runway != null ? 'Total semua akun aktif. Perkiraan berdasarkan pengeluaran 30 hari terakhir.' : 'Total semua akun aktif'}
+                                extra={runway != null && <Pill tone={runwayTone}>Kas bertahan sekitar {runway} hari</Pill>}
+                                onDetail={bukaTab('keuangan')} detailLabel="Lihat keuangan" />
+                        )}
+                        {s.piutang_outstanding !== undefined && (
+                            <Kpi label="Piutang belum dibayar" icon={FileText} periode="Saat ini" value={rp(s.piutang_outstanding)}
+                                sub={jumlahInvoice != null ? `${jumlahInvoice} invoice tercatat` : undefined}
+                                extra={<>
+                                    <AgingBar aging={aging} />
+                                    {agingLama && (agingLama.total > 0
+                                        ? <Pill tone="merah">{rp(agingLama.total)} sudah lewat 60 hari</Pill>
+                                        : <Pill tone="sehat">Tidak ada yang lewat 60 hari</Pill>)}
+                                </>}
+                                onDetail={bukaTab('keuangan')} detailLabel="Lihat umur piutang" />
+                        )}
+                    </section>
+                )}
+
+                {/* KPI operasional: kartu kompak */}
+                {(s.pengeluaran !== undefined || s.produksi_output !== undefined || s.ritase_today !== undefined || s.po_pending_approval !== undefined || s.proyek_aktif !== undefined || s.total_proyek !== undefined) && (
+                    <section aria-label="Operasional hari ini" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {s.pengeluaran !== undefined && (
+                            <Kpi label="Pengeluaran hari ini" icon={Receipt} periode="Hari ini" value={rp(s.pengeluaran)} spark={kpi.pengeluaran?.deret} color={C.merah}
+                                delta={kpi.pengeluaran && <Delta now={kpi.pengeluaran.hari_ini} before={kpi.pengeluaran.kemarin} naikBaik={false} />}
+                                sub={kpi.pengeluaran?.kemarin != null ? `Kemarin ${rp(kpi.pengeluaran.kemarin)}` : undefined} />
+                        )}
+                        {s.produksi_output !== undefined && (
+                            <Kpi label="Output produksi hari ini" icon={Factory} periode="Hari ini" value={angka.format(s.produksi_output)} spark={kpi.produksi?.deret} color={C.tinta}
+                                delta={kpi.produksi && <Delta now={kpi.produksi.hari_ini} before={kpi.produksi.kemarin} />}
+                                sub={ins.produksi?.output_bulan_ini != null ? `Bulan ini ${angka.format(ins.produksi.output_bulan_ini)}` : (kpi.produksi?.kemarin != null ? `Kemarin ${angka.format(kpi.produksi.kemarin)}` : undefined)}
+                                onDetail={bukaTab('produksi')} detailLabel="Lihat produksi" />
+                        )}
+                        {s.ritase_today !== undefined && (
+                            <Kpi label="Ritase hari ini" icon={Truck} periode="Hari ini" value={angka.format(s.ritase_today)} spark={kpi.ritase?.deret} color={C.biru}
+                                delta={kpi.ritase && <Delta now={kpi.ritase.hari_ini} before={kpi.ritase.kemarin} />}
+                                sub={ins.armada ? `${ins.armada.beroperasi_hari_ini} dari ${ins.armada.aktif} unit aktif beroperasi` : (kpi.ritase?.kemarin != null ? `Kemarin ${angka.format(kpi.ritase.kemarin)}` : undefined)}
+                                onDetail={bukaTab('armada')} detailLabel="Lihat armada" />
+                        )}
+                        {s.po_pending_approval !== undefined && (
+                            <Kpi label="PO menunggu approval" icon={ClipboardCheck} periode="Saat ini" value={s.po_pending_approval}
+                                sub="Antrean persetujuan finance dan owner"
+                                extra={s.po_pending_approval > 0 ? <Pill tone="kuning">Ada antrean</Pill> : <Pill tone="sehat">Antrean kosong</Pill>}
+                                to={href('purchase-orders.index')} detailLabel="Buka daftar PO" />
+                        )}
+                        {s.proyek_aktif !== undefined && <Kpi label="Proyek aktif" icon={BriefcaseBusiness} periode="Saat ini" value={s.proyek_aktif} sub="Kontrak klien Anda" onDetail={bukaTab('proyek')} detailLabel="Lihat proyek" />}
+                        {s.total_proyek !== undefined && s.proyek_aktif === undefined && (
+                            <Kpi label="Titik aktif" icon={MapPin} periode="Saat ini" value={s.total_titik_aktif} sub={`dari ${s.total_proyek} proyek`} />
+                        )}
+                    </section>
+                )}
 
                 {canViewProjectMap && (
                     <DashboardPetaProyek
@@ -678,7 +691,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                 )}
 
                 <Tabs value={tab} onValueChange={setTab} className="flex-col gap-4" ref={tabsRef}>
-                    <div className="w-full overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+                    <div className="w-full overflow-x-auto overflow-y-hidden pb-1" style={{ scrollbarWidth: 'thin' }}>
                         <TabsList className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1" aria-label="Kategori dashboard">
                             {tabs.map((t) => {
                                 const Icon = t.icon;
@@ -687,7 +700,11 @@ export default function Dashboard({ auth, ownerData = {} }) {
                                         key={t.id}
                                         value={t.id}
                                         title={t.deskripsi}
-                                        className="h-9 gap-2 rounded-md px-3.5 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-active:bg-gray-900 data-active:font-semibold data-active:text-white data-active:shadow-sm"
+                                        className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                                            tab === t.id
+                                                ? '!bg-[#DC2626] !font-semibold !text-white shadow-sm'
+                                                : 'text-muted-foreground hover:bg-background hover:text-foreground'
+                                        }`}
                                     >
                                         <Icon className="h-4 w-4" aria-hidden="true" />
                                         {t.label}
@@ -703,7 +720,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </TabsList>
                     </div>
 
-                    {/* ── Ringkasan ── (heading dilewati: header halaman dan KPI di atas sudah memberi konteks) */}
+                    {/* -- Ringkasan -- (heading dilewati: header halaman dan KPI di atas sudah memberi konteks) */}
                     <TabsContent value="ringkasan" className="space-y-4">
                         <p className="text-sm text-muted-foreground">{TAB_META.ringkasan.deskripsi}</p>
                         <div className="grid gap-4 lg:grid-cols-3">
@@ -805,7 +822,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </div>
                     </TabsContent>
 
-                    {/* ── Keuangan ── */}
+                    {/* -- Keuangan -- */}
                     {ins.keuangan && (
                         <TabsContent value="keuangan" className="space-y-4">
                             <TabHeading meta={TAB_META.keuangan} />
@@ -897,13 +914,13 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </TabsContent>
                     )}
 
-                    {/* ── Proyek ── */}
+                    {/* -- Proyek -- */}
                     <TabsContent value="proyek" className="space-y-4">
                         <TabHeading meta={TAB_META.proyek} />
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm text-muted-foreground">Tampilkan</span>
                             <Select value={filterProyek} onValueChange={setFilterProyek}>
-                                <SelectTrigger className="w-64" aria-label="Filter proyek"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-64" aria-label="Filter proyek"><SelectValue>{labelProyek(ownerData.proyek_list, filterProyek)}</SelectValue></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="semua">Semua proyek</SelectItem>
                                     {(ownerData.proyek_list ?? []).map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>)}
@@ -937,7 +954,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </Panel>
                     </TabsContent>
 
-                    {/* ── Armada ── */}
+                    {/* -- Armada -- */}
                     {w.armada && (
                         <TabsContent value="armada" className="space-y-4">
                             <TabHeading meta={TAB_META.armada} />
@@ -998,7 +1015,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                                 </Panel>
                                 <Panel title="Unit paling sering downtime" description="Jumlah kejadian per unit" periode="Bulan ini">
                                     <List items={ins.armada?.sering_downtime} empty="Belum ada downtime bulan ini." ok>
-                                        {(ins.armada?.sering_downtime ?? []).map((a) => <Row key={a.armada} title={a.armada} meta={`${a.kejadian}×`} metaSub="kejadian" />)}
+                                        {(ins.armada?.sering_downtime ?? []).map((a) => <Row key={a.armada} title={a.armada} meta={`${a.kejadian}├ù`} metaSub="kejadian" />)}
                                     </List>
                                 </Panel>
                             </div>
@@ -1013,7 +1030,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </TabsContent>
                     )}
 
-                    {/* ── Produksi ── */}
+                    {/* -- Produksi -- */}
                     {w.produksi && (
                         <TabsContent value="produksi" className="space-y-4">
                             <TabHeading meta={TAB_META.produksi} />
@@ -1077,7 +1094,7 @@ export default function Dashboard({ auth, ownerData = {} }) {
                         </TabsContent>
                     )}
 
-                    {/* ── SDM ── */}
+                    {/* -- SDM -- */}
                     {ins.sdm && (
                         <TabsContent value="sdm" className="space-y-4">
                             <TabHeading meta={TAB_META.sdm} />

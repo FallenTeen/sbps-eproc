@@ -47,6 +47,8 @@ export default function DataTable({
     sort = null,
     direction = "asc",
     emptyMessage = "Tidak ada data",
+    density = "comfortable",
+    showFilters = true,
 }) {
     const filtersRef = useRef(cleanFilters(filters));
     const sortRef = useRef({ sort, direction });
@@ -171,6 +173,7 @@ export default function DataTable({
                                 </th>
                             ))}
                         </tr>
+                        {showFilters !== false && (
                         <tr>
                             {columns.map((col) => (
                                 <th
@@ -189,6 +192,7 @@ export default function DataTable({
                                 </th>
                             ))}
                         </tr>
+                    )}
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {rows.data.length === 0 ? (
@@ -205,7 +209,7 @@ export default function DataTable({
                                             key={col.key}
                                             className={
                                                 col.cellClassName ??
-                                                `px-4 py-3 text-sm text-gray-700 ${
+                                                `${density === 'compact' ? 'px-3 py-2 text-xs' : density === 'three' ? 'px-4 py-4 text-sm' : 'px-4 py-3 text-sm'} text-gray-700 ${
                                                     col.align === "right" ? "text-right" : ""
                                                 }`
                                             }

@@ -337,3 +337,16 @@ test('koordinator produksi menerima widget produksi (sesi jalan, QC, pengiriman,
             ->missing('ownerData.widgets.armada')
         );
 });
+
+test('dashboard owner memakai header standar tanpa wrapper lebar', function () {
+    $source = file_get_contents(resource_path('js/Pages/Dashboard.jsx'));
+
+    expect($source)
+        ->toContain('flex flex-col sm:flex-row justify-between items-center gap-4')
+        ->toContain('ownerData')
+        ->toContain('dark:')
+        ->toContain('labelProyek(ownerData.proyek_list, filterProyek)')
+        ->toContain("return proyek?.nama ?? 'Pilih proyek';")
+        ->toContain('Tidak ada')
+        ->not->toContain('mx-auto max-w-');
+});
