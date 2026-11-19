@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Trash2 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ opnames, titiks, filters, sort, direction }) {
     const { auth } = usePage().props;
@@ -148,18 +149,16 @@ export default function Index({ opnames, titiks, filters, sort, direction }) {
                         Stok Opname
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Checklist inventarisasi: cocokkan saldo sistem vs saldo
-                        fisik
+                        Inventarisasi berkala untuk memastikan saldo sistem
+                        sesuai dengan kondisi fisik barang di lapangan.
                     </p>
                 </div>
                 {canManage && (
-                    <Link
-                        href={route("inventory.stok-opname.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
+                    <PrimaryButton variant="outline" asChild>
+                    <Link href={route("inventory.stok-opname.create")}>
                         Catat Opname
                     </Link>
+                    </PrimaryButton>
                 )}
             </div>
 

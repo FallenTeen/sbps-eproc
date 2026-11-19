@@ -5,15 +5,16 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Inventory\Actions\CreateStokOpnameAction;
 use App\Domain\Inventory\Models\StokOpname;
+use App\Domain\Inventory\Services\InventoryDashboardAggregator;
 use App\Domain\Procurement\Actions\GetStokSaldoAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\StokMutasi;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase;
 use Spatie\Permission\Models\Permission;
 
-uses(TestCase::class, DatabaseTransactions::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     Permission::findOrCreate('manage stok opname');
@@ -128,5 +129,121 @@ test('dashboard inventory menampilkan metrik untuk role Inventory', function () 
             ->component('Inventory/Dashboard/Index')
             ->has('metrics.total_item')
             ->has('metrics.mendekati_habis')
+        );
+});
+
+test('agregator dashboard menyusun trend tujuh hari dengan nol untuk hari tanpa mutasi', function () {
+    $trend = collect((new InventoryDashboardAggregator)->getTrend(7));
+
+    expect($trend)->toHaveCount(7);
+
+    $hariIni = $trend->firstWhere('tanggal', now()->toDateString());
+    expect($hariIni['keluar'])->toBe(30.0);
+
+    $hariKosong = $trend->first(fn ($h) => $h['masuk'] === 0.0 && $h['keluar'] === 0.0);
+    expect($hariKosong)->not->toBeNull();
+});
+
+test('agregator dashboard memetakan sumber mutasi yang tidak dikenal ke manual', function () {
+    $mutasi = StokMutasi::create([
+        'bahan_baku_id' => $this->bahanBaku->id,
+        'titik_id' => $this->titik->id,
+        'tipe' => 'masuk',
+        'jumlah' => 1,
+        'tanggal' => now()->toDateString(),
+        'created_by' => $this->inventory->id,
+        'referensi_type' => 'App\\Domain\\Unknown\\Model',
+        'referensi_id' => 'abc',
+    ]);
+
+    expect(InventoryDashboardAggregator::sumberMutasi($mutasi))->toBe('manual');
+});
+
+test('agregator dashboard memakai fallback stok minimum 10', function () {
+    expect(InventoryDashboardAggregator::minimumStok(new BahanBaku(['stok_minimum' => null])))->toBe(10.0);
+
+    $item = BahanBaku::factory()->create([
+        'kategori' => 'bahan_baku',
+        'stok_minimum' => 10,
+    ]);
+    StokMutasi::create([
+        'bahan_baku_id' => $item->id,
+        'titik_id' => $this->titik->id,
+        'tipe' => 'masuk',
+        'jumlah' => 9,
+        'tanggal' => now()->toDateString(),
+        'created_by' => $this->inventory->id,
+    ]);
+
+    $saldo = collect((new InventoryDashboardAggregator)->getSaldo())->firstWhere('id', $item->id);
+    expect($saldo['status'])->toBe('Menipis');
+
+    $judul = collect((new InventoryDashboardAggregator)->getActions())->pluck('judul')->implode(' ');
+    expect($judul)->toContain('Buat/cek PO');
+});
+
+test('agregator dashboard mengabaikan filter yang tidak cocok', function () {
+    $baris = (new InventoryDashboardAggregator)->getMutasi([
+        'sumber' => 'pembelian',
+        'titik' => $this->titik->id,
+        'rentang' => 30,
+    ]);
+
+    expect($baris)->toHaveCount(0);
+});
+
+test('dashboard inventory meneruskan filter ke agregator dan mempertahankan metrics', function () {
+    $this->actingAs($this->inventory)
+        ->get(route('inventory.dashboard', ['rentang' => 7, 'sumber' => 'manual']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Inventory/Dashboard/Index')
+            ->has('metrics.total_item')
+            ->where('dashboard.filter.rentang', 7)
+            ->where('dashboard.filter.sumber', 'manual')
+            ->has('dashboard.trend', 7)
+        );
+});
+
+test('dashboard inventory menyiapkan data ringkasan untuk grafik dan tindakan', function () {
+    $this->actingAs($this->inventory)
+        ->get(route('inventory.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('dashboard.trend', fn ($rows) => collect($rows)->every(fn ($row) => array_key_exists('tanggal', $row) && array_key_exists('masuk', $row) && array_key_exists('keluar', $row)))
+            ->where('dashboard.actions', fn ($rows) => collect($rows)->every(fn ($row) => array_key_exists('id', $row) && array_key_exists('prioritas', $row) && array_key_exists('judul', $row) && array_key_exists('href', $row)))
+        );
+});
+
+test('filter dashboard tersedia untuk kanban dan mutasi', function () {
+    $this->actingAs($this->inventory)
+        ->get(route('inventory.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('dashboard.filter.sumber_options')
+            ->has('dashboard.filter.titik_options')
+            ->has('dashboard.filter.kategori_options')
+            ->where('dashboard.mutasi', fn ($rows) => collect($rows)->every(fn ($row) => array_key_exists('sumber', $row) && array_key_exists('sumber_label', $row)))
+        );
+});
+
+test('dashboard inventory menyiapkan saldo dan opname', function () {
+    (new CreateStokOpnameAction)->execute($this->inventory, $this->titik->id, today()->toDateString(), [
+        ['bahan_baku_id' => $this->bahanBaku->id, 'saldo_fisik' => 60],
+        ['bahan_baku_id' => $this->sparepart->id, 'saldo_fisik' => 0],
+    ]);
+
+    $this->actingAs($this->inventory)
+        ->get(route('inventory.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('dashboard.saldo', fn ($rows) => collect($rows)->every(fn ($row) => array_key_exists('status', $row) && array_key_exists('terakhir_bergerak', $row)))
+            ->where('dashboard.opname', function ($rows) {
+                $selisih = collect($rows)->pluck('selisih')->all();
+
+                return count($selisih) >= 2
+                    && $selisih[0] != 0
+                    && collect($selisih)->search(0.0) > 0;
+            })
         );
 });
