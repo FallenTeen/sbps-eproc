@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import PrimaryButton from "@/Components/PrimaryButton";
+import TimelineStrip from "@/Components/Fleet/TimelineStrip";
 import { formatTanggal } from "@/utils/date";
 import {
     SearchX,
@@ -13,6 +14,7 @@ import {
     ExternalLink,
     ArrowLeft,
     Eye,
+    History,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -27,6 +29,7 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
     const [verifikasi, setVerifikasi] = useState(filters.verifikasi || "");
     const [editing, setEditing] = useState(null);
     const [viewing, setViewing] = useState(null);
+    const [timelineItem, setTimelineItem] = useState(null);
     const [form, setForm] = useState({ status: "terverifikasi", catatan: "" });
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
@@ -36,6 +39,7 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
             if (e.key === "Escape") {
                 setEditing(null);
                 setViewing(null);
+                setTimelineItem(null);
             }
         };
         window.addEventListener("keydown", close);
@@ -54,9 +58,11 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
     };
 
     const startVerify = (it) => {
+        const current = it.eksternal_detail?.verifikasi_workshop;
+
         setEditing(it);
         setForm({
-            status: it.eksternal_detail?.verifikasi_workshop || "terverifikasi",
+            status: current === "bermasalah" ? "bermasalah" : "terverifikasi",
             catatan: it.eksternal_detail?.verifikasi_workshop_catatan || "",
         });
         setErrors({});
@@ -65,13 +71,17 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
     const submit = (e) => {
         e.preventDefault();
         if (!editing) return;
+        const status = ["terverifikasi", "bermasalah"].includes(form.status)
+            ? form.status
+            : "terverifikasi";
+
         setProcessing(true);
         setErrors({});
         router.post(
             route("fleet.workshop.servis-eksternal.verifikasi", {
                 pengajuan: editing.id,
             }),
-            form,
+            { ...form, status },
             {
                 preserveScroll: true,
                 onError: (err) => setErrors(err),
@@ -266,6 +276,18 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                                                     className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
                                                 >
                                                     <Eye className="w-4 h-4" /> Lihat
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setTimelineItem({
+                                                            title: `${it.kode_pengajuan} · ${it.armada?.plat_nomor || "-"}`,
+                                                            events: it.timeline || [],
+                                                        })
+                                                    }
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <History className="w-4 h-4" /> Timeline
                                                 </button>
                                                 {canVerify && (
                                                     <button
@@ -500,6 +522,63 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {timelineItem && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                    onClick={() => setTimelineItem(null)}
+                >
+                    <div
+                        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Timeline ${timelineItem.title}`}
+                    >
+                        <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+                            <div className="min-w-0">
+                                <h3 className="text-base font-semibold text-gray-900">
+                                    Timeline Servis
+                                </h3>
+                                <p className="mt-0.5 truncate text-xs text-gray-500">
+                                    {timelineItem.title}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setTimelineItem(null)}
+                                className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                aria-label="Tutup timeline"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-5">
+                            {timelineItem.events?.length ? (
+                                <TimelineStrip
+                                    events={timelineItem.events}
+                                    title="Alur Penyelesaian"
+                                />
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                    Timeline belum tersedia.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end border-t border-gray-200 p-4">
+                            <button
+                                type="button"
+                                onClick={() => setTimelineItem(null)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

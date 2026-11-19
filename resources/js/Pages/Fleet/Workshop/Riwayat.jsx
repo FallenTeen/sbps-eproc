@@ -1,405 +1,487 @@
-import React, { useState } from "react";
-import { Head } from "@inertiajs/react";
+import React, { useEffect, useState } from "react";
+import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import TimelineStrip from "@/Components/Fleet/TimelineStrip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import {
-    History,
-    User,
-    FileCheck2,
-    Package,
-    Wrench,
     CalendarDays,
+    ClipboardList,
+    Eye,
+    FileCheck2,
+    History,
+    Package,
     Receipt,
     Truck,
-    ClipboardList,
+    User,
+    Wrench,
+    X,
 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
-function StatCard({ label, value, color = "blue" }) {
-    const colors = {
+
+const rupiah = (n) => Number(n || 0).toLocaleString("id-ID");
+
+function StatCard({ label, value, accent = "blue" }) {
+    const accents = {
         blue: "from-blue-600 to-blue-700",
-        green: "from-green-600 to-green-700",
-        amber: "from-amber-500 to-amber-600",
-        purple: "from-purple-600 to-purple-700",
+        green: "from-emerald-600 to-emerald-700",
     };
+
     return (
         <div
-            className={`rounded-xl bg-gradient-to-br ${colors[color]} text-white p-5 shadow-md`}
+            className={`rounded-xl bg-gradient-to-br ${accents[accent]} p-5 text-white shadow-sm`}
         >
             <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
                 {label}
             </p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-        </div>
-    );
-}
-const rupiah = (n) => Number(n || 0).toLocaleString("id-ID");
-
-function EmptyState({ icon: Icon, message }) {
-    return (
-        <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-                <Icon className="h-6 w-6 text-gray-400" />
-            </div>
-            <p className="text-sm font-medium text-gray-700">Belum ada data</p>
-            <p className="mt-1 max-w-xs text-xs leading-5 text-gray-500">
-                {message}
-            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
         </div>
     );
 }
 
-function SectionHeader({
-    icon: Icon,
-    title,
-    description,
-    count,
-    color = "blue",
-}) {
-    const colors = {
-        blue: "bg-blue-50 text-blue-600 ring-blue-100",
-        emerald: "bg-emerald-50 text-emerald-600 ring-emerald-100",
-    };
-
+function TableHeader({ children, className = "" }) {
     return (
-        <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 sm:px-6">
-            <div className="flex min-w-0 items-center gap-3">
-                <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${colors[color]}`}
-                >
-                    <Icon className="h-5 w-5" />
-                </div>
-
-                <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-gray-900 sm:text-base">
-                        {title}
-                    </h2>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                        {description}
-                    </p>
-                </div>
-            </div>
-
-            <span className="inline-flex shrink-0 items-center rounded-lg bg-red-600 px-2.5 py-1 text-xs font-semibold text-gray-100">
-                {count} data
-            </span>
-        </div>
+        <th
+            className={`whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 ${className}`}
+        >
+            {children}
+        </th>
     );
 }
 
-function InfoItem({ icon: Icon, label, children }) {
+function EmptyRow({ colSpan, icon: Icon, message }) {
     return (
-        <div className="flex min-w-0 items-start gap-2.5">
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-            <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">
-                    {label}
-                </p>
-                <div className="mt-1 break-words text-sm text-gray-700">
-                    {children || "-"}
-                </div>
-            </div>
-        </div>
+        <tr>
+            <td colSpan={colSpan} className="px-6 py-12 text-center">
+                <Icon className="mx-auto h-7 w-7 text-gray-300" />
+                <p className="mt-2 text-sm text-gray-500">{message}</p>
+            </td>
+        </tr>
     );
 }
 
-function CostFooter({ amount }) {
+function ActionButton({ onClick, icon: Icon, children, primary = false }) {
     return (
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-gray-500">
-                <Receipt className="h-4 w-4" />
-                <span className="text-xs font-medium sm:text-sm">
-                    Total biaya
-                </span>
-            </div>
-
-            <p className="text-base font-bold tabular-nums text-gray-900 sm:text-lg">
-                <span className="mr-1 text-xs font-medium text-gray-500">
-                    Rp
-                </span>
-                {rupiah(amount)}
-            </p>
-        </div>
+        <button
+            type="button"
+            onClick={onClick}
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                primary
+                    ? "border-red-600 bg-red-600 text-white hover:bg-red-700"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+        >
+            <Icon className="h-3.5 w-3.5" />
+            {children}
+        </button>
     );
 }
 
-function PengajuanCard({ p }) {
-    const spareparts = p.spareparts || [];
-    const personels = p.personels || [];
+function TimelineModal({ modal, onClose }) {
+    useEffect(() => {
+        const handler = (event) => {
+            if (event.key === "Escape") onClose();
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [onClose]);
+
+    if (!modal) return null;
 
     return (
-        <article className="p-4 transition-colors hover:bg-gray-50/70 sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
-                        <FileCheck2 className="h-3.5 w-3.5" />
-                        {p.kode_pengajuan || "-"}
-                    </span>
-
-                    <h3 className="mt-2 text-sm font-bold leading-6 text-gray-900">
-                        {p.armada?.plat_nomor || "-"}
-                    </h3>
-
-                    <p className="mt-0.5 text-xs text-gray-500">
-                        Kode unit: {p.armada?.kode_unit || "-"}
-                    </p>
-                </div>
-
-                <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {formatTanggal(p.tanggal_selesai)}
-                    </span>
-
-                    <span className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
-                        Selesai
-                    </span>
-                </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-4 border-t border-gray-100 pt-4 sm:grid-cols-2">
-                <InfoItem icon={User} label="Diajukan oleh">
-                    {p.diajukan_oleh?.name || "-"}
-                </InfoItem>
-
-                <InfoItem icon={Wrench} label="Personel servis">
-                    {personels.length
-                        ? personels.map((x) => x.nama_personel).join(", ")
-                        : "-"}
-                </InfoItem>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-gray-100 p-3">
-                <div className="flex items-start gap-2.5">
-                    <Package
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${
-                            spareparts.length
-                                ? "text-amber-600"
-                                : "text-gray-400"
-                        }`}
-                    />
-
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-gray-700">
-                            Penggunaan sparepart
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            onClick={onClose}
+        >
+            <div
+                className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Timeline ${modal.title}`}
+            >
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+                    <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900">
+                            Timeline Servis
+                        </h3>
+                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                            {modal.title}
                         </p>
-
-                        {spareparts.length ? (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                                {spareparts.map((s, index) => (
-                                    <span
-                                        key={s.id ?? `${s.nama_item}-${index}`}
-                                        className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800"
-                                    >
-                                        {s.nama_item}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="mt-1 text-xs text-gray-400">
-                                Tidak menggunakan sparepart
-                            </p>
-                        )}
                     </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                        aria-label="Tutup timeline"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
                 </div>
-            </div>
 
-            <CostFooter amount={p.total_biaya} />
-        </article>
-    );
-}
-
-function HistoryCard({ h }) {
-    const unit = h.serviceable?.plat_nomor || h.serviceable?.nama || "-";
-
-    return (
-        <article className="p-4 transition-colors hover:bg-gray-50/70 sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                            <Truck className="h-4 w-4" />
-                        </span>
-
-                        <div className="min-w-0">
-                            <h3 className="break-words text-sm font-bold text-gray-900">
-                                {unit}
-                            </h3>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                                Riwayat perawatan unit
-                            </p>
+                <div className="space-y-4 p-5">
+                    {modal.events?.length ? (
+                        <TimelineStrip
+                            events={modal.events}
+                            title="Alur Penyelesaian"
+                        />
+                    ) : (
+                        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                            Timeline belum tersedia.
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                <span className="inline-flex shrink-0 items-center gap-1 text-xs text-gray-500">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {formatTanggal(h.tanggal)}
-                </span>
+                <div className="flex justify-end border-t border-gray-200 p-4">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        Tutup
+                    </button>
+                </div>
             </div>
-
-            <div className="mt-4 rounded-xl border border-gray-100 bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    Jenis servis
-                </p>
-
-                <p className="mt-1.5 text-sm font-semibold leading-6 text-gray-800">
-                    {h.jenis_servis || "-"}
-                </p>
-
-                {h.notes && (
-                    <div className="mt-3 border-t border-gray-100 pt-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                            Catatan servis
-                        </p>
-                        <p className="mt-1.5 whitespace-pre-line break-words text-sm leading-6 text-gray-600">
-                            {h.notes}
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            <CostFooter amount={h.biaya} />
-        </article>
+        </div>
     );
 }
 
 export default function Riwayat({ pengajuans = [], histories = [] }) {
     const [tab, setTab] = useState("pengajuan");
+    const [modal, setModal] = useState(null);
 
     const totalPengajuan = pengajuans.reduce(
-        (total, p) => total + Number(p.total_biaya || 0),
+        (sum, item) => sum + Number(item.total_biaya || 0),
+        0,
+    );
+    const totalHistory = histories.reduce(
+        (sum, item) => sum + Number(item.biaya || 0),
         0,
     );
 
-    const totalHistory = histories.reduce(
-        (total, h) => total + Number(h.biaya || 0),
-        0,
-    );
+    const openPengajuanTimeline = (p) => {
+        setModal({
+            title: `${p.kode_pengajuan || "-"} · ${p.armada?.plat_nomor || "-"}`,
+            events: p.timeline || [],
+        });
+    };
+
+    const openHistoryTimeline = (h) => {
+        const unit = h.serviceable?.plat_nomor || h.serviceable?.nama || "-";
+        setModal({
+            title: `${unit} · ${formatTanggal(h.tanggal)}`,
+            events: h.timeline || [],
+        });
+    };
 
     return (
         <AuthenticatedLayout>
             <Head title="Workshop - Riwayat Servis" />
 
             <div className="space-y-6 pb-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Riwayat Servis</h1>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Rekap pengajuan selesai dan catatan perawatan unit Workshop.
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                        Riwayat Servis
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Rekap pengajuan selesai dan catatan perawatan unit Workshop.
+                    </p>
                 </div>
 
-                {/* Ringkasan */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
                         label="Pengajuan Selesai"
-                        value={pengajuans.length ?? 0}
-                        color="blue"
+                        value={pengajuans.length}
                     />
                     <StatCard
-                        label="Total Biaya Pengajuan Selesai"
-                        value={rupiah(totalPengajuan)}
-                        color="blue"
+                        label="Total Biaya Pengajuan"
+                        value={`Rp ${rupiah(totalPengajuan)}`}
                     />
                     <StatCard
-                        label="Riwayat servis unit"
+                        label="Riwayat Unit"
                         value={histories.length}
-                        color="green"
+                        accent="green"
                     />
                     <StatCard
-                        label="Total Biaya Riwayat Servis Unit"
-                        value={rupiah(totalHistory)}
-                        color="green"
+                        label="Total Biaya Riwayat"
+                        value={`Rp ${rupiah(totalHistory)}`}
+                        accent="green"
                     />
                 </div>
 
-                {/* Daftar riwayat */}
-                <Tabs value={tab} onValueChange={setTab} className="flex-col gap-4">
-                    <div className="w-full overflow-x-auto overflow-y-hidden pb-1">
-                        <TabsList className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1" aria-label="Jenis riwayat servis">
+                <Tabs value={tab} onValueChange={setTab} className="gap-4">
+                    <div className="w-full overflow-x-auto pb-1">
+                        <TabsList
+                            className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1"
+                            aria-label="Jenis riwayat servis"
+                        >
                             <TabsTrigger
                                 value="pengajuan"
-                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "pengajuan" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${
+                                    tab === "pengajuan"
+                                        ? "!bg-gray-900 !font-semibold !text-white shadow-sm"
+                                        : "text-muted-foreground hover:bg-background hover:text-foreground"
+                                }`}
                             >
-                                <FileCheck2 className="h-4 w-4" /> Pengajuan Selesai
-                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{pengajuans.length}</span>
+                                <FileCheck2 className="h-4 w-4" />
+                                Pengajuan Selesai
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">
+                                    {pengajuans.length}
+                                </span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="unit"
-                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "unit" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${
+                                    tab === "unit"
+                                        ? "!bg-gray-900 !font-semibold !text-white shadow-sm"
+                                        : "text-muted-foreground hover:bg-background hover:text-foreground"
+                                }`}
                             >
-                                <History className="h-4 w-4" /> Riwayat Unit
-                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{histories.length}</span>
+                                <History className="h-4 w-4" />
+                                Riwayat Unit
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">
+                                    {histories.length}
+                                </span>
                             </TabsTrigger>
                         </TabsList>
                     </div>
 
-                    <TabsContent value="pengajuan" className="space-y-4">
-                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                            <SectionHeader
-                                icon={FileCheck2}
-                                title="Pengajuan Servis Selesai"
-                                description="Rekap pengajuan yang telah diselesaikan"
-                                count={pengajuans.length}
-                                color="blue"
-                            />
+                    <TabsContent value="pengajuan">
+                        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
+                                <FileCheck2 className="h-4 w-4 text-blue-600" />
+                                <h2 className="text-sm font-bold text-gray-900">
+                                    Pengajuan Servis Selesai
+                                </h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-[960px] w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <TableHeader>Pengajuan / Unit</TableHeader>
+                                            <TableHeader>Tanggal Selesai</TableHeader>
+                                            <TableHeader>Diajukan Oleh</TableHeader>
+                                            <TableHeader>Personel</TableHeader>
+                                            <TableHeader>Sparepart</TableHeader>
+                                            <TableHeader className="text-right">
+                                                Total Biaya
+                                            </TableHeader>
+                                            <TableHeader className="text-right">
+                                                Aksi
+                                            </TableHeader>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {pengajuans.length === 0 ? (
+                                            <EmptyRow
+                                                colSpan={7}
+                                                icon={ClipboardList}
+                                                message="Belum ada pengajuan servis yang selesai."
+                                            />
+                                        ) : (
+                                            pengajuans.map((p) => {
+                                                const personels =
+                                                    p.personels || [];
+                                                const spareparts =
+                                                    p.spareparts || [];
 
-                            <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
-                                {pengajuans.length === 0 ? (
-                                    <EmptyState
-                                        icon={ClipboardList}
-                                        message="Belum ada pengajuan servis yang selesai."
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {pengajuans.map((p) => (
-                                            <div
-                                                key={p.id}
-                                                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-red-200 hover:shadow-md"
-                                            >
-                                                <PengajuanCard p={p} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                                return (
+                                                    <tr
+                                                        key={p.id}
+                                                        className="align-top hover:bg-gray-50"
+                                                    >
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <div className="font-semibold text-gray-900">
+                                                                {p.kode_pengajuan ||
+                                                                    "-"}
+                                                            </div>
+                                                            <div className="mt-0.5 text-xs text-gray-500">
+                                                                {p.armada?.plat_nomor ||
+                                                                    "-"}
+                                                            </div>
+                                                            <div className="text-xs text-gray-400">
+                                                                {p.armada?.kode_unit ||
+                                                                    "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                                                                {formatTanggal(
+                                                                    p.tanggal_selesai,
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <User className="h-3.5 w-3.5 text-gray-400" />
+                                                                {p.diajukan_oleh?.name ||
+                                                                    "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            {personels.length ? (
+                                                                personels
+                                                                    .map(
+                                                                        (x) =>
+                                                                            x.nama_personel,
+                                                                    )
+                                                                    .filter(Boolean)
+                                                                    .join(", ")
+                                                            ) : (
+                                                                <span className="text-gray-400">
+                                                                    -
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            {spareparts.length ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Package className="h-3.5 w-3.5 text-amber-500" />
+                                                                    {
+                                                                        spareparts.length
+                                                                    }{" "}
+                                                                    item
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-400">
+                                                                    Tidak ada
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold tabular-nums text-gray-900">
+                                                            Rp {rupiah(p.total_biaya)}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Link
+                                                                    href={route(
+                                                                        "fleet.servis-armada.show",
+                                                                        p.id,
+                                                                    )}
+                                                                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                                                >
+                                                                    <Eye className="h-3.5 w-3.5" />
+                                                                    Detail
+                                                                </Link>
+                                                                <ActionButton
+                                                                    icon={History}
+                                                                    primary
+                                                                    onClick={() =>
+                                                                        openPengajuanTimeline(
+                                                                            p,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Timeline
+                                                                </ActionButton>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </section>
                     </TabsContent>
 
-                    <TabsContent value="unit" className="space-y-4">
-                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                            <SectionHeader
-                                icon={History}
-                                title="Riwayat Servis Unit"
-                                description="Catatan perawatan dan servis unit"
-                                count={histories.length}
-                                color="emerald"
-                            />
+                    <TabsContent value="unit">
+                        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
+                                <History className="h-4 w-4 text-emerald-600" />
+                                <h2 className="text-sm font-bold text-gray-900">
+                                    Riwayat Servis Unit
+                                </h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-[840px] w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <TableHeader>Unit</TableHeader>
+                                            <TableHeader>Tanggal</TableHeader>
+                                            <TableHeader>Jenis Servis</TableHeader>
+                                            <TableHeader>Catatan</TableHeader>
+                                            <TableHeader className="text-right">
+                                                Biaya
+                                            </TableHeader>
+                                            <TableHeader className="text-right">
+                                                Aksi
+                                            </TableHeader>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {histories.length === 0 ? (
+                                            <EmptyRow
+                                                colSpan={6}
+                                                icon={Wrench}
+                                                message="Belum ada riwayat perawatan unit."
+                                            />
+                                        ) : (
+                                            histories.map((h) => {
+                                                const unit =
+                                                    h.serviceable?.plat_nomor ||
+                                                    h.serviceable?.nama ||
+                                                    "-";
 
-                            <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
-                                {histories.length === 0 ? (
-                                    <EmptyState
-                                        icon={Wrench}
-                                        message="Belum ada riwayat perawatan unit."
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {histories.map((h) => (
-                                            <div
-                                                key={h.id}
-                                                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-red-200 hover:shadow-md"
-                                            >
-                                                <HistoryCard h={h} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                                return (
+                                                    <tr
+                                                        key={h.id}
+                                                        className="align-top hover:bg-gray-50"
+                                                    >
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                <Truck className="h-4 w-4 text-emerald-600" />
+                                                                <span className="font-semibold text-gray-900">
+                                                                    {unit}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                                                            {formatTanggal(h.tanggal)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm font-medium text-gray-800">
+                                                            {h.jenis_servis || "-"}
+                                                        </td>
+                                                        <td className="max-w-sm px-4 py-3 text-sm text-gray-600">
+                                                            <span className="line-clamp-2">
+                                                                {h.notes || "-"}
+                                                            </span>
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold tabular-nums text-gray-900">
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <Receipt className="h-3.5 w-3.5 text-gray-400" />
+                                                                Rp {rupiah(h.biaya)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex justify-end">
+                                                                <ActionButton
+                                                                    icon={History}
+                                                                    primary
+                                                                    onClick={() =>
+                                                                        openHistoryTimeline(
+                                                                            h,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Timeline
+                                                                </ActionButton>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </section>
                     </TabsContent>
                 </Tabs>
             </div>
+
+            <TimelineModal modal={modal} onClose={() => setModal(null)} />
         </AuthenticatedLayout>
     );
 }

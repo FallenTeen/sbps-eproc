@@ -9,6 +9,7 @@ use App\Domain\Fleet\Models\PengajuanServisArmada;
 use App\Domain\Fleet\Models\PengajuanServisSparepart;
 use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\WorkshopTodo;
+use App\Domain\Fleet\Services\ServisTimelineService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -74,6 +75,16 @@ class WorkshopController extends Controller
             ->take(100)
             ->get();
 
+        $timeline = app(ServisTimelineService::class);
+        $pengajuans->each(fn ($pengajuan) => $pengajuan->setAttribute(
+            'timeline',
+            $timeline->for($pengajuan, true),
+        ));
+        $histories->each(fn ($history) => $history->setAttribute(
+            'timeline',
+            $timeline->forHistory($history),
+        ));
+
         return Inertia::render('Fleet/Workshop/Riwayat', [
             'pengajuans' => $pengajuans,
             'histories' => $histories,
@@ -135,6 +146,12 @@ class WorkshopController extends Controller
         }
 
         $items = $query->paginate(20)->withQueryString();
+
+        $timeline = app(ServisTimelineService::class);
+        $items->getCollection()->each(fn ($pengajuan) => $pengajuan->setAttribute(
+            'timeline',
+            $timeline->for($pengajuan, true),
+        ));
 
         $base = PengajuanServisArmada::where('tipe_servis', 'eksternal');
         $counts = [

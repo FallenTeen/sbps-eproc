@@ -3,6 +3,7 @@
 namespace App\Domain\Fleet\Services;
 
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\ServiceHistory;
 
 class ServisTimelineService
 {
@@ -15,7 +16,7 @@ class ServisTimelineService
         'selesai',
     ];
 
-    public function for(PengajuanServisArmada $pengajuan): array
+    public function for(PengajuanServisArmada $pengajuan, bool $includeDetailRoute = false): array
     {
         $pengajuan->loadMissing([
             'armada',
@@ -31,7 +32,7 @@ class ServisTimelineService
         $skipSparepart = ! $pengajuan->butuh_sparepart
             && in_array($status, ['dikerjakan', 'selesai'], true);
 
-        return collect(self::STEPS)->map(function (string $key, int $index) use ($pengajuan, $status, $currentIndex, $skipSparepart) {
+        return collect(self::STEPS)->map(function (string $key, int $index) use ($pengajuan, $status, $currentIndex, $skipSparepart, $includeDetailRoute) {
             [$state, $badge] = $this->resolveState($key, $index, $status, $currentIndex, $skipSparepart);
 
             return [
@@ -44,8 +45,40 @@ class ServisTimelineService
                 'actor' => $this->actor($pengajuan, $key),
                 'details' => $this->details($pengajuan, $key, $status),
                 'action' => null,
+                'can_open' => $includeDetailRoute && $key === 'diajukan',
+                'detail_route' => $includeDetailRoute && $key === 'diajukan'
+                    ? route('fleet.servis-armada.show', $pengajuan->id)
+                    : null,
             ];
         })->values()->all();
+    }
+
+    public function forHistory(ServiceHistory $history): array
+    {
+        $history->loadMissing('serviceable');
+
+        $unit = $history->serviceable?->plat_nomor
+            ?? $history->serviceable?->nama
+            ?? '-';
+
+        return [[
+            'step' => 1,
+            'key' => 'dicatat',
+            'label' => 'Servis Dicatat',
+            'state' => 'done',
+            'badge' => 'Selesai',
+            'at' => $history->tanggal?->format('Y-m-d'),
+            'actor' => '-',
+            'details' => [
+                $this->detail('Unit', $unit),
+                $this->detail('Jenis servis', $history->jenis_servis),
+                $this->detail('Biaya', $this->rupiah($history->biaya)),
+                $this->detail('Catatan', $history->notes),
+            ],
+            'action' => null,
+            'can_open' => false,
+            'detail_route' => null,
+        ]];
     }
 
     private function resolveState(string $key, int $index, string $status, int|false $currentIndex, bool $skipSparepart): array

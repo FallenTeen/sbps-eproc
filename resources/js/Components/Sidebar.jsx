@@ -120,10 +120,10 @@ function getAllMenus() {
             icon: Wrench,
             permission: ['view fleet service', 'manage fleet service', 'manage sparepart', 'view sparepart'],
             items: [
-                { title: 'To-Do List Servis', href: safeRoute('fleet.workshop.todo.index', {}, '/fleet/workshop/todo'), routeName: 'fleet.workshop.todo.*', permission: ['view fleet service', 'manage fleet service'] },
-                { title: 'Ajuan Sparepart', href: safeRoute('fleet.workshop.sparepart.index', {}, '/fleet/workshop/sparepart'), routeName: 'fleet.workshop.sparepart.*', permission: ['view fleet service', 'manage sparepart', 'view sparepart'] },
-                { title: 'Riwayat Servis', href: safeRoute('fleet.workshop.riwayat.index', {}, '/fleet/workshop/riwayat'), routeName: 'fleet.workshop.riwayat.*', permission: ['view fleet service', 'manage fleet service'] },
                 { title: 'Monitoring Kondisi', href: safeRoute('fleet.workshop.monitoring.index', {}, '/fleet/workshop/monitoring'), routeName: 'fleet.workshop.monitoring.*', permission: ['view fleet service', 'view fleet', 'view production'] },
+                { title: 'Ajuan Sparepart', href: safeRoute('fleet.workshop.sparepart.index', {}, '/fleet/workshop/sparepart'), routeName: 'fleet.workshop.sparepart.*', permission: ['view fleet service', 'manage sparepart', 'view sparepart'] },
+                { title: 'To-Do List Servis', href: safeRoute('fleet.workshop.todo.index', {}, '/fleet/workshop/todo'), routeName: 'fleet.workshop.todo.*', permission: ['view fleet service', 'manage fleet service'] },
+                { title: 'Riwayat Servis Internal', href: safeRoute('fleet.workshop.riwayat.index', {}, '/fleet/workshop/riwayat'), routeName: 'fleet.workshop.riwayat.*', permission: ['view fleet service', 'manage fleet service'] },
                 { title: 'Verifikasi Servis Eksternal', href: safeRoute('fleet.workshop.servis-eksternal.index', {}, '/fleet/workshop/servis-eksternal'), routeName: 'fleet.workshop.servis-eksternal.*', permission: ['manage fleet service', 'view fleet service'] },
             ],
         },
