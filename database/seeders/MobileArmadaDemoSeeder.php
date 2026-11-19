@@ -28,24 +28,6 @@ use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
-/**
- * Data demo armada untuk pengujian aplikasi mobile di staging.
- *
- * Seeder ini MENAMBAH data armada transaksional (checklist harian, ODO awal,
- * pengajuan servis, workshop todo, helper presensi, checklist serah terima)
- * untuk user test yang sudah dibuat oleh MobileTestUserSeeder:
- *
- *   - Master Armada     : Dump truck, mixer beton, excavator uji coba.
- *   - Helper Presensi   : Helper aktif + riwayat presensi helper.
- *   - Checklist Harian  : Checklist hari ini (terisi & belum) + riwayat.
- *   - ODO Awal Proyek   : Catatan ODO awal untuk armada di titik uji coba.
- *   - Pengajuan Servis  : Lengkap semua status (diajukan, disetujui, dikerjakan,
- *                         selesai, ditolak) untuk pengujian alur approval.
- *   - Workshop Todo     : Antrian tugas perbaikan untuk teknisi workshop.
- *   - Checklist Major   : Serah terima sewa alat (berangkat & kembali).
- *
- * Idempotent (menggunakan firstOrCreate/updateOrCreate), aman dijalankan berulang.
- */
 class MobileArmadaDemoSeeder extends Seeder
 {
     use StagingOnly;
@@ -65,7 +47,6 @@ class MobileArmadaDemoSeeder extends Seeder
         $workshop = User::where('email', 'test.workshop@dummy.com')->first() ?? User::where('email', 'workshop@real.com')->first();
         $kepala = User::where('email', 'test.ketua.armada@dummy.com')->first() ?? User::where('email', 'ketua.armada@real.com')->first();
 
-        // ──────────────────────── MASTER ARMADA TAMBAHAN ────────────────────────
         $armada1 = Armada::updateOrCreate(
             ['plat_nomor' => 'B 9999 TEST'],
             [
@@ -114,7 +95,6 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        // Assign driver ke B 9999 TEST
         if ($driver) {
             ArmadaDriver::updateOrCreate(
                 ['armada_id' => $armada1->id, 'karyawan_id' => $driver->id],
@@ -127,28 +107,20 @@ class MobileArmadaDemoSeeder extends Seeder
             );
         }
 
-        // ──────────────────────── HELPER ARMADA & PRESENSI ───────────────────────
         $this->seedHelperArmada($armada1, $driverUser);
 
-        // ──────────────────────── CHECKLIST HARIAN ──────────────────────────────
         $this->seedChecklist($armada1, $driver);
 
-        // ──────────────────────── ODO AWAL PROYEK ───────────────────────────────
         $this->seedOdoAwal($armada1, $proyek, $driver);
 
-        // ──────────────────────── PENGAJUAN SERVIS ──────────────────────────────
         $this->seedServis($armada1, $driverUser ?? $owner, $owner, $kepala);
 
-        // ──────────────────────── WORKSHOP TODO ─────────────────────────────────
         $this->seedWorkshopTodo($armada1, $workshop, $kepala);
 
-        // ──────────────────────── CHECKLIST MAJOR (SERAH TERIMA) ─────────────────
         $this->seedChecklistSerahTerima($armada3, $proyek, $kepala ?? $owner);
 
         $this->command?->info('[MobileArmadaDemo] Data armada demo mobile berhasil ditambahkan.');
     }
-
-    // ─────────────────────────── HELPER ARMADA ─────────────────────────────
 
     private function seedHelperArmada(Armada $armada, ?User $driverUser): void
     {
@@ -176,7 +148,6 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        // Presensi helper hari ini
         PresensiHelper::firstOrCreate(
             [
                 'helper_armada_id' => $helper->id,
@@ -189,7 +160,6 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        // Presensi helper riwayat kemarin
         PresensiHelper::firstOrCreate(
             [
                 'helper_armada_id' => $helper->id,
@@ -203,16 +173,12 @@ class MobileArmadaDemoSeeder extends Seeder
         );
     }
 
-    // ─────────────────────────── CHECKLIST HARIAN ─────────────────────────
-
     private function seedChecklist(Armada $armada, ?Karyawan $driver): void
     {
         $today = now()->toDateString();
 
-        // Checklist hari ini (kondisi baik)
         $this->makeChecklistHari($armada, $driver, $today, true, null, StokSolar::Setengah->value);
 
-        // Riwayat checklist 3 hari terakhir
         for ($i = 1; $i <= 3; $i++) {
             $date = now()->subDays($i)->toDateString();
 
@@ -220,7 +186,7 @@ class MobileArmadaDemoSeeder extends Seeder
                 $armada,
                 $driver,
                 $date,
-                $i !== 2, // Hari ke-2 ada masalah
+                $i !== 2,
                 $i === 2 ? 'Radiator bocor, mesin cepat panas.' : null,
                 StokSolar::cases()[$i]->value,
             );
@@ -294,8 +260,6 @@ class MobileArmadaDemoSeeder extends Seeder
         }
     }
 
-    // ────────────────────────── ODO AWAL PROYEK ──────────────────────────
-
     private function seedOdoAwal(Armada $armada, ?Proyek $proyek, ?Karyawan $driver): void
     {
         if (! $proyek) {
@@ -316,15 +280,12 @@ class MobileArmadaDemoSeeder extends Seeder
         );
     }
 
-    // ────────────────────────── PENGAJUAN SERVIS ─────────────────────────
-
     private function seedServis(
         Armada $armada,
         User $submitter,
         ?User $owner,
         ?User $kepala
     ): void {
-        // Servis 1: Menunggu persetujuan (diajukan oleh driver) -> UNTUK PENGUJIAN APPROVAL KETUA ARMADA
         $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-001',
             'tanggal_ajuan' => now()->toDateString(),
@@ -333,7 +294,6 @@ class MobileArmadaDemoSeeder extends Seeder
             'butuh_sparepart' => true,
         ]);
 
-        // Servis 2: Disetujui, menunggu pengerjaan
         $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-002',
             'tanggal_ajuan' => now()->subDays(3)->toDateString(),
@@ -345,7 +305,6 @@ class MobileArmadaDemoSeeder extends Seeder
             'butuh_sparepart' => false,
         ]);
 
-        // Servis 3: Sedang dikerjakan oleh workshop
         $servis3 = $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-003',
             'tanggal_ajuan' => now()->subDays(5)->toDateString(),
@@ -364,7 +323,6 @@ class MobileArmadaDemoSeeder extends Seeder
             ]);
         }
 
-        // Servis 4: Selesai (dengan rincian sparepart & biaya)
         $servis4 = $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-004',
             'tanggal_ajuan' => now()->subDays(10)->toDateString(),
@@ -423,7 +381,6 @@ class MobileArmadaDemoSeeder extends Seeder
             );
         }
 
-        // Servis 5: Ditolak (dengan catatan penolakan)
         $this->createServis($armada, $submitter, [
             'kode_pengajuan' => 'SRV-DEMO-005',
             'tanggal_ajuan' => now()->subDays(7)->toDateString(),
@@ -458,8 +415,6 @@ class MobileArmadaDemoSeeder extends Seeder
             ])
         );
     }
-
-    // ─────────────────────────── WORKSHOP TODO ────────────────────────────
 
     private function seedWorkshopTodo(Armada $armada, ?User $workshop, ?User $kepala): void
     {
@@ -509,8 +464,6 @@ class MobileArmadaDemoSeeder extends Seeder
         }
     }
 
-    // ──────────────────────── CHECKLIST SERAH TERIMA ──────────────────────
-
     private function seedChecklistSerahTerima(Armada $armada, ?Proyek $proyek, ?User $user): void
     {
         if (! $proyek) {
@@ -535,7 +488,8 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        // Checklist Berangkat
+        $itemTemplate = [...ChecklistSerahTerima::DEFAULT_ITEMS, 'Jok'];
+
         $cstBerangkat = ChecklistSerahTerima::firstOrCreate(
             [
                 'sewa_alat_jam_id' => $sewa->id,
@@ -543,6 +497,7 @@ class MobileArmadaDemoSeeder extends Seeder
             ],
             [
                 'armada_id' => $armada->id,
+                'item_template' => $itemTemplate,
                 'data_penyewa' => [
                     'nama_perusahaan' => 'PT Karya Cikarang Mandiri',
                     'penanggung_jawab' => 'Ir. Bambang Wijaya',
@@ -558,7 +513,9 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        foreach (ChecklistSerahTerima::DEFAULT_ITEMS as $item) {
+        $cstBerangkat->update(['item_template' => $itemTemplate]);
+
+        foreach ($itemTemplate as $item) {
             ChecklistSerahTerimaDetail::firstOrCreate(
                 [
                     'checklist_serah_terima_armada_id' => $cstBerangkat->id,
@@ -571,7 +528,6 @@ class MobileArmadaDemoSeeder extends Seeder
             );
         }
 
-        // Checklist Kembali
         $cstKembali = ChecklistSerahTerima::firstOrCreate(
             [
                 'sewa_alat_jam_id' => $sewa->id,
@@ -579,6 +535,7 @@ class MobileArmadaDemoSeeder extends Seeder
             ],
             [
                 'armada_id' => $armada->id,
+                'item_template' => $itemTemplate,
                 'data_penyewa' => [
                     'nama_perusahaan' => 'PT Karya Cikarang Mandiri',
                     'penanggung_jawab' => 'Ir. Bambang Wijaya',
@@ -594,7 +551,9 @@ class MobileArmadaDemoSeeder extends Seeder
             ]
         );
 
-        foreach (ChecklistSerahTerima::DEFAULT_ITEMS as $item) {
+        $cstKembali->update(['item_template' => $itemTemplate]);
+
+        foreach ($itemTemplate as $item) {
             ChecklistSerahTerimaDetail::firstOrCreate(
                 [
                     'checklist_serah_terima_armada_id' => $cstKembali->id,

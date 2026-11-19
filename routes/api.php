@@ -143,6 +143,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
             ->name('armada.odo-awal-proyek')->middleware('idempotency');
         Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
+        Route::get('armada/checklist-major/template', [ArmadaController::class, 'checklistMajorTemplate'])
+            ->name('armada.checklist-major.template');
         Route::post('armada/checklist-major', [ArmadaController::class, 'submitChecklistMajor'])
             ->name('armada.checklist-major')->middleware('idempotency');
 

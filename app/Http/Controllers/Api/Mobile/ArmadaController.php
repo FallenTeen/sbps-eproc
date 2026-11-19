@@ -1101,6 +1101,27 @@ class ArmadaController extends Controller
     }
 
     /**
+     * GET /api/mobile/armada/checklist-major/template
+     * Template item kustom bersama untuk berangkat & kembali.
+     */
+    public function checklistMajorTemplate(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|string|exists:armadas,id',
+        ]);
+
+        $sewa = SewaAlatJam::where('armada_id', $validated['armada_id'])
+            ->latest('tanggal')
+            ->first();
+
+        return $this->success([
+            'item_template' => $sewa
+                ? ChecklistSerahTerima::templateForSewa($sewa)
+                : ChecklistSerahTerima::DEFAULT_ITEMS,
+        ]);
+    }
+
+    /**
      * POST /api/mobile/armada/checklist-major
      * Mencatat Checklist Major (Serah Terima Kendaraan / Sewa Alat) - Bagian 21.10.
      */
@@ -1113,6 +1134,7 @@ class ArmadaController extends Controller
             'tanggal' => 'nullable|date',
             'catatan' => 'nullable|string|max:2000',
             'ditandatangani_oleh' => 'nullable|string|max:255',
+            'item_template' => 'nullable',
             'items' => 'nullable',
             'photos' => 'nullable|array',
             'foto_kondisi' => 'nullable|array',
@@ -1151,7 +1173,7 @@ class ArmadaController extends Controller
             }
         }
 
-        // Parse items
+        // Parse items & template item kustom (multipart mengirim JSON string)
         $rawItems = $request->input('items', []);
         if (is_string($rawItems)) {
             $decoded = json_decode($rawItems, true);
@@ -1159,6 +1181,10 @@ class ArmadaController extends Controller
                 $rawItems = $decoded;
             }
         }
+
+        $itemTemplate = ChecklistSerahTerima::normalizeTemplate(
+            $request->input('item_template', [])
+        );
 
         $items = [];
         if (is_array($rawItems)) {
@@ -1183,6 +1209,7 @@ class ArmadaController extends Controller
             'tanggal' => $validated['tanggal'] ?? now()->toDateString(),
             'catatan' => $validated['catatan'] ?? null,
             'ditandatangani_oleh' => $validated['ditandatangani_oleh'] ?? null,
+            'item_template' => $itemTemplate,
             'items' => $items,
             'foto_kondisi' => $fotoPaths,
         ], $request->user());
@@ -1195,6 +1222,7 @@ class ArmadaController extends Controller
             'tanggal' => $checklist->tanggal?->toDateString(),
             'odo_atau_hm' => $checklist->odo_atau_hm,
             'catatan' => $checklist->catatan,
+            'item_template' => $checklist->item_template ?? [],
             'items_count' => $checklist->details->count(),
             'items' => $checklist->details->map(fn ($d) => [
                 'id' => $d->id,

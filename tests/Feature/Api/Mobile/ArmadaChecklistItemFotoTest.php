@@ -5,6 +5,8 @@ use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\Fleet\Models\ArmadaDriver;
+use App\Domain\Fleet\Models\ChecklistSerahTerima;
+use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\HR\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -141,4 +143,36 @@ test('item perlu perhatian tanpa foto (app lama, tanpa file item) tetap boleh', 
         ->assertOk();
 
     $this->assertDatabaseCount('armada_checklist_harians', 1);
+});
+
+test('template checklist major mobile mengikuti item_template server', function () {
+    $sewa = SewaAlatJam::create([
+        'armada_id' => $this->armada->id,
+        'tipe_sewa' => 'internal',
+        'penyewa_nama' => 'Internal',
+        'penyewa_pt' => 'SBPS',
+        'penyewa_alamat' => 'Jl. Contoh',
+        'penyewa_penanggung_jawab' => 'Driver',
+        'penyewa_no_hp' => '08',
+        'harga_per_jam_snapshot' => 0,
+        'status' => 'disetujui',
+        'tanggal' => now(),
+        'hm_awal' => 0,
+        'hm_akhir' => 0,
+        'jumlah_jam' => 0,
+    ]);
+
+    ChecklistSerahTerima::create([
+        'sewa_alat_jam_id' => $sewa->id,
+        'armada_id' => $this->armada->id,
+        'tipe' => 'berangkat',
+        'item_template' => [...ChecklistSerahTerima::DEFAULT_ITEMS, 'Jok'],
+        'tanggal' => now(),
+    ]);
+
+    $this->withToken($this->token)
+        ->withHeaders(mobileIdemHeaders())
+        ->get('/api/mobile/armada/checklist-major/template?armada_id='.$this->armada->id)
+        ->assertOk()
+        ->assertJsonPath('data.item_template.12', 'Jok');
 });

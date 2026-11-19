@@ -344,7 +344,8 @@ class PengajuanServisController extends Controller
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.nama_barang' => 'required|string|max:255',
+            'items.*.bahan_baku_id' => 'nullable|uuid|exists:bahan_bakus,id',
+            'items.*.nama_barang' => 'required_without:items.*.bahan_baku_id|nullable|string|max:255',
             'items.*.jumlah' => 'nullable|numeric|min:0',
             'items.*.satuan' => 'nullable|string|max:50',
             'items.*.keterangan' => 'nullable|string|max:1000',
@@ -355,10 +356,12 @@ class PengajuanServisController extends Controller
 
         $items = collect($validated['items'])
             ->map(fn ($item) => [
-                'nama_item' => $item['nama_barang'],
+                'bahan_baku_id' => $item['bahan_baku_id'] ?? null,
+                'nama_item' => $item['nama_barang'] ?? null,
                 'jumlah' => $item['jumlah'] ?? 1,
                 'satuan' => $item['satuan'] ?? null,
                 'nominal' => 0,
+                'catatan' => $item['keterangan'] ?? null,
             ])
             ->all();
 
