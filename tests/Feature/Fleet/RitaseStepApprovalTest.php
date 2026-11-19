@@ -79,11 +79,35 @@ test('persetujuan owner hanya menandai step owner', function () {
 
     $events = timelineFor($this->ritase, $this->owner);
 
-    expect($events[1]['state'])->toBe('pending');
-    expect($events[2]['state'])->toBe('pending');
+    expect($events[1]['state'])->toBe('current');
+    expect($events[2]['state'])->toBe('current');
     expect($events[3]['state'])->toBe('done');
     expect($events[3]['actor'])->toBe($this->owner->name);
     expect($events[3]['state'])->not->toBe('skipped');
+});
+
+test('owner dapat menyetujui semua step', function () {
+    $this->actingAs($this->owner)
+        ->post(route('fleet.ritase.approve-step', [$this->ritase->id, 'logistik']), [
+            'catatan' => 'Owner verifikasi logistik.',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->owner)
+        ->post(route('fleet.ritase.approve-step', [$this->ritase->id, 'security']), [
+            'catatan' => 'Owner verifikasi security.',
+        ])
+        ->assertRedirect();
+
+    expect(RitaseVerifikasi::where('ritase_id', $this->ritase->id)
+        ->where('tahap', 'logistik')
+        ->firstOrFail()->diverifikasi_oleh)->toBe($this->owner->id);
+
+    expect(RitaseVerifikasi::where('ritase_id', $this->ritase->id)
+        ->where('tahap', 'security')
+        ->firstOrFail()->diverifikasi_oleh)->toBe($this->owner->id);
+
+    expect($this->ritase->fresh()->status)->toBe('draft');
 });
 
 test('persetujuan logistik dan security dibuat per step', function () {
@@ -155,8 +179,8 @@ test('halaman detail menawarkan tombol persetujuan sesuai role', function () {
         ->assertInertia(fn ($page) => $page
             ->component('Fleet/Ritase/Show')
             ->where('timeline.0.action', null)
-            ->where('timeline.1.action', null)
-            ->where('timeline.2.action', null)
+            ->where('timeline.1.action.step', 'logistik')
+            ->where('timeline.2.action.step', 'security')
             ->where('timeline.3.action.step', 'owner')
             ->where('timeline.3.action.route', route('fleet.ritase.approve-step', [$this->ritase->id, 'owner'])));
 

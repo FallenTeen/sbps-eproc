@@ -13,6 +13,8 @@ class ApproveRitaseStepAction
 {
     private const STEPS = ['logistik', 'security', 'owner'];
 
+    private const FINAL_APPROVER_ROLES = ['Kepala Divisi Armada', 'Ketua Armada'];
+
     public function execute(Ritase $ritase, string $step, User $actor, ?string $catatan = null): Ritase
     {
         if (! in_array($step, self::STEPS, true)) {
@@ -38,10 +40,18 @@ class ApproveRitaseStepAction
 
     public function canApprove(string $step, User $actor): bool
     {
+        if (! in_array($step, self::STEPS, true)) {
+            return false;
+        }
+
+        if ($actor->hasRole('Owner')) {
+            return true;
+        }
+
         return match ($step) {
             'logistik' => $actor->hasPermissionTo('verify ritase logistik') || $actor->hasPermissionTo('manage timbang'),
             'security' => $actor->hasPermissionTo('verify ritase security'),
-            'owner' => $actor->hasRole(['Owner', 'Kepala Divisi Armada', 'Ketua Armada'])
+            'owner' => $actor->hasAnyRole(self::FINAL_APPROVER_ROLES)
                 || $actor->hasPermissionTo('manage fleet'),
             default => false,
         };
