@@ -2,6 +2,7 @@ import React from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
+import PrimaryButton from "@/Components/PrimaryButton";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
 
 export default function Index({ suppliers, filters, sort, direction }) {
@@ -101,13 +102,12 @@ export default function Index({ suppliers, filters, sort, direction }) {
                     </p>
                 </div>
                 {can("manage procurement") && (
-                    <Link
-                        href={route("procurement.supplier.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Supplier
-                    </Link>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("procurement.supplier.create")}>
+                            <Plus className="w-4 h-4" />
+                            Tambah Supplier
+                        </Link>
+                    </PrimaryButton>
                 )}
             </div>
 

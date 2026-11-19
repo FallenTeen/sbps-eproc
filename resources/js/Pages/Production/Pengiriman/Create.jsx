@@ -30,7 +30,7 @@ export default function Create({ sessions, armadas, drivers }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">

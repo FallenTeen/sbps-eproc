@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import DataTable from '@/Components/DataTable';
+import PrimaryButton from '@/Components/PrimaryButton';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import {formatTanggal} from '@/utils/date';
 
@@ -161,27 +162,35 @@ export default function Index({ proyeks, unitBisnis, filters, sort, direction })
 
     return (
         <Layout>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Manajemen Proyek</h1>
-                {can.createProyek() && (
-                    <Link
-                        href={route('core.proyek.create')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Proyek Baru
-                    </Link>
-                )}
-            </div>
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                            Manajemen Proyek
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Kelola daftar proyek internal dan kontrak klien
+                        </p>
+                    </div>
+                    {can.createProyek() && (
+                        <PrimaryButton variant="outline" asChild>
+                            <Link href={route('core.proyek.create')}>
+                                <Plus className="w-4 h-4" />
+                                Proyek Baru
+                            </Link>
+                        </PrimaryButton>
+                    )}
+                </div>
 
-            <DataTable
-                routeName="core.proyek.index"
-                columns={columns}
-                rows={proyeks}
-                filters={filters}
-                sort={sort}
-                direction={direction}
-            />
+                <DataTable
+                    routeName="core.proyek.index"
+                    columns={columns}
+                    rows={proyeks}
+                    filters={filters}
+                    sort={sort}
+                    direction={direction}
+                />
+            </div>
         </Layout>
     );
 }

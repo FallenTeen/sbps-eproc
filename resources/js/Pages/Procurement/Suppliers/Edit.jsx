@@ -20,7 +20,7 @@ export default function Edit({ supplier }) {
     return (
         <AuthenticatedLayout>
             <Head title="Edit Supplier" />
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div>

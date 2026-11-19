@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DataTable from '@/Components/DataTable';
+import PrimaryButton from '@/Components/PrimaryButton';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 
 export default function Index({ unitBisnis, filters, sort, direction }) {
@@ -84,13 +85,12 @@ export default function Index({ unitBisnis, filters, sort, direction }) {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Unit Bisnis</h1>
                 {can('create unit bisnis') && (
-                    <Link
-                        href={route('core.unit-bisnis.create')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Unit
-                    </Link>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route('core.unit-bisnis.create')}>
+                            <Plus className="w-4 h-4" />
+                            Tambah Unit
+                        </Link>
+                    </PrimaryButton>
                 )}
             </div>
 

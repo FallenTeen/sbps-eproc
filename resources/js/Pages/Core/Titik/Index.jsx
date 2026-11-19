@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import DataTable from '@/Components/DataTable';
+import PrimaryButton from '@/Components/PrimaryButton';
 import { ArrowLeft, Plus, Edit, Eye, Trash2 } from 'lucide-react';
 
 export default function Index({ proyek, titiks, filters, sort, direction }) {
@@ -132,13 +133,12 @@ export default function Index({ proyek, titiks, filters, sort, direction }) {
                         kembali
                     </Link>
                     {can.createTitik() && (
-                        <Link
-                            href={route('core.titik.create', { proyek_id: proyek.id })}
-                            className="inline-flex items-center gap-1.5 border-2 border-black bg-surface-muted px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary transition-colors hover:bg-gray-900 hover:text-white"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Tambah Titik
-                        </Link>
+                        <PrimaryButton variant="outline" asChild>
+                            <Link href={route('core.titik.create', { proyek_id: proyek.id })}>
+                                <Plus className="h-4 w-4" />
+                                Tambah Titik
+                            </Link>
+                        </PrimaryButton>
                     )}
                 </div>
             </div>

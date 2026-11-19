@@ -2,8 +2,9 @@ import React from "react";
 import { Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
-import { Eye, Plus, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Eye, Factory, Truck } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ bbmLogs, filters, sort, direction }) {
     const formatCurrency = (value) =>
@@ -16,11 +17,11 @@ export default function Index({ bbmLogs, filters, sort, direction }) {
             type: "select",
             sortable: false,
             options: [
-                { value: "armada", label: "🚛 Armada" },
-                { value: "mesin", label: "🏭 Mesin" },
+                { value: "armada", label: "Armada" },
+                { value: "mesin", label: "Mesin" },
             ],
             cellClassName: "px-4 py-3 whitespace-nowrap text-sm text-gray-600",
-            render: (item) => (item.serviceable_type?.includes("Armada") ? "🚛 Armada" : "🏭 Mesin"),
+            render: (item) => <ServiceableType type={item.serviceable_type} />,
         },
         {
             key: "unit",
@@ -100,13 +101,11 @@ export default function Index({ bbmLogs, filters, sort, direction }) {
                         <AlertTriangle className="w-4 h-4" />
                         Anomali
                     </Link>
-                    <Link
-                        href={route("fleet.bbm.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Catat BBM
-                    </Link>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("fleet.bbm.create")}>
+                            Catat BBM
+                        </Link>
+                    </PrimaryButton>
                 </div>
             </div>
 
@@ -120,5 +119,17 @@ export default function Index({ bbmLogs, filters, sort, direction }) {
                 emptyMessage="Tidak ada data BBM."
             />
         </AuthenticatedLayout>
+    );
+}
+
+function ServiceableType({ type }) {
+    const armada = type?.includes("Armada");
+    const Icon = armada ? Truck : Factory;
+
+    return (
+        <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
+            <Icon className="h-4 w-4 text-gray-500" aria-hidden="true" />
+            {armada ? "Armada" : "Mesin"}
+        </span>
     );
 }

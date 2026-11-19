@@ -14,6 +14,7 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const emptyForm = {
     nama: "",
@@ -153,12 +154,13 @@ export default function ChecklistTemplates({ templates = [], runs = [] }) {
                             area kantor dari tim security.
                         </p>
                     </div>
-                    <button
+                    <PrimaryButton
+                        variant="outline"
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition active:scale-[0.98]"
+                        className="flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" /> Tambah Template
-                    </button>
+                    </PrimaryButton>
                 </div>
 
                 {/* Flash Message */}

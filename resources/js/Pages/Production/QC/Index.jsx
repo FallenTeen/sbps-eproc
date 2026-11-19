@@ -2,6 +2,7 @@ import React from "react";
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
+import PrimaryButton from "@/Components/PrimaryButton";
 import { Plus } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
 
@@ -101,19 +102,20 @@ export default function Index({ samples, filters, sort, direction }) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Link
-                        href={route("production.qc.pending")}
-                        className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-white transition"
+                    <PrimaryButton
+                        variant="outline"
+                        asChild
                     >
-                        Menunggu Hasil
-                    </Link>
-                    <Link
-                        href={route("production.qc.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Catat Sample
-                    </Link>
+                        <Link href={route("production.qc.pending")}>
+                            Menunggu Hasil
+                        </Link>
+                    </PrimaryButton>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("production.qc.create")}>
+                            <Plus className="w-4 h-4" />
+                            Catat Sample
+                        </Link>
+                    </PrimaryButton>
                 </div>
             </div>
 

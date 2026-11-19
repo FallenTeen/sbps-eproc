@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, router, Link } from "@inertiajs/react";
 import {
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SecondaryButton from "@/Components/SecondaryButton";
+import { ClientPagination } from "@/Components/Pagination";
 import {
     BarChart,
     Bar,
@@ -30,7 +31,11 @@ export default function RabRealisasi({
     summary = {},
     filters = {},
 }) {
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(15);
+
     const handleFilterChange = (key, value) => {
+        setPage(1);
         router.get(
             route("finance.laporan-keuangan.rab-realisasi"),
             {
@@ -63,6 +68,13 @@ export default function RabRealisasi({
         Realisasi: item.realisasi,
     }));
 
+    const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+    const safePage = Math.min(page, totalPages);
+    const paginatedItems = items.slice(
+        (safePage - 1) * perPage,
+        safePage * perPage,
+    );
+
     return (
         <AuthenticatedLayout>
             <Head title="RAB vs Realisasi" />
@@ -87,7 +99,7 @@ export default function RabRealisasi({
                     </Link>
                 </div>
             </div>
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-500">
@@ -285,7 +297,7 @@ export default function RabRealisasi({
                                         </td>
                                     </tr>
                                 ) : (
-                                    items.map((item) => (
+                                    paginatedItems.map((item) => (
                                         <tr
                                             key={item.id}
                                             className="hover:bg-gray-50"
@@ -331,6 +343,16 @@ export default function RabRealisasi({
                             </tbody>
                         </table>
                     </div>
+                    <ClientPagination
+                        total={items.length}
+                        page={safePage}
+                        perPage={perPage}
+                        onPageChange={setPage}
+                        onPerPageChange={(value) => {
+                            setPerPage(value);
+                            setPage(1);
+                        }}
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

@@ -3,6 +3,7 @@ import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Trash2, Edit } from "lucide-react";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ users, roles, filters, sort, direction }) {
     const handleDestroy = (user) => {
@@ -153,13 +154,11 @@ export default function Index({ users, roles, filters, sort, direction }) {
                         Kelola akun pengguna dan role akses
                     </p>
                 </div>
-                <Link
-                    href={route("users.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
+                <PrimaryButton variant="outline" asChild>
+                <Link href={route("users.create")}>
                     Tambah User
                 </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable

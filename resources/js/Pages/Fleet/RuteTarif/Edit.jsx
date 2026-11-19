@@ -24,7 +24,7 @@ export default function Edit({ ruteTarif, unitBisnis }) {
         <AuthenticatedLayout>
             <Head title="Edit Rute Tarif" />
 
-            <div className="mx-auto max-w-4xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-start gap-3">
                     <div>
@@ -32,7 +32,7 @@ export default function Edit({ ruteTarif, unitBisnis }) {
                             Edit Rute Tarif
                         </h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            {ruteTarif.lokasi_asal} → {ruteTarif.lokasi_tujuan}
+                            {ruteTarif.lokasi_asal} -> {ruteTarif.lokasi_tujuan}
                         </p>
                     </div>
                 </div>

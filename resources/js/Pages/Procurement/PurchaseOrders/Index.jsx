@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Eye, Plus } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ pos, filters, sort, direction }) {
     const getStatusBadge = (status) => {
@@ -83,13 +84,11 @@ export default function Index({ pos, filters, sort, direction }) {
                     <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
                     <p className="mt-1 text-sm text-gray-500">Kelola semua purchase order pengadaan</p>
                 </div>
-                <Link
-                    href={route("procurement.purchase-orders.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
+                <PrimaryButton variant="outline" asChild>
+                <Link href={route("procurement.purchase-orders.create")}>
                     Buat PO
                 </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable

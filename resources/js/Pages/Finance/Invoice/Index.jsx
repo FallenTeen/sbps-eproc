@@ -189,7 +189,7 @@ export default function Index({
 
                 <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
                     <Link href={route("finance.invoice.create")}>
-                        <PrimaryButton className="flex items-center gap-2">
+                        <PrimaryButton variant="outline" className="flex items-center gap-2">
                             <Plus className="w-4 h-4" /> Buat Invoice
                         </PrimaryButton>
                     </Link>

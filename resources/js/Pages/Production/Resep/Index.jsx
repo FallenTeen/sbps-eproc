@@ -1,6 +1,7 @@
 import React from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import PrimaryButton from "@/Components/PrimaryButton";
 import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
 
 export default function Index({ produk, resep }) {
@@ -26,13 +27,12 @@ export default function Index({ produk, resep }) {
                         <ArrowLeft className="w-4 h-4" />
                         Kembali ke Produk
                     </Link>
-                    <Link
-                        href={route("production.resep.create", produk.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Item
-                    </Link>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("production.resep.create", produk.id)}>
+                            <Plus className="w-4 h-4" />
+                            Tambah Item
+                        </Link>
+                    </PrimaryButton>
                 </div>
             </div>
 

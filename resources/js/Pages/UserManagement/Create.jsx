@@ -201,7 +201,7 @@ export default function Create({
         <AuthenticatedLayout>
             <Head title="Tambah Akun" />
 
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900">

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, router } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
+import PrimaryButton from "@/Components/PrimaryButton";
 import {
     Plus,
     ChevronDown,
@@ -38,13 +39,11 @@ export default function Index({ mixDesigns }) {
                     </p>
                 </div>
 
-                <Link
-                    href={route("production.mix-design.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="h-4 w-4" />
-                    Buat Template Baru
-                </Link>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("production.mix-design.create")}>
+                        Buat Template Baru
+                    </Link>
+                </PrimaryButton>
             </div>
 
             {/* Empty State */}

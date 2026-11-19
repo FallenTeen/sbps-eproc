@@ -32,7 +32,16 @@ class LogistikController extends Controller
             'ada_selisih' => ['type' => 'boolean'],
         ];
 
-        $query = Ritase::with(['armada', 'driver', 'muatan', 'verifikasiLogistik', 'timbang', 'ruteTarif'])
+        $query = Ritase::with([
+            'armada',
+            'driver',
+            'muatan',
+            'verifikasiLogistik.verifikator',
+            'timbang.penimbang',
+            'ruteTarif',
+            'proyek',
+            'titik',
+        ])
             ->where(function ($q) {
                 $q->where('wajib_jembatan_timbang', true)
                     ->orWhereDoesntHave('verifikasiLogistik')

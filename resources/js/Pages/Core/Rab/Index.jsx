@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import React, { useMemo, useState } from 'react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import Layout from '@/Components/Layout';
 import DataTable from '@/Components/DataTable';
+import Modal from '@/Components/Modal';
+import PrimaryButton from '@/Components/PrimaryButton';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 
 const KATEGORI = [
@@ -15,12 +17,39 @@ const KATEGORI = [
 const rupiah = (v) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(v || 0));
 
-export default function Index({ rabs, proyeks, filters }) {
+export default function Index({ rabs, proyeks, filters, selectedProyek, showCreate = false }) {
     const { url } = usePage();
+    const [showModal, setShowModal] = useState(showCreate);
+    const form = useForm({
+        proyek_id: selectedProyek ?? '',
+        kategori: 'bahan_baku',
+        rencana: '',
+        catatan: '',
+    });
+
     const proyekId = useMemo(() => {
         const m = url.match(/\/core\/proyek\/([^/]+)\/rab/);
         return m ? m[1] : null;
     }, [url]);
+
+    const openCreate = () => {
+        form.setData('proyek_id', selectedProyek ?? proyekId ?? '');
+        form.reset('kategori', 'rencana', 'catatan');
+        setShowModal(true);
+    };
+
+    const closeCreate = () => {
+        form.reset();
+        setShowModal(false);
+    };
+
+    const submitCreate = (e) => {
+        e.preventDefault();
+        form.post(route('core.rab.store'), {
+            preserveScroll: true,
+            onSuccess: closeCreate,
+        });
+    };
 
     const handleDelete = (id) => {
         if (window.confirm('Yakin hapus RAB ini?')) {
@@ -66,12 +95,9 @@ export default function Index({ rabs, proyeks, filters }) {
                         <h1 className="text-xl font-semibold text-gray-800">Rencana Anggaran Biaya</h1>
                         <p className="text-sm text-gray-500">Realisasi dihitung otomatis per kategori (bahan baku, sparepart, SDM, lainnya).</p>
                     </div>
-                    <Link
-                        href={route('core.rab.create', proyekId ? { proyek_id: proyekId } : {})}
-                        className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    >
+                    <PrimaryButton variant="outline" onClick={openCreate}>
                         <Plus size={16} /> Tambah RAB
-                    </Link>
+                    </PrimaryButton>
                 </div>
 
                 <div className="rounded bg-white p-4 shadow-sm">
@@ -98,6 +124,71 @@ export default function Index({ rabs, proyeks, filters }) {
                     rows={rabs}
                     filters={filters}
                 />
+
+                <Modal show={showModal} onClose={closeCreate} title="Tambah RAB" maxWidth="lg">
+                    <form onSubmit={submitCreate} className="space-y-4 p-6">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Proyek</label>
+                            <select
+                                className="w-full rounded border-gray-300 text-sm"
+                                value={form.data.proyek_id}
+                                onChange={(e) => form.setData('proyek_id', e.target.value)}
+                            >
+                                <option value="">-- Pilih proyek --</option>
+                                {proyeks.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.nama}</option>
+                                ))}
+                            </select>
+                            {form.errors.proyek_id && <p className="mt-1 text-xs text-red-600">{form.errors.proyek_id}</p>}
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Kategori</label>
+                            <select
+                                className="w-full rounded border-gray-300 text-sm"
+                                value={form.data.kategori}
+                                onChange={(e) => form.setData('kategori', e.target.value)}
+                            >
+                                {KATEGORI.map((k) => (
+                                    <option key={k.value} value={k.value}>{k.label}</option>
+                                ))}
+                            </select>
+                            {form.errors.kategori && <p className="mt-1 text-xs text-red-600">{form.errors.kategori}</p>}
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Rencana (Rp)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="w-full rounded border-gray-300 text-sm"
+                                value={form.data.rencana}
+                                onChange={(e) => form.setData('rencana', e.target.value)}
+                            />
+                            {form.errors.rencana && <p className="mt-1 text-xs text-red-600">{form.errors.rencana}</p>}
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Catatan</label>
+                            <textarea
+                                rows={3}
+                                className="w-full rounded border-gray-300 text-sm"
+                                value={form.data.catatan}
+                                onChange={(e) => form.setData('catatan', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button type="button" onClick={closeCreate} className="rounded border px-4 py-2 text-sm">
+                                Batal
+                            </button>
+                            <PrimaryButton type="submit" disabled={form.processing}>
+                                Simpan
+                            </PrimaryButton>
+                        </div>
+                    </form>
+                </Modal>
             </div>
         </Layout>
     );

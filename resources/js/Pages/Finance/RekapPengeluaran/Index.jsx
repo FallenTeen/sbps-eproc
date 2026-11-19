@@ -13,6 +13,7 @@ import {
     X,
 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const emptyForm = {
     id: null,
@@ -165,18 +166,18 @@ export default function Index({
                         <Download className="w-4 h-4" />
                         Export Excel
                     </a>
-                    <button
-                        type="button"
+                    <PrimaryButton
+                        variant="outline"
                         onClick={openCreate}
-                        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                        className="flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" />
                         Tambah Pengeluaran
-                    </button>
+                    </PrimaryButton>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {flash?.success && (
                     <div className="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
                         {flash.success}

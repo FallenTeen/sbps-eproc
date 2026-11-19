@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, router, useForm } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
+import PrimaryButton from "@/Components/PrimaryButton";
 import {
     ArrowLeft,
     Trash2,
@@ -214,7 +215,7 @@ export default function Show({ mesin }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="space-y-6">
                 <header className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
                     <div className="flex min-w-0 items-start gap-3">
                         <div className="min-w-0">
@@ -234,7 +235,7 @@ export default function Show({ mesin }) {
                             <p className="mt-1 text-sm text-gray-500">
                                 {mesin.jenis?.replace("_", " ").toUpperCase() ||
                                     "JENIS MESIN -"}
-                                <span className="mx-2 text-gray-300">•</span>
+                                <span className="mx-2 text-gray-300">|</span>
                                 {mesin.unit_bisnis?.nama || "Unit bisnis -"}
                             </p>
                         </div>
@@ -1111,14 +1112,10 @@ function TabSection({
                     )}
                 </div>
                 {actionLabel && (
-                    <button
-                        type="button"
-                        onClick={onAction}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
+                    <PrimaryButton type="button" variant="outline" onClick={onAction}>
                         {actionIcon}
                         {actionLabel}
-                    </button>
+                    </PrimaryButton>
                 )}
             </div>
             {children}

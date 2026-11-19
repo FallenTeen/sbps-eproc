@@ -42,7 +42,7 @@ export default function Edit({ mixDesign, bahanBakus }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-start gap-4">
                     <div>

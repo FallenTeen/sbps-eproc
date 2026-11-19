@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -51,15 +52,27 @@ beforeEach(function () {
     ]);
 
     // Logistik User
+    $logistikPermissions = collect(['verify ritase logistik', 'manage timbang'])
+        ->map(fn (string $name) => Permission::findOrCreate($name, 'web'));
+    $logistikRole = Role::findOrCreate('Logistik', 'web');
+    $logistikRole->syncPermissions($logistikPermissions);
+
     $this->logistikUser = User::factory()->create(['is_active' => true]);
-    Role::findOrCreate('Logistik', 'web');
-    $this->logistikUser->assignRole('Logistik');
+    $this->logistikUser->assignRole($logistikRole);
     $this->logistikToken = $this->logistikUser->createToken('mobile-test')->plainTextToken;
 
     // Security User
+    $securityPermissions = collect([
+        'manage security buku tamu',
+        'manage security checklist',
+        'manage security darurat',
+        'verify ritase security',
+    ])->map(fn (string $name) => Permission::findOrCreate($name, 'web'));
+    $securityRole = Role::findOrCreate('Security', 'web');
+    $securityRole->syncPermissions($securityPermissions);
+
     $this->securityUser = User::factory()->create(['is_active' => true]);
-    Role::findOrCreate('Security', 'web');
-    $this->securityUser->assignRole('Security');
+    $this->securityUser->assignRole($securityRole);
     $this->securityToken = $this->securityUser->createToken('mobile-test')->plainTextToken;
 });
 

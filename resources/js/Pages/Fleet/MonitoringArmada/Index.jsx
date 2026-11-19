@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import { Head } from "@inertiajs/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import { formatTanggal } from "@/utils/date";
 import {
     Truck,
@@ -266,6 +267,7 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
     const [sortKey, setSortKey] = useState("kode_unit");
     const [sortDir, setSortDir] = useState("asc");
     const [selectedArmadaId, setSelectedArmadaId] = useState(null);
+    const [tableTab, setTableTab] = useState("unit");
 
     const applyFilters = () => {
         const params = {};
@@ -509,8 +511,32 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 <TrendChart data={rekap_per_tanggal} dataKey="total_jam_aktif" label="Tren jam aktif harian" color="#8b5cf6" suffix=" jam" />
             </div>
 
-            {/* Breakdown Per Unit Bisnis */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+            <Tabs value={tableTab} onValueChange={setTableTab} className="flex-col gap-4">
+                <div className="w-full overflow-x-auto overflow-y-hidden pb-1">
+                    <TabsList className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1" aria-label="Rekap monitoring armada">
+                        <TabsTrigger
+                            value="unit"
+                            className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tableTab === "unit" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                        >
+                            <Truck className="h-4 w-4" /> Daftar Unit
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="harian"
+                            className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tableTab === "harian" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                        >
+                            <CalendarClock className="h-4 w-4" /> Rekap Harian
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="bisnis"
+                            className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tableTab === "bisnis" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                        >
+                            <Building2 className="h-4 w-4" /> Unit Bisnis
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent value="bisnis" className="space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-blue-500" /> Performa per Unit Bisnis
                 </h3>
@@ -559,8 +585,11 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 )}
             </div>
 
+                </TabsContent>
+
+                <TabsContent value="harian" className="space-y-4">
             {/* Rekap Durasi per Tanggal */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <CalendarClock className="w-5 h-5 text-indigo-500" /> Rekap Durasi per Tanggal
                 </h3>
@@ -602,6 +631,9 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 )}
             </div>
 
+                </TabsContent>
+
+                <TabsContent value="unit" className="space-y-4">
             {/* Daftar Unit */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
@@ -744,6 +776,8 @@ export default function Index({ ringkasan, per_unit_bisnis, rekap_per_tanggal, p
                 )}
                 <p className="text-xs text-gray-400 mt-3">Klik baris untuk melihat riwayat lengkap unit.</p>
             </div>
+                </TabsContent>
+            </Tabs>
 
             {selectedArmadaId ? (
                 <ArmadaDetailModal

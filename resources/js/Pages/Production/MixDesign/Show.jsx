@@ -51,7 +51,7 @@ export default function Show({ mixDesign, produks }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 items-start gap-4">

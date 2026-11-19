@@ -20,6 +20,7 @@ import {
     Navigation,
 } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const GROUP_OPTIONS = [
     { value: "", label: "List Individual"},
@@ -331,22 +332,18 @@ export default function Index({
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Link
-                        href={route("attendance.presensi.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Catat Presensi
-                    </Link>
-                    {isOwner && (
-                        <Link
-                            href={route("attendance.tracking.index")}
-                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-                        >
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("attendance.presensi.create")}>
+                            <Plus className="w-4 h-4" />
+                            Catat Presensi
+                        </Link>
+                    </PrimaryButton>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("attendance.tracking.index")}>
                             <Navigation className="w-4 h-4" />
                             Tracking Linimasa
                         </Link>
-                    )}
+                    </PrimaryButton>
                 </div>
             </div>
 

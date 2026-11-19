@@ -39,7 +39,7 @@ export default function Create({ jabatanOptions = [], roles = ["user"] }) {
         <AuthenticatedLayout>
             <Head title="Tambah Karyawan" />
 
-            <div className="mx-auto max-w-5xl">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6 flex items-start justify-between">
                     <div>

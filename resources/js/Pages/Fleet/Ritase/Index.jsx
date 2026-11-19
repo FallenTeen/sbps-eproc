@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, MapPin, Calendar } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_COLOR = {
     disetujui: "bg-green-100 text-green-800",
@@ -90,7 +91,7 @@ export default function RitaseIndex({
                     <MapPin className="w-3.5 h-3.5 mt-0.5 text-slate-400 flex-shrink-0" />
                     <span>
                         {r.rute_tarif
-                            ? `${r.rute_tarif.lokasi_asal} → ${r.rute_tarif.lokasi_tujuan}`
+                            ? `${r.rute_tarif.lokasi_asal} -> ${r.rute_tarif.lokasi_tujuan}`
                             : (r.titik?.nama ?? "-")}
                     </span>
                 </div>
@@ -171,12 +172,11 @@ export default function RitaseIndex({
             )}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Ritase Harian</h1>
-                <Link
-                    href={route("fleet.ritase.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" /> Catat Ritase
-                </Link>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("fleet.ritase.create")}>
+                        <Plus className="w-4 h-4" /> Catat Ritase
+                    </Link>
+                </PrimaryButton>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

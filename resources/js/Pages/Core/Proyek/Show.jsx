@@ -12,6 +12,7 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import PetaTitikProyek from "@/Components/PetaTitikProyek";
+import PrimaryButton from "@/Components/PrimaryButton";
 import { formatTanggal } from "@/utils/date";
 
 export default function Show({ proyek, rabRealisasi, stats }) {
@@ -82,15 +83,15 @@ export default function Show({ proyek, rabRealisasi, stats }) {
                         <Trash2 className="w-4 h-4" />
                         Hapus
                     </button>
-                    <Link
-                        href={route("core.rab.create", {
-                            proyek_id: proyek.id,
-                        })}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-ink-secondary text-white bg-blue-600 transition-colors"
+                    <PrimaryButton
+                        variant="outline"
+                        asChild
                     >
-                        <Plus className="w-4 h-4" />
-                        Tambah RAB
-                    </Link>
+                        <Link href={route("core.rab.create", { proyek_id: proyek.id })}>
+                            <Plus className="w-4 h-4" />
+                            Tambah RAB
+                        </Link>
+                    </PrimaryButton>
                 </div>
             </div>
 
@@ -497,15 +498,15 @@ export default function Show({ proyek, rabRealisasi, stats }) {
                                         Kelola Titik
                                     </Link>
 
-                                    <Link
-                                        href={route("core.titik.create", {
-                                            proyek_id: proyek.id,
-                                        })}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                                    <PrimaryButton
+                                        variant="outline"
+                                        asChild
                                     >
-                                        <Plus className="h-4 w-4" />
-                                        Tambah Titik
-                                    </Link>
+                                        <Link href={route("core.titik.create", { proyek_id: proyek.id })}>
+                                            <Plus className="h-4 w-4" />
+                                            Tambah Titik
+                                        </Link>
+                                    </PrimaryButton>
                                 </div>
                             </div>
 

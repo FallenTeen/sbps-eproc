@@ -13,6 +13,7 @@ import {
     Edit,
 } from "lucide-react";
 import { formatTanggalWaktu } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_BADGE = {
     berjalan: {
@@ -220,47 +221,48 @@ export default function Index({ sessions, produks, filters, sort, direction }) {
 
     return (
         <Layout>
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        Sesi Produksi
-                    </h1>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                        Riwayat & monitoring produksi harian
-                    </p>
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                            Sesi Produksi
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Riwayat & monitoring produksi harian
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href={route("production.sessions.active")}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                        >
+                            <Activity className="w-4 h-4" />
+                            Sesi Aktif
+                            {countBerjalan > 0 && (
+                                <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                    {countBerjalan}
+                                </span>
+                            )}
+                        </Link>
+                        <PrimaryButton variant="outline" asChild>
+                            <Link href={route("production.sessions.create")}>
+                                Mulai Sesi
+                            </Link>
+                        </PrimaryButton>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Link
-                        href={route("production.sessions.active")}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-                    >
-                        <Activity className="w-4 h-4" />
-                        Sesi Aktif
-                        {countBerjalan > 0 && (
-                            <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                {countBerjalan}
-                            </span>
-                        )}
-                    </Link>
-                    <Link
-                        href={route("production.sessions.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Mulai Sesi
-                    </Link>
-                </div>
-            </div>
 
-            <DataTable
-                routeName="production.sessions.index"
-                columns={columns}
-                rows={sessions}
-                filters={filters}
-                sort={sort}
-                direction={direction}
-                emptyMessage="Tidak ada sesi produksi."
-            />
+
+                <DataTable
+                    routeName="production.sessions.index"
+                    columns={columns}
+                    rows={sessions}
+                    filters={filters}
+                    sort={sort}
+                    direction={direction}
+                    emptyMessage="Tidak ada sesi produksi."
+                />
+            </div>
         </Layout>
     );
 }

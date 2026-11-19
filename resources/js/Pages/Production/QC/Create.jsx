@@ -31,7 +31,7 @@ export default function Create({ sessions }) {
         <AuthenticatedLayout>
             <Head title="Catat Sample QC" />
 
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-4">
                     <div>

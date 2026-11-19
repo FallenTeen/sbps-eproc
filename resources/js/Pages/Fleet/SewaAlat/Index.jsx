@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Clock, Eye, Wrench } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_COLOR = {
     disetujui: "bg-green-100 text-green-800",
@@ -159,13 +160,11 @@ export default function SewaAlatIndex({
             )}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Sewa Alat Berat</h1>
-                    <Link
-                        href={route("fleet.sewa-alat.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Proyek Baru
+                    <PrimaryButton variant="outline" asChild>
+                    <Link href={route("fleet.sewa-alat.create")}>
+                        Catat Sewa
                     </Link>
+                    </PrimaryButton>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -247,11 +247,12 @@ export default function Index({
                 <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
                     <SecondaryButton
                         onClick={() => setShowingTransferModal(true)}
-                        className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-600 border-blue-600"
+                        className="flex items-center gap-2"
                     >
                         <RefreshCw className="w-4 h-4" /> Transfer
                     </SecondaryButton>
                     <PrimaryButton
+                        variant="outline"
                         onClick={() => setShowingAddModal(true)}
                         className="flex items-center gap-2"
                     >
@@ -686,7 +687,6 @@ export default function Index({
                             Batal
                         </SecondaryButton>
                         <PrimaryButton
-                            className="bg-blue-600 hover:bg-blue-700"
                             disabled={transferForm.processing}
                         >
                             <RefreshCw className="w-4 h-4" />

@@ -71,7 +71,7 @@ export default function RitaseCreate({
     return (
         <AuthenticatedLayout>
             <Head title="Catat Ritase" />
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div>
@@ -237,7 +237,7 @@ export default function RitaseCreate({
                                             {selectedRute.nama_rute}
                                         </p>
                                         <p className="mt-1">
-                                            {selectedRute.lokasi_muat} →{" "}
+                                            {selectedRute.lokasi_muat} ->{" "}
                                             {selectedRute.lokasi_bongkar}
                                         </p>
                                         <p className="mt-2 font-medium">
@@ -388,7 +388,7 @@ export default function RitaseCreate({
                                         {estimatedUpah.toLocaleString("id-ID")}
                                     </p>
                                     <p className="mt-1 text-xs text-blue-500">
-                                        {data.jumlah_trip} trip × Rp{" "}
+                                        {data.jumlah_trip} trip ├ù Rp{" "}
                                         {Number(
                                             selectedRute?.tarif_per_trip ?? 0,
                                         ).toLocaleString("id-ID")}

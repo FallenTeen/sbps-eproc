@@ -68,7 +68,7 @@ export default function Outstanding({
                 </Link>
             </div>
 
-            <div className="max-w-7xl mx-auto  space-y-6">
+            <div className="space-y-6">
                 {/* Summary Aging Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-600">

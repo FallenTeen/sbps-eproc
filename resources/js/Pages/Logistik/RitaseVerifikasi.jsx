@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
-import { formatTanggal } from "@/utils/date";
+import { formatTanggal, formatTanggalWaktu } from "@/utils/date";
 import {
     Search,
     X,
@@ -13,10 +13,15 @@ import {
     SearchX,
     ArrowLeft,
     Save,
+    Eye,
 } from "lucide-react";
 
 const statusBadge = (status) =>
-    status === "disetujui" ? (
+    status === "terverifikasi" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Terverifikasi
+        </span>
+    ) : status === "disetujui" ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
             <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Disetujui
         </span>
@@ -81,6 +86,7 @@ function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-xl" }) {
 export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
     const { flash } = usePage().props;
     const [selectedItem, setSelectedItem] = useState(null);
+    const [detailItem, setDetailItem] = useState(null);
     const [form, setForm] = useState({
         jumlah_verifikasi: "",
         berat_kosong_kg: "",
@@ -105,7 +111,7 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
 
         setForm({
             jumlah_verifikasi:
-                r.verifikasi_logistik?.jumlah_verifikasi ??
+                r.verifikasiLogistik?.jumlah_verifikasi ??
                 r.muatan?.jumlah_driver ??
                 r.jumlah_rit ??
                 "",
@@ -232,12 +238,20 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
             align: "right",
             cellClassName: "px-4 py-3 text-right text-sm",
             render: (r) => (
-                <button
-                    onClick={() => openVerifikasiModal(r)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
-                >
-                    <Scale className="w-3.5 h-3.5" /> Verifikasi
-                </button>
+                <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                        onClick={() => setDetailItem(r)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+                    >
+                        <Eye className="w-3.5 h-3.5" /> Detail
+                    </button>
+                    <button
+                        onClick={() => openVerifikasiModal(r)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition shadow-sm active:scale-[0.98]"
+                    >
+                        <Scale className="w-3.5 h-3.5" /> Verifikasi
+                    </button>
+                </div>
             ),
         },
     ];
@@ -274,6 +288,145 @@ export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
                     sort={sort}
                     direction={direction}
                 />
+
+                {/* Modal Detail Ritase */}
+                <Modal
+                    isOpen={!!detailItem}
+                    onClose={() => setDetailItem(null)}
+                    title={`Detail Ritase - ${detailItem?.armada?.plat_nomor ?? ""}`}
+                    maxWidth="max-w-3xl"
+                >
+                    {detailItem && (
+                        <div className="space-y-5">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {statusBadge(detailItem.verifikasiLogistik?.status ?? detailItem.status)}
+                                {detailItem.ada_selisih && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 border border-red-200">
+                                        <AlertTriangle className="w-3 h-3" /> Ada Selisih
+                                    </span>
+                                )}
+                                {detailItem.wajib_jembatan_timbang && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
+                                        Wajib Timbang
+                                    </span>
+                                )}
+                            </div>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Detail Ritase</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {[
+                                        ["Tanggal", formatTanggal(detailItem.tanggal)],
+                                        ["Armada", detailItem.armada?.plat_nomor ?? "-"],
+                                        ["Driver", detailItem.driver?.nama ?? "-"],
+                                        ["Rute", detailItem.ruteTarif ? `${detailItem.ruteTarif.lokasi_asal ?? "-"} → ${detailItem.ruteTarif.lokasi_tujuan ?? "-"}` : "-"],
+                                        ["Proyek", detailItem.proyek?.nama ?? "-"],
+                                        ["Titik", detailItem.titik?.nama ?? "-"],
+                                        ["Customer", detailItem.customer ?? "-"],
+                                        ["Kategori", detailItem.kategori ?? "-"],
+                                        ["Material", detailItem.material ?? "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Muatan & Angka</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Jumlah Driver", `${detailItem.muatan?.jumlah_driver ?? detailItem.jumlah_rit ?? "-"}${detailItem.muatan?.satuan ? ` ${detailItem.muatan.satuan}` : ""}`],
+                                        ["Jumlah Verifikasi", detailItem.verifikasiLogistik?.jumlah_verifikasi ?? "-"],
+                                        ["Sumber Angka Resmi", detailItem.sumber_angka_resmi ?? "-"],
+                                        ["Nominal", detailItem.nominal != null ? `Rp ${Number(detailItem.nominal).toLocaleString("id-ID")}` : "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Hasil Penimbangan & Verifikasi</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Berat Kosong (kg)", detailItem.timbang?.berat_kosong_kg ?? detailItem.armada?.tara_master_kg ?? "-"],
+                                        ["Berat Isi (kg)", detailItem.timbang?.berat_isi_kg ?? "-"],
+                                        ["Berat Netto (kg)", detailItem.timbang?.berat_netto_kg ?? "-"],
+                                        ["Tara Sumber", detailItem.timbang?.tara_sumber ?? "-"],
+                                        ["No. Tiket", detailItem.timbang?.nomor_tiket ?? "-"],
+                                        ["Ditimbang Oleh", detailItem.timbang?.penimbang?.name ?? "-"],
+                                        ["Verifikator", detailItem.verifikasiLogistik?.verifikator?.name ?? "-"],
+                                        ["Catatan Verifikasi", detailItem.verifikasiLogistik?.catatan || detailItem.catatan || "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900 whitespace-pre-line">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+
+                                {Array.isArray(detailItem.verifikasiLogistik?.checklist) &&
+                                    detailItem.verifikasiLogistik.checklist.length > 0 && (
+                                        <div className="mt-3 rounded-lg border border-gray-200 p-3">
+                                            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Checklist</p>
+                                            <ul className="mt-2 space-y-1 text-sm text-gray-700">
+                                                {detailItem.verifikasiLogistik.checklist.map((item, index) => (
+                                                    <li key={index} className="flex items-start gap-2">
+                                                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                                        <span>{typeof item === "string" ? item : JSON.stringify(item)}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                {detailItem.timbang?.foto_tiket_url && (
+                                    <a
+                                        href={detailItem.timbang.foto_tiket_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                                    >
+                                        <Eye className="h-3.5 w-3.5" /> Lihat Foto Tiket
+                                    </a>
+                                )}
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Waktu</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Dicatat", detailItem.created_at],
+                                        ["Diubah", detailItem.updated_at],
+                                        ["Ditimbang", detailItem.timbang?.ditimbang_pada],
+                                        ["Diverifikasi", detailItem.verifikasiLogistik?.diverifikasi_pada],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{formatTanggalWaktu(value)}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setDetailItem(null)}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
 
                 {/* Modal Form Verifikasi */}
                 <Modal

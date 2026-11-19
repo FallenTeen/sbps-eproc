@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, router, Link } from "@inertiajs/react";
 import {
@@ -11,6 +11,7 @@ import {
     Building2,
 } from "lucide-react";
 import SecondaryButton from "@/Components/SecondaryButton";
+import { ClientPagination } from "@/Components/Pagination";
 import {
     BarChart,
     Bar,
@@ -32,7 +33,11 @@ export default function LabaRugi({
     summary = {},
     filters = {},
 }) {
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(15);
+
     const handleFilterChange = (key, value) => {
+        setPage(1);
         router.get(
             route("finance.laporan-keuangan.laba-rugi"),
             {
@@ -97,6 +102,13 @@ export default function LabaRugi({
         { name: "Beban Gaji SDM", value: totalGaji, color: "#ec4899" },
     ].filter((item) => item.value > 0);
 
+    const totalPages = Math.max(1, Math.ceil(reportUnits.length / perPage));
+    const safePage = Math.min(page, totalPages);
+    const paginatedUnits = reportUnits.slice(
+        (safePage - 1) * perPage,
+        safePage * perPage,
+    );
+
     return (
         <AuthenticatedLayout>
             <Head title="Laporan Laba Rugi" />
@@ -121,7 +133,7 @@ export default function LabaRugi({
                     </Link>
                 </div>
             </div>
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
@@ -369,7 +381,7 @@ export default function LabaRugi({
                                         </td>
                                     </tr>
                                 ) : (
-                                    reportUnits.map((unit) => (
+                                    paginatedUnits.map((unit) => (
                                         <tr
                                             key={unit.unit_bisnis_id}
                                             className="hover:bg-gray-50"
@@ -427,6 +439,16 @@ export default function LabaRugi({
                             </tbody>
                         </table>
                     </div>
+                    <ClientPagination
+                        total={reportUnits.length}
+                        page={safePage}
+                        perPage={perPage}
+                        onPageChange={setPage}
+                        onPerPageChange={(value) => {
+                            setPerPage(value);
+                            setPage(1);
+                        }}
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

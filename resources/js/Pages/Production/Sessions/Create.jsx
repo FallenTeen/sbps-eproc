@@ -35,7 +35,7 @@ export default function Create({ mesins, produks, operator, titiks }) {
 
     return (
         <Layout>
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
@@ -51,7 +51,7 @@ export default function Create({ mesins, produks, operator, titiks }) {
                     </div>
                 </div>
 
-                <div className="max-w-5xl">
+                <div>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Informasi Mesin */}
                         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

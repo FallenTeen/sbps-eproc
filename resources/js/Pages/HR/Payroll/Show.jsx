@@ -76,7 +76,7 @@ export default function Show({
         <AuthenticatedLayout>
             <Head title={`Detail Payroll ${getBulanName(bulan)} ${tahun}`} />
 
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {/* Header Action */}
                 <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow">
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">
@@ -311,7 +311,7 @@ export default function Show({
                             Batal
                         </SecondaryButton>
 
-                        <PrimaryButton className="ml-3 bg-green-600 hover:bg-green-700">
+                        <PrimaryButton variant="primary" className="ml-3">
                             Ya, Tandai Dibayar
                         </PrimaryButton>
                     </div>

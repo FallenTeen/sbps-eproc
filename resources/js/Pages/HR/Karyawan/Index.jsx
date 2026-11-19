@@ -145,15 +145,15 @@ export default function Index({ auth, karyawans, filters, sort, direction }) {
                 <h2 className="font-semibold text-xl text-gray-800 leading-tight">
                     Manajemen Karyawan
                 </h2>
-                <Link href={route("hr.karyawan.create")}>
-                    <PrimaryButton>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("hr.karyawan.create")}>
                         <Plus className="w-4 h-4 mr-2" />
                         Tambah Karyawan
-                    </PrimaryButton>
-                </Link>
+                    </Link>
+                </PrimaryButton>
             </div>
             <div className="py-5">
-                <div className="max-w-7xl mx-auto">
+                <div>
                     <DataTable
                         routeName="hr.karyawan.index"
                         columns={columns}

@@ -36,7 +36,7 @@ export default function Create({
         <AuthenticatedLayout>
             <Head title="Catat BBM" />
 
-            <div className="mx-auto max-w-4xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-start gap-3">
                     <div>

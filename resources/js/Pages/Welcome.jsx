@@ -245,7 +245,7 @@ export default function Welcome({
                                 className="brand-mark"
                             />
                             <span>
-                                <b>{shortName}</b>
+                                <b style={{ color: 'var(--r)' }}>{shortName}</b>
                                 <small>{companyName}</small>
                             </span>
                         </a>
@@ -405,7 +405,7 @@ export default function Welcome({
                                 </p>
                                 <a
                                     href="#kontak"
-                                    className="btn btn-dark !bg-white !text-gray-900"
+                                    className="btn btn-dark"
                                 >
                                     Hubungi kami <ArrowRight size={16} />
                                 </a>
@@ -552,7 +552,7 @@ export default function Welcome({
                             </p>
                             <a
                                 href={`mailto:${email}`}
-                                className="btn btn-red btn-lg contact-btn !text-white"
+                                className="btn btn-red btn-lg contact-btn"
                             >
                                 Kirim email <ArrowRight size={18} />
                             </a>
@@ -623,7 +623,7 @@ export default function Welcome({
             </div>
 
             <style>{`
-.sbps{--r:#d0141c;--r-l:#ff5a61;--asp:#1d2025;--ink:#14161a;--svc-cta-shadow:#14161a;--bg:#fff;--bg2:#f4f4f1;--card:#fff;--tx:#1d2025;--mut:#5b616b;--line:#e3e3df;
+.sbps{--r:#DC2626;--r-l:#EF4444;--asp:#1d2025;--ink:#14161a;--svc-cta-shadow:#14161a;--bg:#fff;--bg2:#f4f4f1;--card:#fff;--tx:#1d2025;--mut:#5b616b;--line:#e3e3df;
   font-family:Barlow,system-ui,sans-serif;color:var(--tx);background:var(--bg);line-height:1.6;transition:background-color .25s,color .25s}
 .sbps-dark{--bg:#14161a;--bg2:#1a1d22;--card:#21252b;--tx:#eceae4;--mut:#a4a9b1;--line:#32373e;--svc-cta-shadow:#fff}
 .sbps *{box-sizing:border-box}
@@ -669,11 +669,6 @@ html{scroll-behavior:smooth}section[id]{scroll-margin-top:84px}
 .hero h1{font-size:clamp(46px,7vw,92px);text-transform:uppercase;max-width:14ch}
 .lead{margin-top:24px;max-width:56ch;font-size:18px;color:rgba(255,255,255,.85)}
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
-.hero-card{background:#fff;color:#1d2025;border-top:6px solid var(--r);padding:28px;border-radius:6px}
-.hero-card h2{font-size:30px;margin-bottom:16px;color:#14161a}
-.hero-card li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e6e6e2;font-weight:600;font-size:15px}
-.hero-card li svg{flex:none;margin-top:4px;color:var(--r)}
-.hero-card .btn{margin-top:22px}
 .roadline{position:absolute;left:0;right:0;bottom:34px;height:6px;background:repeating-linear-gradient(90deg,var(--r) 0 46px,transparent 46px 92px)}
 .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;background:#0d0f12}
 /* strip */

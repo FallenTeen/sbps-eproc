@@ -169,12 +169,12 @@ export default function Index({
         <AuthenticatedLayout>
             <Head title="Manajemen Cuti" />
 
-            <div className="max-w-7xl mx-auto">
+            <div>
                 <div className="mb-6 flex justify-between items-center">
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">
                         Pengajuan Cuti Karyawan
                     </h2>
-                    <PrimaryButton onClick={() => setShowingAddModal(true)}>
+                    <PrimaryButton variant="outline" onClick={() => setShowingAddModal(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         Ajukan Cuti Baru
                     </PrimaryButton>

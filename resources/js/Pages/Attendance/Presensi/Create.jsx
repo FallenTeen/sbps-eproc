@@ -54,7 +54,7 @@ export default function Create({ karyawan, titiks }) {
 <AuthenticatedLayout>
     <Head title="Catat Presensi" />
 
-    <div className="mx-auto max-w-5xl">
+    <div className="space-y-6">
         {/* Header Halaman */}
         <div className="mb-6 flex items-start justify-between">
             <div>

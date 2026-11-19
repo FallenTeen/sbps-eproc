@@ -32,7 +32,7 @@ export default function Create({ presensis }) {
         <AuthenticatedLayout>
             <Head title="Formulir Lapangan" />
 
-            <div className="mx-auto max-w-5xl">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6 flex items-start justify-between">
                     <div>

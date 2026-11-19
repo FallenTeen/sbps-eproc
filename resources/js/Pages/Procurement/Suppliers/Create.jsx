@@ -21,7 +21,7 @@ export default function Create() {
     return (
         <AuthenticatedLayout>
             <Head title="Tambah Supplier" />
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">

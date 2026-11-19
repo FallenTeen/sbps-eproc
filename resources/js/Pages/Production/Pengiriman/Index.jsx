@@ -4,6 +4,7 @@ import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
 import { Eye, Plus } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_OPTIONS = [
     { value: "dijadwalkan", label: "Dijadwalkan" },
@@ -118,12 +119,11 @@ export default function Index({ pengirimen, filters, sort, direction }) {
                         proyek/customer.
                     </p>
                 </div>
-                <Link
-                    href={route("production.pengiriman.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" /> Jadwalkan Baru
-                </Link>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("production.pengiriman.create")}>
+                        <Plus className="w-4 h-4" /> Jadwalkan Baru
+                    </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable

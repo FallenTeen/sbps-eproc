@@ -24,7 +24,7 @@ export default function Create({ unitBisnis }) {
         <AuthenticatedLayout>
             <Head title="Tambah Rute Tarif" />
 
-            <div className="mx-auto max-w-4xl">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-slate-800">

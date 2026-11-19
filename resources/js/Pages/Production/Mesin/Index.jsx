@@ -3,6 +3,7 @@ import { Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
 import { Plus, AlertTriangle, CheckCircle2, Eye, Edit } from "lucide-react";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_BADGE = {
     aktif: "bg-emerald-200 text-emerald-800",
@@ -151,13 +152,11 @@ export default function Index({
                 <h1 className="text-2xl font-bold text-gray-800">
                     Mesin Produksi
                 </h1>
-                <Link
-                    href={route("production.mesin.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
-                    Tambah Mesin
-                </Link>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("production.mesin.create")}>
+                        Tambah Mesin
+                    </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable

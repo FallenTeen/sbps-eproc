@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { router, useForm } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
+import PrimaryButton from "@/Components/PrimaryButton";
 import { Plus, Users, Edit, Trash2, ArrowLeft, Save } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
 
@@ -196,13 +197,10 @@ export default function Index({ helpers, options, filters, sort, direction }) {
                     <Users className="w-6 h-6 text-blue-600" />
                     Helper Armada
                 </h1>
-                <button
-                    onClick={openCreate}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
+                <PrimaryButton variant="outline" onClick={openCreate}>
                     <Plus className="w-4 h-4" />
                     Tambah Helper
-                </button>
+                </PrimaryButton>
             </div>
 
             <DataTable

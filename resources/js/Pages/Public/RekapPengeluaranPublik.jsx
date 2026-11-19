@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Head, router, usePage, Link } from "@inertiajs/react";
 import { ArrowUpCircle, Download, Lock, Unlock } from "lucide-react";
 import ApplicationLogo from "@/Components/ApplicationLogo";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 function formatCurrency(value) {
     return new Intl.NumberFormat("id-ID", {
@@ -104,23 +105,26 @@ export default function RekapPengeluaranPublik({
                         </Link>
                         <div className="flex items-center gap-2">
                             {rekap && (
-                                <a
-                                    href={exportHref}
-                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                                <PrimaryButton
+                                    variant="primary"
+                                    asChild
                                 >
-                                    <Download className="w-4 h-4" />
-                                    Export Excel
-                                </a>
+                                    <a href={exportHref}>
+                                        <Download className="w-4 h-4" />
+                                        Export Excel
+                                    </a>
+                                </PrimaryButton>
                             )}
                             {rekap && (
-                                <button
-                                    type="button"
-                                    onClick={lock}
-                                    className="flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+                                <PrimaryButton
+                                    variant="outline"
+                                    asChild
                                 >
-                                    <Lock className="w-4 h-4" />
-                                    Kunci
-                                </button>
+                                    <button type="button" onClick={lock}>
+                                        <Lock className="w-4 h-4" />
+                                        Kunci
+                                    </button>
+                                </PrimaryButton>
                             )}
                         </div>
                     </div>
@@ -163,12 +167,13 @@ export default function RekapPengeluaranPublik({
                                         </p>
                                     )}
                                 </div>
-                                <button
+                                <PrimaryButton
+                                    variant="primary"
                                     type="submit"
-                                    className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+                                    className="w-full justify-center"
                                 >
                                     Buka Rekap
-                                </button>
+                                </PrimaryButton>
                             </form>
                         </div>
                     ) : (

@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Eye } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ formulirs, filters, sort, direction }) {
     const columns = [
@@ -75,13 +76,11 @@ export default function Index({ formulirs, filters, sort, direction }) {
                         Laporan kondisi area dan aktivitas pekerjaan lapangan
                     </p>
                 </div>
-                <Link
-                    href={route("attendance.formulir.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
+                <PrimaryButton variant="outline" asChild>
+                <Link href={route("attendance.formulir.create")}>
                     Buat Formulir
                 </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable
