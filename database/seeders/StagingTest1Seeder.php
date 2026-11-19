@@ -62,6 +62,7 @@ class StagingTest1Seeder extends Seeder
             KaryawanSeeder::class,
             AkunKasBankSeeder::class,
             FleetDataSeeder::class,
+            ArmadaFotoPreviewSeeder::class,
             ProcurementDataSeeder::class,
             ProductionDataSeeder::class,
             FinanceDataSeeder::class,

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import DataTable from "@/Components/DataTable";
+import ImagePreviewModal from "@/Components/ImagePreviewModal";
 import { Plus, Truck } from "lucide-react";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const JENIS = {
     dump_truck: "Dump Truck",
@@ -33,6 +35,8 @@ export default function Index({
     unitBisnis = [],
     titiks = [],
 }) {
+    const [fotoPreview, setFotoPreview] = useState(null);
+
     const columns = [
         {
             key: "kode_unit",
@@ -40,7 +44,36 @@ export default function Index({
             type: "text",
             cellClassName:
                 "px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900",
-            render: (a) => a.kode_unit,
+            render: (a) => (
+                <div className="flex items-center gap-3">
+                    {a.foto_thumb_url ? (
+                        <button
+                            type="button"
+                            title="Lihat foto penuh"
+                            onClick={() => setFotoPreview({
+                            src: a.foto_url,
+                            alt: `Foto ${a.kode_unit}`,
+                        })}
+                            className="block shrink-0 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                            <img
+                                src={a.foto_thumb_url}
+                                alt={`Foto ${a.kode_unit}`}
+                                loading="lazy"
+                                decoding="async"
+                                className="h-10 w-10 object-cover shrink-0 rounded-md border border-slate-200"
+                            />
+                        </button>
+                    ) : (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-400">
+                            <Truck className="h-5 w-5" />
+                        </span>
+                    )}
+                    <span className="font-medium text-slate-800">
+                        {a.kode_unit}
+                    </span>
+                </div>
+            ),
         },
         {
             key: "plat_nomor",
@@ -141,13 +174,11 @@ export default function Index({
         <Layout>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Armada</h1>
-                <Link
-                    href={route("fleet.armada.create")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Tambah Armada</span>
-                </Link>
+                <PrimaryButton variant="outline" asChild>
+                    <Link href={route("fleet.armada.create")}>
+                        <span>Tambah Armada</span>
+                    </Link>
+                </PrimaryButton>
             </div>
 
             <DataTable
@@ -158,6 +189,14 @@ export default function Index({
                 sort={sort}
                 direction={direction}
                 emptyMessage="Tidak ada data armada."
+            />
+
+            <ImagePreviewModal
+                open={Boolean(fotoPreview)}
+                onClose={() => setFotoPreview(null)}
+                src={fotoPreview?.src}
+                alt={fotoPreview?.alt}
+                title={fotoPreview?.alt || "Pratinjau Foto"}
             />
         </Layout>
     );

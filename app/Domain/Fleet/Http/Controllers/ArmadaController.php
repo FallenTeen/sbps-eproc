@@ -34,7 +34,7 @@ class ArmadaController extends Controller
         $this->authorize('viewAny', Armada::class);
 
         $user = $request->user();
-        $query = Armada::with(['unitBisnis', 'titik', 'currentDriver.karyawan', 'diperbaruiOleh:id,name']);
+        $query = Armada::with(['media', 'unitBisnis', 'titik', 'currentDriver.karyawan', 'diperbaruiOleh:id,name']);
 
         if (! $user->hasRole('Owner')) {
             $gcs = UnitBisnis::where('kode', 'GCS')->first();
@@ -119,7 +119,7 @@ class ArmadaController extends Controller
             'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
-            'foto_unit' => 'nullable|image|max:10240',
+            'foto_unit' => 'nullable|image|mimetypes:image/jpeg,image/png,image/webp|max:10240',
             'tara_master_kg' => 'nullable|numeric|min:0',
         ]);
 
@@ -236,7 +236,7 @@ class ArmadaController extends Controller
             'status' => 'nullable|in:aktif,servis,nonaktif',
             'titik_id' => 'nullable|exists:titiks,id',
             'tanggal_mulai_pakai' => 'nullable|date',
-            'foto_unit' => 'nullable|image|max:10240',
+            'foto_unit' => 'nullable|image|mimetypes:image/jpeg,image/png,image/webp|max:10240',
             'tara_master_kg' => 'nullable|numeric|min:0',
         ]);
 

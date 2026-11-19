@@ -39,16 +39,31 @@ export default function Edit({ armada, titiks }) {
         titik_id: armada.titik_id || "",
         status: armada.status || "aktif",
         tanggal_mulai_pakai: formatDateForInput(armada.tanggal_mulai_pakai),
+        foto_unit: null,
     });
+
+    const [fotoPreview, setFotoPreview] = React.useState(null);
+
+    const handleFotoChange = (e) => {
+        const file = e.target.files?.[0] ?? null;
+        setData("foto_unit", file);
+        if (fotoPreview) {
+            URL.revokeObjectURL(fotoPreview);
+        }
+        setFotoPreview(file ? URL.createObjectURL(file) : null);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route("fleet.armada.update", armada.id));
+        put(route("fleet.armada.update", armada.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     return (
         <Layout>
-           <div className="mx-auto max-w-5xl space-y-6">
+           <div className="space-y-6">
                 {/* Header */}
                 <div className="mb-6 flex items-center gap-3">
                     <div>
@@ -164,6 +179,34 @@ export default function Edit({ armada, titiks }) {
                             {errors.tipe_unit && (
                                 <p className="mt-1.5 text-sm text-red-600">
                                     {errors.tipe_unit}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mt-5">
+                            <label
+                                htmlFor="foto_unit"
+                                className="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
+                                Foto Unit
+                            </label>
+                            {(fotoPreview || armada.foto_thumb_url) && (
+                                <img
+                                    src={fotoPreview || armada.foto_thumb_url}
+                                    alt={`Foto ${armada.kode_unit}`}
+                                    className="mb-3 h-32 w-48 rounded-lg border border-slate-200 object-cover"
+                                />
+                            )}
+                            <input
+                                id="foto_unit"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                onChange={handleFotoChange}
+                                className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                            />
+                            {errors.foto_unit && (
+                                <p className="mt-1.5 text-sm text-red-600">
+                                    {errors.foto_unit}
                                 </p>
                             )}
                         </div>

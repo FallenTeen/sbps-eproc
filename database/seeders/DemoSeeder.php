@@ -20,6 +20,7 @@ class DemoSeeder extends Seeder
             FinanceManualRekapDemoSeeder::class,
             AttendanceDataSeeder::class,
             ArmadaDokumenBerkalaSeeder::class,
+            ArmadaFotoPreviewSeeder::class,
             InventoryDemoSeeder::class,
             LogistikDemoSeeder::class,
             MobileTestUserSeeder::class,

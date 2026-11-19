@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useForm, router, usePage } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
+import ImagePreviewModal from "@/Components/ImagePreviewModal";
 import { formatTanggal } from "@/utils/date";
 import {
     ArrowLeft,
@@ -3221,6 +3222,7 @@ function HelperRow({ armada, helper }) {
 
 export default function Show({ armada, options, can }) {
     const [tab, setTab] = useState("ritase");
+    const [fotoPreview, setFotoPreview] = useState(null);
 
     const tabs = [
         { key: "ritase", label: "Ritase", icon: <Truck className="w-4 h-4" /> },
@@ -3312,6 +3314,42 @@ export default function Show({ armada, options, can }) {
                     Informasi Unit
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-6">
+                    <div className="md:col-span-4">
+                        <p className="mb-2 text-sm font-medium text-slate-700">
+                            Foto Unit
+                        </p>
+                        {armada.foto_url ? (
+                            <button
+                                type="button"
+                                title="Klik untuk melihat gambar penuh"
+                                onClick={() =>
+                                    setFotoPreview({
+                                        src: armada.foto_url,
+                                        alt: `Foto ${armada.kode_unit}`,
+                                    })
+                                }
+                                className="block w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                                <img
+                                    src={armada.foto_url}
+                                    alt={`Foto ${armada.kode_unit}`}
+                                    className="h-48 w-full rounded-lg border border-slate-200 object-cover transition hover:brightness-95"
+                                />
+                            </button>
+                        ) : (
+                            <div className="flex h-48 w-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                                Foto unit belum tersedia
+                            </div>
+                        )}
+                        {can.update && (
+                            <a
+                                href={route('fleet.armada.edit', armada.id)}
+                                className="mt-2 inline-block text-sm font-medium text-red-600 hover:text-red-700"
+                            >
+                                Ganti foto
+                            </a>
+                        )}
+                    </div>
                     <div>
                         <span className="block text-xs font-bold uppercase text-gray-400 mb-1">
                             Plat Nomor
@@ -3422,6 +3460,14 @@ export default function Show({ armada, options, can }) {
                     />
                 )}
             </div>
+
+            <ImagePreviewModal
+                open={Boolean(fotoPreview)}
+                onClose={() => setFotoPreview(null)}
+                src={fotoPreview?.src}
+                alt={fotoPreview?.alt}
+                title={fotoPreview?.alt || "Pratinjau Foto"}
+            />
         </Layout>
     );
 }

@@ -16,18 +16,33 @@ export default function Create({ unitBisnis, titiks, drivers }) {
         kapasitas: "",
         titik_id: "",
         tanggal_mulai_pakai: "",
+        foto_unit: null,
     });
+
+    const [fotoPreview, setFotoPreview] = React.useState(null);
+
+    const handleFotoChange = (e) => {
+        const file = e.target.files?.[0] ?? null;
+        setData("foto_unit", file);
+        if (fotoPreview) {
+            URL.revokeObjectURL(fotoPreview);
+        }
+        setFotoPreview(file ? URL.createObjectURL(file) : null);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("fleet.armada.store"));
+        post(route("fleet.armada.store"), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     return (
         <AuthenticatedLayout>
             <Head title="Tambah Armada Baru" />
 
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6 flex items-start gap-3">
                     <div>
@@ -176,6 +191,34 @@ export default function Create({ unitBisnis, titiks, drivers }) {
                                     </p>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="mt-5">
+                            <label
+                                htmlFor="foto_unit"
+                                className="mb-1.5 block text-sm font-medium text-slate-700"
+                            >
+                                Foto Unit
+                            </label>
+                            {fotoPreview && (
+                                <img
+                                    src={fotoPreview}
+                                    alt="Pratinjau foto unit"
+                                    className="mb-3 h-32 w-48 rounded-lg border border-slate-200 object-cover"
+                                />
+                            )}
+                            <input
+                                id="foto_unit"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                onChange={handleFotoChange}
+                                className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                            />
+                            {errors.foto_unit && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {errors.foto_unit}
+                                </p>
+                            )}
                         </div>
                     </section>
 
