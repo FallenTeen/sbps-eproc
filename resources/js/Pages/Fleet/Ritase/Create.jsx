@@ -237,8 +237,7 @@ export default function RitaseCreate({
                                             {selectedRute.nama_rute}
                                         </p>
                                         <p className="mt-1">
-                                            {selectedRute.lokasi_muat} ->{" "}
-                                            {selectedRute.lokasi_bongkar}
+                                            {`${selectedRute.lokasi_muat} -> ${selectedRute.lokasi_bongkar}`}
                                         </p>
                                         <p className="mt-2 font-medium">
                                             Tarif: Rp{" "}

@@ -32,7 +32,7 @@ export default function Edit({ ruteTarif, unitBisnis }) {
                             Edit Rute Tarif
                         </h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            {ruteTarif.lokasi_asal} -> {ruteTarif.lokasi_tujuan}
+                            {`${ruteTarif.lokasi_asal} -> ${ruteTarif.lokasi_tujuan}`}
                         </p>
                     </div>
                 </div>
