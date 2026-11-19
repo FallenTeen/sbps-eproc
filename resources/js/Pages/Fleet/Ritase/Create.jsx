@@ -33,6 +33,7 @@ export default function RitaseCreate({
         proyek_id: "",
         tanggal: new Date().toISOString().slice(0, 10),
         jumlah_trip: 1,
+        satuan_volume: "ritase",
         jumlah_volume: "",
         muatan: "",
         lokasi_muat: "",

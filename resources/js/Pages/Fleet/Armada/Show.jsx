@@ -263,13 +263,12 @@ function DokumenSection({ armada, canManage }) {
 
     const simpanEdit = (event) => {
         event.preventDefault();
-        editForm.post(
+        editForm.put(
             route("fleet.armada.dokumen-berkala.update", {
                 armada: armada.id,
                 dokumen: editing.id,
             }),
             {
-                method: "put",
                 forceFormData: true,
                 preserveScroll: true,
                 onSuccess: () => setEditing(null),

@@ -97,7 +97,16 @@ class RitaseController extends Controller
             $armadaQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
         $armadaList = $armadaQuery->select('id', 'kode_unit', 'plat_nomor', 'jenis')->orderBy('kode_unit')->get();
-        $ruteList = RuteTarif::select('id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit')->get();
+        $ruteList = RuteTarif::select('id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit')
+            ->get()
+            ->map(fn (RuteTarif $rute) => [
+                'id' => $rute->id,
+                'nama_rute' => "{$rute->lokasi_asal} -> {$rute->lokasi_tujuan}",
+                'lokasi_muat' => $rute->lokasi_asal,
+                'lokasi_bongkar' => $rute->lokasi_tujuan,
+                'tarif_per_rit' => $rute->tarif_per_rit,
+                'tarif_per_trip' => $rute->tarif_per_rit,
+            ]);
         $driverList = Karyawan::select('id', 'nama')->where('status', 'aktif')->get();
         $proyekQuery = Proyek::query();
         if ($user->unit_bisnis_id) {
