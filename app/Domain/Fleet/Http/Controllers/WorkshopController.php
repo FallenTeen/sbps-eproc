@@ -23,7 +23,7 @@ class WorkshopController extends Controller
     {
         $this->authorize('viewAny', WorkshopTodo::class);
 
-        $query = PengajuanServisSparepart::with(['pengajuan.armada', 'workshopTodo.armada', 'workshopTodo.mesin'])
+        $query = PengajuanServisSparepart::with(['pengajuan.armada', 'workshopTodo.armada', 'workshopTodo.mesin', 'bahanBaku'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $q->where('nama_item', 'like', '%'.$request->input('q').'%');

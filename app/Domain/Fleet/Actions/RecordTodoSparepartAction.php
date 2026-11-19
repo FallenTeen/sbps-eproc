@@ -15,7 +15,7 @@ class RecordTodoSparepartAction
 {
     public function execute(User $user, array $data): void
     {
-        DB::transaction(function () use ($data) {
+        DB::transaction(function () use ($user, $data) {
             foreach ($data['items'] as $item) {
                 $sparepart = PengajuanServisSparepart::find($item['id'] ?? null);
                 if (! $sparepart || ! $sparepart->workshop_todo_id) {
@@ -30,6 +30,8 @@ class RecordTodoSparepartAction
                     'status' => 'tersedia',
                     'catatan' => $item['catatan'] ?? $sparepart->catatan,
                 ]);
+
+                app(RecordSparepartUsageAction::class)->execute($sparepart, $user);
             }
         });
     }

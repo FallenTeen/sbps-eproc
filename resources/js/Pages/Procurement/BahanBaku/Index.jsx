@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ bahanBakus, filters, sort, direction }) {
     const { auth } = usePage().props;
@@ -92,13 +93,11 @@ export default function Index({ bahanBakus, filters, sort, direction }) {
                     <p className="mt-1 text-sm text-gray-500">Master bahan baku &amp; sparepart</p>
                 </div>
                 {can("manage procurement") && (
-                    <Link
-                        href={route("procurement.bahan-baku.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
+                    <PrimaryButton variant="outline" asChild>
+                    <Link href={route("procurement.bahan-baku.create")}>
                         Tambah Bahan Baku
                     </Link>
+                    </PrimaryButton>
                 )}
             </div>
 

@@ -14,6 +14,7 @@ import {
     Clock,
     FileText,
     Camera,
+    Trash2,
     AlertCircle,
     Building,
     ArrowLeft,
@@ -304,6 +305,7 @@ export default function SewaAlatSerahTerima({
     kembali,
     pemakaian,
     defaultItems,
+    itemTemplate,
     can,
 }) {
     const { flash } = usePage().props;
@@ -317,12 +319,31 @@ export default function SewaAlatSerahTerima({
     const [formCatatan, setFormCatatan] = useState("");
     const [formDitandatangani, setFormDitandatangani] = useState("");
     const [formItems, setFormItems] = useState([]);
+    const [newItemName, setNewItemName] = useState("");
     const [formFoto, setFormFoto] = useState([]);
     const [existingFotos, setExistingFotos] = useState([]);
+
+    const activeTemplate =
+        itemTemplate?.length > 0 ? itemTemplate : defaultItems ?? [];
 
     useEffect(() => {
         if (flash?.success) setShowFlash(true);
     }, [flash]);
+
+    const buildFormItems = (source) => {
+        const details = source?.details ?? [];
+        const byItem = new Map(details.map((detail) => [detail.item, detail]));
+
+        return activeTemplate.map((label) => {
+            const detail = byItem.get(label);
+
+            return {
+                item: label,
+                kondisi: detail?.kondisi ?? "baik",
+                catatan: detail?.catatan ?? "",
+            };
+        });
+    };
 
     const openModal = (tipe) => {
         setModalTipe(tipe);
@@ -337,37 +358,18 @@ export default function SewaAlatSerahTerima({
                     source.ditandatangani_oleh ??
                     "",
             );
-            setFormItems(
-                source.details?.length > 0
-                    ? source.details.map((d) => ({
-                          item: d.item,
-                          kondisi: d.kondisi,
-                          catatan: d.catatan ?? "",
-                      }))
-                    : defaultItems.map((item) => ({
-                          item,
-                          kondisi: "baik",
-                          catatan: "",
-                      })),
-            );
             setExistingFotos(source.foto_kondisi ?? []);
-            setFormFoto([]);
         } else {
             setFormOdo("");
             setFormTanggal(formatInputDate());
             setFormCatatan("");
             setFormDitandatangani("");
-            setFormItems(
-                defaultItems.map((item) => ({
-                    item,
-                    kondisi: "baik",
-                    catatan: "",
-                })),
-            );
             setExistingFotos([]);
-            setFormFoto([]);
         }
 
+        setFormItems(buildFormItems(source));
+        setNewItemName("");
+        setFormFoto([]);
         setModalOpen(true);
     };
 
@@ -387,6 +389,7 @@ export default function SewaAlatSerahTerima({
             tanggal: formTanggal,
             catatan: formCatatan || null,
             ditandatangani_oleh: formDitandatangani || null,
+            item_template: formItems.map((it) => it.item).filter(Boolean),
             items: formItems.map((it) => ({
                 item: it.item,
                 kondisi: it.kondisi,
@@ -419,13 +422,32 @@ export default function SewaAlatSerahTerima({
         });
     };
 
+    const addCustomItem = () => {
+        const label = newItemName.trim();
+        if (!label) return;
+
+        setFormItems((prev) => {
+            if (prev.some((item) => item.item === label)) return prev;
+
+            return [
+                ...prev,
+                { item: label, kondisi: "baik", catatan: "" },
+            ];
+        });
+        setNewItemName("");
+    };
+
+    const removeCustomItem = (idx) => {
+        setFormItems((prev) => prev.filter((_, index) => index !== idx));
+    };
+
     return (
         <AuthenticatedLayout>
             <Head
                 title={`Checklist Serah Terima - ${sewa.armada?.kode_unit ?? ""}`}
             />
 
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {/* Flash Message */}
                 {showFlash && flash?.success && (
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-xs">
@@ -638,8 +660,11 @@ export default function SewaAlatSerahTerima({
                                             <div className="col-span-3 text-center">
                                                 Kondisi
                                             </div>
-                                            <div className="col-span-4">
+                                            <div className="col-span-3">
                                                 Keterangan
+                                            </div>
+                                            <div className="col-span-1 text-center">
+                                                Hapus
                                             </div>
                                         </div>
 
@@ -648,8 +673,19 @@ export default function SewaAlatSerahTerima({
                                                 key={idx}
                                                 className="px-3.5 py-2.5 grid grid-cols-12 items-center gap-2 text-sm bg-white"
                                             >
-                                                <div className="col-span-5 font-medium text-slate-700 pr-2">
-                                                    {itemObj.item}
+                                                <div className="col-span-5 pr-2">
+                                                    <input
+                                                        type="text"
+                                                        value={itemObj.item}
+                                                        onChange={(e) =>
+                                                            updateItemField(
+                                                                idx,
+                                                                "item",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
                                                 </div>
 
                                                 <div className="col-span-3 flex items-center justify-center gap-2">
@@ -710,7 +746,7 @@ export default function SewaAlatSerahTerima({
                                                     </label>
                                                 </div>
 
-                                                <div className="col-span-4">
+                                                <div className="col-span-3">
                                                     <input
                                                         type="text"
                                                         placeholder="Opsional..."
@@ -728,8 +764,47 @@ export default function SewaAlatSerahTerima({
                                                         className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 </div>
+
+                                                <div className="col-span-1 flex justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            removeCustomItem(idx)
+                                                        }
+                                                        title="Hapus bagian"
+                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+
+                                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                                        <input
+                                            type="text"
+                                            value={newItemName}
+                                            onChange={(e) =>
+                                                setNewItemName(e.target.value)
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.preventDefault();
+                                                    addCustomItem();
+                                                }
+                                            }}
+                                            placeholder="Bagian kustom, misal: Jok"
+                                            className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={addCustomItem}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-black bg-transparent px-3 py-2 text-xs font-bold uppercase tracking-widest text-ink-secondary transition-colors hover:bg-gray-900 hover:text-white"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Tambah Bagian
+                                        </button>
                                     </div>
                                 </div>
 

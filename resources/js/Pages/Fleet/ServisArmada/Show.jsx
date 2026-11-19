@@ -54,7 +54,7 @@ function Row({ label, value }) {
     );
 }
 
-export default function Show({ pengajuan, can }) {
+export default function Show({ pengajuan, can, masterSpareparts = [] }) {
     const meta = STATUS_META[pengajuan.status] || {
         label: pengajuan.status,
         cls: "bg-gray-100 text-gray-600",
@@ -75,7 +75,13 @@ export default function Show({ pengajuan, can }) {
 
     // Bagian 3 - request sparepart
     const [items, setItems] = useState([
-        { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+        {
+            bahan_baku_id: "",
+            nama_item: "",
+            jumlah: 1,
+            satuan: "",
+            nominal: 0,
+        },
     ]);
 
     // Bagian 4 - record pengadaan sparepart (Inventory)
@@ -139,6 +145,22 @@ export default function Show({ pengajuan, can }) {
         });
     };
 
+    const chooseMasterSparepart = (index, id) => {
+        const master = masterSpareparts.find((s) => s.id === id);
+        setItems(
+            items.map((item, i) =>
+                i === index
+                    ? {
+                          ...item,
+                          bahan_baku_id: master?.id ?? "",
+                          nama_item: master?.nama ?? "",
+                          satuan: master?.satuan ?? "",
+                      }
+                    : item,
+            ),
+        );
+    };
+
     const doRecordSparepart = (e) => {
         e.preventDefault();
         post(route("fleet.servis-armada.record-sparepart", pengajuan.id), {
@@ -155,14 +177,20 @@ export default function Show({ pengajuan, can }) {
     const addItem = () =>
         setItems([
             ...items,
-            { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+            {
+                bahan_baku_id: "",
+                nama_item: "",
+                jumlah: 1,
+                satuan: "",
+                nominal: 0,
+            },
         ]);
 
     return (
         <AuthenticatedLayout>
             <Head title={pengajuan.kode_pengajuan} />
 
-            <div className="mx-auto max-w-5xl py-6 space-y-6">
+            <div className="space-y-6 py-6">
                 {/* Header Halaman & Action Bar */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                     <div className="min-w-0">
@@ -261,7 +289,7 @@ export default function Show({ pengajuan, can }) {
                                             })
                                         }
                                         rows={2}
-                                        placeholder="Berikan catatan persetujuan atau penolakan…"
+                                        placeholder="Berikan catatan persetujuan atau penolakan..."
                                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                                     />
                                     {errors.catatan_acc && (
@@ -402,7 +430,7 @@ export default function Show({ pengajuan, can }) {
                                             })
                                         }
                                         rows={2}
-                                        placeholder="Tambahkan instruksi / catatan pengerjaan…"
+                                        placeholder="Tambahkan instruksi / catatan pengerjaan..."
                                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                                     />
                                 </div>
@@ -570,7 +598,8 @@ export default function Show({ pengajuan, can }) {
                                                     className="hover:bg-gray-50/50"
                                                 >
                                                     <td className="px-3.5 py-2.5 font-medium text-gray-900">
-                                                        {s.nama_item}
+                                                        {s.bahanBaku?.nama ||
+                                                            s.nama_item}
                                                         {s.satuan && (
                                                             <span className="text-gray-400 font-normal">
                                                                 {" "}
@@ -637,19 +666,87 @@ export default function Show({ pengajuan, can }) {
                                                     key={i}
                                                     className="flex items-center gap-2"
                                                 >
-                                                    <input
-                                                        value={it.nama_item}
+                                                    <select
+                                                        value={
+                                                            it.bahan_baku_id ||
+                                                            (it.nama_item
+                                                                ? "__manual__"
+                                                                : "")
+                                                        }
                                                         onChange={(e) => {
-                                                            const n = [
-                                                                ...items,
-                                                            ];
-                                                            n[i].nama_item =
-                                                                e.target.value;
-                                                            setItems(n);
+                                                            if (
+                                                                e.target.value ===
+                                                                "__manual__"
+                                                            ) {
+                                                                setItems(
+                                                                    items.map(
+                                                                        (
+                                                                            item,
+                                                                            idx,
+                                                                        ) =>
+                                                                            idx === i
+                                                                                ? {
+                                                                                      ...item,
+                                                                                      bahan_baku_id:
+                                                                                          "",
+                                                                                      nama_item:
+                                                                                          "",
+                                                                                      satuan:
+                                                                                          "",
+                                                                                  }
+                                                                                : item,
+                                                                    ),
+                                                                );
+                                                            } else {
+                                                                chooseMasterSparepart(
+                                                                    i,
+                                                                    e.target
+                                                                        .value,
+                                                                );
+                                                            }
                                                         }}
-                                                        placeholder="Nama sparepart"
                                                         className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                                                    />
+                                                    >
+                                                        <option value="">
+                                                            Pilih sparepart
+                                                        </option>
+                                                        {masterSpareparts
+                                                            .filter(
+                                                                (s) =>
+                                                                    ! s.sparepart_untuk ||
+                                                                    s.sparepart_untuk ===
+                                                                        "armada",
+                                                            )
+                                                            .map((s) => (
+                                                                <option
+                                                                    key={s.id}
+                                                                    value={s.id}
+                                                                >
+                                                                    {s.nama}
+                                                                    {s.satuan
+                                                                        ? ` (${s.satuan})`
+                                                                        : ""}
+                                                                </option>
+                                                            ))}
+                                                        <option value="__manual__">
+                                                            Lainnya (ketik manual)
+                                                        </option>
+                                                    </select>
+                                                    {! it.bahan_baku_id && (
+                                                        <input
+                                                            value={it.nama_item}
+                                                            onChange={(e) => {
+                                                                const n = [
+                                                                    ...items,
+                                                                ];
+                                                                n[i].nama_item =
+                                                                    e.target.value;
+                                                                setItems(n);
+                                                            }}
+                                                            placeholder="Nama sparepart"
+                                                            className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                                                        />
+                                                    )}
                                                     <input
                                                         type="number"
                                                         value={it.jumlah}

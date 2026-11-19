@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { Plus, Eye } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 const STATUS_META = {
     diajukan: { label: "Diajukan", cls: "bg-blue-100 text-blue-700" },
@@ -116,13 +117,11 @@ export default function Index({ pengajuans, filters = {}, sort, direction }) {
                     </p>
                 </div>
                 {canSubmit && (
-                    <Link
-                        href={route("fleet.servis-armada.create")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Ajukan Servis
-                    </Link>
+                    <PrimaryButton variant="outline" asChild>
+                        <Link href={route("fleet.servis-armada.create")}>
+                            Ajukan Servis
+                        </Link>
+                    </PrimaryButton>
                 )}
             </div>
 

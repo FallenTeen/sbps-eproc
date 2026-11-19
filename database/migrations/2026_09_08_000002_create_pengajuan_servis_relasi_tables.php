@@ -31,6 +31,7 @@ return new class extends Migration
         Schema::create('pengajuan_servis_spareparts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('pengajuan_servis_armada_id');
+            $table->uuid('bahan_baku_id')->nullable();
             $table->string('nama_item');
             $table->decimal('jumlah', 12, 2)->default(1);
             $table->string('satuan')->nullable();
@@ -43,6 +44,8 @@ return new class extends Migration
 
             $table->foreign('pengajuan_servis_armada_id')
                 ->references('id')->on('pengajuan_servis_armadas')->cascadeOnDelete();
+            $table->foreign('bahan_baku_id')
+                ->references('id')->on('bahan_bakus')->nullOnDelete();
         });
     }
 

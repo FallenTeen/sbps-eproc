@@ -17,7 +17,7 @@ class RecordPengadaanSparepartAction
 {
     public function execute(PengajuanServisArmada $pengajuan, User $user, array $data): PengajuanServisArmada
     {
-        DB::transaction(function () use ($pengajuan, $data) {
+        DB::transaction(function () use ($pengajuan, $user, $data) {
             $items = $data['items'] ?? [];
 
             foreach ($items as $item) {
@@ -33,6 +33,8 @@ class RecordPengadaanSparepartAction
                     'status' => 'tersedia',
                     'catatan' => $item['catatan'] ?? $sparepart->catatan,
                 ]);
+
+                app(RecordSparepartUsageAction::class)->execute($sparepart, $user);
             }
 
             $pengajuan->update([

@@ -27,7 +27,7 @@ export default function Create({ suppliers }) {
         <AuthenticatedLayout>
             <Head title="Tambah Bahan Baku" />
 
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="flex items-center gap-3">
                     <div>

@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import PrimaryButton from "@/Components/PrimaryButton";
+import { formatTanggal } from "@/utils/date";
 import {
     SearchX,
     PackageSearch,
@@ -8,6 +10,8 @@ import {
     Save,
     Wrench,
     ArrowLeft,
+    Eye,
+    ExternalLink,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -19,9 +23,21 @@ export default function Sparepart({ items, filters, canRecord }) {
     const [status, setStatus] = useState(filters.status || "");
     const [q, setQ] = useState(filters.q || "");
     const [editing, setEditing] = useState(null);
+    const [detail, setDetail] = useState(null);
     const [record, setRecord] = useState({});
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        const close = (e) => {
+            if (e.key === "Escape") {
+                setEditing(null);
+                setDetail(null);
+            }
+        };
+        window.addEventListener("keydown", close);
+        return () => window.removeEventListener("keydown", close);
+    }, []);
 
     const apply = () => {
         router.get(route("fleet.workshop.sparepart.index"), {
@@ -133,12 +149,9 @@ export default function Sparepart({ items, filters, canRecord }) {
                         >
                             Terapkan
                         </button>
-                        <button
-                            onClick={clear}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                        >
+                        <PrimaryButton variant="outline" onClick={clear}>
                             <SearchX className="w-4 h-4" /> Reset
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </div>
             </div>
@@ -189,7 +202,8 @@ export default function Sparepart({ items, filters, canRecord }) {
                                         className="hover:bg-gray-50"
                                     >
                                         <td className="px-6 py-4 text-sm text-gray-900">
-                                            {it.nama_item}
+                                            {it.bahanBaku?.nama ||
+                                                it.nama_item}
                                             {it.satuan && (
                                                 <span className="text-xs text-gray-400">
                                                     {" "}
@@ -221,19 +235,27 @@ export default function Sparepart({ items, filters, canRecord }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right text-sm">
-                                            {canRecord &&
-                                                it.status === "diajukan" &&
-                                                it.workshop_todo && (
-                                                    <button
-                                                        onClick={() =>
-                                                            startRecord(it)
-                                                        }
-                                                        className="inline-flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1 transition-colors"
-                                                    >
-                                                        <Save className="w-4 h-4" />{" "}
-                                                        Catat
-                                                    </button>
-                                                )}
+                                            <div className="flex flex-wrap justify-end gap-2">
+                                                <button
+                                                    onClick={() => setDetail(it)}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <Eye className="w-4 h-4" /> Lihat
+                                                </button>
+                                                {canRecord &&
+                                                    it.status === "diajukan" &&
+                                                    it.workshop_todo && (
+                                                        <button
+                                                            onClick={() =>
+                                                                startRecord(it)
+                                                            }
+                                                            className="inline-flex items-center gap-1 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-1 transition-colors"
+                                                        >
+                                                            <Save className="w-4 h-4" />{" "}
+                                                            Catat
+                                                        </button>
+                                                    )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -262,6 +284,92 @@ export default function Sparepart({ items, filters, canRecord }) {
                         ))}
                 </div>
             </div>
+
+            {/* Detail ajuan */}
+            {detail && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
+                    <div
+                        className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Detail Ajuan Sparepart</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">{source(detail).label}</p>
+                            </div>
+                            <button
+                                onClick={() => setDetail(null)}
+                                className="text-gray-500 hover:text-gray-900"
+                                aria-label="Tutup detail"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Item</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">
+                                    {detail.bahanBaku?.nama || detail.nama_item || "-"}
+                                </dd>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Jumlah</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">{detail.jumlah ?? "-"} {detail.satuan || ""}</dd>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Nominal</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">Rp {Number(detail.nominal || 0).toLocaleString("id-ID")}</dd>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Status</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">{STATUS_META[detail.status]?.label || detail.status || "-"}</dd>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Tanggal</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">{formatTanggal(detail.tanggal)}</dd>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 p-3">
+                                <dt className="text-xs text-gray-500">Unit</dt>
+                                <dd className="font-semibold text-gray-900 mt-0.5">{source(detail).unit || "-"}</dd>
+                            </div>
+                            {detail.catatan && (
+                                <div className="sm:col-span-2 rounded-lg bg-gray-50 p-3">
+                                    <dt className="text-xs text-gray-500">Catatan</dt>
+                                    <dd className="text-gray-700 mt-0.5 whitespace-pre-line">{detail.catatan}</dd>
+                                </div>
+                            )}
+                        </dl>
+
+                        <div className="flex flex-wrap justify-end gap-2 pt-4">
+                            <button
+                                onClick={() => setDetail(null)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                            {detail.pengajuan && (
+                                <button
+                                    onClick={() => router.visit(route("fleet.servis-armada.show", detail.pengajuan.id))}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                >
+                                    <ExternalLink className="w-4 h-4" /> Buka Pengajuan Servis
+                                </button>
+                            )}
+                            {detail.workshop_todo && !detail.pengajuan && (
+                                <button
+                                    onClick={() => router.visit(route("fleet.workshop.todo.index"))}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                >
+                                    <ExternalLink className="w-4 h-4" /> Buka Daftar To-Do
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal catat pengadaan (Inventory, item dari to-do) */}
             {editing && (
@@ -379,7 +487,7 @@ export default function Sparepart({ items, filters, canRecord }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
                                 >
                                     <Wrench className="w-4 h-4" />
                                     {processing ? "Menyimpan..." : "Simpan"}

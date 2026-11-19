@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import {
     Activity,
     AlertTriangle,
@@ -172,11 +173,22 @@ export default function Monitoring({
     belum_checklist = [],
     stats = {},
 }) {
+    const [tab, setTab] = useState("buruk");
+
     return (
         <AuthenticatedLayout>
             <Head title="Workshop - Monitoring Kondisi Alat" />
 
-            <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-6">
+            <div className="space-y-6 pb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Monitoring Kondisi Alat</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Temuan kondisi unit dan pemeriksaan harian yang belum dicatat.
+                        </p>
+                    </div>
+                </div>
+
                 {/* Statistik */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <StatCard
@@ -205,62 +217,83 @@ export default function Monitoring({
                 </div>
 
                 {/* Daftar monitoring */}
-                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
-                    {/* Kondisi tidak baik */}
-                    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50 shadow-sm">
-                        <SectionHeader
-                            icon={AlertTriangle}
-                            title="Kondisi Tidak Baik"
-                            description="Temuan dalam 24 jam terakhir"
-                            count={kondisi_buruk.length}
-                            color="red"
-                        />
+                <Tabs value={tab} onValueChange={setTab} className="flex-col gap-4">
+                    <div className="w-full overflow-x-auto overflow-y-hidden pb-1">
+                        <TabsList className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1" aria-label="Jenis monitoring kondisi">
+                            <TabsTrigger
+                                value="buruk"
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "buruk" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                            >
+                                <AlertTriangle className="h-4 w-4" /> Kondisi Tidak Baik
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{kondisi_buruk.length}</span>
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="belum"
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "belum" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                            >
+                                <ClipboardCheck className="h-4 w-4" /> Belum Checklist
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{belum_checklist.length}</span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                        <div className="max-h-[680px] space-y-3 overflow-y-auto p-4">
-                            {kondisi_buruk.length === 0 ? (
-                                <EmptyState
-                                    icon={CheckCircle2}
-                                    title="Semua unit dalam kondisi baik"
-                                    description="Tidak ada temuan kondisi buruk dalam periode pemantauan."
-                                    color="green"
-                                />
-                            ) : (
-                                kondisi_buruk.map((item) => (
-                                    <ConditionCard key={item.id} item={item} />
-                                ))
-                            )}
-                        </div>
-                    </section>
+                    <TabsContent value="buruk" className="space-y-4">
+                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50 shadow-sm">
+                            <SectionHeader
+                                icon={AlertTriangle}
+                                title="Kondisi Tidak Baik"
+                                description="Temuan dalam 24 jam terakhir"
+                                count={kondisi_buruk.length}
+                                color="red"
+                            />
 
-                    {/* Belum checklist */}
-                    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50 shadow-sm">
-                        <SectionHeader
-                            icon={ClipboardCheck}
-                            title="Armada Belum Checklist"
-                            description="Pemeriksaan harian yang belum dilakukan"
-                            count={belum_checklist.length}
-                            color="amber"
-                        />
-
-                        <div className="max-h-[680px] space-y-3 overflow-y-auto p-4">
-                            {belum_checklist.length === 0 ? (
-                                <EmptyState
-                                    icon={ClipboardList}
-                                    title="Semua armada sudah diperiksa"
-                                    description="Tidak ada armada yang menunggu checklist hari ini."
-                                    color="green"
-                                />
-                            ) : (
-                                belum_checklist.map((armada) => (
-                                    <UncheckedCard
-                                        key={armada.id}
-                                        armada={armada}
+                            <div className="max-h-[680px] space-y-3 overflow-y-auto p-4">
+                                {kondisi_buruk.length === 0 ? (
+                                    <EmptyState
+                                        icon={CheckCircle2}
+                                        title="Semua unit dalam kondisi baik"
+                                        description="Tidak ada temuan kondisi buruk dalam periode pemantauan."
+                                        color="green"
                                     />
-                                ))
-                            )}
-                        </div>
-                    </section>
-                </div>
+                                ) : (
+                                    kondisi_buruk.map((item) => (
+                                        <ConditionCard key={item.id} item={item} />
+                                    ))
+                                )}
+                            </div>
+                        </section>
+                    </TabsContent>
+
+                    <TabsContent value="belum" className="space-y-4">
+                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50 shadow-sm">
+                            <SectionHeader
+                                icon={ClipboardCheck}
+                                title="Armada Belum Checklist"
+                                description="Pemeriksaan harian yang belum dilakukan"
+                                count={belum_checklist.length}
+                                color="amber"
+                            />
+
+                            <div className="max-h-[680px] space-y-3 overflow-y-auto p-4">
+                                {belum_checklist.length === 0 ? (
+                                    <EmptyState
+                                        icon={ClipboardList}
+                                        title="Semua armada sudah diperiksa"
+                                        description="Tidak ada armada yang menunggu checklist hari ini."
+                                        color="green"
+                                    />
+                                ) : (
+                                    belum_checklist.map((armada) => (
+                                        <UncheckedCard
+                                            key={armada.id}
+                                            armada={armada}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        </section>
+                    </TabsContent>
+                </Tabs>
             </div>
         </AuthenticatedLayout>
     );

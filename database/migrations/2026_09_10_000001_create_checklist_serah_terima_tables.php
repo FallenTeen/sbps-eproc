@@ -26,6 +26,7 @@ return new class extends Migration
             $table->uuid('sewa_alat_jam_id');
             $table->uuid('armada_id');
             $table->string('tipe'); // berangkat | kembali
+            $table->json('item_template')->nullable(); // daftar item kustom bersama (berangkat & kembali)
             $table->json('data_penyewa')->nullable();
             $table->decimal('odo_atau_hm', 12, 2)->nullable();
             $table->json('foto_kondisi')->nullable(); // array path (banyak foto/sisi)

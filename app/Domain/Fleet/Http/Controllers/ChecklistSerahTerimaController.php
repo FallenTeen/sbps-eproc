@@ -25,6 +25,7 @@ class ChecklistSerahTerimaController extends Controller
 
         $berangkat = $sewa->checklists->firstWhere('tipe', 'berangkat');
         $kembali = $sewa->checklists->firstWhere('tipe', 'kembali');
+        $itemTemplate = ChecklistSerahTerima::canonicalTemplate($berangkat, $kembali);
 
         // pemakaian dihitung on-the-fly (prinsip Bagian 0 #1): bukan kolom tersimpan
         $pemakaian = ($berangkat && $kembali)
@@ -37,6 +38,7 @@ class ChecklistSerahTerimaController extends Controller
             'kembali' => $kembali,
             'pemakaian' => $pemakaian,
             'defaultItems' => ChecklistSerahTerima::DEFAULT_ITEMS,
+            'itemTemplate' => $itemTemplate,
             'can' => [
                 'record' => $request->user()->can('update', $sewaAlat),
                 'print' => $berangkat && $kembali,
@@ -54,6 +56,8 @@ class ChecklistSerahTerimaController extends Controller
             'tanggal' => 'required|date',
             'catatan' => 'nullable|string|max:2000',
             'ditandatangani_oleh' => 'nullable|string|max:255',
+            'item_template' => 'nullable|array|min:1|max:50',
+            'item_template.*' => 'required|string|max:255|distinct',
             'items' => 'required|array|min:1',
             'items.*.item' => 'required|string|max:255',
             'items.*.kondisi' => ['required', Rule::in(['baik', 'rusak'])],
@@ -80,6 +84,7 @@ class ChecklistSerahTerimaController extends Controller
             'tanggal' => $validated['tanggal'],
             'catatan' => $validated['catatan'] ?? null,
             'ditandatangani_oleh' => $validated['ditandatangani_oleh'] ?? null,
+            'item_template' => $validated['item_template'] ?? null,
             'items' => $validated['items'],
             'foto_kondisi' => $fotoPaths,
         ], $request->user());

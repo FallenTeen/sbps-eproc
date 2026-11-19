@@ -28,7 +28,7 @@ export default function Create({ armadas }) {
         <AuthenticatedLayout>
             <Head title="Ajukan Servis Armada" />
 
-            <div className="mx-auto max-w-4xl">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 <div className="mb-6 flex items-start gap-3">
                     <div>
@@ -119,7 +119,7 @@ export default function Create({ armadas }) {
                                     </label>
                                     <textarea
                                         rows={4}
-                                        placeholder="Jelaskan kondisi / kerusakan armada…"
+                                        placeholder="Jelaskan kondisi / kerusakan armada..."
                                         value={form.catatan_ajuan}
                                         onChange={(e) =>
                                             setForm({
@@ -153,7 +153,7 @@ export default function Create({ armadas }) {
                                         className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                                     >
                                         <Save className="h-4 w-4" />
-                                        {processing ? "Menyimpan…" : "Simpan"}
+                                        {processing ? "Menyimpan..." : "Simpan"}
                                     </button>
                                 </div>
                             </div>

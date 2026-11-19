@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import PrimaryButton from "@/Components/PrimaryButton";
+import { formatTanggal } from "@/utils/date";
 import {
     SearchX,
     Wrench,
     X,
     CheckCircle2,
+    Clock3,
     AlertTriangle,
     ExternalLink,
     ArrowLeft,
+    Eye,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -22,9 +26,21 @@ const rupiah = (n) => Number(n || 0).toLocaleString("id-ID");
 export default function ServisEksternal({ items, filters, counts, canVerify }) {
     const [verifikasi, setVerifikasi] = useState(filters.verifikasi || "");
     const [editing, setEditing] = useState(null);
+    const [viewing, setViewing] = useState(null);
     const [form, setForm] = useState({ status: "terverifikasi", catatan: "" });
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        const close = (e) => {
+            if (e.key === "Escape") {
+                setEditing(null);
+                setViewing(null);
+            }
+        };
+        window.addEventListener("keydown", close);
+        return () => window.removeEventListener("keydown", close);
+    }, []);
 
     const apply = () => {
         router.get(route("fleet.workshop.servis-eksternal.index"), {
@@ -82,22 +98,25 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
 
             <div className="grid grid-cols-3 gap-4 mb-6">
                 {[
-                    { key: "belum", label: "Belum Diverifikasi", cls: "text-amber-700" },
-                    { key: "terverifikasi", label: "Terverifikasi", cls: "text-green-700" },
-                    { key: "bermasalah", label: "Bermasalah", cls: "text-red-700" },
-                ].map((c) => (
-                    <div
-                        key={c.key}
-                        className="bg-white rounded-xl border border-gray-200 shadow-sm p-4"
-                    >
-                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {c.label}
+                    { key: "belum", label: "Belum Diverifikasi", cls: "bg-amber-50 border-amber-100 text-amber-900", icon: Clock3 },
+                    { key: "terverifikasi", label: "Terverifikasi", cls: "bg-emerald-50 border-emerald-100 text-emerald-900", icon: CheckCircle2 },
+                    { key: "bermasalah", label: "Bermasalah", cls: "bg-red-50 border-red-100 text-red-900", icon: AlertTriangle },
+                ].map((c) => {
+                    const Icon = c.icon;
+                    return (
+                        <div
+                            key={c.key}
+                            className={`rounded-xl border p-4 shadow-sm ${c.cls}`}
+                        >
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+                                <Icon className="h-4 w-4" /> {c.label}
+                            </div>
+                            <div className="mt-1 text-2xl font-bold tabular-nums">
+                                {counts?.[c.key] ?? 0}
+                            </div>
                         </div>
-                        <div className={`mt-1 text-2xl font-bold ${c.cls}`}>
-                            {counts?.[c.key] ?? 0}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
@@ -118,18 +137,12 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                         </select>
                     </div>
                     <div className="flex gap-2">
-                        <button
-                            onClick={apply}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-white border-2 border-black bg-gray-900 transition-colors"
-                        >
+                        <PrimaryButton variant="outline" onClick={apply}>
                             Terapkan
-                        </button>
-                        <button
-                            onClick={clear}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                        >
+                        </PrimaryButton>
+                        <PrimaryButton variant="outline" onClick={clear}>
                             <SearchX className="w-4 h-4" /> Reset
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </div>
             </div>
@@ -247,15 +260,23 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right text-sm">
-                                            {canVerify && (
+                                            <div className="flex flex-wrap justify-end gap-2">
                                                 <button
-                                                    onClick={() => startVerify(it)}
-                                                    className="inline-flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1 transition-colors"
+                                                    onClick={() => setViewing(it)}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    <CheckCircle2 className="w-4 h-4" />
-                                                    Verifikasi
+                                                    <Eye className="w-4 h-4" /> Lihat
                                                 </button>
-                                            )}
+                                                {canVerify && (
+                                                    <button
+                                                        onClick={() => startVerify(it)}
+                                                        className="inline-flex items-center gap-1 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-1 transition-colors"
+                                                    >
+                                                        <CheckCircle2 className="w-4 h-4" />
+                                                        Verifikasi
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -283,6 +304,113 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                         ))}
                 </div>
             </div>
+
+            {viewing && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
+                    <div
+                        className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Detail Pengajuan Servis Eksternal</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    {viewing.kode_pengajuan} - {viewing.armada?.plat_nomor || "-"}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setViewing(null)}
+                                className="text-gray-500 hover:text-gray-900"
+                                aria-label="Tutup detail"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                    <p className="text-xs text-gray-500">Bengkel</p>
+                                    <p className="font-semibold text-gray-900 mt-0.5">{viewing.eksternal_detail?.nama_bengkel || "-"}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{viewing.eksternal_detail?.alamat_bengkel || "-"}</p>
+                                </div>
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                    <p className="text-xs text-gray-500">Estimasi Biaya</p>
+                                    <p className="font-semibold text-gray-900 mt-0.5">Rp {rupiah(viewing.eksternal_detail?.total_biaya_estimasi)}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Diajukan oleh {viewing.diajukan_oleh?.name || "-"}</p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Rincian Pekerjaan</p>
+                                <p className="mt-1 whitespace-pre-line text-gray-700">
+                                    {viewing.eksternal_detail?.rincian_pekerjaan || "-"}
+                                </p>
+                            </div>
+
+                            {viewing.eksternal_detail?.foto_bengkel_url && (
+                                <a
+                                    href={viewing.eksternal_detail.foto_bengkel_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                                >
+                                    <ExternalLink className="w-3.5 h-3.5" /> Lihat foto bengkel
+                                </a>
+                            )}
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Nota Bengkel</p>
+                                    <span className="text-xs font-semibold text-gray-700">
+                                        {viewing.eksternal_notas?.length || 0} nota
+                                    </span>
+                                </div>
+                                {viewing.eksternal_notas?.length ? (
+                                    <div className="mt-2 divide-y divide-gray-100">
+                                        {viewing.eksternal_notas.map((n, index) => (
+                                            <div key={n.id ?? index} className="flex justify-between gap-3 py-2 text-xs">
+                                                <span className="text-gray-600">
+                                                    Nota {index + 1} · {formatTanggal(n.tanggal_nota)}
+                                                    {n.catatan ? ` · ${n.catatan}` : ""}
+                                                </span>
+                                                <span className="font-semibold tabular-nums text-gray-900">
+                                                    Rp {rupiah(n.nominal_rp)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-xs text-gray-400">Belum ada nota yang dicatat.</p>
+                                )}
+                            </div>
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hasil Verifikasi Workshop</p>
+                                <p className="mt-1 font-semibold text-gray-900">
+                                    {STATUS_META[viewing.eksternal_detail?.verifikasi_workshop || "belum"]?.label || "Belum Diverifikasi"}
+                                </p>
+                                {viewing.eksternal_detail?.verifikasi_workshop_catatan && (
+                                    <p className="mt-1 whitespace-pre-line text-gray-600">
+                                        {viewing.eksternal_detail.verifikasi_workshop_catatan}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <button
+                                onClick={() => setViewing(null)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {editing && (
                 <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
@@ -361,7 +489,7 @@ export default function ServisEksternal({ items, filters, counts, canVerify }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
                                 >
                                     {form.status === "bermasalah" ? (
                                         <AlertTriangle className="w-4 h-4" />

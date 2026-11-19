@@ -21,7 +21,7 @@ export default function Edit({ bahanBaku, suppliers }) {
     return (
         <AuthenticatedLayout>
             <Head title="Edit Bahan Baku" />
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
                 {/* Header Halaman */}
                 {/* Header Halaman */}
                 <div className="flex items-center gap-3">

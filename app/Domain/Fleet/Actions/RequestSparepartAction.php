@@ -7,6 +7,7 @@ use App\Domain\Fleet\Models\PengajuanServisSparepart;
 use App\Domain\Fleet\Models\WorkshopTodo;
 use App\Domain\Fleet\States\Dikerjakan;
 use App\Domain\Fleet\States\MenungguSparepart;
+use App\Domain\Procurement\Actions\ResolveSparepartBahanBakuAction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -32,7 +33,10 @@ class RequestSparepartAction
             ]);
         }
 
-        DB::transaction(function () use ($pengajuan, $workshopTodo, $items) {
+        $context = $workshopTodo?->mesin_id ? 'mesin' : 'armada';
+        $resolver = app(ResolveSparepartBahanBakuAction::class);
+
+        DB::transaction(function () use ($pengajuan, $workshopTodo, $items, $context, $resolver) {
             if ($pengajuan) {
                 $pengajuan->update([
                     'butuh_sparepart' => true,
@@ -41,17 +45,21 @@ class RequestSparepartAction
             }
 
             foreach ($items as $item) {
-                if (empty($item['nama_item'])) {
+                $resolved = $resolver->execute($item, $context);
+
+                if (! $resolved || empty($resolved['nama_item'])) {
                     continue;
                 }
                 PengajuanServisSparepart::create([
                     'pengajuan_servis_armada_id' => $pengajuan?->id,
                     'workshop_todo_id' => $workshopTodo?->id,
-                    'nama_item' => $item['nama_item'],
-                    'jumlah' => $item['jumlah'] ?? 1,
-                    'satuan' => $item['satuan'] ?? null,
-                    'nominal' => $item['nominal'] ?? 0,
-                    'tanggal' => $item['tanggal'] ?? now()->toDateString(),
+                    'bahan_baku_id' => $resolved['bahan_baku_id'],
+                    'nama_item' => $resolved['nama_item'],
+                    'jumlah' => $resolved['jumlah'],
+                    'satuan' => $resolved['satuan'],
+                    'nominal' => $resolved['nominal'],
+                    'tanggal' => $resolved['tanggal'] ?? now()->toDateString(),
+                    'catatan' => $resolved['catatan'],
                     'status' => 'diajukan',
                 ]);
             }

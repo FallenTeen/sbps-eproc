@@ -2,6 +2,7 @@
 
 namespace App\Domain\Fleet\Models;
 
+use App\Domain\Procurement\Models\BahanBaku;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,7 @@ class PengajuanServisSparepart extends Model
     protected $fillable = [
         'pengajuan_servis_armada_id',
         'workshop_todo_id',
+        'bahan_baku_id',
         'nama_item',
         'jumlah',
         'satuan',
@@ -38,5 +40,10 @@ class PengajuanServisSparepart extends Model
     public function workshopTodo()
     {
         return $this->belongsTo(WorkshopTodo::class, 'workshop_todo_id');
+    }
+
+    public function bahanBaku()
+    {
+        return $this->belongsTo(BahanBaku::class, 'bahan_baku_id');
     }
 }

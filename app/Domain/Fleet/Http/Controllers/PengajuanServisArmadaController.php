@@ -11,6 +11,7 @@ use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Procurement\Models\BahanBaku;
 use App\Http\Controllers\Controller;
 use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
@@ -80,7 +81,8 @@ class PengajuanServisArmadaController extends Controller
         $user = request()->user();
 
         return Inertia::render('Fleet/ServisArmada/Show', [
-            'pengajuan' => $pengajuan->load(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts']),
+            'pengajuan' => $pengajuan->load(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts.bahanBaku']),
+            'masterSpareparts' => $this->masterSpareparts(),
             'can' => [
                 'approve' => $user->can('approve', $pengajuan),
                 'assignWorkshop' => $user->can('assignWorkshop', $pengajuan),
@@ -136,7 +138,8 @@ class PengajuanServisArmadaController extends Controller
 
         $validated = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.nama_item' => 'required|string|max:255',
+            'items.*.bahan_baku_id' => 'nullable|uuid|exists:bahan_bakus,id',
+            'items.*.nama_item' => 'required_without:items.*.bahan_baku_id|nullable|string|max:255',
             'items.*.jumlah' => 'nullable|numeric|min:0',
             'items.*.satuan' => 'nullable|string|max:50',
             'items.*.nominal' => 'nullable|numeric|min:0',
@@ -179,5 +182,20 @@ class PengajuanServisArmadaController extends Controller
         app(CompletePengajuanServisAction::class)->execute($pengajuan, $request->user(), $validated);
 
         return back()->with('success', 'Servis armada selesai.');
+    }
+
+    private function masterSpareparts(): array
+    {
+        return BahanBaku::sparepart()
+            ->aktif()
+            ->orderBy('nama')
+            ->get(['id', 'nama', 'satuan', 'sparepart_untuk'])
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'satuan' => $item->satuan,
+                'sparepart_untuk' => $item->sparepart_untuk,
+            ])
+            ->all();
     }
 }

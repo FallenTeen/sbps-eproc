@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Fleet\Actions\GenerateChecklistSerahTerimaPdfAction;
 use App\Domain\Fleet\Actions\RecordChecklistSerahTerimaAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ChecklistSerahTerima;
@@ -150,4 +151,73 @@ test('Uniknya per (sewa, tipe): hanya ada satu baris berangkat & satu baris kemb
     ]);
 
     expect(ChecklistSerahTerima::where('tipe', 'kembali')->count())->toBe(1);
+});
+
+test('item template kustom berangkat otomatis dipakai checklist kembali', function () {
+    $action = new RecordChecklistSerahTerimaAction;
+    $template = [...ChecklistSerahTerima::DEFAULT_ITEMS, 'Jok'];
+
+    $berangkat = $action->execute($this->sewa, 'berangkat', [
+        'item_template' => $template,
+        'items' => [],
+        'foto_kondisi' => [],
+    ]);
+
+    $kembali = $action->execute($this->sewa, 'kembali', [
+        'items' => [],
+        'foto_kondisi' => [],
+    ]);
+
+    expect($berangkat->item_template)->toBe($template);
+    expect($kembali->item_template)->toBe($template);
+    expect($kembali->details->pluck('item')->all())->toBe($template);
+    expect($berangkat->fresh()->details->pluck('item')->all())->toBe($template);
+    expect($kembali->details->firstWhere('item', 'Jok')?->kondisi)->toBe('baik');
+});
+
+test('PDF checklist cetak dinamis mengikuti item_template kustom', function () {
+    $action = new RecordChecklistSerahTerimaAction;
+    $template = [...ChecklistSerahTerima::DEFAULT_ITEMS, 'Jok'];
+
+    $berangkat = $action->execute($this->sewa, 'berangkat', [
+        'odo_atau_hm' => 100,
+        'tanggal' => now()->toDateString(),
+        'item_template' => $template,
+        'items' => [
+            ['item' => 'Jok', 'kondisi' => 'rusak', 'catatan' => 'Robecek'],
+        ],
+        'foto_kondisi' => [],
+    ]);
+
+    $kembali = $action->execute($this->sewa, 'kembali', [
+        'odo_atau_hm' => 250,
+        'tanggal' => now()->addDay()->toDateString(),
+        'items' => [
+            ['item' => 'Jok', 'kondisi' => 'baik', 'catatan' => 'Diganti'],
+        ],
+        'foto_kondisi' => [],
+    ]);
+
+    $pdf = app(GenerateChecklistSerahTerimaPdfAction::class)->execute($this->sewa);
+    $output = $pdf->output();
+
+    expect($output)->toStartWith('%PDF-')
+        ->and($berangkat->item_template)->toContain('Jok')
+        ->and($kembali->item_template)->toContain('Jok')
+        ->and($berangkat->details->pluck('item'))->toContain('Jok')
+        ->and($kembali->details->pluck('item'))->toContain('Jok');
+});
+
+test('klien lama tanpa item_template memakai label item sebagai template', function () {
+    $action = new RecordChecklistSerahTerimaAction;
+
+    $checklist = $action->execute($this->sewa, 'berangkat', [
+        'items' => [
+            ['item' => 'Jok', 'kondisi' => 'rusak', 'catatan' => 'Robecek'],
+        ],
+        'foto_kondisi' => [],
+    ]);
+
+    expect($checklist->item_template)->toBe(['Jok']);
+    expect($checklist->details->count())->toBe(1);
 });

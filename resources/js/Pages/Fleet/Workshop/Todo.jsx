@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import PrimaryButton from "@/Components/PrimaryButton";
 import {
     Plus,
     CalendarClock,
@@ -42,6 +43,7 @@ export default function Todo({
     armadas,
     mesins,
     workshopUsers,
+    masterSpareparts = [],
     filters,
     can,
 }) {
@@ -53,7 +55,13 @@ export default function Todo({
     const [processing, setProcessing] = useState(false);
     const [sparepartFor, setSparepartFor] = useState(null);
     const [items, setItems] = useState([
-        { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+        {
+            bahan_baku_id: "",
+            nama_item: "",
+            jumlah: 1,
+            satuan: "",
+            nominal: 0,
+        },
     ]);
     const [spErrors, setSpErrors] = useState({});
 
@@ -115,15 +123,45 @@ export default function Todo({
 
     const openSparepart = (t) => {
         setSparepartFor(t);
-        setItems([{ nama_item: "", jumlah: 1, satuan: "", nominal: 0 }]);
+        setItems([
+            {
+                bahan_baku_id: "",
+                nama_item: "",
+                jumlah: 1,
+                satuan: "",
+                nominal: 0,
+            },
+        ]);
         setSpErrors({});
     };
 
     const addSparepartItem = () =>
         setItems([
             ...items,
-            { nama_item: "", jumlah: 1, satuan: "", nominal: 0 },
+            {
+                bahan_baku_id: "",
+                nama_item: "",
+                jumlah: 1,
+                satuan: "",
+                nominal: 0,
+            },
         ]);
+
+    const chooseMasterSparepart = (index, id) => {
+        const master = masterSpareparts.find((s) => s.id === id);
+        setItems(
+            items.map((item, i) =>
+                i === index
+                    ? {
+                          ...item,
+                          bahan_baku_id: master?.id ?? "",
+                          nama_item: master?.nama ?? "",
+                          satuan: master?.satuan ?? "",
+                      }
+                    : item,
+            ),
+        );
+    };
 
     const submitSparepart = (e) => {
         e.preventDefault();
@@ -156,13 +194,13 @@ export default function Todo({
                     </p>
                 </div>
                 {can.manage && (
-                    <button
+                    <PrimaryButton
+                        variant="outline"
                         onClick={() => setShowCreate(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Buat To-Do
-                    </button>
+                    </PrimaryButton>
                 )}
             </div>
 
@@ -202,12 +240,9 @@ export default function Todo({
                         >
                             Terapkan
                         </button>
-                        <button
-                            onClick={clear}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink-secondary hover:text-white bg-surface-muted border-2 border-black hover:bg-gray-900 transition-colors"
-                        >
+                        <PrimaryButton variant="outline" onClick={clear}>
                             <SearchX className="w-4 h-4" /> Reset
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </div>
             </div>
@@ -614,26 +649,90 @@ export default function Todo({
                                     className="border border-gray-200 rounded-lg p-3 space-y-2"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Nama item *"
-                                            value={item.nama_item}
-                                            onChange={(e) =>
-                                                setItems(
-                                                    items.map((x, i) =>
-                                                        i === idx
-                                                            ? {
-                                                                  ...x,
-                                                                  nama_item:
-                                                                      e.target
-                                                                          .value,
-                                                              }
-                                                            : x,
-                                                    ),
-                                                )
+                                        <select
+                                            value={
+                                                item.bahan_baku_id ||
+                                                (item.nama_item
+                                                    ? "__manual__"
+                                                    : "")
                                             }
+                                            onChange={(e) => {
+                                                if (
+                                                    e.target.value ===
+                                                    "__manual__"
+                                                ) {
+                                                    setItems(
+                                                        items.map((x, i) =>
+                                                            i === idx
+                                                                ? {
+                                                                      ...x,
+                                                                      bahan_baku_id:
+                                                                          "",
+                                                                      nama_item:
+                                                                          "",
+                                                                      satuan: "",
+                                                                  }
+                                                                : x,
+                                                        ),
+                                                    );
+                                                } else {
+                                                    chooseMasterSparepart(
+                                                        idx,
+                                                        e.target.value,
+                                                    );
+                                                }
+                                            }}
                                             className="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-                                        />
+                                        >
+                                            <option value="">
+                                                Pilih sparepart
+                                            </option>
+                                            {masterSpareparts
+                                                .filter(
+                                                    (s) =>
+                                                        ! s.sparepart_untuk ||
+                                                        s.sparepart_untuk ===
+                                                            (sparepartFor?.mesin_id
+                                                                ? "mesin"
+                                                                : "armada"),
+                                                )
+                                                .map((s) => (
+                                                    <option
+                                                        key={s.id}
+                                                        value={s.id}
+                                                    >
+                                                        {s.nama}
+                                                        {s.satuan
+                                                            ? ` (${s.satuan})`
+                                                            : ""}
+                                                    </option>
+                                                ))}
+                                            <option value="__manual__">
+                                                Lainnya (ketik manual)
+                                            </option>
+                                        </select>
+                                        {! item.bahan_baku_id && (
+                                            <input
+                                                type="text"
+                                                placeholder="Nama item *"
+                                                value={item.nama_item}
+                                                onChange={(e) =>
+                                                    setItems(
+                                                        items.map((x, i) =>
+                                                            i === idx
+                                                                ? {
+                                                                      ...x,
+                                                                      nama_item:
+                                                                          e.target
+                                                                              .value,
+                                                                  }
+                                                                : x,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+                                            />
+                                        )}
                                         <button
                                             type="button"
                                             onClick={() =>

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import {
     History,
     User,
@@ -263,6 +264,8 @@ function HistoryCard({ h }) {
 }
 
 export default function Riwayat({ pengajuans = [], histories = [] }) {
+    const [tab, setTab] = useState("pengajuan");
+
     const totalPengajuan = pengajuans.reduce(
         (total, p) => total + Number(p.total_biaya || 0),
         0,
@@ -277,7 +280,16 @@ export default function Riwayat({ pengajuans = [], histories = [] }) {
         <AuthenticatedLayout>
             <Head title="Workshop - Riwayat Servis" />
 
-            <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-6">
+            <div className="space-y-6 pb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Riwayat Servis</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Rekap pengajuan selesai dan catatan perawatan unit Workshop.
+                        </p>
+                    </div>
+                </div>
+
                 {/* Ringkasan */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
@@ -303,69 +315,90 @@ export default function Riwayat({ pengajuans = [], histories = [] }) {
                 </div>
 
                 {/* Daftar riwayat */}
-                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
-                    {/* Pengajuan servis selesai */}
-                    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <SectionHeader
-                            icon={FileCheck2}
-                            title="Pengajuan Servis Selesai"
-                            description="Rekap pengajuan yang telah diselesaikan"
-                            count={pengajuans.length}
-                            color="blue"
-                        />
+                <Tabs value={tab} onValueChange={setTab} className="flex-col gap-4">
+                    <div className="w-full overflow-x-auto overflow-y-hidden pb-1">
+                        <TabsList className="h-auto w-fit min-w-max gap-1 rounded-md border bg-muted p-1" aria-label="Jenis riwayat servis">
+                            <TabsTrigger
+                                value="pengajuan"
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "pengajuan" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                            >
+                                <FileCheck2 className="h-4 w-4" /> Pengajuan Selesai
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{pengajuans.length}</span>
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="unit"
+                                className={`h-9 shrink-0 gap-2 rounded-md px-3.5 text-sm transition-colors ${tab === "unit" ? "!bg-gray-900 !font-semibold !text-white shadow-sm" : "text-muted-foreground hover:bg-background hover:text-foreground"}`}
+                            >
+                                <History className="h-4 w-4" /> Riwayat Unit
+                                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-700">{histories.length}</span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                        <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
-                            {pengajuans.length === 0 ? (
-                                <EmptyState
-                                    icon={ClipboardList}
-                                    message="Belum ada pengajuan servis yang selesai."
-                                />
-                            ) : (
-                                <div className="grid grid-cols-1 gap-4">
-                                    {pengajuans.map((p) => (
-                                        <div
-                                            key={p.id}
-                                            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
-                                        >
-                                            <PengajuanCard p={p} />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                    <TabsContent value="pengajuan" className="space-y-4">
+                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <SectionHeader
+                                icon={FileCheck2}
+                                title="Pengajuan Servis Selesai"
+                                description="Rekap pengajuan yang telah diselesaikan"
+                                count={pengajuans.length}
+                                color="blue"
+                            />
 
-                    {/* Riwayat servis unit */}
-                    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <SectionHeader
-                            icon={History}
-                            title="Riwayat Servis Unit"
-                            description="Catatan perawatan dan servis unit"
-                            count={histories.length}
-                            color="emerald"
-                        />
+                            <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
+                                {pengajuans.length === 0 ? (
+                                    <EmptyState
+                                        icon={ClipboardList}
+                                        message="Belum ada pengajuan servis yang selesai."
+                                    />
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {pengajuans.map((p) => (
+                                            <div
+                                                key={p.id}
+                                                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-red-200 hover:shadow-md"
+                                            >
+                                                <PengajuanCard p={p} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </TabsContent>
 
-                        <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
-                            {histories.length === 0 ? (
-                                <EmptyState
-                                    icon={Wrench}
-                                    message="Belum ada riwayat perawatan unit."
-                                />
-                            ) : (
-                                <div className="grid grid-cols-1 gap-4">
-                                    {histories.map((h) => (
-                                        <div
-                                            key={h.id}
-                                            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-emerald-300 hover:shadow-md"
-                                        >
-                                            <HistoryCard h={h} />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                </div>
+                    <TabsContent value="unit" className="space-y-4">
+                        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <SectionHeader
+                                icon={History}
+                                title="Riwayat Servis Unit"
+                                description="Catatan perawatan dan servis unit"
+                                count={histories.length}
+                                color="emerald"
+                            />
+
+                            <div className="max-h-[680px] overflow-y-auto bg-gray-50/50 p-4">
+                                {histories.length === 0 ? (
+                                    <EmptyState
+                                        icon={Wrench}
+                                        message="Belum ada riwayat perawatan unit."
+                                    />
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {histories.map((h) => (
+                                            <div
+                                                key={h.id}
+                                                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-red-200 hover:shadow-md"
+                                            >
+                                                <HistoryCard h={h} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </TabsContent>
+                </Tabs>
             </div>
         </AuthenticatedLayout>
     );

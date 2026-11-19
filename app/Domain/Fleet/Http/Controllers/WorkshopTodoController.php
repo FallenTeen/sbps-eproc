@@ -7,6 +7,7 @@ use App\Domain\Fleet\Actions\RequestSparepartAction;
 use App\Domain\Fleet\Actions\StoreWorkshopTodoAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\WorkshopTodo;
+use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -45,6 +46,7 @@ class WorkshopTodoController extends Controller
             'armadas' => Armada::aktif()->orderBy('plat_nomor')->get(['id', 'plat_nomor', 'kode_unit']),
             'mesins' => MesinProduksi::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama', 'jenis']),
             'workshopUsers' => $this->workshopUsers(),
+            'masterSpareparts' => $this->masterSpareparts(),
             'filters' => $request->only(['status', 'q']),
             'can' => [
                 'manage' => $user->can('manage', WorkshopTodo::class),
@@ -131,7 +133,8 @@ class WorkshopTodoController extends Controller
 
         $validated = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.nama_item' => 'required|string|max:255',
+            'items.*.bahan_baku_id' => 'nullable|uuid|exists:bahan_bakus,id',
+            'items.*.nama_item' => 'required_without:items.*.bahan_baku_id|nullable|string|max:255',
             'items.*.jumlah' => 'nullable|numeric|min:0',
             'items.*.satuan' => 'nullable|string|max:50',
             'items.*.nominal' => 'nullable|numeric|min:0',
@@ -140,6 +143,21 @@ class WorkshopTodoController extends Controller
         app(RequestSparepartAction::class)->execute($request->user(), $validated['items'], null, $todo);
 
         return back()->with('success', 'Permintaan sparepart dari to-do diajukan ke Inventory.');
+    }
+
+    private function masterSpareparts(): array
+    {
+        return BahanBaku::sparepart()
+            ->aktif()
+            ->orderBy('nama')
+            ->get(['id', 'nama', 'satuan', 'sparepart_untuk'])
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'satuan' => $item->satuan,
+                'sparepart_untuk' => $item->sparepart_untuk,
+            ])
+            ->all();
     }
 
     private function workshopUsers(): array
