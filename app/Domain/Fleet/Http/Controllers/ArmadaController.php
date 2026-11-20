@@ -24,6 +24,11 @@ use App\Http\Controllers\Controller;
 use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ArmadaController extends Controller
 {
@@ -66,7 +71,7 @@ class ArmadaController extends Controller
         }
         $titiksQuery = Titik::aktif();
         if ($user->unit_bisnis_id) {
-            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+            $titiksQuery->whereHas('proyek', fn($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
         }
 
         return Inertia::render('Fleet/Armada/Index', [
@@ -91,7 +96,7 @@ class ArmadaController extends Controller
         $unitBisnis = $unitBisnisQuery->get();
         $titiksQuery = Titik::aktif();
         if ($user->unit_bisnis_id) {
-            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+            $titiksQuery->whereHas('proyek', fn($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
         }
         $titiks = $titiksQuery->get();
         $drivers = Karyawan::aktif()->where('tipe', '!=', 'borongan_rit')->get();
@@ -146,16 +151,16 @@ class ArmadaController extends Controller
             'unitBisnis',
             'titik',
             'serviceHistories',
-            'dokumenBerkalas' => fn ($q) => $q->orderBy('tanggal_jatuh_tempo'),
-            'checklists' => fn ($q) => $q->with(['dicatatOleh', 'akhir'])->latest('tanggal')->limit(30),
-            'checklistAkhirs' => fn ($q) => $q->with(['dicatatOleh', 'awal'])->latest('tanggal')->limit(30),
-            'pengisianSolars' => fn ($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
-            'bbmLogs' => fn ($q) => $q->latest('tanggal')->limit(30),
-            'downtimes' => fn ($q) => $q->latest('mulai')->limit(10),
-            'ritases' => fn ($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
-            'sewaAlatJams' => fn ($q) => $q->with('proyek')->latest('tanggal')->limit(50),
-            'driverAssignments' => fn ($q) => $q->with('karyawan')->latest('tanggal_mulai'),
-            'helperArmadas' => fn ($q) => $q->with('presensis')->latest('durasi_mulai'),
+            'dokumenBerkalas' => fn($q) => $q->orderBy('tanggal_jatuh_tempo'),
+            'checklists' => fn($q) => $q->with(['dicatatOleh', 'akhir'])->latest('tanggal')->limit(30),
+            'checklistAkhirs' => fn($q) => $q->with(['dicatatOleh', 'awal'])->latest('tanggal')->limit(30),
+            'pengisianSolars' => fn($q) => $q->with('dicatatOleh')->latest('tanggal')->limit(30),
+            'bbmLogs' => fn($q) => $q->latest('tanggal')->limit(30),
+            'downtimes' => fn($q) => $q->latest('mulai')->limit(10),
+            'ritases' => fn($q) => $q->with(['driver', 'ruteTarif', 'biayaLain'])->latest('tanggal')->limit(50),
+            'sewaAlatJams' => fn($q) => $q->with('proyek')->latest('tanggal')->limit(50),
+            'driverAssignments' => fn($q) => $q->with('karyawan')->latest('tanggal_mulai'),
+            'helperArmadas' => fn($q) => $q->with('presensis')->latest('durasi_mulai'),
             'dokumenBerkalas',
         ]);
 
@@ -166,7 +171,7 @@ class ArmadaController extends Controller
         }
         $titiksQuery = Titik::aktif();
         if ($user->unit_bisnis_id) {
-            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+            $titiksQuery->whereHas('proyek', fn($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
         }
 
         $canRecordRitase = $user->can('recordRitase', $armada);
@@ -196,7 +201,7 @@ class ArmadaController extends Controller
                 'href' => 'fleet.dokumen-berkala.index',
                 'permission' => 'view fleet',
             ],
-        ])->filter(fn ($item) => $user->can($item['permission']))->values()->all();
+        ])->filter(fn($item) => $user->can($item['permission']))->values()->all();
 
         return Inertia::render('Fleet/Armada/Show', [
             'armada' => $armada,
@@ -235,7 +240,7 @@ class ArmadaController extends Controller
         $unitBisnis = $unitBisnisQuery->get();
         $titiksQuery = Titik::aktif();
         if ($user->unit_bisnis_id) {
-            $titiksQuery->whereHas('proyek', fn ($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
+            $titiksQuery->whereHas('proyek', fn($q) => $q->where('unit_bisnis_id', $user->unit_bisnis_id));
         }
         $titiks = $titiksQuery->get();
 
@@ -263,36 +268,67 @@ class ArmadaController extends Controller
     {
         $this->authorize('update', $armada);
 
-        $validated = $request->validate([
-            'plat_nomor' => 'nullable|unique:armadas,plat_nomor,'.$armada->id,
-            'kode_unit' => 'required|unique:armadas,kode_unit,'.$armada->id,
-            'jenis' => 'required|in:dump_truck,dump_truck_tronton,self_loader,alat_berat,truck_molen,lainnya',
-            'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
-            'model_tarif' => 'required|in:ritase,sewa_jam,internal',
-            'tahun' => 'nullable|integer',
-            'kapasitas' => 'nullable|string',
-            'status' => 'nullable|in:aktif,servis,nonaktif',
-            'titik_id' => 'nullable|exists:titiks,id',
-            'tanggal_mulai_pakai' => 'nullable|date',
-            'foto_unit' => 'nullable|image|mimetypes:image/jpeg,image/png,image/webp|max:10240',
-            'tara_master_kg' => 'nullable|numeric|min:0',
-        ]);
+        try {
+            $validated = $request->validate([
+                'plat_nomor' => 'nullable|unique:armadas,plat_nomor,' . $armada->id,
+                'kode_unit' => 'required|unique:armadas,kode_unit,' . $armada->id,
+                'jenis' => 'required|in:dump_truck,dump_truck_tronton,self_loader,alat_berat,truck_molen,lainnya',
+                'tipe_unit' => 'nullable|in:armada_jalan,alat_berat',
+                'model_tarif' => 'required|in:ritase,sewa_jam,internal',
+                'tahun' => 'nullable|integer',
+                'kapasitas' => 'nullable|string',
+                'status' => 'nullable|in:aktif,servis,nonaktif',
+                'titik_id' => 'nullable|exists:titiks,id',
+                'tanggal_mulai_pakai' => 'nullable|date',
+                'foto_unit' => 'nullable|image|mimetypes:image/jpeg,image/png,image/webp|max:10240',
+                'tara_master_kg' => 'nullable|numeric|min:0',
+            ]);
 
-        $validated['data_diperbarui_pada'] = now();
-        $validated['data_diperbarui_oleh'] = $request->user()?->id;
+            $validated['data_diperbarui_pada'] = now();
+            $validated['data_diperbarui_oleh'] = $request->user()?->id;
 
-        if ($request->has('tara_master_kg') && (float) $request->input('tara_master_kg') !== (float) $armada->tara_master_kg) {
-            $validated['tara_diperbarui_pada'] = now();
+            if ($request->has('tara_master_kg') && (float) $request->input('tara_master_kg') !== (float) $armada->tara_master_kg) {
+                $validated['tara_diperbarui_pada'] = now();
+            }
+
+            DB::transaction(function () use ($request, $armada, $validated) {
+                $armada->update(Arr::except($validated, ['foto_unit']));
+
+                if ($request->hasFile('foto_unit')) {
+                    $armada->clearMediaCollection('foto_unit');
+                    $armada->addMediaFromRequest('foto_unit')->toMediaCollection('foto_unit');
+                }
+            });
+
+            return redirect()
+                ->route('fleet.armada.index')
+                ->with('success', 'Armada diperbarui.');
+        } catch (ValidationException $e) {
+            Log::warning('Validasi gagal saat update Armada', [
+                'armada_id' => $armada->id,
+                'user_id' => $request->user()?->id,
+                'errors' => $e->errors(),
+                'payload' => $request->except(['foto_unit']),
+            ]);
+
+            throw $e;
+        } catch (Throwable $e) {
+            Log::error('Gagal update Armada', [
+                'armada_id' => $armada->id,
+                'user_id' => $request->user()?->id,
+                'has_file_foto_unit' => $request->hasFile('foto_unit'),
+                'payload' => $request->except(['foto_unit']),
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput($request->except(['foto_unit']))
+                ->with('error', 'Gagal memperbarui armada: ' . $e->getMessage());
         }
-
-        $armada->update(\Illuminate\Support\Arr::except($validated, ['foto_unit']));
-
-        if ($request->hasFile('foto_unit')) {
-            $armada->clearMediaCollection('foto_unit');
-            $armada->addMediaFromRequest('foto_unit')->toMediaCollection('foto_unit');
-        }
-
-        return redirect()->route('fleet.armada.index')->with('success', 'Armada diperbarui.');
     }
 
     public function destroy(Armada $armada)
@@ -411,7 +447,7 @@ class ArmadaController extends Controller
             'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
             'items.*.catatan' => 'nullable|string',
             'items.*.foto' => 'nullable|string',
-            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'stok_solar' => 'nullable|in:' . implode(',', StokSolar::values()),
             'foto_stok_solar' => 'nullable|string',
             'foto_stok_solar_metadata' => 'nullable|array',
             'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
@@ -436,7 +472,7 @@ class ArmadaController extends Controller
             'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
             'items.*.catatan' => 'nullable|string',
             'items.*.foto' => 'nullable|string',
-            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'stok_solar' => 'nullable|in:' . implode(',', StokSolar::values()),
             'foto_stok_solar' => 'nullable|string',
             'foto_stok_solar_metadata' => 'nullable|array',
             'dicatat_oleh_karyawan_id' => 'required|exists:karyawans,id',
