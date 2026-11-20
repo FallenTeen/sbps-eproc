@@ -36,11 +36,13 @@ class Ritase extends Model
         'titik_id',
         'customer',
         'status',
+        'selesai_pada',
         'catatan',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'selesai_pada' => 'datetime',
         'jumlah_rit' => 'integer',
         'jumlah_volume' => 'float',
         'tarif_per_rit_snapshot' => 'float',

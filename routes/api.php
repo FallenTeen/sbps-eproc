@@ -128,6 +128,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
         Route::post('armada/ritase/input', [ArmadaController::class, 'storeRitase'])
             ->name('armada.ritase.input')->middleware('idempotency');
+        Route::post('armada/ritase/{ritase}/selesai', [ArmadaController::class, 'selesaikanRitase'])
+            ->name('armada.ritase.selesai');
         Route::get('armada/ritase/{ritase}', [ArmadaController::class, 'showRitase'])
             ->name('armada.ritase.show');
         Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');

@@ -43,6 +43,11 @@ class ArmadaController extends Controller
 {
     use ApiResponse;
 
+    private ?Request $cachedKaryawanRequest = null;
+    private ?Karyawan $cachedKaryawan = null;
+    private ?Request $cachedManagerRequest = null;
+    private bool $cachedManager = false;
+
     /** Daftar bagian default checklist (web & mobile sama). */
     public const BAGIAN_DEFAULT = ['Ban', 'Rem', 'Lampu', 'Oli mesin', 'Air radiator', 'Body', 'Kabin'];
 
@@ -51,7 +56,23 @@ class ArmadaController extends Controller
      */
     private function currentKaryawan(Request $request)
     {
-        return $request->user()?->karyawan;
+        if ($this->cachedKaryawanRequest !== $request) {
+            $this->cachedKaryawanRequest = $request;
+            $this->cachedKaryawan = $request->user()?->karyawan;
+        }
+
+        return $this->cachedKaryawan;
+    }
+
+    private function isArmadaManager(Request $request): bool
+    {
+        if ($this->cachedManagerRequest !== $request) {
+            $this->cachedManagerRequest = $request;
+            $user = $request->user();
+            $this->cachedManager = $user !== null && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
+        }
+
+        return $this->cachedManager;
     }
 
     /**
@@ -198,8 +219,7 @@ class ArmadaController extends Controller
      */
     public function ritase(Request $request)
     {
-        $user = $request->user();
-        $isManager = $user && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
+        $isManager = $this->isArmadaManager($request);
 
         $karyawan = $this->currentKaryawan($request);
         if (! $karyawan && ! $isManager) {
@@ -230,14 +250,14 @@ class ArmadaController extends Controller
         $page = $query->paginate($perPage);
 
         return $this->success([
-            'items' => collect($page->items())->map(fn (Ritase $r) => $this->ritaseMobilePayload($r)),
+            'items' => collect($page->items())->map(fn (Ritase $r) => $this->ritaseMobilePayload($r, $request)),
             'current_page' => $page->currentPage(),
             'last_page' => $page->lastPage(),
             'total' => $page->total(),
         ], 'Riwayat ritase driver.');
     }
 
-    private function ritaseMobilePayload(Ritase $ritase): array
+    private function ritaseMobilePayload(Ritase $ritase, ?Request $request = null): array
     {
         return [
             'id' => $ritase->id,
@@ -273,19 +293,30 @@ class ArmadaController extends Controller
             'berat_kosong_kg' => $ritase->timbang?->berat_kosong_kg,
             'berat_isi_kg' => $ritase->timbang?->berat_isi_kg,
             'berat_netto_kg' => $ritase->timbang?->berat_netto_kg,
+            'selesai' => $ritase->selesai_pada !== null,
+            'selesai_pada' => $ritase->selesai_pada?->toISOString(),
+            'bisa_selesaikan' => $request !== null && $this->canSelesaikanMobileRitase($request, $ritase),
         ];
     }
 
     private function canViewMobileRitase(Request $request, Ritase $ritase): bool
     {
-        $user = $request->user();
-        $manager = $user && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
-
-        if ($manager) {
+        if ($this->isArmadaManager($request)) {
             return true;
         }
 
         return $this->currentKaryawan($request)?->id === $ritase->driver_karyawan_id;
+    }
+
+    private function ownsMobileRitase(Request $request, Ritase $ritase): bool
+    {
+        return ! $this->isArmadaManager($request)
+            && $this->currentKaryawan($request)?->id === $ritase->driver_karyawan_id;
+    }
+
+    private function canSelesaikanMobileRitase(Request $request, Ritase $ritase): bool
+    {
+        return $ritase->selesai_pada === null && $this->ownsMobileRitase($request, $ritase);
     }
 
     /**
@@ -311,9 +342,38 @@ class ArmadaController extends Controller
         ]);
 
         return $this->success([
-            'ritase' => $this->ritaseMobilePayload($ritase),
+            'ritase' => $this->ritaseMobilePayload($ritase, $request),
             'timeline' => app(RitaseTimelineService::class)->for($ritase, $request->user()),
         ], 'Detail ritase.');
+    }
+
+    /**
+     * POST /api/mobile/armada/ritase/{ritase}/selesai
+     * Catat waktu selesai milik driver (record-only, status tidak diubah).
+     */
+    public function selesaikanRitase(Request $request, Ritase $ritase)
+    {
+        if (! $this->ownsMobileRitase($request, $ritase)) {
+            return $this->error('Ritase tidak ditemukan atau bukan milik Anda.', 403);
+        }
+
+        if ($ritase->selesai_pada === null) {
+            $ritase->update(['selesai_pada' => now()]);
+        }
+
+        $ritase->loadMissing([
+            'armada',
+            'driver',
+            'ruteTarif',
+            'proyek',
+            'titik',
+            'muatan',
+            'timbang',
+            'verifikasiLogistik',
+            'verifikasiSecurity',
+        ]);
+
+        return $this->success($this->ritaseMobilePayload($ritase, $request), 'Ritase ditandai selesai.');
     }
 
     /**
