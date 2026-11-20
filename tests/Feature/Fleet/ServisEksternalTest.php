@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -248,4 +249,49 @@ test('GET servis-armada?tipe_servis=eksternal hanya mengembalikan servis ekstern
         ->get('/api/mobile/servis-armada?tipe_servis=eksternal');
 
     $response->assertOk();
+});
+
+test('GET servis-armada menerima filter status jamak dipisah koma', function () {
+    PengajuanServisArmada::factory()->for($this->armada)->create(['status' => 'diajukan']);
+    PengajuanServisArmada::factory()->for($this->armada)->create(['status' => 'dikerjakan']);
+    PengajuanServisArmada::factory()->for($this->armada)->create(['status' => 'selesai']);
+
+    $response = $this->withToken($this->ownerToken)
+        ->withHeaders(mobileAuthHeaders())
+        ->get('/api/mobile/servis-armada?status=diajukan,dikerjakan');
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $items = $response->json('data.data') ?? $response->json('data');
+    expect($items)->toHaveCount(2);
+    expect(collect($items)->pluck('status')->all())
+        ->toBe(['diajukan', 'dikerjakan']);
+});
+
+test('filter web belum memakai literal belum dan mengecualikan terverifikasi', function () {
+    Permission::findOrCreate('view fleet service', 'web');
+    $this->owner->givePermissionTo('view fleet service');
+
+    foreach (['Bengkel Belum', 'Bengkel Belum Lain', 'Bengkel Verified'] as $nama) {
+        $this->withToken($this->ownerToken)
+            ->withHeaders(mobileIdemHeaders())
+            ->post('/api/mobile/servis-armada/eksternal', [
+                'armada_id'            => $this->armada->id,
+                'nama_bengkel'         => $nama,
+                'total_biaya_estimasi' => 100000,
+            ])
+            ->assertCreated();
+    }
+
+    ServisEksternalDetail::where('nama_bengkel', 'Bengkel Verified')
+        ->update(['verifikasi_workshop' => 'terverifikasi']);
+
+    $this->app['auth']->forgetGuards();
+
+    $this->actingAs($this->owner)
+        ->get(route('fleet.workshop.servis-eksternal.index', ['verifikasi' => 'belum']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Fleet/Workshop/ServisEksternal')
+            ->where('counts.belum', 2)
+            ->where('items.total', 2));
 });

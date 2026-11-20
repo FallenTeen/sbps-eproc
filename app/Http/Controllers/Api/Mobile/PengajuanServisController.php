@@ -63,8 +63,9 @@ class PengajuanServisController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
+        $statuses = $this->parseStatusFilter($request->query('status'));
+        if ($statuses !== []) {
+            $query->whereIn('status', $statuses);
         }
 
         if ($request->filled('tipe_servis')) {
@@ -551,6 +552,27 @@ class PengajuanServisController extends Controller
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────
+
+    /**
+     * `status` bisa berupa satu nilai, array (`status[]=a&status[]=b`),
+     * atau daftar dipisah koma (`status=a,b`) dari klien mobile.
+     */
+    private function parseStatusFilter(mixed $value): array
+    {
+        if (is_array($value)) {
+            $values = $value;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            $values = explode(',', $value);
+        } elseif (is_string($value) && $value !== '') {
+            $values = [$value];
+        } else {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($item) => is_string($item) ? trim($item) : '', $values),
+        )));
+    }
 
     /**
      * Map satu to-do workshop ke kontrak checklist mobile

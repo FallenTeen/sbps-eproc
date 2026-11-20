@@ -137,12 +137,17 @@ class WorkshopController extends Controller
             'eksternalNotas',
         ])->where('tipe_servis', 'eksternal')->latest('created_at');
 
+        $applyVerifikasi = function ($q, string $verifikasi) {
+            $verifikasi === 'belum'
+                ? $q->where(function ($qq) {
+                    $qq->where('verifikasi_workshop', 'belum')
+                        ->orWhereNull('verifikasi_workshop');
+                })
+                : $q->where('verifikasi_workshop', $verifikasi);
+        };
+
         if (in_array($verifikasi, ['belum', 'terverifikasi', 'bermasalah'], true)) {
-            $query->whereHas('eksternalDetail', function ($q) use ($verifikasi) {
-                $verifikasi === 'belum'
-                    ? $q->whereNull('verifikasi_workshop')
-                    : $q->where('verifikasi_workshop', $verifikasi);
-            });
+            $query->whereHas('eksternalDetail', fn ($q) => $applyVerifikasi($q, $verifikasi));
         }
 
         $items = $query->paginate(20)->withQueryString();
@@ -155,7 +160,7 @@ class WorkshopController extends Controller
 
         $base = PengajuanServisArmada::where('tipe_servis', 'eksternal');
         $counts = [
-            'belum' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->whereNull('verifikasi_workshop'))->count(),
+            'belum' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $applyVerifikasi($q, 'belum'))->count(),
             'terverifikasi' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->where('verifikasi_workshop', 'terverifikasi'))->count(),
             'bermasalah' => (clone $base)->whereHas('eksternalDetail', fn ($q) => $q->where('verifikasi_workshop', 'bermasalah'))->count(),
         ];
