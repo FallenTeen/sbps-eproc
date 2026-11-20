@@ -86,10 +86,9 @@ class ArmadaDokumenBerkalaController extends Controller
         return back()->with('success', "Reminder {$count} dokumen berhasil diperbarui.");
     }
 
-    public function store(Request $request, Armada $armada)
+    private function dokumenRules(): array
     {
-        $validated = $request->validate([
-            'jenis' => 'required|in:pajak_tahunan,stnk_5_tahunan,kir',
+        return [
             'nomor_dokumen' => 'nullable|string|max:255',
             'tanggal_terbit' => 'nullable|date',
             'tanggal_jatuh_tempo' => 'required|date',
@@ -102,6 +101,14 @@ class ArmadaDokumenBerkalaController extends Controller
             'catatan' => 'nullable|string|max:2000',
             'meta' => 'nullable|array',
             'scan_dokumen' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+        ];
+    }
+
+    public function store(Request $request, Armada $armada)
+    {
+        $validated = $request->validate([
+            'jenis' => 'required|in:pajak_tahunan,stnk_5_tahunan,kir',
+            ...$this->dokumenRules(),
         ]);
 
         $dokumen = $armada->dokumenBerkalas()->create([
@@ -134,20 +141,7 @@ class ArmadaDokumenBerkalaController extends Controller
     {
         abort_unless($dokumen->armada_id === $armada->id, 404);
 
-        $validated = $request->validate([
-            'nomor_dokumen' => 'nullable|string|max:255',
-            'tanggal_terbit' => 'nullable|date',
-            'tanggal_jatuh_tempo' => 'required|date',
-            'nominal_biaya' => 'nullable|numeric|min:0',
-            'wilayah' => 'nullable|string|max:255',
-            'tempat_pembayaran' => 'nullable|string|max:255',
-            'teknis_pembayaran' => 'nullable|string|max:1000',
-            'reminder_hari_sebelum' => 'nullable|array',
-            'reminder_hari_sebelum.*' => 'integer|min:1',
-            'catatan' => 'nullable|string|max:2000',
-            'meta' => 'nullable|array',
-            'scan_dokumen' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
-        ]);
+        $validated = $request->validate($this->dokumenRules());
 
         $dokumen->update([
             'nomor_dokumen' => $validated['nomor_dokumen'] ?? $dokumen->nomor_dokumen,

@@ -4,7 +4,6 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DataTable from "@/Components/DataTable";
 import { AlertTriangle, Eye, Factory, Truck } from "lucide-react";
 import { formatTanggal } from "@/utils/date";
-import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Index({ bbmLogs, filters, sort, direction }) {
     const formatCurrency = (value) =>
@@ -101,11 +100,6 @@ export default function Index({ bbmLogs, filters, sort, direction }) {
                         <AlertTriangle className="w-4 h-4" />
                         Anomali
                     </Link>
-                    <PrimaryButton variant="outline" asChild>
-                        <Link href={route("fleet.bbm.create")}>
-                            Catat BBM
-                        </Link>
-                    </PrimaryButton>
                 </div>
             </div>
 

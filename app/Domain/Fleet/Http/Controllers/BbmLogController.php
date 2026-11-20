@@ -76,9 +76,9 @@ class BbmLogController extends Controller
     }
 
     /**
-     * Show form pencatatan BBM. Tipe & unit bersifat opsional
-     * (dipilih via dropdown), hanya dipakai untuk preselect saat
-     * diakses dari halaman armada/mesin tertentu.
+     * Legacy endpoint, bukan jalur input utama. Input baru solar lewat
+     * `fleet/pengisian-solar`; `bbm_logs` hanya ledger turunan.
+     * Dipertahankan untuk kompatibilitas mesin produksi.
      */
     public function create(Request $request)
     {
@@ -105,7 +105,8 @@ class BbmLogController extends Controller
     }
 
     /**
-     * Store pencatatan BBM baru.
+     * Legacy endpoint, bukan jalur input utama. Dipertahankan untuk
+     * kompatibilitas mesin produksi; solar memakai RecordPengisianSolarAction.
      */
     public function store(Request $request)
     {

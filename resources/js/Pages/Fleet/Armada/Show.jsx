@@ -200,6 +200,7 @@ function DokumenSection({ armada, canManage }) {
         wilayah: "",
         tempat_pembayaran: "",
         teknis_pembayaran: "",
+        reminder: "30,14,7",
         catatan: "",
         scan_dokumen: null,
     });
@@ -247,6 +248,7 @@ function DokumenSection({ armada, canManage }) {
 
     const bukaEdit = (dokumen) => {
         setEditing(dokumen);
+        editForm.clearErrors();
         editForm.setData({
             nomor_dokumen: dokumen.nomor_dokumen || "",
             tanggal_terbit: dokumen.tanggal_terbit?.substring(0, 10) || "",
@@ -256,6 +258,7 @@ function DokumenSection({ armada, canManage }) {
             wilayah: dokumen.wilayah || "",
             tempat_pembayaran: dokumen.tempat_pembayaran || "",
             teknis_pembayaran: dokumen.teknis_pembayaran || "",
+            reminder: (dokumen.reminder_hari_sebelum || []).join(","),
             catatan: dokumen.catatan || "",
             scan_dokumen: null,
         });
@@ -263,6 +266,10 @@ function DokumenSection({ armada, canManage }) {
 
     const simpanEdit = (event) => {
         event.preventDefault();
+        editForm.transform((d) => ({
+            ...d,
+            reminder_hari_sebelum: hariKeJSON(d.reminder),
+        }));
         editForm.put(
             route("fleet.armada.dokumen-berkala.update", {
                 armada: armada.id,
@@ -722,7 +729,10 @@ function DokumenSection({ armada, canManage }) {
                 {editing && (
                     <form onSubmit={simpanEdit} className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
-                            <Field label="Nomor Dokumen">
+                            <Field
+                                label="Nomor Dokumen"
+                                error={editForm.errors.nomor_dokumen}
+                            >
                                 <input
                                     value={editForm.data.nomor_dokumen}
                                     onChange={(e) =>
@@ -734,7 +744,10 @@ function DokumenSection({ armada, canManage }) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Biaya (Rp)">
+                            <Field
+                                label="Biaya (Rp)"
+                                error={editForm.errors.nominal_biaya}
+                            >
                                 <input
                                     type="number"
                                     min="0"
@@ -748,7 +761,10 @@ function DokumenSection({ armada, canManage }) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Tanggal Terbit">
+                            <Field
+                                label="Tanggal Terbit"
+                                error={editForm.errors.tanggal_terbit}
+                            >
                                 <input
                                     type="date"
                                     value={editForm.data.tanggal_terbit}
@@ -761,7 +777,10 @@ function DokumenSection({ armada, canManage }) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Tanggal Jatuh Tempo">
+                            <Field
+                                label="Tanggal Jatuh Tempo"
+                                error={editForm.errors.tanggal_jatuh_tempo}
+                            >
                                 <input
                                     type="date"
                                     value={editForm.data.tanggal_jatuh_tempo}
@@ -775,7 +794,10 @@ function DokumenSection({ armada, canManage }) {
                                     required
                                 />
                             </Field>
-                            <Field label="Wilayah">
+                            <Field
+                                label="Wilayah"
+                                error={editForm.errors.wilayah}
+                            >
                                 <input
                                     value={editForm.data.wilayah}
                                     onChange={(e) =>
@@ -787,12 +809,34 @@ function DokumenSection({ armada, canManage }) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Tempat Pembayaran">
+                            <Field
+                                label="Tempat Pembayaran"
+                                error={editForm.errors.tempat_pembayaran}
+                            >
                                 <input
                                     value={editForm.data.tempat_pembayaran}
                                     onChange={(e) =>
                                         editForm.setData(
                                             "tempat_pembayaran",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={inputClass}
+                                />
+                            </Field>
+                            <Field
+                                label="Pengingat (Hari, pisah koma)"
+                                error={
+                                    editForm.errors["reminder_hari_sebelum.0"] ||
+                                    editForm.errors.reminder_hari_sebelum
+                                }
+                            >
+                                <input
+                                    value={editForm.data.reminder}
+                                    placeholder="30,14,7"
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "reminder",
                                             e.target.value,
                                         )
                                     }
@@ -1854,107 +1898,14 @@ function ServiceSection({ armada, options }) {
     );
 }
 
-function BbmSection({ armada, options }) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const { data, setData, post, processing, errors, reset, clearErrors } =
-        useForm({
-            tanggal: new Date().toISOString().split("T")[0],
-            liter: "",
-            biaya: "",
-            jam_operasional_saat_isi: "",
-        });
-
-    const submit = (e) => {
-        e.preventDefault();
-        post(route("fleet.armada.record-bbm", armada.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                reset();
-                clearErrors();
-                setIsModalOpen(false);
-            },
-        });
-    };
-
+function BbmSection({ armada }) {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <Fuel className="w-5 h-5 text-blue-600" /> Riwayat BBM
                 </h3>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className={btnPrimary + " flex items-center gap-2"}
-                >
-                    <Plus className="w-4 h-4" /> Catat BBM
-                </button>
             </div>
-
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Catat BBM"
-            >
-                <form onSubmit={submit} className="space-y-4">
-                    <Field label="Tanggal *" error={errors.tanggal}>
-                        <input
-                            type="date"
-                            value={data.tanggal}
-                            onChange={(e) => setData("tanggal", e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Liter *" error={errors.liter}>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            value={data.liter}
-                            onChange={(e) => setData("liter", e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Biaya">
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={data.biaya}
-                            onChange={(e) => setData("biaya", e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field label="Jam Operasional Saat Isi">
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={data.jam_operasional_saat_isi}
-                            onChange={(e) =>
-                                setData(
-                                    "jam_operasional_saat_isi",
-                                    e.target.value,
-                                )
-                            }
-                            className={inputClass}
-                        />
-                    </Field>
-                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-                        <button
-                            type="button"
-                            onClick={() => setIsModalOpen(false)}
-                            className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className={btnPrimary}
-                        >
-                            {processing ? "Menyimpan..." : "Simpan BBM"}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
                 {armada.bbm_logs.length === 0 ? (
@@ -3449,7 +3400,7 @@ export default function Show({ armada, options, can }) {
                     <ServiceSection armada={armada} options={options} />
                 )}
                 {tab === "bbm" && (
-                    <BbmSection armada={armada} options={options} />
+                    <BbmSection armada={armada} />
                 )}
                 {tab === "checklist" && (
                     <ChecklistSection armada={armada} options={options} />
