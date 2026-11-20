@@ -6,12 +6,15 @@ use App\Domain\Core\Models\Proyek;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SewaAlatController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', SewaAlatJam::class);
@@ -24,23 +27,20 @@ class SewaAlatController extends Controller
             });
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('penyewa_eksternal', 'like', "%{$search}%")
-                    ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
-            });
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'armada' => ['relation' => 'armada', 'column' => 'id', 'type' => 'exact'],
+            'pelanggan' => ['column' => 'penyewa_nama', 'type' => 'like'],
+            'hm_awal' => ['searchable' => false],
+            'hm_akhir' => ['searchable' => false],
+            'jumlah_jam' => ['searchable' => false],
+            'harga_per_jam_snapshot' => ['searchable' => false],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('armada_id')) {
-            $query->where('armada_id', $request->armada_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $sewaList = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $sewaList = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $baseStatsQuery = SewaAlatJam::query();
         if ($request->user()->unit_bisnis_id) {
@@ -65,7 +65,9 @@ class SewaAlatController extends Controller
 
         return Inertia::render('Fleet/SewaAlat/Index', [
             'sewaList' => $sewaList,
-            'filters' => $request->only(['search', 'armada_id', 'status']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'armadaList' => $armadaList,
             'stats' => [
                 'total_aktif' => $totalAktif,
@@ -98,6 +100,11 @@ class SewaAlatController extends Controller
         return Inertia::render('Fleet/SewaAlat/Create', [
             'armadaList' => $armadaList,
             'proyekList' => $proyekList,
+            'formDefaults' => [
+                'tipe_sewa' => 'internal',
+                'proyek_id' => '',
+                'tanggal_mulai' => now()->toDateString(),
+            ],
         ]);
     }
 
@@ -107,8 +114,13 @@ class SewaAlatController extends Controller
 
         $validated = $request->validate([
             'armada_id' => 'required|exists:armadas,id',
-            'proyek_id' => 'nullable|exists:proyeks,id',
+            'tipe_sewa' => 'required|in:internal,eksternal',
+            'proyek_id' => 'nullable|required_if:tipe_sewa,internal|exists:proyeks,id',
             'nama_pelanggan' => 'required|string|max:255',
+            'penyewa_pt' => 'nullable|string|max:255',
+            'penyewa_alamat' => 'nullable|string|max:255',
+            'penyewa_penanggung_jawab' => 'nullable|string|max:255',
+            'penyewa_no_hp' => 'nullable|string|max:50',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
             'hm_awal' => 'required|numeric|min:0',
@@ -117,15 +129,21 @@ class SewaAlatController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $jumlahJam = null;
+        $jumlahJam = 0;
         if (! empty($validated['hm_akhir']) && ! empty($validated['hm_awal'])) {
             $jumlahJam = max(0, floatval($validated['hm_akhir']) - floatval($validated['hm_awal']));
         }
 
         SewaAlatJam::create([
             'armada_id' => $validated['armada_id'],
-            'proyek_id' => $validated['proyek_id'] ?? null,
+            'tipe_sewa' => $validated['tipe_sewa'],
+            'proyek_id' => $validated['tipe_sewa'] === 'internal' ? ($validated['proyek_id'] ?? null) : null,
             'penyewa_eksternal' => $validated['nama_pelanggan'],
+            'penyewa_nama' => $validated['nama_pelanggan'],
+            'penyewa_pt' => $validated['penyewa_pt'] ?? null,
+            'penyewa_alamat' => $validated['penyewa_alamat'] ?? null,
+            'penyewa_penanggung_jawab' => $validated['penyewa_penanggung_jawab'] ?? null,
+            'penyewa_no_hp' => $validated['penyewa_no_hp'] ?? null,
             'tanggal' => $validated['tanggal_mulai'],
             'hm_awal' => $validated['hm_awal'],
             'hm_akhir' => $validated['hm_akhir'] ?? null,
@@ -168,8 +186,13 @@ class SewaAlatController extends Controller
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.armada_id' => 'required|exists:armadas,id',
+            'items.*.tipe_sewa' => 'required|in:internal,eksternal',
             'items.*.proyek_id' => 'nullable|exists:proyeks,id',
             'items.*.nama_pelanggan' => 'required|string|max:255',
+            'items.*.penyewa_pt' => 'nullable|string|max:255',
+            'items.*.penyewa_alamat' => 'nullable|string|max:255',
+            'items.*.penyewa_penanggung_jawab' => 'nullable|string|max:255',
+            'items.*.penyewa_no_hp' => 'nullable|string|max:50',
             'items.*.tanggal_mulai' => 'required|date',
             'items.*.hm_awal' => 'required|numeric|min:0',
             'items.*.hm_akhir' => 'nullable|numeric|gte:hm_awal',
@@ -179,15 +202,25 @@ class SewaAlatController extends Controller
 
         $saved = 0;
         foreach ($validated['items'] as $item) {
-            $jumlahJam = null;
+            if ($item['tipe_sewa'] === 'internal' && empty($item['proyek_id'])) {
+                return back()->withErrors(['items' => 'Sewa internal wajib memilih proyek.']);
+            }
+
+            $jumlahJam = 0;
             if (! empty($item['hm_akhir']) && ! empty($item['hm_awal'])) {
                 $jumlahJam = max(0, floatval($item['hm_akhir']) - floatval($item['hm_awal']));
             }
 
             SewaAlatJam::create([
                 'armada_id' => $item['armada_id'],
-                'proyek_id' => $item['proyek_id'] ?? null,
+                'tipe_sewa' => $item['tipe_sewa'],
+                'proyek_id' => $item['tipe_sewa'] === 'internal' ? ($item['proyek_id'] ?? null) : null,
                 'penyewa_eksternal' => $item['nama_pelanggan'],
+                'penyewa_nama' => $item['nama_pelanggan'],
+                'penyewa_pt' => $item['penyewa_pt'] ?? null,
+                'penyewa_alamat' => $item['penyewa_alamat'] ?? null,
+                'penyewa_penanggung_jawab' => $item['penyewa_penanggung_jawab'] ?? null,
+                'penyewa_no_hp' => $item['penyewa_no_hp'] ?? null,
                 'tanggal' => $item['tanggal_mulai'],
                 'hm_awal' => $item['hm_awal'],
                 'hm_akhir' => $item['hm_akhir'] ?? null,

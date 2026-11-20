@@ -2,12 +2,14 @@
 
 namespace App\Domain\Fleet\Http\Controllers;
 
-use App\Domain\Fleet\Actions\RecordChecklistHarianAction;
+use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
+use App\Domain\Fleet\Enums\StokSolar;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
 use App\Domain\HR\Models\Karyawan;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +17,8 @@ use Inertia\Inertia;
 
 class ChecklistHarianController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Map tipe checkable dari URL (string pendek) ke Eloquent class.
      * Dipakai supaya URL tidak perlu membawa FQCN penuh.
@@ -33,21 +37,11 @@ class ChecklistHarianController extends Controller
     {
         $this->authorize('viewAny', ArmadaChecklistHarian::class);
 
-        $query = ArmadaChecklistHarian::with(['checkable', 'dicatatOleh']);
+        $query = ArmadaChecklistHarian::with(['checkable', 'dicatatOleh', 'akhir']);
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
-        }
-
-        if ($request->filled('tipe')) {
-            $modelClass = self::CHECKABLE_MAP[$request->tipe] ?? null;
-            if ($modelClass) {
-                $query->where('checkable_type', $modelClass);
-            }
-        }
-
-        if ($request->filled('status')) {
-            $query->where('kondisi_baik', $request->status === 'baik');
+        $tipe = $request->input('filters.tipe');
+        if ($tipe && isset(self::CHECKABLE_MAP[$tipe])) {
+            $query->where('checkable_type', self::CHECKABLE_MAP[$tipe]);
         }
 
         if ($request->user()->unit_bisnis_id) {
@@ -57,11 +51,21 @@ class ChecklistHarianController extends Controller
             });
         }
 
-        $checklists = $query->orderBy('tanggal', 'desc')->paginate(20)->withQueryString();
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'kondisi' => ['column' => 'kondisi_baik', 'type' => 'boolean'],
+            'dicatat_oleh' => ['relation' => 'dicatatOleh', 'column' => 'nama', 'type' => 'like'],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc']);
+
+        $checklists = $query->paginate($this->tablePerPage($request, 20))->withQueryString();
 
         return Inertia::render('Fleet/Checklist/Index', [
             'checklists' => $checklists,
-            'filters' => $request->only(['tanggal', 'tipe', 'status']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -80,6 +84,8 @@ class ChecklistHarianController extends Controller
             'checkable' => $checkable,
             'checkableType' => $checkableType,
             'existingToday' => $existingToday,
+            'karyawans' => Karyawan::aktif()->get(['id', 'nama', 'jabatan']),
+            'stokSolarOptions' => StokSolar::options(),
         ]);
     }
 
@@ -94,11 +100,25 @@ class ChecklistHarianController extends Controller
             'checkable_type' => 'required|string|in:'.implode(',', array_keys(self::CHECKABLE_MAP)),
             'checkable_id' => 'required|string',
             'tanggal' => 'nullable|date|before_or_equal:today',
-            'kondisi_baik' => 'required|boolean',
+            'kondisi_baik' => 'nullable|boolean',
             'item_bermasalah' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.bagian' => 'required_with:items|string|max:100',
+            'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable|string',
+            'foto_stok_solar_metadata' => 'nullable|array',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'foto_odo_pagi_metadata' => 'nullable|array',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
+            'client_uuid' => 'nullable|string|max:36',
         ]);
 
-        if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
+        if (($validated['kondisi_baik'] ?? null) === false && empty($validated['item_bermasalah']) && empty($validated['items'])) {
             return back()
                 ->withErrors(['item_bermasalah' => 'Item bermasalah wajib diisi jika kondisi tidak baik.'])
                 ->withInput();
@@ -119,17 +139,22 @@ class ChecklistHarianController extends Controller
 
         $data = [
             'tanggal' => $tanggal,
-            'kondisi_baik' => $validated['kondisi_baik'],
+            'kondisi_baik' => $validated['kondisi_baik'] ?? null,
             'item_bermasalah' => $validated['item_bermasalah'] ?? null,
+            'items' => $validated['items'] ?? null,
+            'stok_solar' => $validated['stok_solar'] ?? null,
+            'foto_stok_solar' => $validated['foto_stok_solar'] ?? null,
+            'foto_stok_solar_metadata' => $validated['foto_stok_solar_metadata'] ?? null,
             'dicatat_oleh_karyawan_id' => $karyawan->id,
+            'odo_pagi' => $validated['odo_pagi'] ?? null,
+            'foto_odo_pagi' => $validated['foto_odo_pagi'] ?? null,
+            'foto_odo_pagi_metadata' => $validated['foto_odo_pagi_metadata'] ?? null,
+            'jam_mulai_operasi' => $validated['jam_mulai_operasi'] ?? null,
+            'hm_odo' => $validated['hm_odo'] ?? null,
+            'client_uuid' => $validated['client_uuid'] ?? null,
         ];
 
-        if ($existing) {
-            $existing->update($data);
-            $checklist = $existing;
-        } else {
-            $checklist = app(RecordChecklistHarianAction::class)->execute($checkable, $data);
-        }
+        $checklist = app(RecordChecklistAwalAction::class)->execute($checkable, $data);
 
         return back()->with('success', $existing
             ? 'Checklist hari ini berhasil diperbarui.'
@@ -143,7 +168,7 @@ class ChecklistHarianController extends Controller
     {
         $this->authorize('view', $checklistHarian);
 
-        $checklistHarian->load(['checkable', 'dicatatOleh']);
+        $checklistHarian->load(['checkable', 'dicatatOleh', 'akhir']);
 
         return Inertia::render('Fleet/Checklist/Show', [
             'checklist' => $checklistHarian,
@@ -160,11 +185,24 @@ class ChecklistHarianController extends Controller
         $this->authorize('recordChecklist', $checklistHarian->checkable);
 
         $validated = $request->validate([
-            'kondisi_baik' => 'required|boolean',
+            'kondisi_baik' => 'nullable|boolean',
             'item_bermasalah' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.bagian' => 'required_with:items|string|max:100',
+            'items.*.kondisi' => 'required_with:items|in:baik,perlu_perhatian,rusak',
+            'items.*.catatan' => 'nullable|string',
+            'items.*.foto' => 'nullable|string',
+            'stok_solar' => 'nullable|in:'.implode(',', StokSolar::values()),
+            'foto_stok_solar' => 'nullable|string',
+            'foto_stok_solar_metadata' => 'nullable|array',
+            'odo_pagi' => 'nullable|numeric|min:0',
+            'foto_odo_pagi' => 'nullable|string',
+            'foto_odo_pagi_metadata' => 'nullable|array',
+            'jam_mulai_operasi' => 'nullable|date_format:H:i',
+            'hm_odo' => 'nullable|numeric|min:0',
         ]);
 
-        if (! $validated['kondisi_baik'] && empty($validated['item_bermasalah'])) {
+        if (($validated['kondisi_baik'] ?? null) === false && empty($validated['item_bermasalah']) && empty($validated['items'])) {
             return back()
                 ->withErrors(['item_bermasalah' => 'Item bermasalah wajib diisi jika kondisi tidak baik.'])
                 ->withInput();
@@ -184,7 +222,7 @@ class ChecklistHarianController extends Controller
 
         $tanggal = Carbon::parse($date);
 
-        $query = ArmadaChecklistHarian::with(['checkable', 'dicatatOleh'])
+        $query = ArmadaChecklistHarian::with(['checkable', 'dicatatOleh', 'akhir'])
             ->whereDate('tanggal', $tanggal);
 
         if (Auth::user()->unit_bisnis_id) {
@@ -212,7 +250,7 @@ class ChecklistHarianController extends Controller
         $this->authorize('view', $checkable);
 
         $checklists = $checkable->checklists()
-            ->with('dicatatOleh')
+            ->with(['dicatatOleh', 'akhir'])
             ->orderBy('tanggal', 'desc')
             ->paginate(20);
 
@@ -273,7 +311,7 @@ class ChecklistHarianController extends Controller
             if ($existing) {
                 $existing->update($data);
             } else {
-                app(RecordChecklistHarianAction::class)->execute($checkable, $data);
+                app(RecordChecklistAwalAction::class)->execute($checkable, $data);
             }
             $saved++;
         }

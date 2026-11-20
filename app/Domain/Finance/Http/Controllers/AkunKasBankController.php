@@ -5,12 +5,44 @@ namespace App\Domain\Finance\Http\Controllers;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Actions\RecordTransferAntarKasAction;
 use App\Domain\Finance\Models\AkunKasBank;
+use App\Domain\Finance\Models\TransferAntarKas;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AkunKasBankController extends Controller
 {
+    use FilterableTable;
+
+    public function show(AkunKasBank $akun_ka)
+    {
+        $this->authorize('view', $akun_ka);
+
+        $akun_ka->load(['unitBisnis', 'akunCoa']);
+
+        $totalMasuk = (float) $akun_ka->mutasis()->where('tipe', 'masuk')->sum('jumlah');
+        $totalKeluar = (float) $akun_ka->mutasis()->where('tipe', 'keluar')->sum('jumlah');
+        $saldoSaatIni = (float) $akun_ka->saldo_awal + $totalMasuk - $totalKeluar;
+
+        $mutasis = $akun_ka->mutasis()
+            ->with('referensi')
+            ->orderByDesc('tanggal')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        return Inertia::render('Finance/AkunKas/Show', [
+            'akunKas' => $akun_ka,
+            'summary' => [
+                'total_masuk' => $totalMasuk,
+                'total_keluar' => $totalKeluar,
+                'saldo_saat_ini' => $saldoSaatIni,
+            ],
+            'mutasis' => $mutasis,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', AkunKasBank::class);
@@ -25,7 +57,13 @@ class AkunKasBankController extends Controller
             $unitBisnisId = $unitBisnis ? $unitBisnis->id : null;
         }
 
-        $akunKas = AkunKasBank::query()
+        $computeSaldo = function ($akun) {
+            $akun->saldo_saat_ini = $akun->saldo_awal + ($akun->total_masuk ?? 0) - ($akun->total_keluar ?? 0);
+
+            return $akun;
+        };
+
+        $base = AkunKasBank::query()
             ->when($unitBisnisId, function ($q, $unitBisnisId) {
                 return $q->where('unit_bisnis_id', $unitBisnisId);
             })
@@ -34,13 +72,23 @@ class AkunKasBankController extends Controller
             }], 'jumlah')
             ->withSum(['mutasis as total_keluar' => function ($q) {
                 $q->where('tipe', 'keluar');
-            }], 'jumlah')
-            ->get()
-            ->map(function ($akun) {
-                $akun->saldo_saat_ini = $akun->saldo_awal + ($akun->total_masuk ?? 0) - ($akun->total_keluar ?? 0);
+            }], 'jumlah');
 
-                return $akun;
-            });
+        // Seluruh akun pada unit (untuk total saldo & opsi modal transfer).
+        $allAkun = (clone $base)->get()->map($computeSaldo);
+        $totalSaldo = $allAkun->sum('saldo_saat_ini');
+        $transferAccounts = $allAkun->where('aktif', true)->values();
+
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'jenis_kas' => ['type' => 'exact'],
+            'aktif' => ['type' => 'boolean'],
+        ];
+
+        $sort = $this->applyTableQuery($base, $request, $columns, 'nama');
+
+        $akunKas = $base->paginate($this->tablePerPage($request))->withQueryString();
+        $akunKas->setCollection($akunKas->getCollection()->map($computeSaldo));
 
         $unitBisnisList = UnitBisnis::all(['id', 'nama']);
         if ($user && ! $user->hasRole(['Owner', 'Admin Keuangan']) && $user->unit_bisnis_id) {
@@ -50,7 +98,12 @@ class AkunKasBankController extends Controller
         return Inertia::render('Finance/AkunKas/Index', [
             'akunKas' => $akunKas,
             'unit_bisnis_id' => $unitBisnisId,
+            'totalSaldo' => $totalSaldo,
+            'transferAccounts' => $transferAccounts,
             'unitBisnisList' => $unitBisnisList,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -116,6 +169,25 @@ class AkunKasBankController extends Controller
         $akun_ka->update($validated);
 
         return redirect()->route('finance.akun-kas.index', ['unit_bisnis_id' => $akun_ka->unit_bisnis_id])->with('success', 'Akun Kas berhasil diupdate.');
+    }
+
+    public function destroy(AkunKasBank $akun_ka)
+    {
+        $this->authorize('delete', $akun_ka);
+
+        $sudahDiproses = $akun_ka->mutasis()->exists()
+            || TransferAntarKas::where('dari_akun_kas_bank_id', $akun_ka->id)
+                ->orWhere('ke_akun_kas_bank_id', $akun_ka->id)
+                ->exists();
+
+        if ($sudahDiproses) {
+            return back()->with('error', 'Akun kas tidak bisa dihapus karena sudah memiliki riwayat mutasi atau transfer antar kas.');
+        }
+
+        $akun_ka->delete();
+
+        return redirect()->route('finance.akun-kas.index')
+            ->with('success', 'Akun kas berhasil dihapus.');
     }
 
     public function mutasi(Request $request, AkunKasBank $akunKasBank)

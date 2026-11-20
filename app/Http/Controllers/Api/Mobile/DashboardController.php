@@ -7,6 +7,7 @@ use App\Domain\Core\Actions\GetRABRealisasiAction;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Finance\Models\Invoice;
 use App\Domain\Finance\Models\MutasiKasBank;
+use App\Domain\Fleet\Actions\CalculateArmadaUtilizationAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Procurement\Models\PurchaseOrder;
 use App\Domain\Production\Models\ProductionSession;
@@ -33,34 +34,42 @@ class DashboardController extends Controller
                 'karyawanAssignments as sdm_count',
             ])
             ->orderBy('nama')
-            ->get()
-            ->map(function (Titik $titik) use ($today) {
-                $produksiToday = (float) ProductionSession::where('titik_id', $titik->id)
-                    ->where('status', 'selesai')
-                    ->whereDate('mulai', $today)
-                    ->sum('hasil_output');
+            ->get();
 
-                $presensiToday = Presensi::where('titik_id', $titik->id)
-                    ->whereDate('check_in', $today)
-                    ->count();
+        // Batch queries untuk production & presensi hari ini (anti N+1).
+        $titikIds = $titiks->pluck('id');
 
-                return [
-                    'titik_id' => $titik->id,
-                    'titik' => $titik->nama,
-                    'proyek' => $titik->proyek?->nama,
-                    'latitude' => (float) $titik->latitude,
-                    'longitude' => (float) $titik->longitude,
-                    'sdm_count' => (int) $titik->sdm_count,
-                    'armada_count' => (int) $titik->armada_count,
-                    'presensi_today' => $presensiToday,
-                    'produksi_today' => $produksiToday,
-                ];
-            });
+        $produksiMap = ProductionSession::where('status', 'selesai')
+            ->whereDate('mulai', $today)
+            ->whereIn('titik_id', $titikIds)
+            ->selectRaw('titik_id, COALESCE(SUM(hasil_output), 0) as total')
+            ->groupBy('titik_id')
+            ->pluck('total', 'titik_id');
+
+        $presensiMap = Presensi::whereDate('check_in', $today)
+            ->whereIn('titik_id', $titikIds)
+            ->selectRaw('titik_id, COUNT(*) as total')
+            ->groupBy('titik_id')
+            ->pluck('total', 'titik_id');
+
+        $items = $titiks->map(function (Titik $titik) use ($produksiMap, $presensiMap) {
+            return [
+                'titik_id' => $titik->id,
+                'titik' => $titik->nama,
+                'proyek' => $titik->proyek?->nama,
+                'latitude' => (float) $titik->latitude,
+                'longitude' => (float) $titik->longitude,
+                'sdm_count' => (int) $titik->sdm_count,
+                'armada_count' => (int) $titik->armada_count,
+                'presensi_today' => (int) ($presensiMap[$titik->id] ?? 0),
+                'produksi_today' => (float) ($produksiMap[$titik->id] ?? 0),
+            ];
+        });
 
         return $this->success([
             'tanggal' => $today,
             'total_titik' => $titiks->count(),
-            'items' => $titiks,
+            'items' => $items,
         ], 'Ringkasan dashboard mobile.');
     }
 
@@ -204,19 +213,52 @@ class DashboardController extends Controller
 
     /**
      * GET /api/mobile/dashboard/armada-status
-     * Distribusi status armada aktif.
+     * Distribusi status armada per unit bisnis (Section 12.5).
      */
     public function armadaStatus()
     {
-        $statuses = Armada::aktif()
-            ->selectRaw('status, count(*) as jumlah')
-            ->groupBy('status')
-            ->get();
+        $armadas = Armada::with('unitBisnis')->get();
+
+        $groupByStatus = fn ($items) => $items->groupBy('status')
+            ->map(fn ($rows, $status) => ['status' => $status, 'jumlah' => $rows->count()])
+            ->values();
+
+        $byUnitBisnis = $armadas->groupBy('unit_bisnis_id')
+            ->map(fn ($items, $unitBisnisId) => [
+                'unit_bisnis_id' => $unitBisnisId,
+                'kode' => $items->first()->unitBisnis?->kode,
+                'nama' => $items->first()->unitBisnis?->nama,
+                'total' => $items->count(),
+                'items' => $groupByStatus($items),
+            ])->values();
 
         return $this->success([
-            'total' => Armada::aktif()->count(),
-            'items' => $statuses,
+            'total' => $armadas->count(),
+            'items' => $groupByStatus($armadas),
+            'by_unit_bisnis' => $byUnitBisnis,
         ], 'Status armada.');
+    }
+
+    /**
+     * GET /api/mobile/dashboard/armada-monitoring
+     * Metrik utilisasi & kondisi seluruh armada (Bagian 21.11) -
+     * ringkasan KPI, rekap durasi per tanggal, dan baris per unit.
+     */
+    public function armadaMonitoring(Request $request, CalculateArmadaUtilizationAction $action)
+    {
+        $validated = $request->validate([
+            'unit_bisnis_id' => 'nullable|exists:unit_bisnis,id',
+            'dari' => 'nullable|date',
+            'sampai' => 'nullable|date|after_or_equal:dari',
+        ]);
+
+        $data = $action->execute(
+            dari: $validated['dari'] ?? null,
+            sampai: $validated['sampai'] ?? null,
+            unitBisnisId: $validated['unit_bisnis_id'] ?? null,
+        );
+
+        return $this->success($data, 'Monitoring armada.');
     }
 
     /**

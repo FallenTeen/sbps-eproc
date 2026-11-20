@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  */
 class CleanDataSeeder extends Seeder
 {
+    use StagingOnly;
+
     private array $tables = [
         // Finance
         'invoice_items',
@@ -20,9 +23,11 @@ class CleanDataSeeder extends Seeder
         'invoices',
         'transfer_antar_kas',
         'mutasi_kas_banks',
+        'rekap_manuals',
 
         // Procurement (referensi ke purchase_orders)
         'pembayarans',
+        'armada_pengisian_solars',
         'bbm_logs',
         'service_history',
         'purchase_order_approvals',
@@ -44,15 +49,34 @@ class CleanDataSeeder extends Seeder
         'produks',
 
         // Fleet
+        'checklist_serah_terima_detail',
+        'checklist_serah_terima_armada',
+        'pengajuan_servis_spareparts',
+        'pengajuan_servis_personels',
+        'servis_eksternal_notas',
+        'servis_eksternal_detail',
+        'pengajuan_servis_armadas',
+        'workshop_todos',
+        'presensi_helpers',
+        'helper_armadas',
+        'armada_odo_awal_proyeks',
+        'armada_penanggung_jawabs',
         'ritase_biaya_lains',
+        'ritase_verifikasis',
+        'ritase_timbangs',
+        'ritase_muatans',
         'ritases',
         'sewa_alat_jams',
+        'armada_checklist_akhirs',
         'armada_checklist_harians',
         'downtime_logs',
         'service_intervals',
         'armada_drivers',
+        'armada_dokumen_berkala_riwayats',
+        'armada_dokumen_berkalas',
         'armadas',
         'rute_tarifs',
+        'stok_opnames',
 
         // HR & Payroll
         'komponen_gajis',
@@ -62,13 +86,21 @@ class CleanDataSeeder extends Seeder
         'karyawans',
 
         // Attendance
+        'mobile_tracking_locations',
         'formulir_lapangans',
         'presensis',
+        'security_checklist_run_items',
+        'security_checklist_runs',
+        'security_checklist_template_items',
+        'security_checklist_templates',
+        'security_laporan_darurats',
+        'buku_tamus',
 
         // Core
         'komunikasi_logs',
         'rabs',
         'titiks',
+        'proyek_user',
         'proyeks',
         'dokumens',
 
@@ -78,6 +110,8 @@ class CleanDataSeeder extends Seeder
 
     public function run(): void
     {
+        $this->assertNotProduction();
+
         foreach ($this->tables as $table) {
             DB::table($table)->delete();
         }

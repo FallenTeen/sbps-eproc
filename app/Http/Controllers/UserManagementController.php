@@ -2,49 +2,51 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\HR\Models\Karyawan;
+use App\Domain\Shared\Actions\RecordAuditLogAction;
 use App\Models\User;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
 {
+    use FilterableTable;
+
+    public function __construct(private RecordAuditLogAction $recordAuditLog)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = User::with('roles');
+        $this->authorize('viewAny', User::class);
 
-        // Filter by role
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->role);
-            });
-        }
+        $query = User::with(['roles', 'karyawan:id,user_id,nama,jabatan']);
 
-        // Filter by active status
-        if ($request->has('is_active') && $request->is_active !== '') {
-            $query->where('is_active', $request->is_active);
-        }
+        $columns = [
+            'name' => ['type' => 'like'],
+            'email' => ['type' => 'like'],
+            'role' => ['type' => 'exact', 'relation' => 'roles', 'column' => 'name'],
+            'is_active' => ['type' => 'boolean'],
+        ];
 
-        // Search by name or email
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, 'name');
 
-        $users = $query->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
+        $users = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $roles = Role::pluck('name');
 
         return Inertia::render('UserManagement/Index', [
             'users' => $users,
             'roles' => $roles,
-            'filters' => $request->only(['role', 'is_active', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -53,45 +55,94 @@ class UserManagementController extends Controller
      */
     public function create()
     {
-        $roles = Role::pluck('name');
+        $this->authorize('create', User::class);
+
+        $karyawans = $this->karyawansTanpaAkun();
+        $roles = Role::where('guard_name', 'web')->orderBy('name')->pluck('name');
+        if (! $roles->contains('user')) {
+            $roles->prepend('user');
+        }
+        $jabatanOptions = Karyawan::query()
+            ->whereNotNull('jabatan')
+            ->where('jabatan', '<>', '')
+            ->distinct()
+            ->orderBy('jabatan')
+            ->pluck('jabatan');
 
         return Inertia::render('UserManagement/Create', [
-            'roles' => $roles,
+            'karyawans' => $karyawans,
+            'roles' => $roles->values(),
+            'jabatanOptions' => $jabatanOptions,
         ]);
     }
 
     /**
-     * Store a newly created user.
+     * Create an account with the no-permission "user" role. Its display name
+     * comes from a linked/new employee or, for account-only creation, the email.
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $defaultRole = Role::firstOrCreate([
+            'name' => 'user',
+            'guard_name' => 'web',
+        ]);
+        $defaultRole->syncPermissions([]);
+
+        $hasEmployee = $request->filled('karyawan_id') || $request->filled('new_karyawan');
+        $rules = [
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|exists:roles,name',
+            'password' => 'required|string|min:8',
             'is_active' => 'sometimes|boolean',
-        ]);
+        ];
+        if ($hasEmployee) {
+            $rules['role'] = [
+                'required',
+                'string',
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
+            ];
+        }
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_active' => $request->is_active ?? true,
-        ]);
+        $validated = $request->validate(array_merge($rules, $this->karyawanLinkRules(false)));
 
-        $user->assignRole($validated['role']);
+        $role = $validated['role'] ?? $defaultRole;
 
-        return redirect()->route('users.index')
-            ->with('success', 'User berhasil dibuat.');
+        [$user, $karyawan] = DB::transaction(function () use ($request, $validated, $role) {
+            $karyawanTerpilih = isset($validated['karyawan_id'])
+                ? Karyawan::findOrFail($validated['karyawan_id'])
+                : null;
+
+            $name = $karyawanTerpilih?->nama
+                ?? ($validated['new_karyawan']['nama']
+                    ?? Str::before($validated['email'], '@'));
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'is_active' => $request->is_active ?? true,
+            ]);
+
+            $user->assignRole($role);
+
+            return [$user, $this->resolveKaryawanLink($request, $user)];
+        });
+
+        $pesan = 'User berhasil dibuat.';
+        if ($karyawan) {
+            $pesan .= ' Karyawan "'.$karyawan->nama.'" tertaut dengan akun ini.';
+        }
+
+        return redirect()->route('users.index')->with('success', $pesan);
     }
 
     /**
-     * Show form to edit a user.
+     * Show form to edit a user, termasuk status tautan karyawan.
      */
     public function edit(User $user)
     {
-        $user->load('roles');
+        $this->authorize('update', $user);
+
+        $user->load(['roles', 'karyawan:id,user_id,nama,jabatan,tipe,no_hp']);
         $roles = Role::pluck('name');
         $userRole = $user->roles->first()?->name ?? '';
 
@@ -99,6 +150,7 @@ class UserManagementController extends Controller
             'user' => $user,
             'roles' => $roles,
             'userRole' => $userRole,
+            'karyawans' => $this->karyawansTanpaAkun(),
         ]);
     }
 
@@ -107,6 +159,8 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $this->authorize('update', $user);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$user->id,
@@ -136,6 +190,8 @@ class UserManagementController extends Controller
      */
     public function destroy(User $user)
     {
+        $this->authorize('delete', $user);
+
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
@@ -147,10 +203,54 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Tautkan karyawan ke akun user: pakai karyawan yang sudah ada
+     * (belum punya akun) atau buat data karyawan baru yang tertaut.
+     */
+    public function linkKaryawan(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $validated = $request->validate($this->karyawanLinkRules(true));
+
+        $karyawan = $this->resolveKaryawanLink($request, $user);
+
+        return back()->with('success', 'Karyawan "'.$karyawan->nama.'" berhasil tertaut dengan akun "'.$user->email.'".');
+    }
+
+    /**
+     * Lepas tautan karyawan dari akun user (karyawan datanya tetap ada,
+     * hanya tidak lagi memakai akun ini).
+     */
+    public function unlinkKaryawan(User $user)
+    {
+        $this->authorize('update', $user);
+
+        $karyawan = $user->karyawan()->first();
+
+        if (! $karyawan) {
+            return back()->with('error', 'Akun ini belum tertaut dengan karyawan manapun.');
+        }
+
+        $karyawan->update(['user_id' => null]);
+
+        $this->recordAuditLog->execute(
+            "Melepas tautan karyawan '{$karyawan->nama}' dari akun '{$user->email}'",
+            $user,
+            'updated',
+            ['user_id' => $user->id, 'karyawan_id' => $karyawan->id],
+            'user-management'
+        );
+
+        return back()->with('success', 'Tautan karyawan "'.$karyawan->nama.'" berhasil dilepas.');
+    }
+
+    /**
      * Assign role to user.
      */
     public function assignRole(Request $request, User $user)
     {
+        $this->authorize('assignRole', $user);
+
         $request->validate([
             'role' => 'required|string|exists:roles,name',
         ]);
@@ -165,6 +265,8 @@ class UserManagementController extends Controller
      */
     public function removeRole(Request $request, User $user)
     {
+        $this->authorize('removeRole', $user);
+
         $request->validate([
             'role' => 'required|string|exists:roles,name',
         ]);
@@ -179,6 +281,8 @@ class UserManagementController extends Controller
      */
     public function toggleActive(User $user)
     {
+        $this->authorize('toggleActive', $user);
+
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');
         }
@@ -186,5 +290,100 @@ class UserManagementController extends Controller
         $user->update(['is_active' => ! $user->is_active]);
 
         return back()->with('success', 'Status user berhasil diubah.');
+    }
+
+    /**
+     * Daftar karyawan aktif yang belum menaut ke akun manapun.
+     */
+    protected function karyawansTanpaAkun()
+    {
+        return Karyawan::whereNull('user_id')
+            ->aktif()
+            ->orderBy('nama')
+            ->get(['id', 'nama', 'tipe', 'jabatan', 'no_hp']);
+    }
+
+    /**
+     * Patungan validasi untuk pemilihan karyawan (link existing ATAU buat baru).
+     * $wajib=true dipakai endpoint link-karyawan: harus memilih salah satu mode.
+     */
+    protected function karyawanLinkRules(bool $wajib = false): array
+    {
+        return [
+            'karyawan_id' => [
+                $wajib ? 'required_without:new_karyawan' : 'nullable',
+                Rule::exists('karyawans', 'id'),
+            ],
+            'new_karyawan' => [
+                $wajib ? 'required_without:karyawan_id' : 'nullable',
+                'array',
+            ],
+            'new_karyawan.nama' => ['required_with:new_karyawan', 'string', 'max:255'],
+            'new_karyawan.tipe' => ['required_with:new_karyawan', Rule::in(['tetap', 'harian', 'borongan_rit'])],
+            'new_karyawan.jabatan' => ['required_with:new_karyawan', 'string', 'max:100'],
+            'new_karyawan.no_hp' => ['nullable', 'string', 'max:30'],
+            'new_karyawan.alias' => ['nullable', 'string', 'max:100'],
+        ];
+    }
+
+    /**
+     * Terapkan pilihan tautan karyawan ke user:
+     * - karyawan_id terisi  → tautkan karyawan existing (harus belum punya akun / sudah milik user ini)
+     * - new_karyawan terisi → buat data karyawan baru yang tertaut ke user
+     * - keduanya kosong     → kembalikan null (tidak mengubah apa pun)
+     */
+    protected function resolveKaryawanLink(Request $request, User $user): ?Karyawan
+    {
+        if ($karyawanId = $request->input('karyawan_id')) {
+            $karyawan = Karyawan::findOrFail($karyawanId);
+
+            if ($karyawan->user_id !== null && (string) $karyawan->user_id !== (string) $user->id) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'karyawan_id' => 'Karyawan "'.$karyawan->nama.'" sudah menaungi akun lain.',
+                ]);
+            }
+
+            $karyawan->update(['user_id' => $user->id]);
+
+            $this->recordAuditLog->execute(
+                "Menautkan karyawan '{$karyawan->nama}' ke akun '{$user->email}'",
+                $user,
+                'updated',
+                ['user_id' => $user->id, 'karyawan_id' => $karyawan->id],
+                'user-management'
+            );
+
+            return $karyawan;
+        }
+
+        if ($request->filled('new_karyawan')) {
+            $data = $request->validate($this->karyawanNewDataRules())['new_karyawan'];
+            $data['user_id'] = $user->id;
+
+            $karyawan = Karyawan::create($data);
+
+            $this->recordAuditLog->execute(
+                "Membuat data karyawan '{$karyawan->nama}' tertaut ke akun '{$user->email}'",
+                $user,
+                'created',
+                ['user_id' => $user->id, 'karyawan_id' => $karyawan->id],
+                'user-management'
+            );
+
+            return $karyawan;
+        }
+
+        return null;
+    }
+
+    protected function karyawanNewDataRules(): array
+    {
+        return [
+            'new_karyawan.nama' => 'required|string|max:255',
+            'new_karyawan.tipe' => ['required', Rule::in(['tetap', 'harian', 'borongan_rit'])],
+            'new_karyawan.jabatan' => 'required|string|max:100',
+            'new_karyawan.no_hp' => 'nullable|string|max:30',
+            'new_karyawan.alias' => 'nullable|string|max:100',
+        ];
     }
 }

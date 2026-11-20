@@ -24,23 +24,47 @@ class Ritase extends Model
         'kategori',
         'material',
         'jumlah_rit',
+        'satuan_volume',
+        'jumlah_volume',
         'tarif_per_rit_snapshot',
+        'nominal',
+        'total_upah_rit',
+        'sumber_angka_resmi',
+        'wajib_jembatan_timbang',
+        'ada_selisih',
         'proyek_id',
         'titik_id',
         'customer',
         'status',
+        'selesai_pada',
         'catatan',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'selesai_pada' => 'datetime',
         'jumlah_rit' => 'integer',
+        'jumlah_volume' => 'float',
         'tarif_per_rit_snapshot' => 'float',
+        'nominal' => 'float',
+        'total_upah_rit' => 'float',
+        'wajib_jembatan_timbang' => 'boolean',
+        'ada_selisih' => 'boolean',
     ];
+
+    public function getJumlahResmiAttribute(): float
+    {
+        if ($this->sumber_angka_resmi === 'logistik' && $this->verifikasiLogistik?->jumlah_verifikasi !== null) {
+            return (float) $this->verifikasiLogistik->jumlah_verifikasi;
+        }
+
+        return (float) ($this->jumlah_volume ?: $this->jumlah_rit);
+    }
 
     public function getTotalUpahRitAttribute(): float
     {
-        return (float) (($this->jumlah_rit ?? 0) * ($this->tarif_per_rit_snapshot ?? 0));
+        // Kolom sudah berisi nilai efektif (dari RecordRitaseAction).
+        return (float) ($this->attributes['total_upah_rit'] ?? 0);
     }
 
     // Relasi
@@ -72,6 +96,37 @@ class Ritase extends Model
     public function biayaLain()
     {
         return $this->hasMany(RitaseBiayaLain::class);
+    }
+
+    public function muatan()
+    {
+        return $this->hasOne(RitaseMuatan::class);
+    }
+
+    public function verifikasis()
+    {
+        return $this->hasMany(RitaseVerifikasi::class);
+    }
+
+    public function verifikasiLogistik()
+    {
+        return $this->hasOne(RitaseVerifikasi::class)
+            ->where('tahap', 'logistik')
+            ->orderByDesc('diverifikasi_pada')
+            ->orderByDesc('created_at');
+    }
+
+    public function verifikasiSecurity()
+    {
+        return $this->hasOne(RitaseVerifikasi::class)
+            ->where('tahap', 'security')
+            ->orderByDesc('diverifikasi_pada')
+            ->orderByDesc('created_at');
+    }
+
+    public function timbang()
+    {
+        return $this->hasOne(RitaseTimbang::class);
     }
 
     public function invoiceItems()

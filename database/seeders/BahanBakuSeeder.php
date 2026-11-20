@@ -3,13 +3,18 @@
 namespace Database\Seeders;
 
 use App\Domain\Procurement\Models\BahanBaku;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class BahanBakuSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         BahanBaku::query()->delete();
 
         BahanBaku::insert([
@@ -74,6 +79,72 @@ class BahanBakuSeeder extends Seeder
                 'nama' => 'Filter Udara',
                 'kategori' => 'sparepart',
                 'sparepart_untuk' => 'armada',
+                'satuan' => 'unit',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'BB-005',
+                'nama' => 'Aspal Pen 60/70',
+                'kategori' => 'bahan_baku',
+                'sparepart_untuk' => null,
+                'satuan' => 'kg',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'BB-006',
+                'nama' => 'Filler (Abu Batu)',
+                'kategori' => 'bahan_baku',
+                'sparepart_untuk' => null,
+                'satuan' => 'kg',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'BB-007',
+                'nama' => 'Aditif Beton',
+                'kategori' => 'bahan_baku',
+                'sparepart_untuk' => null,
+                'satuan' => 'liter',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SP-003',
+                'nama' => 'Ban Dump Truck 12R',
+                'kategori' => 'sparepart',
+                'sparepart_untuk' => 'armada',
+                'satuan' => 'unit',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SP-004',
+                'nama' => 'Kampas Rem Belakang',
+                'kategori' => 'sparepart',
+                'sparepart_untuk' => 'armada',
+                'satuan' => 'unit',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'kode' => 'SP-005',
+                'nama' => 'Screw Conveyor AMP',
+                'kategori' => 'sparepart',
+                'sparepart_untuk' => 'mesin_produksi',
                 'satuan' => 'unit',
                 'aktif' => true,
                 'created_at' => now(),

@@ -2,15 +2,19 @@
 
 namespace App\Domain\Procurement\Http\Controllers;
 
+use App\Domain\Procurement\Actions\GetStokSaldoAction;
 use App\Domain\Procurement\Actions\SetHargaBeliAction;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Supplier;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BahanBakuController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', BahanBaku::class);
@@ -21,16 +25,23 @@ class BahanBakuController extends Controller
             },
         ]);
 
-        if ($request->has('search')) {
-            $query->where('nama', 'like', '%'.$request->search.'%')
-                ->orWhere('kode', 'like', '%'.$request->search.'%');
-        }
+        $columns = [
+            'kode' => ['type' => 'like'],
+            'nama' => ['type' => 'like'],
+            'kategori' => ['type' => 'exact'],
+            'satuan' => ['type' => 'like'],
+            'aktif' => ['type' => 'boolean'],
+        ];
 
-        $bahanBakus = $query->orderBy('nama')->paginate(10)->withQueryString();
+        $sort = $this->applyTableQuery($query, $request, $columns, 'nama');
+
+        $bahanBakus = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Procurement/BahanBaku/Index', [
             'bahanBakus' => $bahanBakus,
-            'filters' => $request->only('search'),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -78,18 +89,7 @@ class BahanBakuController extends Controller
 
         $bahanBaku->load(['hargaBeli.supplier']);
 
-        $stokPerTitik = $bahanBaku->stokMutasis()
-            ->with('titik')
-            ->get()
-            ->groupBy('titik_id')
-            ->map(function ($mutasis, $titikId) {
-                return [
-                    'titik_id' => $titikId,
-                    'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
-                ];
-            })
-            ->values();
+        $stokPerTitik = (new GetStokSaldoAction)->perTitik($bahanBaku);
 
         $bahanBaku->setAttribute('stok_per_titik', $stokPerTitik);
 
@@ -150,17 +150,7 @@ class BahanBakuController extends Controller
     {
         $this->authorize('view', $bahanBaku);
 
-        $perTitik = $bahanBaku->stokMutasis()
-            ->get()
-            ->groupBy('titik_id')
-            ->map(function ($mutasis, $titikId) {
-                return [
-                    'titik_id' => $titikId,
-                    'titik' => $mutasis->first()->titik?->nama ?? '-',
-                    'stok' => $mutasis->sum(fn ($m) => $m->tipe === 'masuk' ? $m->jumlah : -$m->jumlah),
-                ];
-            })
-            ->values();
+        $perTitik = (new GetStokSaldoAction)->perTitik($bahanBaku);
 
         $mutasis = $bahanBaku->stokMutasis()
             ->with('titik')

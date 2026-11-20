@@ -3,6 +3,7 @@
 namespace App\Domain\HR\Http\Controllers;
 
 use App\Domain\HR\Actions\CalculateNetSalaryAction;
+use App\Domain\HR\Actions\CalculateSalaryAction;
 use App\Domain\HR\Models\GajiPeriode;
 use App\Domain\HR\Models\KomponenGaji;
 use App\Domain\HR\Services\GeneratePayrollPeriodService;
@@ -112,6 +113,70 @@ class PayrollController extends Controller
         $periode->komponen()->create($request->only(['jenis', 'jumlah', 'keterangan']));
 
         return back()->with('success', 'Komponen gaji berhasil ditambahkan.');
+    }
+
+    /**
+     * Koreksi manual admin pada komponen lembur (tarif/jam/jumlah).
+     * Menandai `diedit_manual` agar refresh payroll tidak menimpa (BK-3/BK-10).
+     */
+    public function updateKomponen(Request $request, KomponenGaji $komponen)
+    {
+        $periode = $komponen->gajiPeriode;
+
+        if (! $periode || $komponen->jenis !== 'lembur') {
+            return back()->with('error', 'Komponen tidak dapat dikoreksi.');
+        }
+
+        $this->authorize('update', $periode);
+
+        $request->validate([
+            'lembur_tarif_jam' => 'required|numeric|min:0',
+        ]);
+
+        $menit = (int) ($request->input('lembur_jam_menit') ?? $komponen->lembur_jam_menit ?? 0);
+        $tarif = round((float) $request->input('lembur_tarif_jam'), 2);
+        $jumlahManual = $request->filled('jumlah')
+            ? round((float) $request->input('jumlah'), 2)
+            : round($menit / 60 * $tarif, 2);
+
+        $komponen->update([
+            'lembur_jam_menit' => $menit,
+            'lembur_tarif_jam' => $tarif,
+            'jumlah' => $jumlahManual,
+            'diedit_manual' => true,
+        ]);
+
+        return back()->with('success', 'Tarif lembur dikoreksi manual dan dikunci dari refresh otomatis.');
+    }
+
+    /**
+     * Tombol "Hitung ulang otomatis": reset SEMUA baris lembur periode
+     * (termasuk yang diedit manual) ke tarif saran terbaru (BK-10).
+     */
+    public function recalcLembur($bulan, $tahun)
+    {
+        $periodes = GajiPeriode::with('karyawan')
+            ->where('periode_bulan', $bulan)
+            ->where('periode_tahun', $tahun)
+            ->where('status', 'draft')
+            ->get();
+
+        foreach ($periodes as $periode) {
+            $this->authorize('update', $periode);
+
+            $periode->komponen()->where('jenis', 'lembur')->delete();
+
+            if (in_array($periode->karyawan?->tipe, ['harian', 'tetap'], true)) {
+                (new CalculateSalaryAction)->syncLembur(
+                    $periode,
+                    $periode->karyawan,
+                    (int) $bulan,
+                    (int) $tahun
+                );
+            }
+        }
+
+        return back()->with('success', "Komponen lembur periode {$bulan}/{$tahun} dihitung ulang otomatis.");
     }
 
     public function deleteKomponen(KomponenGaji $komponen)

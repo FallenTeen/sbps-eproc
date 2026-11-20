@@ -1,7 +1,7 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Components/Sidebar';
 import NotificationBell from '@/Components/NotificationBell';
+import KomunikasiButton from '@/Components/KomunikasiButton';
 import Breadcrumb from '@/Components/Breadcrumb';
 import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -31,8 +31,8 @@ export default function AuthenticatedLayout({ header, children }) {
     const portal = auth?.portal;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const handleLogout = () => {
-        router.post(route('logout'));
+    const handlePortalSwitch = () => {
+        router.visit(route('portal.pilih.index'));
     };
 
     return (
@@ -66,9 +66,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                     {portalLabels[portal] || portal}
                                 </span>
                                 <button
-                                    onClick={handleLogout}
+                                    onClick={handlePortalSwitch}
                                     className="flex items-center gap-1 rounded-none border-2 border-black px-2 py-1 text-[10px] font-black text-black hover:bg-black hover:text-white transition-all"
-                                    title="Kembali ke Portal"
+                                    title="Pilih Portal"
                                 >
                                     <LogOut className="h-3 w-3" />
                                     <span className="hidden sm:inline">Portal</span>
@@ -76,6 +76,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             </div>
                         )}
 
+                        <KomunikasiButton />
                         <NotificationBell />
 
                         <Dropdown>

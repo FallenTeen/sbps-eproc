@@ -28,6 +28,8 @@ class Karyawan extends Model
         'no_bpjs_kesehatan',
         'no_bpjs_ketenagakerjaan',
         'status_ptkp',
+        'no_hp',
+        'alias',
         'status',
     ];
 

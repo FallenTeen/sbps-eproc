@@ -56,13 +56,14 @@ class EnsureIdempotency
 
         // Kunci singkat: dua request identik yang menembak bersamaan
         // diserialisasi supaya controller tidak diproses dobel.
-        // Cache store tanpa dukungan atomic lock → lanjut tanpa kunci.
+        // Cache store tanpa dukungan atomic lock → set acquired=false
+        // agar masuk ke polling waitForStored() (fallback DB unique constraint).
         try {
             $lock = Cache::lock("idempotency:{$user->id}:{$endpoint}:{$key}", self::RACE_WAIT_SECONDS + 5);
             $acquired = $lock->get();
         } catch (\Throwable) {
             $lock = null;
-            $acquired = true;
+            $acquired = false;
         }
 
         try {

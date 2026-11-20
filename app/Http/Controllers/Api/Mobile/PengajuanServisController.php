@@ -1,0 +1,601 @@
+<?php
+
+namespace App\Http\Controllers\Api\Mobile;
+
+use App\Domain\Fleet\Actions\ApprovePengajuanServisAction;
+use App\Domain\Fleet\Actions\AssignWorkshopPengerjaanAction;
+use App\Domain\Fleet\Actions\CompletePengajuanServisAction;
+use App\Domain\Fleet\Actions\RejectPengajuanServisAction;
+use App\Domain\Fleet\Actions\RequestSparepartAction;
+use App\Domain\Fleet\Actions\SubmitPengajuanServisAction;
+use App\Domain\Fleet\Actions\SubmitServisEksternalAction;
+use App\Domain\Fleet\Models\Armada;
+use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\ServisEksternalDetail;
+use App\Domain\Fleet\Models\ServisEksternalNota;
+use App\Domain\Fleet\Models\WorkshopTodo;
+use App\Domain\Fleet\Services\ServisTimelineService;
+use App\Http\Controllers\Api\ApiResponse;
+use App\Http\Controllers\Controller;
+use App\Support\ArmadaOwnership;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * v6 (21.8) - Sistem Servis Armada (mobile).
+ *
+ * Bagian 1 (ajuan) bisa diajukan dari mobile oleh PIC/operator/driver melalui
+ * armada yang sedang diampu. Status, riwayat, dan approval (Ketua Divisi / Admin)
+ * bisa diakses melalui mobile.
+ */
+class PengajuanServisController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * GET /api/mobile/servis-armada
+     * Riwayat pengajuan servis armada (paginasi & filter status).
+     *
+     * Non-manajer hanya melihat ajuan miliknya sendiri atau untuk armada yang
+     * diampu (PIC/driver). Role Workshop juga melihat ajuan berstatus
+     * disetujui/dikerjakan. Manajer melihat semua.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $query = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh'])
+            ->latest('tanggal_ajuan')
+            ->latest('created_at');
+
+        if (! ArmadaOwnership::isManager($user)) {
+            $heldIds = ArmadaOwnership::heldIds($user);
+            $isWorkshop = ArmadaOwnership::isWorkshop($user);
+            $query->where(function ($q) use ($user, $heldIds, $isWorkshop) {
+                $q->where(function ($own) use ($user, $heldIds) {
+                    $own->where('diajukan_oleh', $user->id)
+                        ->orWhereIn('armada_id', $heldIds);
+                });
+
+                if ($isWorkshop) {
+                    $q->orWhereIn('status', ArmadaOwnership::WORKSHOP_SERVIS_STATUSES);
+                }
+            });
+        }
+
+        $statuses = $this->parseStatusFilter($request->query('status'));
+        if ($statuses !== []) {
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('tipe_servis')) {
+            $query->where('tipe_servis', $request->query('tipe_servis'));
+        }
+
+        $perPage = min((int) $request->query('per_page', 15), 50);
+        $paginated = $query->paginate($perPage);
+
+        return $this->success($paginated, 'Daftar riwayat pengajuan servis armada.');
+    }
+
+    /**
+     * GET /api/mobile/servis-armada/saya
+     * Servis yang diampu user (diajukannya sendiri atau armada yang diampu).
+     */
+    public function saya(Request $request)
+    {
+        $user = $request->user();
+        $heldIds = ArmadaOwnership::heldIds($user);
+        $isWorkshop = ArmadaOwnership::isWorkshop($user);
+
+        $query = PengajuanServisArmada::with(['armada']);
+
+        if (! ArmadaOwnership::isManager($user)) {
+            $query->where(function ($q) use ($user, $heldIds, $isWorkshop) {
+                $q->where('diajukan_oleh', $user->id)
+                    ->orWhereIn('armada_id', $heldIds);
+
+                if ($isWorkshop) {
+                    $q->orWhereIn('status', ArmadaOwnership::WORKSHOP_SERVIS_STATUSES);
+                }
+            });
+        }
+
+        $servis = $query
+            ->latest('tanggal_ajuan')
+            ->latest('created_at')
+            ->get();
+
+        return $this->success($servis, 'Daftar servis armada.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada
+     * Ajukan servis (bagian 1).
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|exists:armadas,id',
+            'tanggal_ajuan' => 'nullable|date',
+            'catatan_ajuan' => 'nullable|string|max:2000',
+            'keluhan' => 'nullable|string|max:2000',
+            'kategori' => 'nullable|string|max:50',
+            'odometer_saat_ajuan' => 'nullable|numeric',
+            'jam_operasional_saat_ajuan' => 'nullable|numeric',
+        ]);
+
+        if (empty($validated['catatan_ajuan']) && !empty($validated['keluhan'])) {
+            $validated['catatan_ajuan'] = $validated['keluhan'];
+        }
+
+        $user = $request->user();
+
+        $isManager = ArmadaOwnership::isManager($user);
+        $isHolder = ArmadaOwnership::holds($user, $validated['armada_id']);
+
+        if (! $isManager && ! $isHolder) {
+            return $this->error('Anda tidak berhak mengajukan servis untuk armada ini.', 403);
+        }
+
+        $pengajuan = app(SubmitPengajuanServisAction::class)->execute($user, $validated);
+
+        return $this->success($pengajuan->load('armada'), 'Ajuan servis armada dibuat.', 201);
+    }
+
+    /**
+     * GET /api/mobile/servis-armada/{id}
+     */
+    public function show(Request $request, $id)
+    {
+        $pengajuan = PengajuanServisArmada::with(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts', 'workshopTodos', 'eksternalDetail', 'eksternalNotas'])
+            ->findOrFail($id);
+
+        $user = $request->user();
+
+        if (! $this->canWorkOnServis($user, $pengajuan)) {
+            return $this->error('Anda tidak berhak melihat pengajuan servis ini.', 403);
+        }
+
+        $payload = $pengajuan->toArray();
+        $payload['timeline'] = app(ServisTimelineService::class)->for($pengajuan);
+
+        if (isset($payload['eksternal_detail'])) {
+            $fotoBengkel = $payload['eksternal_detail']['foto_bengkel'] ?? null;
+            $payload['eksternal_detail']['foto_bengkel_url'] = $fotoBengkel
+                ? array_map(fn ($path) => asset('storage/'.$path), explode(',', $fotoBengkel))
+                : [];
+        }
+
+        foreach ($payload['eksternal_notas'] ?? [] as $index => $nota) {
+            $fotoNota = $nota['foto_nota'] ?? null;
+            $payload['eksternal_notas'][$index]['foto_nota_url'] = $fotoNota
+                ? array_map(fn ($path) => asset('storage/'.$path), explode(',', $fotoNota))
+                : [];
+        }
+
+        $payload['todos'] = $pengajuan->workshopTodos
+            ->map(fn (WorkshopTodo $t) => $this->mapTodo($t, $pengajuan->id))
+            ->values();
+
+        // Append foto hasil kerja (Spatie Media) as flat URL array
+        if ($pengajuan->tipe_servis === 'eksternal') {
+            $baseUrl = request()->getSchemeAndHttpHost();
+            $payload['foto_hasil_urls'] = array_map(
+                fn ($path) => str_starts_with($path, 'http')
+                    ? preg_replace('#^https?://(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?#i', $baseUrl, $path)
+                    : $baseUrl.'/storage/'.ltrim($path, '/'),
+                $pengajuan->foto_hasil_urls ?? [],
+            );
+        }
+
+        return $this->success($payload, 'Detail servis armada.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/todo/{todoId}/toggle
+     * Checklist to-do workshop pada job servis terhubung.
+     * Body: { is_done: boolean } → status to-do `selesai`/`terjadwal`.
+     */
+    public function toggleTodo(Request $request, $id, $todoId)
+    {
+        $validated = $request->validate([
+            'is_done' => 'required|boolean',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $todo = WorkshopTodo::query()
+            ->where('id', $todoId)
+            ->where('terkait_pengajuan_servis_id', $pengajuan->id)
+            ->firstOrFail();
+
+        $todo->update([
+            'status' => $validated['is_done'] ? 'selesai' : 'terjadwal',
+        ]);
+
+        return $this->success($this->mapTodo($todo->fresh(), $pengajuan->id), 'Checklist to-do diperbarui.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/todo/{todoId}/photo
+     * Upload foto bukti pengerjaan to-do (multipart `photo`).
+     */
+    public function uploadTodoPhoto(Request $request, $id, $todoId)
+    {
+        $validated = $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $todo = WorkshopTodo::query()
+            ->where('id', $todoId)
+            ->where('terkait_pengajuan_servis_id', $pengajuan->id)
+            ->firstOrFail();
+
+        // Retry outbox memakai foto yang sama dengan idempotency key yang sama -
+        // file lama dibuang dulu supaya tiap retry TIDAK menimbun file yatim
+        // di storage (baris DB tetap tunggal: foto_bukti last-write-wins).
+        $previous = $todo->foto_bukti;
+
+        $path = $request->file('photo')->store('workshop/todo/'.now()->format('Y/m'), 'public');
+
+        if ($previous) {
+            Storage::disk('public')->delete($previous);
+        }
+
+        $todo->update(['foto_bukti' => $path]);
+
+        return $this->success($this->mapTodo($todo->fresh(), $pengajuan->id), 'Foto bukti to-do terunggah.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/approve
+     * Bagian 21.8 #2 - ACC ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
+     */
+    public function approve(Request $request, $id)
+    {
+        if (! ArmadaOwnership::isManager($request->user())) {
+            return $this->error('Anda tidak berhak menyetujui pengajuan servis.', 403);
+        }
+
+        $validated = $request->validate([
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $updated = app(ApprovePengajuanServisAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            $validated['catatan'] ?? null
+        );
+
+        return $this->success($updated->load(['armada', 'disetujuiOleh']), 'Pengajuan servis berhasil disetujui.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/tolak
+     * Bagian 21.8 #2 - Tolak ajuan servis oleh Ketua Divisi Armada / Owner / Admin.
+     */
+    public function tolak(Request $request, $id)
+    {
+        if (! ArmadaOwnership::isManager($request->user())) {
+            return $this->error('Anda tidak berhak menolak pengajuan servis.', 403);
+        }
+
+        $validated = $request->validate([
+            'alasan' => 'required|string|max:1000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        $updated = app(RejectPengajuanServisAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            $validated['alasan']
+        );
+
+        return $this->success($updated->load(['armada', 'disetujuiOleh']), 'Pengajuan servis ditolak.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/mulai
+     * Bagian 21.8 #3 - Workshop mulai mengerjakan servis (menunggu -> dikerjakan).
+     */
+    public function mulai(Request $request, $id)
+    {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak mengerjakan servis ini.', 403);
+        }
+
+        $validated = $request->validate([
+            'catatan_pengerjaan' => 'nullable|string|max:2000',
+            'butuh_sparepart' => 'nullable|boolean',
+            'personels' => 'nullable|array',
+            'personels.*.nama_personel' => 'nullable|string|max:255',
+            'personels.*.peran' => 'nullable|string|max:255',
+        ]);
+
+        $updated = app(AssignWorkshopPengerjaanAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            $validated,
+        );
+
+        return $this->success($updated->fresh(['armada', 'spareparts']), 'Pengerjaan servis dimulai.');
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/selesai
+     * Bagian 21.8 #4+ - Tandai servis selesai (dikerjakan/menunggu_sparepart -> selesai).
+     */
+    public function selesai(Request $request, $id)
+    {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak menyelesaikan servis ini.', 403);
+        }
+
+        $validated = $request->validate([
+            'catatan_workshop' => 'nullable|string|max:2000',
+        ]);
+
+        $updated = app(CompletePengajuanServisAction::class)->execute(
+            $pengajuan,
+            $request->user(),
+            ['catatan_pengerjaan' => $validated['catatan_workshop'] ?? null],
+        );
+
+        return $this->success($updated->fresh(['armada', 'spareparts']), 'Servis selesai dikerjakan.');
+    }
+
+    /**
+     * POST /api/mobile/workshop/job/{id}/request-sparepart
+     * Bagian 21.8 #4 - Workshop mengajukan permintaan sparepart ke Inventory.
+     * Item dikirim sebagai `nama_barang` (mobile) - dipetakan ke `nama_item`.
+     */
+    public function requestSparepart(Request $request, $id)
+    {
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if (! ArmadaOwnership::canWorkOnServis($request->user(), $pengajuan->status->getValue())) {
+            return $this->error('Anda tidak berhak mengajukan sparepart untuk servis ini.', 403);
+        }
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.bahan_baku_id' => 'nullable|uuid|exists:bahan_bakus,id',
+            'items.*.nama_barang' => 'required_without:items.*.bahan_baku_id|nullable|string|max:255',
+            'items.*.jumlah' => 'nullable|numeric|min:0',
+            'items.*.satuan' => 'nullable|string|max:50',
+            'items.*.keterangan' => 'nullable|string|max:1000',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $items = collect($validated['items'])
+            ->map(fn ($item) => [
+                'bahan_baku_id' => $item['bahan_baku_id'] ?? null,
+                'nama_item' => $item['nama_barang'] ?? null,
+                'jumlah' => $item['jumlah'] ?? 1,
+                'satuan' => $item['satuan'] ?? null,
+                'nominal' => 0,
+                'catatan' => $item['keterangan'] ?? null,
+            ])
+            ->all();
+
+        $updated = app(RequestSparepartAction::class)->execute(
+            $request->user(),
+            $items,
+            pengajuan: $pengajuan,
+        );
+
+        return $this->success(
+            $updated->fresh(['armada', 'spareparts']),
+            'Request sparepart dikirim ke inventory.',
+            201,
+        );
+    }
+
+    // ── TD-B Servis Eksternal ─────────────────────────────────────────────
+
+    /**
+     * POST /api/mobile/servis-armada/eksternal
+     * TD-B1/B2/B5: Ajukan servis eksternal. Status langsung 'dikerjakan'.
+     */
+    public function storeEksternal(Request $request)
+    {
+        $validated = $request->validate([
+            'armada_id' => 'required|exists:armadas,id',
+            'nama_bengkel' => 'required|string|max:255',
+            'alamat_bengkel' => 'nullable|string|max:2000',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'rincian_pekerjaan' => 'nullable|string|max:2000',
+            'total_biaya_estimasi' => 'nullable|numeric|min:0',
+            'odometer_saat_ajuan' => 'nullable|numeric',
+            'jam_operasional_saat_ajuan' => 'nullable|numeric',
+            'foto_bengkel' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_nota' => 'nullable|array|max:5',
+            'foto_nota.*' => 'image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $user = $request->user();
+
+        if (! ArmadaOwnership::isManager($user) && ! ArmadaOwnership::holds($user, $validated['armada_id'])) {
+            return $this->error('Anda tidak berhak mengajukan servis untuk armada ini.', 403);
+        }
+
+        $pengajuan = app(SubmitServisEksternalAction::class)->execute(
+            $user,
+            $validated,
+            $request->file('foto_bengkel'),
+            $request->file('foto_nota') ?? [],
+        );
+
+        return $this->success($pengajuan, 'Servis eksternal berhasil diajukan.', 201);
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/eksternal/nota
+     * TD-B4/B5: Tambah foto nota bengkel.
+     */
+    public function storeEksternalNota(Request $request, $id)
+    {
+        $request->validate([
+            'foto_nota' => 'required|array|min:1|max:5',
+            'foto_nota.*' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if ($pengajuan->tipe_servis !== 'eksternal') {
+            return $this->error('Pengajuan ini bukan tipe servis eksternal.', 422);
+        }
+
+        $user = $request->user();
+        $created = [];
+        foreach ($request->file('foto_nota') as $file) {
+            $path = $file->store('servis_eksternal/nota/'.now()->format('Y/m'), 'public');
+            $created[] = ServisEksternalNota::create([
+                'pengajuan_id' => $pengajuan->id,
+                'foto_nota' => $path,
+                'diinput_oleh' => $user->id,
+                'tanggal_nota' => now()->toDateString(),
+            ]);
+        }
+
+        return $this->success($created, 'Foto nota berhasil diunggah.', 201);
+    }
+
+    /**
+     * POST /api/mobile/servis-armada/{id}/foto-hasil
+     * TD-B4/B5: Upload foto hasil pengerjaan (Spatie Media Collection).
+     */
+    public function storeFotoHasil(Request $request, $id)
+    {
+        $request->validate([
+            'foto_hasil' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::findOrFail($id);
+
+        if ($pengajuan->tipe_servis !== 'eksternal') {
+            return $this->error('Pengajuan ini bukan tipe servis eksternal.', 422);
+        }
+
+        $pengajuan->addMedia($request->file('foto_hasil'))
+            ->toMediaCollection('foto_hasil_kerja');
+
+        return $this->success([
+            'foto_hasil_urls' => $pengajuan->fresh()->foto_hasil_urls,
+        ], 'Foto hasil pengerjaan berhasil diunggah.', 201);
+    }
+
+    /**
+     * POST /api/mobile/workshop/servis-eksternal/{id}/verifikasi
+     * TD-B7: Workshop memverifikasi servis eksternal (terverifikasi/bermasalah).
+     */
+    public function verifikasiServisEksternal(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:terverifikasi,bermasalah',
+            'catatan' => 'nullable|string|max:2000',
+        ]);
+
+        $pengajuan = PengajuanServisArmada::where('tipe_servis', 'eksternal')->findOrFail($id);
+        $detail = $pengajuan->eksternalDetail;
+
+        if (! $detail) {
+            return $this->error('Detail servis eksternal tidak ditemukan.', 404);
+        }
+
+        $detail->update([
+            'verifikasi_workshop' => $validated['status'],
+            'verifikasi_workshop_oleh' => $request->user()->id,
+            'verifikasi_workshop_pada' => now(),
+            'verifikasi_workshop_catatan' => $validated['catatan'] ?? null,
+        ]);
+
+        return $this->success(
+            $pengajuan->fresh(['eksternalDetail', 'eksternalNotas', 'armada']),
+            $validated['status'] === 'terverifikasi'
+                ? 'Servis eksternal terverifikasi.'
+                : 'Servis eksternal ditandai bermasalah.',
+        );
+    }
+
+    /**
+     * GET /api/mobile/workshop/servis-eksternal
+     * TD-B7: Daftar servis eksternal yang perlu diverifikasi workshop.
+     */
+    public function workshopServisEksternalList(Request $request)
+    {
+        $query = PengajuanServisArmada::with(['armada', 'eksternalDetail', 'eksternalNotas', 'diajukanOleh'])
+            ->where('tipe_servis', 'eksternal')
+            ->latest('created_at');
+
+        if ($request->filled('verifikasi')) {
+            $query->whereHas('eksternalDetail', function ($q) use ($request) {
+                $q->where('verifikasi_workshop', $request->query('verifikasi'));
+            });
+        }
+
+        $perPage = min((int) $request->query('per_page', 15), 50);
+        $paginated = $query->paginate($perPage);
+
+        return $this->success($paginated, 'Daftar servis eksternal.');
+    }
+
+    // ── Helper ──────────────────────────────────────────────────────────────
+
+    /**
+     * `status` bisa berupa satu nilai, array (`status[]=a&status[]=b`),
+     * atau daftar dipisah koma (`status=a,b`) dari klien mobile.
+     */
+    private function parseStatusFilter(mixed $value): array
+    {
+        if (is_array($value)) {
+            $values = $value;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            $values = explode(',', $value);
+        } elseif (is_string($value) && $value !== '') {
+            $values = [$value];
+        } else {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($item) => is_string($item) ? trim($item) : '', $values),
+        )));
+    }
+
+    /**
+     * Map satu to-do workshop ke kontrak checklist mobile
+     * (`WorkshopTodoItem` Flutter).
+     */
+    private function canWorkOnServis($user, PengajuanServisArmada $pengajuan): bool
+    {
+        if (ArmadaOwnership::canWorkOnServis($user, $pengajuan->status->getValue())) {
+            return true;
+        }
+
+        return $pengajuan->diajukan_oleh === $user?->id
+            || ArmadaOwnership::holds($user, $pengajuan->armada_id);
+    }
+
+    private function mapTodo(WorkshopTodo $todo, string $jobId): array
+    {
+        return [
+            'id' => $todo->id,
+            'jobId' => $jobId,
+            'label' => $todo->judul,
+            'isDone' => $todo->status === 'selesai',
+            'photoPath' => $todo->foto_bukti ? asset('storage/'.$todo->foto_bukti) : null,
+        ];
+    }
+}

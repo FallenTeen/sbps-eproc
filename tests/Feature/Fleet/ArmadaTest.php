@@ -71,7 +71,7 @@ test('index armada difilter berdasarkan status', function () {
     Armada::factory()->for($this->unit)->create(['kode_unit' => 'GCS-DT-01']);
     Armada::factory()->for($this->unit)->servis()->create(['kode_unit' => 'GCS-DT-02']);
 
-    $this->get(route('fleet.armada.index', ['status' => 'servis']))
+    $this->get(route('fleet.armada.index', ['filters' => ['status' => 'servis']]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Fleet/Armada/Index')
@@ -122,6 +122,42 @@ test('store armada menolak plat nomor duplikat', function () {
         'jenis' => 'dump_truck',
         'model_tarif' => 'ritase',
     ])->assertSessionHasErrors('plat_nomor');
+});
+
+test('store armada dengan plat nomor kosong (nullable) berhasil', function () {
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => '',
+        'kode_unit' => 'TM 01 C',
+        'jenis' => 'truck_molen',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->assertDatabaseHas('armadas', [
+        'kode_unit' => 'TM 01 C',
+        'plat_nomor' => null,
+    ]);
+});
+
+test('store armada mendukung jenis baru dump_truck_tronton dan self_loader', function () {
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => 'R 8704 HR',
+        'kode_unit' => 'DTT 01',
+        'jenis' => 'dump_truck_tronton',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->post(route('fleet.armada.store'), [
+        'unit_bisnis_id' => $this->unit->id,
+        'plat_nomor' => 'B 9072 UIQ',
+        'kode_unit' => 'SL 01',
+        'jenis' => 'self_loader',
+        'model_tarif' => 'ritase',
+    ])->assertRedirect(route('fleet.armada.index'));
+
+    $this->assertDatabaseHas('armadas', ['kode_unit' => 'DTT 01', 'jenis' => 'dump_truck_tronton']);
+    $this->assertDatabaseHas('armadas', ['kode_unit' => 'SL 01', 'jenis' => 'self_loader']);
 });
 
 test('store armada memerlukan unit bisnis', function () {
@@ -196,6 +232,7 @@ test('record ritase berhasil', function () {
             'driver_karyawan_id' => $this->driver->id,
             'tanggal' => '2026-08-12',
             'jumlah_rit' => 6,
+            'satuan_volume' => 'ritase',
             'tarif_per_rit_snapshot' => 50000,
             'customer' => 'PT Klien',
             'biaya_lain' => [
@@ -230,6 +267,7 @@ test('record ritase memakai tarif dari rute tarif', function () {
             'tanggal' => '2026-08-12',
             'rute_tarif_id' => $rute->id,
             'jumlah_rit' => 3,
+            'satuan_volume' => 'ritase',
         ],
     )->assertRedirect();
 
@@ -259,7 +297,9 @@ test('record sewa alat berhasil', function () {
     $this->from(route('fleet.armada.index'))->post(
         route('fleet.armada.record-sewa', $armada->id),
         [
+            'tipe_sewa' => 'eksternal',
             'penyewa_eksternal' => 'PT Sewa',
+            'penyewa_nama' => 'PT Sewa',
             'harga_per_jam_snapshot' => 150000,
             'tanggal' => '2026-08-12',
             'jumlah_jam' => 8,
@@ -278,6 +318,8 @@ test('record sewa menghitung jam otomatis dari HM', function () {
     $this->from(route('fleet.armada.index'))->post(
         route('fleet.armada.record-sewa', $armada->id),
         [
+            'tipe_sewa' => 'eksternal',
+            'penyewa_nama' => 'PT Uji',
             'harga_per_jam_snapshot' => 150000,
             'tanggal' => '2026-08-12',
             'hm_awal' => 100,

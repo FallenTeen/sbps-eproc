@@ -8,19 +8,24 @@ use App\Domain\Core\Models\Rab;
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Models\User;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class ProyekSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $gcs = UnitBisnis::where('kode', 'GCS')->firstOrFail();
         $cbp = UnitBisnis::where('kode', 'CBP')->firstOrFail();
         $amp = UnitBisnis::where('kode', 'AMP')->firstOrFail();
 
-        $owner = User::where('email', 'owner@example.com')->firstOrFail();
-        $gcsUser = User::where('email', 'gcs@example.com')->firstOrFail();
-        $kontraktor = User::where('email', 'kontraktor@example.com')->firstOrFail();
+        $owner = User::where('email', 'owner@real.com')->firstOrFail();
+        $gcsUser = User::where('email', 'gcs@real.com')->firstOrFail();
+        $kontraktor = User::where('email', 'kontraktor@dummy.com')->firstOrFail();
 
         // ─────────────────────────── PROYEK ───────────────────────────
         $proyeks = [
@@ -64,6 +69,19 @@ class ProyekSeeder extends Seeder
                 'created_by' => $owner->id,
             ],
             [
+                'kode_proyek' => 'PRJ-CBP-002',
+                'unit_bisnis_id' => $cbp->id,
+                'nama' => 'Sinergi Plant CBP-2',
+                'tipe_proyek' => 'internal',
+                'client' => null,
+                'lokasi' => 'Cibitung, Jawa Barat',
+                'tanggal_mulai' => now()->subMonths(1)->toDateString(),
+                'tanggal_selesai_rencana' => now()->addMonths(5)->toDateString(),
+                'status' => 'aktif',
+                'catatan' => 'Pengerasan area & penataan Plant CBP-2.',
+                'created_by' => $owner->id,
+            ],
+            [
                 'kode_proyek' => 'PRJ-AMP-001',
                 'unit_bisnis_id' => $amp->id,
                 'nama' => 'Hotmix Jalan Provinsi',
@@ -77,22 +95,30 @@ class ProyekSeeder extends Seeder
                 'created_by' => $owner->id,
             ],
             [
-                'kode_proyek' => 'PRJ-CBP-002',
-                'unit_bisnis_id' => $cbp->id,
-                'nama' => 'Pengerasan Area Plant',
+                'kode_proyek' => 'PRJ-KTR-001',
+                'unit_bisnis_id' => $gcs->id,
+                'nama' => 'Kantor Pusat SBPS',
                 'tipe_proyek' => 'internal',
                 'client' => null,
-                'lokasi' => 'Cibitung, Jawa Barat',
-                'tanggal_mulai' => now()->subMonths(1)->toDateString(),
-                'tanggal_selesai_rencana' => now()->addMonths(2)->toDateString(),
-                'status' => 'draft',
-                'catatan' => 'Pengerasan halaman plant dengan beton K-225.',
+                'lokasi' => 'Patikraja, Banyumas, Jawa Tengah',
+                'tanggal_mulai' => now()->subMonths(8)->toDateString(),
+                'tanggal_selesai_rencana' => now()->addYears(5)->toDateString(),
+                'status' => 'aktif',
+                'catatan' => 'Head Office PT Satria Buana Pamula Sakti - lokasi absen karyawan kantor.',
                 'created_by' => $owner->id,
             ],
         ];
 
         foreach ($proyeks as $data) {
-            Proyek::updateOrCreate(['kode_proyek' => $data['kode_proyek']], $data);
+            $proyek = Proyek::updateOrCreate(['kode_proyek' => $data['kode_proyek']], $data);
+
+            // Hubungkan user kontraktor (eksternal) HANYA ke proyek kontrak_klien
+            // miliknya (pivot proyek_user) untuk object-level scoping. Kontraktor
+            // ini menangani PRJ-GCS-002 saja - proyek milik klien/unit lain TIDAK
+            // boleh terlihat olehnya walau juga bertipe kontrak_klien.
+            if ($data['kode_proyek'] === 'PRJ-GCS-002') {
+                $proyek->users()->syncWithoutDetaching([$kontraktor->id]);
+            }
         }
 
         // ─────────────────────────── TITIK ───────────────────────────
@@ -106,6 +132,9 @@ class ProyekSeeder extends Seeder
             ['PRJ-AMP-001', 'Plant AMP', -6.23800000, 107.02000000, 100],
             ['PRJ-AMP-001', 'Jalan Provinsi KM 12', -6.18000000, 107.18000000, 100],
             ['PRJ-CBP-002', 'Area Plant CBP-2', -6.23000000, 107.01000000, 100],
+            // Kantor utama SBPS (Jl. Raya Patikraja No. 99, Patikraja, Banyumas)
+            // - titik absen wajib karyawan kantor.
+            ['PRJ-KTR-001', 'Kantor Pusat', -7.4685527, 109.217636, 100],
         ];
 
         $titikIds = [];

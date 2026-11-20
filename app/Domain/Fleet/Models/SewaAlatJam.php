@@ -15,8 +15,14 @@ class SewaAlatJam extends Model
 
     protected $fillable = [
         'armada_id',
+        'tipe_sewa',
         'proyek_id',
         'penyewa_eksternal',
+        'penyewa_nama',
+        'penyewa_pt',
+        'penyewa_alamat',
+        'penyewa_penanggung_jawab',
+        'penyewa_no_hp',
         'lokasi_pekerjaan',
         'harga_per_jam_snapshot',
         'tanggal',
@@ -49,6 +55,11 @@ class SewaAlatJam extends Model
     public function invoiceItems()
     {
         return $this->morphMany(InvoiceItem::class, 'referensi');
+    }
+
+    public function checklists()
+    {
+        return $this->hasMany(ChecklistSerahTerima::class, 'sewa_alat_jam_id');
     }
 
     // Scope

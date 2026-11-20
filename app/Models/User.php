@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\HR\Models\Karyawan;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -54,6 +56,14 @@ class User extends Authenticatable
         return $this->hasOne(Karyawan::class, 'user_id');
     }
 
+    /**
+     * Proyek yang diizinkan dilihat user tertentu (pivot proyek_user).
+     */
+    public function proyeks()
+    {
+        return $this->belongsToMany(Proyek::class, 'proyek_user');
+    }
+
     public function isOwner(): bool
     {
         return $this->hasRole('Owner');
@@ -74,5 +84,20 @@ class User extends Authenticatable
             'Ketua Divisi Produksi CBP',
             'Ketua Divisi Produksi AMP',
         ]);
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    public function getRoleNames(): Collection
+    {
+        $this->loadMissing('roles');
+        $roles = $this->getRelationValue('roles');
+
+        if ($roles instanceof Collection) {
+            return $roles->pluck('name');
+        }
+
+        return collect();
     }
 }

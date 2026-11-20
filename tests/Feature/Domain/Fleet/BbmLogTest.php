@@ -21,7 +21,6 @@ beforeEach(function () {
     $unit = UnitBisnis::factory()->gcs()->create();
     $this->armada = Armada::factory()->create(['unit_bisnis_id' => $unit->id]);
 
-    // Buat rute dan ritase untuk anomali
     $this->rute = RuteTarif::factory()->create([
         'unit_bisnis_id' => $unit->id,
         'jarak_km' => 50,
@@ -34,62 +33,49 @@ beforeEach(function () {
     ]);
 });
 
-test('koordinator can view bbm index', function () {
+test('halaman BBM lama dialihkan ke pengisian solar', function () {
     $this->actingAs($this->koordinator)
-        ->get(route('fleet.bbm.index'))
-        ->assertStatus(200);
+        ->get('/fleet/bbm')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
+
+    $this->actingAs($this->koordinator)
+        ->get('/fleet/bbm/anomaly')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
 });
 
-test('koordinator can view standalone bbm create form', function () {
+test('form create BBM legacy tidak tersedia', function () {
     $this->actingAs($this->koordinator)
-        ->get(route('fleet.bbm.create'))
-        ->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->component('Fleet/BBM/Create')
-            ->has('serviceables.armada')
-            ->has('serviceables.mesin_produksi')
-        );
+        ->get('/fleet/bbm/create')
+        ->assertNotFound();
 });
 
-test('koordinator can create bbm log', function () {
-    $data = [
-        'serviceable_type' => 'armada',
-        'serviceable_id' => $this->armada->id,
-        'tanggal' => now()->toDateString(),
-        'liter' => 100,
-        'biaya' => 500000,
-        'jam_operasional_saat_isi' => 8.5,
-    ];
-
+test('pengiriman BBM legacy tidak bisa membuat log', function () {
     $this->actingAs($this->koordinator)
-        ->post(route('fleet.bbm.store'), $data)
-        ->assertRedirect();
+        ->post('/fleet/bbm', [
+            'serviceable_type' => 'armada',
+            'serviceable_id' => $this->armada->id,
+            'tanggal' => now()->toDateString(),
+            'liter' => 100,
+            'biaya' => 500000,
+        ])
+        ->assertNotFound();
 
-    $this->assertDatabaseHas('bbm_logs', [
-        'serviceable_id' => $this->armada->id,
-        'liter' => 100,
-    ]);
+    expect(BbmLog::count())->toBe(0);
 });
 
 test('anomaly detection uses rute tarif', function () {
-    // Buat BBM dengan konsumsi tinggi (anomali)
     BbmLog::factory()->create([
         'serviceable_type' => Armada::class,
         'serviceable_id' => $this->armada->id,
-        'liter' => 100, // Estimasi seharusnya: 50km * 0.3 * 4 rit = 60L -> 100 > 60*1.2 = 72, anomali!
+        'liter' => 100,
     ]);
 
     $this->actingAs($this->koordinator)
-        ->get(route('fleet.bbm.anomaly'))
-        ->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->component('Fleet/BBM/Anomaly')
-            ->has('anomalies')
-        );
+        ->get('/fleet/bbm/anomaly')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
 });
 
-test('anomaly uses fallback if no rute', function () {
-    // Buat armada tanpa ritase (tidak ada rute)
+test('anomaly fallback tetap mengarah ke solar', function () {
     $armada2 = Armada::factory()->create(['unit_bisnis_id' => $this->armada->unit_bisnis_id]);
     BbmLog::factory()->create([
         'serviceable_type' => Armada::class,
@@ -98,20 +84,18 @@ test('anomaly uses fallback if no rute', function () {
     ]);
 
     $this->actingAs($this->koordinator)
-        ->get(route('fleet.bbm.anomaly'))
-        ->assertStatus(200); // Harus tetap jalan dengan fallback
+        ->get('/fleet/bbm/anomaly')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
 });
 
-test('bbm with purchase_order_id requires valid po', function () {
-    $data = [
-        'serviceable_type' => 'armada',
-        'serviceable_id' => $this->armada->id,
-        'tanggal' => now()->toDateString(),
-        'liter' => 50,
-        'purchase_order_id' => 'invalid-uuid',
-    ];
-
+test('validasi purchase order BBM legacy tidak lagi relevan', function () {
     $this->actingAs($this->koordinator)
-        ->post(route('fleet.bbm.store'), $data)
-        ->assertSessionHasErrors('purchase_order_id');
+        ->post('/fleet/bbm', [
+            'serviceable_type' => 'armada',
+            'serviceable_id' => $this->armada->id,
+            'tanggal' => now()->toDateString(),
+            'liter' => 50,
+            'purchase_order_id' => 'invalid-uuid',
+        ])
+        ->assertNotFound();
 });

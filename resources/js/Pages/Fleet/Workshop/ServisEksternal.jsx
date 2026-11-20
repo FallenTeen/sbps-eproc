@@ -1,0 +1,587 @@
+import React, { useState, useEffect } from "react";
+import { Head, router } from "@inertiajs/react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import PrimaryButton from "@/Components/PrimaryButton";
+import TimelineStrip from "@/Components/Fleet/TimelineStrip";
+import { formatTanggal } from "@/utils/date";
+import {
+    SearchX,
+    Wrench,
+    X,
+    CheckCircle2,
+    Clock3,
+    AlertTriangle,
+    ExternalLink,
+    ArrowLeft,
+    Eye,
+    History,
+} from "lucide-react";
+
+const STATUS_META = {
+    belum: { label: "Belum Diverifikasi", cls: "bg-amber-100 text-amber-800" },
+    terverifikasi: { label: "Terverifikasi", cls: "bg-green-100 text-green-700" },
+    bermasalah: { label: "Bermasalah", cls: "bg-red-100 text-red-700" },
+};
+
+const rupiah = (n) => Number(n || 0).toLocaleString("id-ID");
+
+export default function ServisEksternal({ items, filters, counts, canVerify }) {
+    const [verifikasi, setVerifikasi] = useState(filters.verifikasi || "");
+    const [editing, setEditing] = useState(null);
+    const [viewing, setViewing] = useState(null);
+    const [timelineItem, setTimelineItem] = useState(null);
+    const [form, setForm] = useState({ status: "terverifikasi", catatan: "" });
+    const [errors, setErrors] = useState({});
+    const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        const close = (e) => {
+            if (e.key === "Escape") {
+                setEditing(null);
+                setViewing(null);
+                setTimelineItem(null);
+            }
+        };
+        window.addEventListener("keydown", close);
+        return () => window.removeEventListener("keydown", close);
+    }, []);
+
+    const apply = () => {
+        router.get(route("fleet.workshop.servis-eksternal.index"), {
+            verifikasi: verifikasi || undefined,
+        });
+    };
+
+    const clear = () => {
+        setVerifikasi("");
+        router.get(route("fleet.workshop.servis-eksternal.index"));
+    };
+
+    const startVerify = (it) => {
+        const current = it.eksternal_detail?.verifikasi_workshop;
+
+        setEditing(it);
+        setForm({
+            status: current === "bermasalah" ? "bermasalah" : "terverifikasi",
+            catatan: it.eksternal_detail?.verifikasi_workshop_catatan || "",
+        });
+        setErrors({});
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        if (!editing) return;
+        const status = ["terverifikasi", "bermasalah"].includes(form.status)
+            ? form.status
+            : "terverifikasi";
+
+        setProcessing(true);
+        setErrors({});
+        router.post(
+            route("fleet.workshop.servis-eksternal.verifikasi", {
+                pengajuan: editing.id,
+            }),
+            { ...form, status },
+            {
+                preserveScroll: true,
+                onError: (err) => setErrors(err),
+                onSuccess: () => setEditing(null),
+                onFinish: () => setProcessing(false),
+            },
+        );
+    };
+
+    return (
+        <AuthenticatedLayout>
+            <Head title="Workshop - Verifikasi Servis Eksternal" />
+
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">
+                    Verifikasi Servis Eksternal
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                    Servis armada yang dikerjakan bengkel luar. Workshop
+                    memverifikasi kelengkapan nota &amp; hasil pekerjaan
+                    (TD-B6/B7).
+                </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                    { key: "belum", label: "Belum Diverifikasi", cls: "bg-amber-50 border-amber-100 text-amber-900", icon: Clock3 },
+                    { key: "terverifikasi", label: "Terverifikasi", cls: "bg-emerald-50 border-emerald-100 text-emerald-900", icon: CheckCircle2 },
+                    { key: "bermasalah", label: "Bermasalah", cls: "bg-red-50 border-red-100 text-red-900", icon: AlertTriangle },
+                ].map((c) => {
+                    const Icon = c.icon;
+                    return (
+                        <div
+                            key={c.key}
+                            className={`rounded-xl border p-4 shadow-sm ${c.cls}`}
+                        >
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+                                <Icon className="h-4 w-4" /> {c.label}
+                            </div>
+                            <div className="mt-1 text-2xl font-bold tabular-nums">
+                                {counts?.[c.key] ?? 0}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Status Verifikasi
+                        </label>
+                        <select
+                            value={verifikasi}
+                            onChange={(e) => setVerifikasi(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        >
+                            <option value="">Semua Status</option>
+                            <option value="belum">Belum Diverifikasi</option>
+                            <option value="terverifikasi">Terverifikasi</option>
+                            <option value="bermasalah">Bermasalah</option>
+                        </select>
+                    </div>
+                    <div className="flex gap-2">
+                        <PrimaryButton variant="outline" onClick={apply}>
+                            Terapkan
+                        </PrimaryButton>
+                        <PrimaryButton variant="outline" onClick={clear}>
+                            <SearchX className="w-4 h-4" /> Reset
+                        </PrimaryButton>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Pengajuan / Unit
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Bengkel
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">
+                                Estimasi
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500">
+                                Nota
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">
+                                Status
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {items.data.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan={6}
+                                    className="px-6 py-8 text-center text-sm text-gray-500"
+                                >
+                                    <Wrench className="w-6 h-6 mx-auto mb-2 text-gray-300" />
+                                    Belum ada servis eksternal.
+                                </td>
+                            </tr>
+                        ) : (
+                            items.data.map((it) => {
+                                const detail = it.eksternal_detail || {};
+                                const status = detail.verifikasi_workshop || "belum";
+                                const meta = STATUS_META[status] || STATUS_META.belum;
+                                return (
+                                    <tr key={it.id} className="hover:bg-gray-50 align-top">
+                                        <td className="px-6 py-4 text-sm">
+                                            <div className="font-semibold text-gray-900">
+                                                {it.kode_pengajuan}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {it.armada?.plat_nomor ||
+                                                    it.armada?.kode_unit ||
+                                                    "-"}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                Diajukan:{" "}
+                                                {it.diajukan_oleh?.name || "-"}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            <div className="font-medium">
+                                                {detail.nama_bengkel || "-"}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {detail.alamat_bengkel || "-"}
+                                            </div>
+                                            {detail.rincian_pekerjaan && (
+                                                <div className="mt-1 text-xs text-gray-400 max-w-xs">
+                                                    {detail.rincian_pekerjaan}
+                                                </div>
+                                            )}
+                                            {detail.foto_bengkel_url && (
+                                                <a
+                                                    href={detail.foto_bengkel_url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="mt-1 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                                                >
+                                                    <ExternalLink className="w-3 h-3" />
+                                                    Foto bengkel
+                                                </a>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-sm tabular-nums text-gray-700">
+                                            Rp {rupiah(detail.total_biaya_estimasi)}
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-sm tabular-nums text-gray-700">
+                                            {it.eksternal_notas?.length || 0}
+                                            {it.eksternal_notas?.length > 0 && (
+                                                <div className="text-xs text-gray-500">
+                                                    Rp{" "}
+                                                    {rupiah(
+                                                        it.eksternal_notas.reduce(
+                                                            (s, n) =>
+                                                                s +
+                                                                Number(
+                                                                    n.nominal_rp ||
+                                                                        0,
+                                                                ),
+                                                            0,
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <span
+                                                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${meta.cls}`}
+                                            >
+                                                {meta.label}
+                                            </span>
+                                            {detail.verifikasi_workshop_catatan && (
+                                                <div className="mt-1 text-xs text-gray-500 max-w-[14rem]">
+                                                    {detail.verifikasi_workshop_catatan}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-sm">
+                                            <div className="flex flex-wrap justify-end gap-2">
+                                                <button
+                                                    onClick={() => setViewing(it)}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <Eye className="w-4 h-4" /> Lihat
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setTimelineItem({
+                                                            title: `${it.kode_pengajuan} · ${it.armada?.plat_nomor || "-"}`,
+                                                            events: it.timeline || [],
+                                                        })
+                                                    }
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold border border-gray-300 rounded-md px-3 py-1 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <History className="w-4 h-4" /> Timeline
+                                                </button>
+                                                {canVerify && (
+                                                    <button
+                                                        onClick={() => startVerify(it)}
+                                                        className="inline-flex items-center gap-1 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-1 transition-colors"
+                                                    >
+                                                        <CheckCircle2 className="w-4 h-4" />
+                                                        Verifikasi
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                    Menampilkan {items.from || 0} - {items.to || 0} dari{" "}
+                    {items.total || 0} data
+                </div>
+                <div className="flex gap-2">
+                    {items.links &&
+                        items.links.map((link, index) => (
+                            <button
+                                key={index}
+                                onClick={() => link.url && router.get(link.url)}
+                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                className={`px-3 py-1 border rounded ${link.active ? "bg-gray-900 text-white border-gray-900" : "hover:bg-gray-100"}`}
+                                disabled={!link.url}
+                            />
+                        ))}
+                </div>
+            </div>
+
+            {viewing && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
+                    <div
+                        className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Detail Pengajuan Servis Eksternal</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    {viewing.kode_pengajuan} - {viewing.armada?.plat_nomor || "-"}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setViewing(null)}
+                                className="text-gray-500 hover:text-gray-900"
+                                aria-label="Tutup detail"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                    <p className="text-xs text-gray-500">Bengkel</p>
+                                    <p className="font-semibold text-gray-900 mt-0.5">{viewing.eksternal_detail?.nama_bengkel || "-"}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{viewing.eksternal_detail?.alamat_bengkel || "-"}</p>
+                                </div>
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                    <p className="text-xs text-gray-500">Estimasi Biaya</p>
+                                    <p className="font-semibold text-gray-900 mt-0.5">Rp {rupiah(viewing.eksternal_detail?.total_biaya_estimasi)}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Diajukan oleh {viewing.diajukan_oleh?.name || "-"}</p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Rincian Pekerjaan</p>
+                                <p className="mt-1 whitespace-pre-line text-gray-700">
+                                    {viewing.eksternal_detail?.rincian_pekerjaan || "-"}
+                                </p>
+                            </div>
+
+                            {viewing.eksternal_detail?.foto_bengkel_url && (
+                                <a
+                                    href={viewing.eksternal_detail.foto_bengkel_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                                >
+                                    <ExternalLink className="w-3.5 h-3.5" /> Lihat foto bengkel
+                                </a>
+                            )}
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Nota Bengkel</p>
+                                    <span className="text-xs font-semibold text-gray-700">
+                                        {viewing.eksternal_notas?.length || 0} nota
+                                    </span>
+                                </div>
+                                {viewing.eksternal_notas?.length ? (
+                                    <div className="mt-2 divide-y divide-gray-100">
+                                        {viewing.eksternal_notas.map((n, index) => (
+                                            <div key={n.id ?? index} className="flex justify-between gap-3 py-2 text-xs">
+                                                <span className="text-gray-600">
+                                                    Nota {index + 1} · {formatTanggal(n.tanggal_nota)}
+                                                    {n.catatan ? ` · ${n.catatan}` : ""}
+                                                </span>
+                                                <span className="font-semibold tabular-nums text-gray-900">
+                                                    Rp {rupiah(n.nominal_rp)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-xs text-gray-400">Belum ada nota yang dicatat.</p>
+                                )}
+                            </div>
+
+                            <div className="rounded-lg border border-gray-200 p-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hasil Verifikasi Workshop</p>
+                                <p className="mt-1 font-semibold text-gray-900">
+                                    {STATUS_META[viewing.eksternal_detail?.verifikasi_workshop || "belum"]?.label || "Belum Diverifikasi"}
+                                </p>
+                                {viewing.eksternal_detail?.verifikasi_workshop_catatan && (
+                                    <p className="mt-1 whitespace-pre-line text-gray-600">
+                                        {viewing.eksternal_detail.verifikasi_workshop_catatan}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <button
+                                onClick={() => setViewing(null)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editing && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Verifikasi Servis Eksternal
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                    {editing.kode_pengajuan} -{" "}
+                                    {editing.eksternal_detail?.nama_bengkel || "-"}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setEditing(null)}
+                                className="text-gray-500 hover:text-gray-900"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={submit} className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Hasil Verifikasi
+                                </label>
+                                <select
+                                    value={form.status}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            status: e.target.value,
+                                        })
+                                    }
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="terverifikasi">
+                                        Terverifikasi
+                                    </option>
+                                    <option value="bermasalah">
+                                        Bermasalah
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Catatan
+                                </label>
+                                <textarea
+                                    rows="3"
+                                    value={form.catatan}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            catatan: e.target.value,
+                                        })
+                                    }
+                                    placeholder="opsional"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            {(errors.status || errors.catatan) && (
+                                <p className="text-red-600 text-xs">
+                                    {errors.status || errors.catatan}
+                                </p>
+                            )}
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditing(null)}
+                                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {form.status === "bermasalah" ? (
+                                        <AlertTriangle className="w-4 h-4" />
+                                    ) : (
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    )}
+                                    {processing ? "Menyimpan..." : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {timelineItem && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                    onClick={() => setTimelineItem(null)}
+                >
+                    <div
+                        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Timeline ${timelineItem.title}`}
+                    >
+                        <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+                            <div className="min-w-0">
+                                <h3 className="text-base font-semibold text-gray-900">
+                                    Timeline Servis
+                                </h3>
+                                <p className="mt-0.5 truncate text-xs text-gray-500">
+                                    {timelineItem.title}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setTimelineItem(null)}
+                                className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                aria-label="Tutup timeline"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-5">
+                            {timelineItem.events?.length ? (
+                                <TimelineStrip
+                                    events={timelineItem.events}
+                                    title="Alur Penyelesaian"
+                                />
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                    Timeline belum tersedia.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end border-t border-gray-200 p-4">
+                            <button
+                                type="button"
+                                onClick={() => setTimelineItem(null)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </AuthenticatedLayout>
+    );
+}

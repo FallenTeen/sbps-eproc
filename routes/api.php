@@ -1,15 +1,22 @@
 <?php
 
 use App\Http\Controllers\Api\Mobile\AppVersionController;
+use App\Http\Controllers\Api\Mobile\ArmadaController;
 use App\Http\Controllers\Api\Mobile\AuthController;
 use App\Http\Controllers\Api\Mobile\DashboardController;
 use App\Http\Controllers\Api\Mobile\FormulirController;
+use App\Http\Controllers\Api\Mobile\InventoryController;
 use App\Http\Controllers\Api\Mobile\KontraktorController;
+use App\Http\Controllers\Api\Mobile\LogistikController;
 use App\Http\Controllers\Api\Mobile\MasterDataController;
 use App\Http\Controllers\Api\Mobile\MobileQcController;
 use App\Http\Controllers\Api\Mobile\NotificationController;
+use App\Http\Controllers\Api\Mobile\PendingSummaryController;
+use App\Http\Controllers\Api\Mobile\PengajuanServisController;
 use App\Http\Controllers\Api\Mobile\PresensiController;
 use App\Http\Controllers\Api\Mobile\ProduksiController;
+use App\Http\Controllers\Api\Mobile\SecurityController;
+use App\Http\Controllers\Api\Mobile\TitikMapController;
 use App\Http\Controllers\Api\Mobile\TrackingController;
 use App\Http\Controllers\Api\Mobile\UploadController;
 use Illuminate\Support\Facades\Route;
@@ -38,12 +45,15 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::post('logout-all-devices', [AuthController::class, 'logoutAllDevices'])->name('logout-all-devices');
         Route::get('user', [AuthController::class, 'user'])->name('user');
         Route::post('update-profile', [AuthController::class, 'updateProfile'])->name('update-profile');
+        Route::post('change-password', [AuthController::class, 'changePassword'])->name('change-password');
+        Route::post('push-token', [AuthController::class, 'updatePushToken'])->name('push-token');
 
         // Penugasan User
         Route::get('assignments', [AuthController::class, 'assignments'])->name('assignments');
 
-        // Presensi
+        // Presensi & Peta Titik
         Route::get('titik-aktif', [PresensiController::class, 'titikAktif'])->name('titik-aktif');
+        Route::get('titik-map', [TitikMapController::class, 'index'])->name('titik-map');
         Route::post('presensi/check-in', [PresensiController::class, 'checkIn'])
             ->name('presensi.check-in')->middleware('idempotency');
         Route::post('presensi/check-out', [PresensiController::class, 'checkOut'])
@@ -57,17 +67,24 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('formulir/hari-ini', [FormulirController::class, 'hariIni'])->name('formulir.hari-ini');
         Route::get('formulir/riwayat', [FormulirController::class, 'riwayat'])->name('formulir.riwayat');
 
-        // Laporan Produksi Harian
-        Route::post('produksi/mulai', [ProduksiController::class, 'mulai'])->name('produksi.mulai');
-        Route::post('produksi/selesai/{sessionId}', [ProduksiController::class, 'selesai'])->name('produksi.selesai');
-        Route::get('produksi/sesi-aktif', [ProduksiController::class, 'sesiAktif'])->name('produksi.sesi-aktif');
-        Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
-        Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
+        // Laporan Produksi Harian (fitur sesi produksi: role/permission lain tertolak 403)
+        Route::middleware('permission:start session')->group(function () {
+            Route::post('produksi/mulai', [ProduksiController::class, 'mulai'])->name('produksi.mulai');
+        });
+        Route::middleware('permission:end session')->group(function () {
+            Route::post('produksi/selesai/{sessionId}', [ProduksiController::class, 'selesai'])->name('produksi.selesai');
+        });
+        Route::middleware('permission:view production')->group(function () {
+            Route::get('produksi/sesi-aktif', [ProduksiController::class, 'sesiAktif'])->name('produksi.sesi-aktif');
+            Route::get('produksi/riwayat', [ProduksiController::class, 'riwayat'])->name('produksi.riwayat');
+            Route::get('produksi/titik-progress', [ProduksiController::class, 'titikProgress'])->name('produksi.titik-progress');
+        });
 
-        // Master Data (mesin, produk, bahan baku)
+        // Master Data (mesin, produk, bahan baku, armada)
         Route::get('master/mesin', [MasterDataController::class, 'mesin'])->name('master.mesin');
         Route::get('master/produk', [MasterDataController::class, 'produk'])->name('master.produk');
         Route::get('master/bahan-baku', [MasterDataController::class, 'bahanBaku'])->name('master.bahan-baku');
+        Route::get('master/armada', [MasterDataController::class, 'armada'])->name('master.armada');
 
         // GPS Tracking
         Route::post('tracking/batch', [TrackingController::class, 'batch'])
@@ -86,24 +103,160 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
         Route::get('dashboard/chart/produksi', [DashboardController::class, 'chartProduksi'])->name('dashboard.chart-produksi');
         Route::get('dashboard/chart/keuangan', [DashboardController::class, 'chartKeuangan'])->name('dashboard.chart-keuangan');
         Route::get('dashboard/armada-status', [DashboardController::class, 'armadaStatus'])->name('dashboard.armada-status');
+        Route::get('dashboard/armada-monitoring', [DashboardController::class, 'armadaMonitoring'])->name('dashboard.armada-monitoring');
         Route::get('dashboard/kehadiran-divisi', [DashboardController::class, 'kehadiranDivisi'])->name('dashboard.kehadiran-divisi');
-        Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
-        Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
 
-        // Quality Control
-        Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
-        Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
-        Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
-        Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
+        // Endpoint finansial: hanya role keuangan/owner; role lain 403.
+        Route::middleware('permission:view owner dashboard|view finance|manage finance')->group(function () {
+            Route::get('dashboard/chart/keuangan', [DashboardController::class, 'chartKeuangan'])->name('dashboard.chart-keuangan');
+            Route::get('dashboard/po-pending', [DashboardController::class, 'poPending'])->name('dashboard.po-pending');
+            Route::get('dashboard/invoice-belum-dibayar', [DashboardController::class, 'invoiceBelumDibayar'])->name('dashboard.invoice-belum-dibayar');
+        });
+
+        // Quality Control (catatan QC: hanya role QC/produksi)
+        Route::middleware('permission:manage qc')->group(function () {
+            Route::post('qc/slump-test', [MobileQcController::class, 'storeSlumpTest'])->name('qc.slump-test');
+            Route::post('qc/uji-tekan', [MobileQcController::class, 'storeUjiTekan'])->name('qc.uji-tekan');
+        });
+        Route::middleware('permission:manage qc|view production')->group(function () {
+            Route::get('qc/riwayat', [MobileQcController::class, 'riwayat'])->name('qc.riwayat');
+            Route::get('qc/{id}', [MobileQcController::class, 'show'])->name('qc.show');
+        });
+
+        // Armada (driver)
+        Route::get('armada/saya', [ArmadaController::class, 'saya'])->name('armada.saya');
+        Route::get('armada/ritase', [ArmadaController::class, 'ritase'])->name('armada.ritase');
+        Route::post('armada/ritase/input', [ArmadaController::class, 'storeRitase'])
+            ->name('armada.ritase.input')->middleware('idempotency');
+        Route::post('armada/ritase/{ritase}/selesai', [ArmadaController::class, 'selesaikanRitase'])
+            ->name('armada.ritase.selesai');
+        Route::get('armada/ritase/{ritase}', [ArmadaController::class, 'showRitase'])
+            ->name('armada.ritase.show');
+        Route::get('armada/checklist-hari-ini', [ArmadaController::class, 'checklistHariIni'])->name('armada.checklist-hari-ini');
+        Route::post('armada/checklist/awal', [ArmadaController::class, 'submitChecklistAwal'])
+            ->name('armada.checklist.awal')->middleware('idempotency');
+        Route::post('armada/checklist/akhir', [ArmadaController::class, 'submitChecklistAkhir'])
+            ->name('armada.checklist.akhir')->middleware('idempotency');
+        Route::get('armada/pengisian-solar', [ArmadaController::class, 'indexPengisianSolar'])->name('armada.pengisian-solar.index');
+        Route::post('armada/pengisian-solar', [ArmadaController::class, 'storePengisianSolar'])
+            ->name('armada.pengisian-solar.store')->middleware('idempotency');
+        Route::post('armada/pengisian-solar/{pengisianSolar}', [ArmadaController::class, 'updatePengisianSolar'])
+            ->name('armada.pengisian-solar.update')->middleware('idempotency');
+        Route::delete('armada/pengisian-solar/{pengisianSolar}', [ArmadaController::class, 'deletePengisianSolar'])
+            ->name('armada.pengisian-solar.destroy');
+        Route::post('armada/odo-awal-proyek', [ArmadaController::class, 'storeOdoAwalProyek'])
+            ->name('armada.odo-awal-proyek')->middleware('idempotency');
+        Route::get('armada/odo-awal-proyek', [ArmadaController::class, 'indexOdoAwalProyek'])->name('armada.odo-awal-proyek.index');
+        Route::get('armada/checklist-major/template', [ArmadaController::class, 'checklistMajorTemplate'])
+            ->name('armada.checklist-major.template');
+        Route::post('armada/checklist-major', [ArmadaController::class, 'submitChecklistMajor'])
+            ->name('armada.checklist-major')->middleware('idempotency');
+
+        // v6 (21.6) - helper armada & presensi (dicatat PIC)
+        Route::get('armada/helper', [ArmadaController::class, 'indexHelper'])->name('armada.helper.index');
+        Route::post('armada/helper/{helper}/presensi', [ArmadaController::class, 'storeHelperPresensi'])
+            ->name('armada.helper.presensi')->middleware('idempotency');
+
+        // v6 (21.8) - Sistem Servis Armada (mobile: ajuan, riwayat, detail, approval/reject)
+        Route::get('servis-armada', [PengajuanServisController::class, 'index'])->name('servis-armada.index');
+        Route::get('servis-armada/saya', [PengajuanServisController::class, 'saya'])->name('servis-armada.saya');
+        Route::post('servis-armada', [PengajuanServisController::class, 'store'])
+            ->name('servis-armada.store')->middleware('idempotency');
+        Route::get('servis-armada/{id}', [PengajuanServisController::class, 'show'])->name('servis-armada.show');
+        Route::post('servis-armada/{id}/approve', [PengajuanServisController::class, 'approve'])
+            ->name('servis-armada.approve')->middleware('idempotency');
+        Route::post('servis-armada/{id}/tolak', [PengajuanServisController::class, 'tolak'])
+            ->name('servis-armada.tolak')->middleware('idempotency');
+
+        // v6 (21.8 #3-4) - Pengerjaan workshop (mulai, selesai, request sparepart)
+        Route::post('servis-armada/{id}/mulai', [PengajuanServisController::class, 'mulai'])
+            ->name('servis-armada.mulai')->middleware('idempotency');
+        Route::post('servis-armada/{id}/selesai', [PengajuanServisController::class, 'selesai'])
+            ->name('servis-armada.selesai')->middleware('idempotency');
+        Route::post('workshop/job/{id}/request-sparepart', [PengajuanServisController::class, 'requestSparepart'])
+            ->name('workshop.job.request-sparepart')->middleware('idempotency');
+        Route::post('workshop/job/{id}/todo/{todoId}/toggle', [PengajuanServisController::class, 'toggleTodo'])
+            ->name('workshop.job.todo.toggle')->middleware('idempotency');
+        Route::post('workshop/job/{id}/todo/{todoId}/photo', [PengajuanServisController::class, 'uploadTodoPhoto'])
+            ->name('workshop.job.todo.photo')->middleware('idempotency');
+
+        // TD-B: Servis Eksternal (mobile)
+        Route::post('servis-armada/eksternal', [PengajuanServisController::class, 'storeEksternal'])
+            ->name('servis-armada.store-eksternal')->middleware('idempotency');
+        Route::post('servis-armada/{id}/eksternal/nota', [PengajuanServisController::class, 'storeEksternalNota'])
+            ->name('servis-armada.eksternal-nota')->middleware('idempotency');
+        Route::post('servis-armada/{id}/foto-hasil', [PengajuanServisController::class, 'storeFotoHasil'])
+            ->name('servis-armada.foto-hasil')->middleware('idempotency');
+        Route::post('workshop/servis-eksternal/{id}/verifikasi', [PengajuanServisController::class, 'verifikasiServisEksternal'])
+            ->name('workshop.servis-eksternal.verifikasi')->middleware('idempotency');
+        Route::get('workshop/servis-eksternal', [PengajuanServisController::class, 'workshopServisEksternalList'])
+            ->name('workshop.servis-eksternal.index');
+
+        // v6 (21.7 & 14d) - Modul Inventory (stok, request sparepart, opname)
+        Route::middleware('permission:manage inventory|view inventory|manage sparepart|view sparepart|manage procurement|view procurement')->group(function () {
+            Route::get('inventory/summary', [InventoryController::class, 'summary'])->name('inventory.summary');
+            Route::get('inventory/materials', [InventoryController::class, 'materials'])->name('inventory.materials');
+            Route::get('inventory/materials/{id}/mutasi', [InventoryController::class, 'materialMutasi'])->name('inventory.material-mutasi');
+            Route::get('inventory/mutasi', [InventoryController::class, 'mutasi'])->name('inventory.mutasi');
+            Route::get('inventory/requests', [InventoryController::class, 'requests'])->name('inventory.requests');
+            Route::get('inventory/requests/{id}', [InventoryController::class, 'requestDetail'])->name('inventory.request-detail');
+        });
+        Route::post('inventory/requests/{id}/proses', [InventoryController::class, 'prosesRequest'])
+            ->name('inventory.request.proses')
+            ->middleware(['idempotency', 'permission:manage inventory|manage sparepart|manage procurement']);
+        Route::middleware('permission:manage stok opname|view stok opname')->group(function () {
+            Route::get('inventory/opname/materials', [InventoryController::class, 'opnameMaterials'])->name('inventory.opname-materials');
+            Route::post('inventory/opname', [InventoryController::class, 'submitOpname'])
+                ->name('inventory.opname')->middleware('idempotency');
+        });
+
+        // TD-E: Modul Logistik & Timbang
+        Route::middleware('permission:verify ritase logistik|manage timbang')->group(function () {
+            Route::get('logistik/ritase/antrean', [LogistikController::class, 'antrean'])->name('logistik.ritase.antrean');
+            Route::post('logistik/ritase/{id}/verifikasi', [LogistikController::class, 'verifikasi'])
+                ->name('logistik.ritase.verifikasi')->middleware('idempotency');
+        });
+
+        // TD-F: Modul Security
+        Route::middleware('permission:manage security buku tamu|manage security checklist|manage security darurat|verify ritase security')->group(function () {
+            Route::get('security/buku-tamu/hari-ini', [SecurityController::class, 'bukuTamuHariIni'])->name('security.buku-tamu.hari-ini');
+            Route::post('security/buku-tamu', [SecurityController::class, 'storeBukuTamu'])
+                ->name('security.buku-tamu.store')->middleware('idempotency');
+            Route::post('security/buku-tamu/keluar', [SecurityController::class, 'keluarBukuTamu'])
+                ->name('security.buku-tamu.keluar')->middleware('idempotency');
+            Route::post('security/checklist', [SecurityController::class, 'submitChecklist'])
+                ->name('security.checklist')->middleware('idempotency');
+            Route::post('security/darurat', [SecurityController::class, 'submitDarurat'])
+                ->name('security.darurat')->middleware('idempotency');
+            Route::get('security/ritase/antrean', [SecurityController::class, 'antreanRitase'])->name('security.ritase.antrean');
+            Route::post('security/ritase/{id}/verifikasi', [SecurityController::class, 'verifikasiRitase'])
+                ->name('security.ritase.verifikasi')->middleware('idempotency');
+        });
+
+        // Tindak lanjut laporan darurat (KDA/Ketua Armada/Owner/Security)
+        Route::get('security/darurat', [SecurityController::class, 'daftarDarurat'])->name('security.darurat.index');
+        Route::post('security/darurat/{id}/tangani', [SecurityController::class, 'tanganiDarurat'])
+            ->name('security.darurat.tangani')->middleware('idempotency');
 
         // Notifikasi
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         // Portal Kontraktor
-        Route::get('kontraktor/proyek', [KontraktorController::class, 'proyekList'])->name('kontraktor.proyek');
-        Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
-        Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
-        Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])->name('kontraktor.komunikasi');
+        Route::middleware('permission:view kontraktor|manage kontraktor')->group(function () {
+            Route::get('kontraktor/proyek', [KontraktorController::class, 'proyekList'])->name('kontraktor.proyek');
+            Route::get('kontraktor/proyek/{id}', [KontraktorController::class, 'proyekDetail'])->name('kontraktor.proyek-detail');
+            Route::get('kontraktor/invoice', [KontraktorController::class, 'invoiceList'])->name('kontraktor.invoice');
+            Route::post('kontraktor/komunikasi', [KontraktorController::class, 'sendMessage'])
+                ->name('kontraktor.komunikasi')->middleware('idempotency');
+        });
+
+        // Ringkasan pekerjaan server-side untuk Home Kerja (Fase 2 T1)
+        Route::get('me/pending-summary', PendingSummaryController::class)->name('me.pending-summary');
     });
 });
+
+// Alias kompatibilitas root /api/me/pending-summary
+Route::get('me/pending-summary', PendingSummaryController::class)
+    ->name('mobile.me.pending-summary')
+    ->middleware(['auth:sanctum', 'mobile.auth', 'active.role', 'throttle:mobile']);

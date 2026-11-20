@@ -1,0 +1,638 @@
+import React, { useState, useEffect } from "react";
+import { router, usePage } from "@inertiajs/react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import DataTable from "@/Components/DataTable";
+import { formatTanggal, formatTanggalWaktu } from "@/utils/date";
+import {
+    Search,
+    X,
+    CheckCircle2,
+    Clock,
+    AlertTriangle,
+    Scale,
+    SearchX,
+    ArrowLeft,
+    Save,
+    Eye,
+} from "lucide-react";
+
+const statusBadge = (status) =>
+    status === "terverifikasi" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Terverifikasi
+        </span>
+    ) : status === "disetujui" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Disetujui
+        </span>
+    ) : status === "draft" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-600" /> Draft
+        </span>
+    ) : status === "ditagih" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 border border-red-200">
+            <AlertTriangle className="w-3 h-3 text-red-600" /> Ditagih
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-600" /> Menunggu
+        </span>
+    );
+
+function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-xl" }) {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") onClose();
+        };
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+            window.addEventListener("keydown", handleKeyDown);
+        } else {
+            document.body.style.overflow = "unset";
+        }
+        return () => {
+            document.body.style.overflow = "unset";
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
+            <div
+                className={`w-full ${maxWidth} max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden transform transition-all border border-gray-100`}
+                role="dialog"
+                aria-modal="true"
+            >
+                <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-gray-50/50">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <Scale className="w-5 h-5 text-emerald-600" /> {title}
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-200/60 hover:text-gray-700 transition"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                <div className="p-6 overflow-y-auto">{children}</div>
+            </div>
+        </div>
+    );
+}
+
+export default function RitaseVerifikasi({ rows, filters, sort, direction }) {
+    const { flash } = usePage().props;
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [detailItem, setDetailItem] = useState(null);
+    const [form, setForm] = useState({
+        jumlah_verifikasi: "",
+        berat_kosong_kg: "",
+        berat_isi_kg: "",
+        berat_netto_kg: "",
+        tara_sumber: "master",
+        nomor_tiket: "",
+        catatan: "",
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const openVerifikasiModal = (r) => {
+        setSelectedItem(r);
+        const beratKosong =
+            r.timbang?.berat_kosong_kg ?? r.armada?.tara_master_kg ?? "";
+        const beratIsi = r.timbang?.berat_isi_kg ?? "";
+        const beratNetto =
+            r.timbang?.berat_netto_kg ??
+            (beratIsi && beratKosong
+                ? parseFloat(beratIsi) - parseFloat(beratKosong)
+                : "");
+
+        setForm({
+            jumlah_verifikasi:
+                r.verifikasiLogistik?.jumlah_verifikasi ??
+                r.muatan?.jumlah_driver ??
+                r.jumlah_rit ??
+                "",
+            berat_kosong_kg: beratKosong,
+            berat_isi_kg: beratIsi,
+            berat_netto_kg: beratNetto,
+            tara_sumber: "master",
+            nomor_tiket: r.timbang?.nomor_tiket ?? "",
+            catatan: "",
+        });
+    };
+
+    const handleBeratChange = (field, value) => {
+        const nextForm = { ...form, [field]: value };
+
+        if (field === "berat_isi_kg" || field === "berat_kosong_kg") {
+            const isi = parseFloat(
+                field === "berat_isi_kg" ? value : nextForm.berat_isi_kg,
+            );
+            const kosong = parseFloat(
+                field === "berat_kosong_kg" ? value : nextForm.berat_kosong_kg,
+            );
+            if (!isNaN(isi) && !isNaN(kosong)) {
+                nextForm.berat_netto_kg = (isi - kosong).toFixed(2);
+            }
+        }
+
+        setForm(nextForm);
+    };
+
+    const submitVerifikasi = (e) => {
+        e.preventDefault();
+        if (!selectedItem) return;
+        setIsSubmitting(true);
+        router.post(
+            route("logistik.ritase-verifikasi.verifikasi", selectedItem.id),
+            form,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSelectedItem(null);
+                    setIsSubmitting(false);
+                },
+                onError: () => setIsSubmitting(false),
+            },
+        );
+    };
+
+    const columns = [
+        {
+            key: "tanggal",
+            label: "Tanggal",
+            type: "date",
+            sortable: true,
+            render: (r) => formatTanggal(r.tanggal),
+        },
+        {
+            key: "plat_nomor",
+            label: "Armada",
+            type: "text",
+            sortable: true,
+            render: (r) => r.armada?.plat_nomor ?? "-",
+        },
+        {
+            key: "driver",
+            label: "Driver",
+            type: "text",
+            sortable: true,
+            render: (r) => r.driver?.nama ?? "-",
+        },
+        {
+            key: "muatan",
+            label: "Muatan (Driver)",
+            type: "text",
+            sortable: true,
+            render: (r) => (
+                <>
+                    {r.muatan?.jumlah_driver ?? r.jumlah_rit}{" "}
+                    {r.muatan?.satuan ?? r.satuan_volume ?? ""}
+                    {r.ada_selisih && (
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                            <AlertTriangle className="w-3 h-3" /> Selisih
+                        </span>
+                    )}
+                </>
+            ),
+        },
+        {
+            key: "wajib_jembatan_timbang",
+            label: "Wajib Timbang",
+            type: "select",
+            options: [
+                { value: "1", label: "Ya" },
+                { value: "0", label: "Tidak" },
+            ],
+            sortable: true,
+            render: (r) =>
+                r.wajib_jembatan_timbang ? (
+                    <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
+                        Ya
+                    </span>
+                ) : (
+                    <span className="text-gray-400">Tidak</span>
+                ),
+        },
+        {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: [
+                { value: "disetujui", label: "Disetujui" },
+                { value: "draft", label: "Draft" },
+                { value: "ditagih", label: "Ditagih" },
+                { value: "menunggu", label: "Menunggu" },
+            ],
+            sortable: true,
+            render: (r) => statusBadge(r.status),
+        },
+        {
+            key: "aksi",
+            label: "Aksi",
+            search: false,
+            sortable: false,
+            align: "right",
+            cellClassName: "px-4 py-3 text-right text-sm",
+            render: (r) => (
+                <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                        onClick={() => setDetailItem(r)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+                    >
+                        <Eye className="w-3.5 h-3.5" /> Detail
+                    </button>
+                    <button
+                        onClick={() => openVerifikasiModal(r)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition shadow-sm active:scale-[0.98]"
+                    >
+                        <Scale className="w-3.5 h-3.5" /> Verifikasi
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <AuthenticatedLayout title="Antrean Verifikasi Ritase">
+            <div className="space-y-6">
+                {flash?.success && (
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 font-medium flex items-center gap-2 shadow-sm">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        {flash.success}
+                    </div>
+                )}
+
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div>
+                            <h1 className="text-2xl font-bold">
+                                Antrean Verifikasi Ritase (Logistik)
+                            </h1>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Verifikasi data ritase muatan dan penimbangan
+                                armada logistik.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <DataTable
+                    routeName="logistik.ritase-verifikasi.index"
+                    columns={columns}
+                    rows={rows}
+                    filters={filters}
+                    sort={sort}
+                    direction={direction}
+                />
+
+                {/* Modal Detail Ritase */}
+                <Modal
+                    isOpen={!!detailItem}
+                    onClose={() => setDetailItem(null)}
+                    title={`Detail Ritase - ${detailItem?.armada?.plat_nomor ?? ""}`}
+                    maxWidth="max-w-3xl"
+                >
+                    {detailItem && (
+                        <div className="space-y-5">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {statusBadge(detailItem.verifikasiLogistik?.status ?? detailItem.status)}
+                                {detailItem.ada_selisih && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 border border-red-200">
+                                        <AlertTriangle className="w-3 h-3" /> Ada Selisih
+                                    </span>
+                                )}
+                                {detailItem.wajib_jembatan_timbang && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
+                                        Wajib Timbang
+                                    </span>
+                                )}
+                            </div>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Detail Ritase</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {[
+                                        ["Tanggal", formatTanggal(detailItem.tanggal)],
+                                        ["Armada", detailItem.armada?.plat_nomor ?? "-"],
+                                        ["Driver", detailItem.driver?.nama ?? "-"],
+                                        ["Rute", detailItem.ruteTarif ? `${detailItem.ruteTarif.lokasi_asal ?? "-"} → ${detailItem.ruteTarif.lokasi_tujuan ?? "-"}` : "-"],
+                                        ["Proyek", detailItem.proyek?.nama ?? "-"],
+                                        ["Titik", detailItem.titik?.nama ?? "-"],
+                                        ["Customer", detailItem.customer ?? "-"],
+                                        ["Kategori", detailItem.kategori ?? "-"],
+                                        ["Material", detailItem.material ?? "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Muatan & Angka</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Jumlah Driver", `${detailItem.muatan?.jumlah_driver ?? detailItem.jumlah_rit ?? "-"}${detailItem.muatan?.satuan ? ` ${detailItem.muatan.satuan}` : ""}`],
+                                        ["Jumlah Verifikasi", detailItem.verifikasiLogistik?.jumlah_verifikasi ?? "-"],
+                                        ["Sumber Angka Resmi", detailItem.sumber_angka_resmi ?? "-"],
+                                        ["Nominal", detailItem.nominal != null ? `Rp ${Number(detailItem.nominal).toLocaleString("id-ID")}` : "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Hasil Penimbangan & Verifikasi</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Berat Kosong (kg)", detailItem.timbang?.berat_kosong_kg ?? detailItem.armada?.tara_master_kg ?? "-"],
+                                        ["Berat Isi (kg)", detailItem.timbang?.berat_isi_kg ?? "-"],
+                                        ["Berat Netto (kg)", detailItem.timbang?.berat_netto_kg ?? "-"],
+                                        ["Tara Sumber", detailItem.timbang?.tara_sumber ?? "-"],
+                                        ["No. Tiket", detailItem.timbang?.nomor_tiket ?? "-"],
+                                        ["Ditimbang Oleh", detailItem.timbang?.penimbang?.name ?? "-"],
+                                        ["Verifikator", detailItem.verifikasiLogistik?.verifikator?.name ?? "-"],
+                                        ["Catatan Verifikasi", detailItem.verifikasiLogistik?.catatan || detailItem.catatan || "-"],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900 whitespace-pre-line">{value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+
+                                {Array.isArray(detailItem.verifikasiLogistik?.checklist) &&
+                                    detailItem.verifikasiLogistik.checklist.length > 0 && (
+                                        <div className="mt-3 rounded-lg border border-gray-200 p-3">
+                                            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Checklist</p>
+                                            <ul className="mt-2 space-y-1 text-sm text-gray-700">
+                                                {detailItem.verifikasiLogistik.checklist.map((item, index) => (
+                                                    <li key={index} className="flex items-start gap-2">
+                                                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                                        <span>{typeof item === "string" ? item : JSON.stringify(item)}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                {detailItem.timbang?.foto_tiket_url && (
+                                    <a
+                                        href={detailItem.timbang.foto_tiket_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                                    >
+                                        <Eye className="h-3.5 w-3.5" /> Lihat Foto Tiket
+                                    </a>
+                                )}
+                            </section>
+
+                            <section>
+                                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Waktu</h4>
+                                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ["Dicatat", detailItem.created_at],
+                                        ["Diubah", detailItem.updated_at],
+                                        ["Ditimbang", detailItem.timbang?.ditimbang_pada],
+                                        ["Diverifikasi", detailItem.verifikasiLogistik?.diverifikasi_pada],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                                            <dd className="mt-0.5 text-sm font-semibold text-gray-900">{formatTanggalWaktu(value)}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </section>
+
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setDetailItem(null)}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
+
+                {/* Modal Form Verifikasi */}
+                <Modal
+                    isOpen={!!selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    title={`Verifikasi Ritase - ${selectedItem?.armada?.plat_nomor ?? ""}`}
+                    maxWidth="max-w-2xl"
+                >
+                    {selectedItem && (
+                        <form onSubmit={submitVerifikasi} className="space-y-4">
+                            {/* Info Ringkas Unit */}
+                            <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-xs mb-2">
+                                <div>
+                                    <span className="text-gray-400 block font-semibold">
+                                        Driver
+                                    </span>
+                                    <span className="font-bold text-gray-800">
+                                        {selectedItem.driver?.nama ?? "-"}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-400 block font-semibold">
+                                        Tanggal
+                                    </span>
+                                    <span className="font-bold text-gray-800">
+                                        {formatTanggal(selectedItem.tanggal) ??
+                                            "-"}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-400 block font-semibold">
+                                        Muatan Driver
+                                    </span>
+                                    <span className="font-bold text-gray-800">
+                                        {selectedItem.muatan?.jumlah_driver ??
+                                            selectedItem.jumlah_rit}{" "}
+                                        {selectedItem.muatan?.satuan ??
+                                            selectedItem.satuan_volume ??
+                                            ""}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Jumlah Verifikasi{" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.jumlah_verifikasi}
+                                        onChange={(e) =>
+                                            handleBeratChange(
+                                                "jumlah_verifikasi",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        No. Tiket Timbang
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.nomor_tiket}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                nomor_tiket: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Berat Kosong / Tara (kg){" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.berat_kosong_kg}
+                                        onChange={(e) =>
+                                            handleBeratChange(
+                                                "berat_kosong_kg",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Berat Isi / Bruto (kg){" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.berat_isi_kg}
+                                        onChange={(e) =>
+                                            handleBeratChange(
+                                                "berat_isi_kg",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Berat Netto (kg){" "}
+                                        <span className="text-red-600">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-emerald-50/30 focus:bg-white font-semibold text-emerald-900"
+                                        value={form.berat_netto_kg}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                berat_netto_kg: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Tara Sumber
+                                    </label>
+                                    <select
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.tara_sumber}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                tara_sumber: e.target.value,
+                                            })
+                                        }
+                                    >
+                                        <option value="master">
+                                            Master (Standard)
+                                        </option>
+                                        <option value="timbang_ulang">
+                                            Timbang Ulang
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
+                                        Catatan
+                                    </label>
+                                    <textarea
+                                        rows="2"
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-gray-50/50 focus:bg-white"
+                                        value={form.catatan}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                catatan: e.target.value,
+                                            })
+                                        }
+                                        placeholder="Catatan verifikasi logistik..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Modal Action Buttons */}
+                            <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedItem(null)}
+                                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="px-5 py-2.5 rounded-xl items-center gap-2 flex bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition shadow-sm active:scale-[0.98] disabled:opacity-50"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {isSubmitting ? "Menyimpan..." : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </Modal>
+            </div>
+        </AuthenticatedLayout>
+    );
+}

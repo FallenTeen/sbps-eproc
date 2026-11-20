@@ -21,7 +21,7 @@ class RecordStockMutationAction
             }
 
             foreach ($po->items as $item) {
-                StokMutasi::create([
+                $this->record([
                     'bahan_baku_id' => $item->bahan_baku_id,
                     'titik_id' => $titikId,
                     'tipe' => 'masuk',
@@ -34,5 +34,10 @@ class RecordStockMutationAction
                 ]);
             }
         });
+    }
+
+    public function record(array $data): void
+    {
+        StokMutasi::create($data);
     }
 }

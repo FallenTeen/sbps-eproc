@@ -40,8 +40,8 @@ class HandleInertiaRequests extends Middleware
         'core.rab.create' => 'Tambah RAB',
         'core.rab.show' => 'Detail RAB',
         'core.rab.edit' => 'Edit RAB',
-        'core.rab.realisasi' => 'Realisasi RAB',
-        'core.rab.compare' => 'RAB vs Realisasi',
+
+        'core.app-version.index' => 'Versi Aplikasi Mobile',
 
         'procurement.bahan-baku.index' => 'Bahan Baku',
         'procurement.bahan-baku.create' => 'Tambah Bahan Baku',
@@ -82,8 +82,9 @@ class HandleInertiaRequests extends Middleware
         'fleet.rute-tarif.edit' => 'Edit Rute Tarif',
         'fleet.service-history.index' => 'Service History',
         'fleet.checklist-harian.index' => 'Checklist Harian',
-        'fleet.bbm.index' => 'Log BBM',
+        'fleet.pengisian-solar.index' => 'Pengisian Solar',
         'fleet.downtime.index' => 'Downtime Log',
+        'fleet.monitoring-armada.index' => 'Monitoring Armada',
 
         'production.dashboard' => 'Dashboard Produksi',
         'production.mesin.index' => 'Mesin Produksi',
@@ -123,6 +124,9 @@ class HandleInertiaRequests extends Middleware
         'hr.payroll.show' => 'Detail Payroll',
         'hr.payroll.review' => 'Review Payroll',
 
+        'attendance.presensi.index' => 'Presensi',
+        'attendance.presensi.rekapDetail' => 'Detail Rekap Presensi',
+
         'finance.akun-kas.index' => 'Kas & Bank',
         'finance.akun-kas.create' => 'Tambah Akun Kas',
         'finance.akun-kas.show' => 'Detail Akun Kas',
@@ -140,6 +144,8 @@ class HandleInertiaRequests extends Middleware
         'finance.invoice.outstanding' => 'Piutang Outstanding',
         'finance.invoice.aging' => 'Aging Piutang',
         'finance.laporan-keuangan.index' => 'Laporan Keuangan',
+        'finance.rekap-kas.index' => 'Rekap Pemasukan & Pengeluaran',
+        'finance.rekap-pengeluaran.index' => 'Rekap Pengeluaran',
         'finance.laporan-keuangan.rab-realisasi' => 'RAB vs Realisasi',
         'finance.laporan-keuangan.laba-rugi' => 'Laporan Laba Rugi',
 
@@ -179,8 +185,6 @@ class HandleInertiaRequests extends Middleware
         'core.rab.create' => 'core.rab.index',
         'core.rab.show' => 'core.rab.index',
         'core.rab.edit' => 'core.rab.index',
-        'core.rab.realisasi' => 'core.rab.index',
-        'core.rab.compare' => 'core.rab.index',
 
         'procurement.bahan-baku.create' => 'procurement.bahan-baku.index',
         'procurement.bahan-baku.show' => 'procurement.bahan-baku.index',
@@ -240,6 +244,8 @@ class HandleInertiaRequests extends Middleware
         'hr.karyawan.edit' => 'hr.karyawan.index',
         'hr.payroll.show' => 'hr.payroll.index',
         'hr.payroll.review' => 'hr.payroll.index',
+
+        'attendance.presensi.rekapDetail' => 'attendance.presensi.index',
 
         'finance.akun-kas.create' => 'finance.akun-kas.index',
         'finance.akun-kas.show' => 'finance.akun-kas.index',

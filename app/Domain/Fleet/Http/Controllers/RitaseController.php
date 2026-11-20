@@ -3,17 +3,23 @@
 namespace App\Domain\Fleet\Http\Controllers;
 
 use App\Domain\Core\Models\Proyek;
+use App\Domain\Fleet\Actions\ApproveRitaseStepAction;
+use App\Domain\Fleet\Actions\RecordRitaseAction;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RuteTarif;
+use App\Domain\Fleet\Services\RitaseTimelineService;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RitaseController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Ritase::class);
@@ -26,23 +32,21 @@ class RitaseController extends Controller
             });
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('driver', fn ($d) => $d->where('nama', 'like', "%{$search}%"))
-                    ->orWhereHas('armada', fn ($a) => $a->where('kode_unit', 'like', "%{$search}%")->orWhere('plat_nomor', 'like', "%{$search}%"));
-            });
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'armada' => ['relation' => 'armada', 'column' => 'id', 'type' => 'exact'],
+            'driver' => ['relation' => 'driver', 'column' => 'nama', 'type' => 'like'],
+            'rute' => ['relation' => 'ruteTarif', 'column' => 'lokasi_asal', 'type' => 'like'],
+            'jumlah_rit' => ['searchable' => false],
+            'jumlah_volume' => ['searchable' => false],
+            'tarif_per_rit_snapshot' => ['searchable' => false],
+            'total_upah_rit' => ['searchable' => false],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('armada_id')) {
-            $query->where('armada_id', $request->armada_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
-        }
-
-        $ritase = $query->orderByDesc('tanggal')->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $ritase = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $today = Carbon::today();
         $baseStatsQuery = Ritase::query();
@@ -69,7 +73,9 @@ class RitaseController extends Controller
 
         return Inertia::render('Fleet/Ritase/Index', [
             'ritase' => $ritase,
-            'filters' => $request->only(['search', 'armada_id', 'tanggal']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
             'armadaList' => $armadaList,
             'stats' => [
                 'total_trip_today' => $totalTripToday,
@@ -93,7 +99,16 @@ class RitaseController extends Controller
             $armadaQuery->where('unit_bisnis_id', $user->unit_bisnis_id);
         }
         $armadaList = $armadaQuery->select('id', 'kode_unit', 'plat_nomor', 'jenis')->orderBy('kode_unit')->get();
-        $ruteList = RuteTarif::select('id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit')->get();
+        $ruteList = RuteTarif::select('id', 'lokasi_asal', 'lokasi_tujuan', 'tarif_per_rit')
+            ->get()
+            ->map(fn (RuteTarif $rute) => [
+                'id' => $rute->id,
+                'nama_rute' => "{$rute->lokasi_asal} -> {$rute->lokasi_tujuan}",
+                'lokasi_muat' => $rute->lokasi_asal,
+                'lokasi_bongkar' => $rute->lokasi_tujuan,
+                'tarif_per_rit' => $rute->tarif_per_rit,
+                'tarif_per_trip' => $rute->tarif_per_rit,
+            ]);
         $driverList = Karyawan::select('id', 'nama')->where('status', 'aktif')->get();
         $proyekQuery = Proyek::query();
         if ($user->unit_bisnis_id) {
@@ -106,6 +121,11 @@ class RitaseController extends Controller
             'ruteList' => $ruteList,
             'driverList' => $driverList,
             'proyekList' => $proyekList,
+            'formDefaults' => [
+                'jumlah_trip' => 1,
+                'satuan_volume' => 'ritase',
+                'tanggal' => now()->toDateString(),
+            ],
         ]);
     }
 
@@ -116,24 +136,32 @@ class RitaseController extends Controller
         $validated = $request->validate([
             'armada_id' => 'required|exists:armadas,id',
             'karyawan_id' => 'required|exists:karyawans,id',
-            'rute_tarif_id' => 'required|exists:rute_tarifs,id',
+            'rute_tarif_id' => 'nullable|exists:rute_tarifs,id',
             'proyek_id' => 'nullable|exists:proyeks,id',
+            'titik_id' => 'nullable|exists:titiks,id',
             'tanggal' => 'required|date',
             'jumlah_trip' => 'required|integer|min:1',
+            'satuan_volume' => 'required|in:tonase,ritase,m3,harian',
+            'jumlah_volume' => 'nullable|numeric|min:0',
+            'nominal' => 'nullable|numeric|min:0',
+            'tarif_per_rit_snapshot' => 'nullable|numeric|min:0',
+            'customer' => 'nullable|string',
             'catatan' => 'nullable|string',
         ]);
 
-        $rute = RuteTarif::findOrFail($validated['rute_tarif_id']);
-
-        Ritase::create([
+        $ritase = (new RecordRitaseAction)->execute([
             'armada_id' => $validated['armada_id'],
             'driver_karyawan_id' => $validated['karyawan_id'],
-            'rute_tarif_id' => $validated['rute_tarif_id'],
+            'rute_tarif_id' => $validated['rute_tarif_id'] ?? null,
             'proyek_id' => $validated['proyek_id'] ?? null,
+            'titik_id' => $validated['titik_id'] ?? null,
             'tanggal' => $validated['tanggal'],
             'jumlah_rit' => $validated['jumlah_trip'],
-            'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
-            'status' => 'disetujui',
+            'satuan_volume' => $validated['satuan_volume'],
+            'jumlah_volume' => $validated['jumlah_volume'] ?? null,
+            'nominal' => $validated['nominal'] ?? null,
+            'tarif_per_rit_snapshot' => $validated['tarif_per_rit_snapshot'] ?? null,
+            'customer' => $validated['customer'] ?? null,
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
@@ -142,22 +170,68 @@ class RitaseController extends Controller
 
     public function show(Request $request, string $id)
     {
-        $ritase = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek', 'biayaLain'])->findOrFail($id);
+        $ritase = Ritase::with([
+            'armada',
+            'driver',
+            'ruteTarif',
+            'proyek',
+            'biayaLain',
+            'muatan',
+            'timbang',
+            'verifikasiLogistik',
+            'verifikasiSecurity',
+        ])->findOrFail($id);
         $this->authorize('view', $ritase);
 
-        return response()->json($ritase);
+        $user = $request->user();
+        $relatedLinks = collect([
+            [
+                'label' => 'Detail Armada',
+                'href' => 'fleet.armada.show',
+                'permission' => 'view fleet',
+                'params' => [$ritase->armada_id],
+            ],
+            [
+                'label' => 'Riwayat Servis',
+                'href' => 'fleet.workshop.riwayat.index',
+                'permission' => 'view fleet service',
+            ],
+        ])->filter(fn ($item) => $user && $user->can($item['permission']))->values()->all();
+
+        $props = [
+            'ritase' => $ritase,
+            'timeline' => app(RitaseTimelineService::class)->for($ritase, $user),
+            'can' => [
+                'approve' => false,
+            ],
+            'related_links' => $relatedLinks,
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json($props);
+        }
+
+        return Inertia::render('Fleet/Ritase/Show', $props);
     }
 
     /**
-     * Setujui ritase (mis. oleh koordinator sebelum ditagihkan).
+     * Setujui satu tahap alur ritase.
      */
-    public function approve(Request $request, Ritase $ritase)
+    public function approveStep(Request $request, Ritase $ritase, string $step)
     {
-        $this->authorize('update', $ritase);
+        $action = app(ApproveRitaseStepAction::class);
 
-        $ritase->update(['status' => 'disetujui']);
+        if (! $action->canApprove($step, $request->user())) {
+            abort(403);
+        }
 
-        return back()->with('success', 'Ritase disetujui.');
+        $validated = $request->validate([
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $action->execute($ritase, $step, $request->user(), $validated['catatan'] ?? null);
+
+        return back()->with('success', 'Persetujuan tahap disimpan.');
     }
 
     /**
@@ -171,25 +245,28 @@ class RitaseController extends Controller
             'items' => 'required|array|min:1',
             'items.*.armada_id' => 'required|exists:armadas,id',
             'items.*.karyawan_id' => 'required|exists:karyawans,id',
-            'items.*.rute_tarif_id' => 'required|exists:rute_tarif,id',
+            'items.*.rute_tarif_id' => 'nullable|exists:rute_tarifs,id',
             'items.*.proyek_id' => 'nullable|exists:proyeks,id',
             'items.*.tanggal' => 'required|date',
             'items.*.jumlah_trip' => 'required|integer|min:1',
+            'items.*.satuan_volume' => 'required|in:tonase,ritase,m3,harian',
+            'items.*.jumlah_volume' => 'nullable|numeric|min:0',
+            'items.*.nominal' => 'nullable|numeric|min:0',
             'items.*.catatan' => 'nullable|string',
         ]);
 
         $saved = 0;
         foreach ($validated['items'] as $item) {
-            $rute = RuteTarif::findOrFail($item['rute_tarif_id']);
-            Ritase::create([
+            (new RecordRitaseAction)->execute([
                 'armada_id' => $item['armada_id'],
                 'driver_karyawan_id' => $item['karyawan_id'],
-                'rute_tarif_id' => $item['rute_tarif_id'],
+                'rute_tarif_id' => $item['rute_tarif_id'] ?? null,
                 'proyek_id' => $item['proyek_id'] ?? null,
                 'tanggal' => $item['tanggal'],
                 'jumlah_rit' => $item['jumlah_trip'],
-                'tarif_per_rit_snapshot' => $rute->tarif_per_rit,
-                'status' => 'disetujui',
+                'satuan_volume' => $item['satuan_volume'],
+                'jumlah_volume' => $item['jumlah_volume'] ?? null,
+                'nominal' => $item['nominal'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
             ]);
             $saved++;

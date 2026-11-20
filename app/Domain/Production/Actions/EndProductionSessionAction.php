@@ -46,7 +46,7 @@ class EndProductionSessionAction
                     'jumlah_terpakai' => $item['jumlah_terpakai'],
                 ]);
 
-                // Kurangi stok (mutasi keluar) — warning-first, bukan hard-block (Bagian 16 #2)
+                // Kurangi stok (mutasi keluar) - warning-first, bukan hard-block (Bagian 16 #2)
                 StokMutasi::create([
                     'bahan_baku_id' => $item['bahan_baku_id'],
                     'titik_id' => $session->titik_id,

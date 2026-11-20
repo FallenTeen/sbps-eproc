@@ -1,1 +1,1 @@
-// Bootstrap file — required by app.jsx (Vite entry)
+// Bootstrap file - required by app.jsx (Vite entry)

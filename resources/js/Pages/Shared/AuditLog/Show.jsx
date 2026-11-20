@@ -1,54 +1,140 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ArrowLeft } from 'lucide-react';
+import { formatTanggalWaktu } from '@/utils/date';
+import {
+    formatAuditValue,
+    getAuditActionLabel,
+    getAuditAdditionalDetails,
+    getAuditChanges,
+    getAuditFieldLabel,
+    getAuditSubjectLabel,
+} from '@/utils/auditLog';
 
 export default function Show({ log }) {
-    const formatValue = (value) => {
-        if (value === null) return '-';
-        if (typeof value === 'object') return JSON.stringify(value, null, 2);
-        return String(value);
-    };
-
-    const getActionBadge = (action) => {
-        const colors = { created: 'bg-green-200 text-green-800', updated: 'bg-blue-200 text-blue-800', deleted: 'bg-red-200 text-red-800' };
-        return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colors[action] || 'bg-gray-200 text-gray-800'}`}>{action}</span>;
-    };
+    const changes = getAuditChanges(log);
+    const additionalDetails = getAuditAdditionalDetails(log);
+    const properties = log.properties && typeof log.properties === 'object' ? log.properties : {};
+    const subjectLabel = getAuditSubjectLabel(log.subject_type);
+    const actionLabel = getAuditActionLabel(log.event);
 
     return (
         <AuthenticatedLayout>
-            <div className="flex items-center gap-4 mb-6">
-                <Link href={route('audit.logs')} className="text-gray-600 hover:text-gray-900"><ArrowLeft className="w-5 h-5" /></Link>
-                <h1 className="text-2xl font-bold">Detail Audit Log</h1>
+            <Head title={`Rincian Perubahan: ${subjectLabel}`} />
+
+            <div className="mb-5">
+                <Link
+                    href={route('audit.logs')}
+                    className="inline-flex min-h-10 items-center gap-2 font-semibold text-gray-700 hover:text-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                >
+                    <ArrowLeft className="h-4 w-4" /> Kembali ke riwayat perubahan
+                </Link>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div><strong>Waktu:</strong> {new Date(log.created_at).toLocaleString('id-ID')}</div>
-                    <div><strong>User:</strong> {log.causer?.name || 'System'}</div>
-                    <div><strong>Model:</strong> {log.subject_type}</div>
-                    <div><strong>ID:</strong> {log.subject_id}</div>
-                    <div><strong>Aksi:</strong> {getActionBadge(log.event)}</div>
-                    <div><strong>IP:</strong> {log.properties?.ip || '-'}</div>
-                </div>
-
-                {log.properties?.old && (
-                    <div className="mt-4">
-                        <h3 className="font-medium mb-2">Data Sebelum</h3>
-                        <div className="bg-gray-50 p-3 rounded border overflow-x-auto">
-                            <pre className="text-sm">{formatValue(log.properties.old)}</pre>
-                        </div>
+            <div className="space-y-5">
+                <section className="border-2 border-black bg-white p-5 sm:p-6">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-2xl font-bold text-gray-900">Rincian perubahan pada {subjectLabel}</h1>
+                        <span className="border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700">
+                            {actionLabel}
+                        </span>
                     </div>
-                )}
+                    <p className="mt-2 text-sm leading-6 text-gray-700">
+                        {log.description || `${actionLabel} pada ${subjectLabel.toLowerCase()}.`}
+                    </p>
 
-                {log.properties?.attributes && (
-                    <div className="mt-4">
-                        <h3 className="font-medium mb-2">Data Sesudah</h3>
-                        <div className="bg-gray-50 p-3 rounded border overflow-x-auto">
-                            <pre className="text-sm">{formatValue(log.properties.attributes)}</pre>
+                    <dl className="mt-5 grid grid-cols-1 gap-4 border-t border-gray-200 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                            <dt className="text-xs font-medium text-gray-600">Dilakukan oleh</dt>
+                            <dd className="mt-1 text-sm font-semibold text-gray-900">
+                                {log.causer?.nama_lengkap || log.causer?.name || 'Sistem'}
+                            </dd>
                         </div>
-                    </div>
-                )}
+                        <div>
+                            <dt className="text-xs font-medium text-gray-600">Tanggal dan waktu</dt>
+                            <dd className="mt-1 text-sm font-semibold text-gray-900">
+                                {formatTanggalWaktu(log.created_at)}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-xs font-medium text-gray-600">Bagian data</dt>
+                            <dd className="mt-1 text-sm font-semibold text-gray-900">{subjectLabel}</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section className="border border-gray-300 bg-white p-5 sm:p-6">
+                    <h2 className="text-lg font-semibold text-gray-900">Apa yang berubah?</h2>
+                    {changes.length > 0 ? (
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="min-w-full text-left text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-300 text-gray-600">
+                                        <th scope="col" className="py-3 pr-4 font-medium">Bagian</th>
+                                        <th scope="col" className="py-3 px-4 font-medium">Sebelumnya</th>
+                                        <th scope="col" className="py-3 pl-4 font-medium">Sesudahnya</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {changes.map(({ field, label, before, after }) => (
+                                        <tr key={field} className="border-b border-gray-100 last:border-0">
+                                            <th scope="row" className="py-3 pr-4 font-medium text-gray-900">{label}</th>
+                                            <td className="max-w-sm whitespace-pre-wrap break-words px-4 py-3 text-gray-700">
+                                                {formatAuditValue(before, field)}
+                                            </td>
+                                            <td className="max-w-sm whitespace-pre-wrap break-words pl-4 py-3 font-medium text-gray-900">
+                                                {formatAuditValue(after, field)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : additionalDetails.length > 0 ? (
+                        <>
+                            <p className="mt-2 text-sm text-gray-600">
+                                Aktivitas ini tidak menyimpan nilai sebelum dan sesudah. Informasi yang tercatat:
+                            </p>
+                            <dl className="mt-4 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+                                {additionalDetails.map(({ field, label, value }) => (
+                                    <div key={field} className="flex justify-between gap-4 border-b border-gray-100 py-3">
+                                        <dt className="text-sm text-gray-600">{label || getAuditFieldLabel(field)}</dt>
+                                        <dd className="text-right text-sm font-medium text-gray-900">{value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </>
+                    ) : (
+                        <p className="mt-2 text-sm text-gray-600">
+                            Tidak ada rincian nilai yang disimpan untuk aktivitas ini.
+                        </p>
+                    )}
+                </section>
+
+                <details className="border border-gray-300 bg-white p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-gray-800">
+                        Informasi teknis (untuk admin)
+                    </summary>
+                    <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt className="text-gray-600">ID aktivitas</dt>
+                            <dd className="mt-1 break-all font-mono text-xs text-gray-800">{log.id}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-gray-600">ID data</dt>
+                            <dd className="mt-1 break-all font-mono text-xs text-gray-800">{log.subject_id || '—'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-gray-600">Alamat IP</dt>
+                            <dd className="mt-1 text-gray-800">{properties.ip || '—'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-gray-600">Perangkat atau browser</dt>
+                            <dd className="mt-1 break-words text-gray-800">{properties.user_agent || '—'}</dd>
+                        </div>
+                    </dl>
+                </details>
             </div>
         </AuthenticatedLayout>
     );

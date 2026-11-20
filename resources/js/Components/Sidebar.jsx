@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     FolderKanban,
     ShoppingCart,
+    Package,
     Truck,
     Factory,
     Users,
@@ -14,6 +15,9 @@ import {
     Building2,
     ShieldCheck,
     MapPin,
+    Wrench,
+    Navigation,
+    Smartphone,
 } from 'lucide-react';
 
 function safeRoute(name, params = {}, fallback = '/dashboard') {
@@ -29,8 +33,14 @@ function safeRoute(name, params = {}, fallback = '/dashboard') {
 
 /**
  * All possible menu items with required permission(s).
- * permission: string | string[]  — user must have AT LEAST ONE of these.
- * If omitted, item is always shown (e.g. Dashboard).
+ * permission: string | string[]  - user must have AT LEAST ONE of these.
+ * excludeRoles: string[]         - item HIDDEN for these roles regardless of permission
+ *                                  (mis. role eksternal Kontraktor vs menu core).
+ * roles: string[]                - item ONLY shown if user has ANY of these roles
+ *                                  (mis. "Portal Kontraktor" yang rutenya role:Kontraktor).
+ * section: boolean               - item hanya label grup (tidak bisa diklik), anak-anaknya
+ *                                  ditampilkan langsung di bawah label.
+ * If permission & roles omitted, item is always shown (e.g. Dashboard).
  */
 function getAllMenus() {
     return [
@@ -46,6 +56,7 @@ function getAllMenus() {
             href: safeRoute('core.proyek.index', {}, '/core/proyek'),
             routeName: 'core.proyek.*',
             permission: ['manage proyek', 'view proyek'],
+            excludeRoles: ['Kontraktor'],
         },
         {
             title: 'Procurement',
@@ -53,23 +64,84 @@ function getAllMenus() {
             permission: ['manage procurement', 'view procurement', 'approve procurement', 'manage bahan baku', 'manage supplier'],
             items: [
                 { title: 'Purchase Orders', href: safeRoute('procurement.purchase-orders.index', {}, '/procurement/purchase-orders'), routeName: 'procurement.purchase-orders.*', permission: ['manage procurement', 'view procurement', 'approve procurement'] },
-                { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', {}, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', permission: ['manage bahan baku', 'view bahan baku'] },
+                { title: 'Bahan Baku & Price List', href: safeRoute('procurement.bahan-baku.index', { filters: { kategori: 'bahan_baku' } }, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', activeQuery: { key: 'filters[kategori]', value: 'bahan_baku', fallback: true }, permission: ['manage bahan baku', 'view bahan baku'] },
                 { title: 'Daftar Supplier', href: safeRoute('procurement.supplier.index', {}, '/procurement/supplier'), routeName: 'procurement.supplier.*', permission: ['manage supplier', 'view supplier'] },
+            ],
+        },
+        {
+            title: 'Inventory',
+            icon: Package,
+            permission: ['manage inventory', 'view inventory', 'manage stok opname', 'view stok opname', 'manage bahan baku', 'view bahan baku'],
+            items: [
+                { title: 'Dashboard Inventory', href: safeRoute('inventory.dashboard', {}, '/inventory/dashboard'), routeName: 'inventory.dashboard', permission: ['manage inventory', 'view inventory', 'manage stok opname', 'view stok opname', 'manage procurement', 'view procurement'] },
+                { title: 'Material & Sparepart', href: safeRoute('procurement.bahan-baku.index', { filters: { kategori: 'sparepart' } }, '/procurement/bahan-baku'), routeName: 'procurement.bahan-baku.*', activeQuery: { key: 'filters[kategori]', value: 'sparepart' }, permission: ['manage bahan baku', 'view bahan baku'] },
+                { title: 'Stok Opname', href: safeRoute('inventory.stok-opname.index', {}, '/inventory/stok-opname'), routeName: 'inventory.stok-opname.*', permission: ['manage stok opname', 'view stok opname'] },
             ],
         },
         {
             title: 'Manajemen Armada',
             icon: Truck,
-            permission: ['manage fleet', 'view fleet'],
+            permission: ['manage fleet', 'view fleet', 'manage pengisian solar', 'manage helper armada', 'manage dokumen armada', 'view fleet service', 'manage fleet service'],
             items: [
-                { title: 'Armada (GCS)', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Log Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
-                { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
+                { title: 'Monitoring Armada', href: safeRoute('fleet.monitoring-armada.index', {}, '/fleet/monitoring-armada'), routeName: 'fleet.monitoring-armada.*', permission: ['manage fleet', 'view fleet'] },
+                { title: 'Unit Armada', href: safeRoute('fleet.armada.index', {}, '/fleet/armada'), routeName: 'fleet.armada.*', permission: ['manage fleet', 'view fleet'] },
+                {
+                    title: 'Operasional',
+                    section: true,
+                    items: [
+                        { title: 'Ritase Harian', href: safeRoute('fleet.ritase.index', {}, '/fleet/ritase'), routeName: 'fleet.ritase.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Sewa Alat Jam (HM)', href: safeRoute('fleet.sewa-alat.index', {}, '/fleet/sewa-alat'), routeName: 'fleet.sewa-alat.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Rute Tarif', href: safeRoute('fleet.rute-tarif.index', {}, '/fleet/rute-tarif'), routeName: 'fleet.rute-tarif.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Helper Armada', href: safeRoute('fleet.helper.index', {}, '/fleet/helper'), routeName: 'fleet.helper.*', permission: ['manage helper armada'] },
+                    ],
+                },
+                {
+                    title: 'Bahan Bakar',
+                    section: true,
+                    items: [
+                        { title: 'Pengisian Solar', href: safeRoute('fleet.pengisian-solar.index', {}, '/fleet/pengisian-solar'), routeName: 'fleet.pengisian-solar.*', permission: ['manage pengisian solar'] },
+                    ],
+                },
+                {
+                    title: 'Perawatan & Dokumen',
+                    section: true,
+                    items: [
+                        { title: 'Checklist Harian', href: safeRoute('fleet.checklist-harian.index', {}, '/fleet/checklist-harian'), routeName: 'fleet.checklist-harian.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Servis Armada', href: safeRoute('fleet.servis-armada.index', {}, '/fleet/servis-armada'), routeName: 'fleet.servis-armada.*', permission: ['view fleet service', 'manage fleet service', 'approve fleet service', 'manage sparepart', 'view sparepart', 'manage fleet', 'view fleet'] },
+                        { title: 'Downtime Aktif', href: safeRoute('fleet.downtime.active', {}, '/fleet/downtime/active'), routeName: 'fleet.downtime.*', permission: ['manage fleet', 'view fleet'] },
+                        { title: 'Dokumen Armada', href: safeRoute('fleet.dokumen-berkala.index', {}, '/fleet/dokumen-berkala'), routeName: 'fleet.dokumen-berkala.*', permission: ['manage fleet', 'view fleet', 'manage dokumen armada'] },
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'Workshop',
+            icon: Wrench,
+            permission: ['view fleet service', 'manage fleet service', 'manage sparepart', 'view sparepart'],
+            items: [
+                { title: 'Monitoring Kondisi', href: safeRoute('fleet.workshop.monitoring.index', {}, '/fleet/workshop/monitoring'), routeName: 'fleet.workshop.monitoring.*', permission: ['view fleet service', 'view fleet', 'view production'] },
+                { title: 'Ajuan Sparepart', href: safeRoute('fleet.workshop.sparepart.index', {}, '/fleet/workshop/sparepart'), routeName: 'fleet.workshop.sparepart.*', permission: ['view fleet service', 'manage sparepart', 'view sparepart'] },
+                { title: 'To-Do List Servis', href: safeRoute('fleet.workshop.todo.index', {}, '/fleet/workshop/todo'), routeName: 'fleet.workshop.todo.*', permission: ['view fleet service', 'manage fleet service'] },
+                { title: 'Riwayat Servis Internal', href: safeRoute('fleet.workshop.riwayat.index', {}, '/fleet/workshop/riwayat'), routeName: 'fleet.workshop.riwayat.*', permission: ['view fleet service', 'manage fleet service'] },
+                { title: 'Verifikasi Servis Eksternal', href: safeRoute('fleet.workshop.servis-eksternal.index', {}, '/fleet/workshop/servis-eksternal'), routeName: 'fleet.workshop.servis-eksternal.*', permission: ['manage fleet service', 'view fleet service'] },
+            ],
+        },
+        {
+            title: 'Logistik',
+            icon: Truck,
+            permission: ['verify ritase logistik', 'manage timbang'],
+            items: [
+                { title: 'Antrean Verifikasi Ritase', href: safeRoute('logistik.ritase-verifikasi.index', {}, '/logistik/ritase-verifikasi'), routeName: 'logistik.ritase-verifikasi.*', permission: ['verify ritase logistik', 'manage timbang'] },
+            ],
+        },
+        {
+            title: 'Security',
+            icon: ShieldCheck,
+            permission: ['manage security buku tamu', 'manage security checklist', 'manage security darurat', 'verify ritase security'],
+            items: [
+                { title: 'Buku Tamu', href: safeRoute('security.buku-tamu.index', {}, '/security/buku-tamu'), routeName: 'security.buku-tamu.*', permission: ['manage security buku tamu'] },
+                { title: 'Checklist Kantor', href: safeRoute('security.checklist-template.index', {}, '/security/checklist-template'), routeName: 'security.checklist-template.*', permission: ['manage security checklist'] },
+                { title: 'Laporan Darurat', href: safeRoute('security.darurat.index', {}, '/security/darurat'), routeName: 'security.darurat.*', permission: ['manage security darurat'] },
             ],
         },
         {
@@ -78,6 +150,7 @@ function getAllMenus() {
             permission: ['manage production cbp', 'manage production amp', 'view production', 'start session', 'end session', 'manage qc'],
             items: [
                 { title: 'Dashboard Produksi', href: safeRoute('production.dashboard', {}, '/production/dashboard'), routeName: 'production.dashboard', permission: ['manage production cbp', 'manage production amp', 'view production'] },
+                { title: 'Mesin Produksi', href: safeRoute('production.mesin.index', {}, '/production/mesin'), routeName: 'production.mesin.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Sesi Produksi', href: safeRoute('production.sessions.index', {}, '/production/sessions'), routeName: 'production.sessions.*', permission: ['manage production cbp', 'manage production amp', 'view production', 'start session'] },
                 { title: 'Mix Design (BOM)', href: safeRoute('production.mix-design.index', {}, '/production/mix-design'), routeName: 'production.mix-design.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
                 { title: 'Pengiriman Armada Transportasi', href: safeRoute('production.pengiriman.index', {}, '/production/pengiriman'), routeName: 'production.pengiriman.*', permission: ['manage production cbp', 'manage production amp', 'view production'] },
@@ -91,7 +164,7 @@ function getAllMenus() {
             items: [
                 { title: 'Data Karyawan', href: safeRoute('hr.karyawan.index', {}, '/hr/karyawan'), routeName: 'hr.karyawan.*', permission: ['manage hr', 'view hr'] },
                 { title: 'Pengajuan Cuti', href: safeRoute('hr.cuti.index', {}, '/hr/cuti'), routeName: 'hr.cuti.*', permission: ['manage hr', 'view hr'] },
-                { title: 'Payroll 3-Skema', href: safeRoute('hr.payroll.index', {}, '/hr/payroll'), routeName: 'hr.payroll.*', permission: ['manage payroll', 'view payroll'] },
+                { title: 'Payroll', href: safeRoute('hr.payroll.index', {}, '/hr/payroll'), routeName: 'hr.payroll.*', permission: ['manage payroll', 'view payroll'] },
             ],
         },
         {
@@ -111,15 +184,35 @@ function getAllMenus() {
                 { title: 'Kas & Bank', href: safeRoute('finance.akun-kas.index', {}, '/finance/akun-kas'), routeName: 'finance.akun-kas.*', permission: ['manage kas', 'manage finance', 'view finance'] },
                 { title: 'Daftar Invoice', href: safeRoute('finance.invoice.index', {}, '/finance/invoice'), routeName: ['finance.invoice.*', '!finance.invoice.outstanding', '!finance.invoice.aging'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
                 { title: 'Piutang & Pembayaran', href: safeRoute('finance.invoice.outstanding', {}, '/finance/invoice/outstanding'), routeName: ['finance.invoice.outstanding', 'finance.invoice.aging', 'finance.pembayaran-klien.*'], permission: ['manage invoice', 'view invoice', 'manage finance'] },
+                { title: 'Rekap Pemasukan & Pengeluaran', href: safeRoute('finance.rekap-kas.index', {}, '/finance/rekap-kas'), routeName: ['finance.rekap-kas.*'], permission: ['manage rekap keuangan'] },
+                { title: 'Rekap Pengeluaran', href: safeRoute('finance.rekap-pengeluaran.index', {}, '/finance/rekap-pengeluaran'), routeName: ['finance.rekap-pengeluaran.*'], permission: ['manage rekap pengeluaran'] },
                 { title: 'Laporan Konsolidasi', href: safeRoute('finance.laporan-keuangan.index', {}, '/finance/laporan-keuangan'), routeName: 'finance.laporan-keuangan.*', permission: ['manage finance', 'view finance'] },
             ],
         },
         {
             title: 'Portal Kontraktor',
             icon: ClipboardList,
-            permission: ['manage kontraktor', 'view kontraktor'],
+            // Route-nya dibatasi middleware `role:Kontraktor` - jadi menu HANYA
+            // untuk role Kontraktor. Internal (Owner/Admin dll) yang melewati
+            // cek permission TIDAK boleh melihatnya (kalau diklik → 403).
+            roles: ['Kontraktor'],
             href: safeRoute('kontraktor.dashboard', {}, '/kontraktor/dashboard'),
             routeName: 'kontraktor.*',
+        },
+        {
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
+            permission: ['manage app version'],
+            excludeRoles: ['Owner'],
+        },
+        {
+            title: 'Manajemen User',
+            icon: Users,
+            href: safeRoute('users.index', {}, '/users'),
+            routeName: 'users.*',
+            permission: ['manage user'],
         },
     ];
 }
@@ -130,47 +223,57 @@ function hasPermission(userPermissions, required) {
     return list.some((p) => userPermissions.includes(p));
 }
 
-function filterMenuByPermissions(menus, userPermissions) {
-    return menus
-        .filter((item) => hasPermission(userPermissions, item.permission))
-        .map((item) => {
-            if (!item.items) return item;
-            const filteredItems = item.items.filter((sub) =>
-                hasPermission(userPermissions, sub.permission)
-            );
-            return { ...item, items: filteredItems };
-        })
-        .filter((item) => !item.items || item.items.length > 0);
+function isExcludedByRole(userRoles, excludeRoles) {
+    if (!excludeRoles || excludeRoles.length === 0) return false;
+    return excludeRoles.some((role) => userRoles.includes(role));
+}
+
+function isAllowedByRoles(userRoles, roles) {
+    if (!roles || roles.length === 0) return true;
+    return roles.some((role) => userRoles.includes(role));
+}
+
+function filterMenuByPermissions(menus, userPermissions, userRoles = []) {
+    const allowed = (item) =>
+        !isExcludedByRole(userRoles, item.excludeRoles) &&
+        isAllowedByRoles(userRoles, item.roles) &&
+        hasPermission(userPermissions, item.permission);
+
+    const filterItems = (items) =>
+        items
+            .filter(allowed)
+            .map((item) => (item.items ? { ...item, items: filterItems(item.items) } : item))
+            .filter((item) => !item.items || item.items.length > 0);
+
+    return filterItems(menus);
 }
 
 export default function Sidebar({ isOpen, onClose }) {
     const { auth } = usePage().props;
+    const { url: currentUrl } = usePage();
     const user = auth?.user;
     const roles = auth?.roles || [];
     const activeRole = auth?.active_role || roles[0] || '';
     const userPermissions = auth?.permissions || [];
 
     const allMenus = getAllMenus();
-    const menuList = filterMenuByPermissions(allMenus, userPermissions);
+    const menuList = filterMenuByPermissions(allMenus, userPermissions, roles);
 
     const isOwner = roles.includes('Owner');
-    const isAdminKeuangan = roles.includes('Admin Keuangan');
 
     const roleExtraMenus = [];
     if (isOwner) {
         roleExtraMenus.push({
-            title: 'Audit Log',
-            icon: ShieldCheck,
-            href: safeRoute('audit.logs', {}, '/audit/logs'),
-            routeName: 'audit.*',
+            title: 'Tracking Linimasa',
+            icon: Navigation,
+            href: safeRoute('attendance.tracking.index', {}, '/attendance/tracking'),
+            routeName: 'attendance.tracking.*',
         });
-    }
-    if (isOwner || isAdminKeuangan) {
         roleExtraMenus.push({
-            title: 'Manajemen User',
-            icon: Users,
-            href: safeRoute('users.index', {}, '/users'),
-            routeName: 'users.*',
+            title: 'Versi Aplikasi Mobile',
+            icon: Smartphone,
+            href: safeRoute('core.app-version.index', {}, '/core/app-version'),
+            routeName: 'core.app-version.*',
         });
     }
 
@@ -179,13 +282,14 @@ export default function Sidebar({ isOpen, onClose }) {
     const [openSubmenu, setOpenSubmenu] = useState({});
     const [switching, setSwitching] = useState(false);
 
-    const toggleSubmenu = (title) => {
-        setOpenSubmenu((prev) => ({ ...prev, [title]: !prev[title] }));
+    const toggleSubmenu = (title, currentlyOpen) => {
+        setOpenSubmenu((prev) => ({ ...prev, [title]: !currentlyOpen }));
     };
 
     const matchesPattern = (current, pattern) => {
         if (pattern.endsWith('.*')) {
-            return current.startsWith(pattern.replace('.*', ''));
+            const prefix = pattern.slice(0, -2);
+            return current === prefix || current.startsWith(prefix + '.');
         }
         return current === pattern;
     };
@@ -214,6 +318,23 @@ export default function Sidebar({ isOpen, onClose }) {
         return false;
     };
 
+    const isMenuItemActive = (item) => {
+        const selfActive = isRouteActive(item.routeName) && (() => {
+            if (!item.activeQuery) return true;
+
+            try {
+                const params = new URL(currentUrl, window.location.origin).searchParams;
+                const actual = params.get(item.activeQuery.key);
+                if (actual === item.activeQuery.value) return true;
+                return item.activeQuery.fallback && actual === null;
+            } catch (e) {
+                return false;
+            }
+        })();
+
+        return selfActive || (item.items || []).some((sub) => isMenuItemActive(sub));
+    };
+
     const handleRoleSwitch = (newRole) => {
         if (newRole === activeRole || switching) return;
         setSwitching(true);
@@ -224,6 +345,22 @@ export default function Sidebar({ isOpen, onClose }) {
                 preserveScroll: false,
                 onFinish: () => setSwitching(false),
             }
+        );
+    };
+
+    const renderSubLink = (sub) => {
+        const subActive = isMenuItemActive(sub);
+        return (
+            <Link
+                key={sub.title}
+                href={sub.href}
+                className={`block border-2 px-2.5 py-1.5 text-[11px] font-bold transition-all ${subActive
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
+                    }`}
+            >
+                {sub.title}
+            </Link>
         );
     };
 
@@ -242,12 +379,15 @@ export default function Sidebar({ isOpen, onClose }) {
             >
                 <div className="flex h-16 items-center justify-between bg-white px-4">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black font-bold text-sm border-2 border-white shadow-md">
-                            S
-                        </div>
+                        <img
+                            src="/main-logo.png"
+                            alt=""
+                            aria-hidden="true"
+                            className="h-9 w-9 shrink-0 object-contain"
+                        />
                         <div>
                             <span className="text-base font-black tracking-tight text-black">SBPS System</span>
-                            <span className="block text-[10px] font-semibold text-blaxk/70">Multi-Unit Bisnis v5</span>
+                            <span className="block text-[10px] font-semibold text-black/70">Multi-Unit Bisnis</span>
                         </div>
                     </Link>
                 </div>
@@ -284,10 +424,9 @@ export default function Sidebar({ isOpen, onClose }) {
                     {finalMenuList.map((item, idx) => {
                         const Icon = item.icon || Building2;
                         const hasSub = item.items && item.items.length > 0;
-                        const isSubOpen = openSubmenu[item.title] ?? item.items?.some((sub) => isRouteActive(sub.routeName));
-                        const active = !hasSub
-                            ? isRouteActive(item.routeName)
-                            : item.items.some((sub) => isRouteActive(sub.routeName));
+                        const hasActiveChild = hasSub && item.items.some((sub) => isMenuItemActive(sub));
+                        const isSubOpen = openSubmenu[item.title] ?? hasActiveChild;
+                        const active = isMenuItemActive(item);
 
                         return (
                             <div key={idx} className="space-y-1">
@@ -304,40 +443,67 @@ export default function Sidebar({ isOpen, onClose }) {
                                     </Link>
                                 ) : (
                                     <div>
+                                        {/* Seluruh baris adalah tombol toggle */}
                                         <button
                                             type="button"
-                                            onClick={() => toggleSubmenu(item.title)}
-                                            className={`group flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold transition-all border-2 ${active
+                                            onClick={() => toggleSubmenu(item.title, isSubOpen)}
+                                            aria-expanded={!!isSubOpen}
+                                            aria-label={`${isSubOpen ? 'Tutup' : 'Buka'} submenu ${item.title}`}
+                                            className={`group flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-xs font-bold transition-all border-2 ${active
                                                 ? 'bg-white text-ink.DEFAULT border-black shadow-bw-sm font-black'
                                                 : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <span className="flex flex-1 items-center gap-3">
                                                 <Icon className="h-4.5 w-4.5 shrink-0 text-ink.DEFAULT" />
                                                 <span>{item.title}</span>
-                                            </div>
+                                            </span>
                                             {isSubOpen ? (
-                                                <ChevronDown className="h-4 w-4 text-ink.DEFAULT" />
+                                                <ChevronDown className="h-4 w-4 shrink-0 text-ink.DEFAULT" />
                                             ) : (
-                                                <ChevronRight className="h-4 w-4 text-ink.DEFAULT" />
+                                                <ChevronRight className="h-4 w-4 shrink-0 text-ink.DEFAULT" />
                                             )}
                                         </button>
 
                                         {isSubOpen && (
                                             <div className="mt-1 ml-4 border-l-2 border-black pl-3 space-y-1">
                                                 {item.items.map((sub, sIdx) => {
-                                                    const subActive = isRouteActive(sub.routeName);
+                                                    if (!sub.section) return renderSubLink(sub);
+
+                                                    const sectionKey = `${item.title}/${sub.title}`;
+                                                    const sectionActive = sub.items.some((child) => isMenuItemActive(child));
+                                                    const isSectionOpen = openSubmenu[sectionKey] ?? sectionActive;
+
                                                     return (
-                                                        <Link
-                                                            key={sIdx}
-                                                            href={sub.href}
-                                                            className={`block px-2.5 py-2 text-[11px] font-bold transition-all border-2 -ml-[1px] ${subActive
-                                                                ? 'bg-black text-white border-black'
-                                                                : 'bg-white text-ink.DEFAULT border-transparent hover:border-black hover:bg-surface-muted'
-                                                                }`}
-                                                        >
-                                                            {sub.title}
-                                                        </Link>
+                                                        <div key={sIdx}>
+                                                            {/* Header grup: seluruh baris bisa diklik */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleSubmenu(sectionKey, isSectionOpen)}
+                                                                aria-expanded={!!isSectionOpen}
+                                                                aria-label={`${isSectionOpen ? 'Tutup' : 'Buka'} grup ${sub.title}`}
+                                                                className={`flex w-full cursor-pointer items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] font-black text-ink.DEFAULT transition-all ${sectionActive
+                                                                    ? 'bg-surface-muted'
+                                                                    : 'bg-white hover:bg-surface-muted'
+                                                                    }`}
+                                                            >
+                                                                <span>{sub.title}</span>
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <span className="text-[10px] font-bold text-ink-secondary">{sub.items.length}</span>
+                                                                    {isSectionOpen ? (
+                                                                        <ChevronDown className="h-3.5 w-3.5" />
+                                                                    ) : (
+                                                                        <ChevronRight className="h-3.5 w-3.5" />
+                                                                    )}
+                                                                </span>
+                                                            </button>
+
+                                                            {isSectionOpen && (
+                                                                <div className="mt-1 mb-1 ml-3 border-l-2 border-black/30 pl-2 space-y-0.5">
+                                                                    {sub.items.map((child) => renderSubLink(child))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     );
                                                 })}
                                             </div>

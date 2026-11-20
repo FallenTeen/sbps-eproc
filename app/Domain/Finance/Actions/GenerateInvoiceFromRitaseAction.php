@@ -67,7 +67,7 @@ class GenerateInvoiceFromRitaseAction
 
             // Tambahkan item per ritase
             foreach ($ritases as $ritase) {
-                $deskripsi = "Ritase - {$ritase->armada->plat_nomor} - {$ritase->jumlah_rit} rit";
+                $deskripsi = 'Ritase - {'.($ritase->armada->plat_nomor ?? $ritase->armada->kode_unit)."} - {$ritase->jumlah_rit} rit";
                 $subtotal = $ritase->total_upah_rit + $ritase->biayaLain->sum('jumlah');
 
                 $invoice->items()->create([

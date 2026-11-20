@@ -9,6 +9,7 @@ use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\GeoUrl;
 use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -58,8 +59,11 @@ class TrackingController extends Controller
             ], 'Batch lokasi sudah diproses sebelumnya.');
         }
 
+        // Presensi terbuka dalam 36 jam terakhir. Bukan whereDate check-in
+        // supaya shift malam (check-in 22:00, kirim lokasi sampai check-out
+        // esok pagi - BK-6) tetap diterima setelah ganti tanggal.
         $presensi = Presensi::byKaryawan($karyawan->id)
-            ->whereDate('check_in', now()->toDateString())
+            ->where('check_in', '>=', now()->subHours(36))
             ->whereNull('check_out')
             ->latest('check_in')
             ->first();
@@ -68,19 +72,13 @@ class TrackingController extends Controller
             return $this->error('Tracking hanya aktif saat check-in.', 422);
         }
 
-        $cutoff = Carbon::parse(now()->toDateString().' '.config('mobile.tracking.auto_cutoff', '18:00'));
-
         $received = count($validated['locations']);
         $saved = 0;
 
         try {
-            DB::transaction(function () use ($validated, $karyawan, $presensi, $cutoff, $received, &$saved) {
+            DB::transaction(function () use ($validated, $karyawan, $presensi, $received, &$saved) {
                 foreach ($validated['locations'] as $loc) {
                     $recordedAt = Carbon::parse($loc['timestamp']);
-
-                    if ($recordedAt->greaterThan($cutoff)) {
-                        continue;
-                    }
 
                     MobileTrackingLocation::create([
                         'karyawan_id' => $karyawan->id,
@@ -143,25 +141,47 @@ class TrackingController extends Controller
         $locations = MobileTrackingLocation::where('karyawan_id', $target->karyawan->id)
             ->whereDate('recorded_at', now()->toDateString())
             ->orderBy('recorded_at')
-            ->get()
-            ->map(fn (MobileTrackingLocation $l) => [
-                'lat' => (float) $l->latitude,
-                'lng' => (float) $l->longitude,
-                'timestamp' => $l->recorded_at->toIso8601String(),
-            ]);
+            ->get();
+
+        $lastLocation = $locations->last();
 
         return $this->success([
             'user_id' => $target->id,
             'nama' => $target->name,
             'tanggal' => now()->toDateString(),
-            'items' => $locations,
+            'last_lat' => $lastLocation ? (float) $lastLocation->latitude : null,
+            'last_lng' => $lastLocation ? (float) $lastLocation->longitude : null,
+            'google_maps_url' => $lastLocation
+                ? GeoUrl::googleMaps((float) $lastLocation->latitude, (float) $lastLocation->longitude)
+                : null,
+            'items' => $locations->map(fn (MobileTrackingLocation $l) => [
+                'lat' => (float) $l->latitude,
+                'lng' => (float) $l->longitude,
+                'timestamp' => $l->recorded_at->toIso8601String(),
+            ]),
         ], 'Tracking hari ini.');
     }
 
     /**
      * GET /api/mobile/tracking/active-users
-     * User yang sedang aktif (kirim tracking dalam 1 jam terakhir).
-     * Hanya role tertentu (Owner / Admin).
+     * Karyawan yang masih ber-presensi aktif HARI INI (check-in, belum
+     * check-out) beserta status GPS terkini. Setiap field adalah data ABSAH
+     * server - tidak ada fabrikasi realtime:
+     *
+     * - `titik`        : titik kerja dari presensi aktif mereka;
+     * - `aktif_sejak`  : waktu check-in yang masih aktif (ISO);
+     * - `last_seen`    : timestamp lokasi GPS TERAKHIR hari ini
+     *                    (null bila belum ada GPS tercatat hari ini);
+     * - `last_lat`     : latitude GPS TERAKHIR hari ini (null bila tanpa GPS);
+     * - `last_lng`     : longitude GPS TERAKHIR hari ini (null bila tanpa GPS);
+     * - `google_maps_url` : URL universal Google Maps dari koordinat GPS terakhir
+     *                    (null bila tanpa GPS) - dipakai aksi "Buka di Google
+     *                    Maps" / "Bagikan Lokasi", format sama di mobile & web;
+     * - `point_count`  : jumlah titik GPS hari ini.
+     *
+     * Freshness / stale-state dihitung klien dari `last_seen`. Daftar ini
+     * BUKAN janji realtime - app wajib menyebut keterlambatannya bila lama.
+     * Khusus role Owner / Admin.
      */
     public function activeUsers(Request $request)
     {
@@ -171,34 +191,68 @@ class TrackingController extends Controller
             return $this->error('Anda tidak berhak melihat data ini.', 403);
         }
 
-        $oneHourAgo = now()->subHour();
+        $today = now()->toDateString();
 
-        $users = MobileTrackingLocation::selectRaw('
-                karyawan_id,
-                max(recorded_at) as last_seen,
-                count(*) as point_count
-            ')
-            ->where('recorded_at', '>=', $oneHourAgo)
-            ->groupBy('karyawan_id')
+        $presensis = Presensi::with(['karyawan.user', 'karyawan', 'titik'])
+            ->whereDate('check_in', $today)
+            ->whereNull('check_out')
+            ->orderByDesc('check_in')
+            ->get();
+
+        $karyawanIds = $presensis->pluck('karyawan_id')->filter()->values();
+
+        // Baris lokasi GPS TERAKHIR per karyawan (anti N+1 via join subquery).
+        $lastLocations = MobileTrackingLocation::query()
+            ->select(
+                'mobile_tracking_locations.karyawan_id',
+                'mobile_tracking_locations.latitude',
+                'mobile_tracking_locations.longitude',
+                'mobile_tracking_locations.recorded_at'
+            )
+            ->joinSub(
+                MobileTrackingLocation::query()
+                    ->selectRaw('karyawan_id, max(recorded_at) as last_seen')
+                    ->whereIn('karyawan_id', $karyawanIds)
+                    ->whereDate('recorded_at', $today)
+                    ->groupBy('karyawan_id'),
+                'latest',
+                fn ($join) => $join->on('mobile_tracking_locations.karyawan_id', '=', 'latest.karyawan_id')
+                    ->on('mobile_tracking_locations.recorded_at', '=', 'latest.last_seen')
+            )
             ->get()
-            ->map(function ($row) {
-                $karyawan = Karyawan::with('user')
-                    ->find($row->karyawan_id);
+            ->keyBy('karyawan_id');
+
+        $pointCounts = MobileTrackingLocation::selectRaw('karyawan_id, count(*) as point_count')
+            ->whereIn('karyawan_id', $karyawanIds)
+            ->whereDate('recorded_at', $today)
+            ->groupBy('karyawan_id')
+            ->pluck('point_count', 'karyawan_id');
+
+        $items = $presensis
+            ->filter(fn (Presensi $p) => $p->karyawan !== null && $p->karyawan->user !== null)
+            ->map(function (Presensi $p) use ($lastLocations, $pointCounts) {
+                $last = $lastLocations[$p->karyawan_id] ?? null;
 
                 return [
-                    'karyawan_id' => $row->karyawan_id,
-                    'nama' => $karyawan?->nama,
-                    'user_id' => $karyawan?->user_id,
-                    'last_seen' => Carbon::parse($row->last_seen)->toIso8601String(),
-                    'point_count' => (int) $row->point_count,
+                    'karyawan_id' => $p->karyawan_id,
+                    'nama' => $p->karyawan->nama,
+                    'user_id' => $p->karyawan->user_id,
+                    'titik' => $p->titik?->nama,
+                    'aktif_sejak' => $p->check_in?->toIso8601String(),
+                    'last_seen' => $last?->recorded_at?->toIso8601String(),
+                    'last_lat' => $last ? (float) $last->latitude : null,
+                    'last_lng' => $last ? (float) $last->longitude : null,
+                    'google_maps_url' => $last
+                        ? GeoUrl::googleMaps((float) $last->latitude, (float) $last->longitude)
+                        : null,
+                    'point_count' => (int) ($pointCounts[$p->karyawan_id] ?? 0),
                 ];
             })
-            ->filter(fn ($u) => $u['nama'] !== null)
             ->values();
 
         return $this->success([
-            'total' => $users->count(),
-            'items' => $users,
-        ], 'User aktif.');
+            'total' => $items->count(),
+            'items' => $items,
+        ], 'Karyawan ber-presensi aktif & status GPS.');
     }
 }

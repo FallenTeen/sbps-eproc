@@ -7,47 +7,43 @@ use App\Domain\Finance\Models\AkunKasBank;
 use App\Domain\Finance\Models\MutasiKasBank;
 use App\Domain\Finance\Models\TransferAntarKas;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class TransferKasController extends Controller
 {
+    use FilterableTable;
+
     /**
      * Display a listing of transfers.
      */
     public function index(Request $request)
     {
         $this->authorize('viewAny', TransferAntarKas::class);
+
         $query = TransferAntarKas::with(['dariAkun', 'keAkun']);
 
-        if ($request->filled('dari_akun')) {
-            $query->where('dari_akun_kas_bank_id', $request->dari_akun);
-        }
+        $columns = [
+            'tanggal' => ['type' => 'date'],
+            'dari' => ['relation' => 'dariAkun', 'column' => 'id', 'type' => 'exact'],
+            'ke' => ['relation' => 'keAkun', 'column' => 'id', 'type' => 'exact'],
+            'jumlah' => ['type' => 'exact', 'searchable' => false],
+        ];
 
-        if ($request->filled('ke_akun')) {
-            $query->where('ke_akun_kas_bank_id', $request->ke_akun);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['tanggal' => 'desc', 'created_at' => 'desc']);
 
-        if ($request->filled('tanggal_from')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_from);
-        }
-
-        if ($request->filled('tanggal_to')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_to);
-        }
-
-        $transfers = $query->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+        $transfers = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         $akunList = AkunKasBank::where('aktif', true)->get();
 
         return Inertia::render('Finance/TransferKas/Index', [
             'transfers' => $transfers,
             'akunList' => $akunList,
-            'filters' => $request->only(['dari_akun', 'ke_akun', 'tanggal_from', 'tanggal_to']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

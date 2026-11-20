@@ -14,11 +14,14 @@ use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\ResepProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ProductionSessionController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', ProductionSession::class);
@@ -33,24 +36,17 @@ class ProductionSessionController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'mesin' => ['relation' => 'mesin', 'column' => 'nama', 'type' => 'like'],
+            'produk' => ['relation' => 'produk', 'column' => 'id', 'type' => 'exact'],
+            'operator' => ['relation' => 'operator', 'column' => 'nama', 'type' => 'like'],
+            'mulai' => ['type' => 'date'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->filled('produk_id')) {
-            $query->where('produk_id', $request->produk_id);
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('mulai', $request->tanggal);
-        }
-
-        if ($request->filled('search')) {
-            $query->whereHas('mesin', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'))
-                ->orWhereHas('produk', fn ($q) => $q->where('nama', 'like', '%'.$request->search.'%'));
-        }
-
-        $sessions = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $sessions = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         // Append margin untuk tampilan index
         $sessions->getCollection()->transform(function ($session) {
@@ -73,7 +69,9 @@ class ProductionSessionController extends Controller
         return Inertia::render('Production/Sessions/Index', [
             'sessions' => $sessions,
             'produks' => $produksQuery->get(),
-            'filters' => $request->only('status', 'produk_id', 'tanggal', 'search'),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

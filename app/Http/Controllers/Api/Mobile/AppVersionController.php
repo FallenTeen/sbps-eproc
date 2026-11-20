@@ -17,14 +17,17 @@ class AppVersionController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'app' => 'required|string|in:presensi,proyek',
+            'app' => 'required|string|in:presensi,proyek,mobile',
             'platform' => 'required|string|in:android,ios',
         ]);
 
-        $version = AppVersion::query()
-            ->where('app', $validated['app'])
-            ->where('platform', $validated['platform'])
-            ->first();
+        $baseQuery = AppVersion::query()->where('platform', $validated['platform']);
+
+        $version = match ($validated['app']) {
+            'mobile' => (clone $baseQuery)->where('app', 'mobile')->first()
+                ?? (clone $baseQuery)->where('app', 'presensi')->first(),
+            default => (clone $baseQuery)->where('app', $validated['app'])->first(),
+        };
 
         if (! $version) {
             return $this->error('Konfigurasi versi aplikasi belum tersedia.', 404);

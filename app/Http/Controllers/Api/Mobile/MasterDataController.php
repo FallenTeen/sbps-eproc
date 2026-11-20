@@ -83,4 +83,79 @@ class MasterDataController extends Controller
 
         return $this->success($items, 'Daftar bahan baku.');
     }
+
+    /**
+     * GET /api/mobile/master/armada
+     * Daftar seluruh unit armada untuk dropdown pengajuan servis dan monitoring.
+     */
+    public function armada()
+    {
+        $items = \App\Domain\Fleet\Models\Armada::query()
+            ->with('titik')
+            ->where('status', '!=', 'nonaktif')
+            ->orderBy('plat_nomor')
+            ->get()
+            ->map(fn (\App\Domain\Fleet\Models\Armada $a) => [
+                'id' => $a->id,
+                'plat_nomor' => $a->plat_nomor,
+                'kode_unit' => $a->kode_unit ?? $a->kode,
+                'jenis' => $a->jenis ?? $a->tipe_unit,
+                'status' => $a->status,
+                'titik' => $a->titik ? [
+                    'id' => $a->titik->id,
+                    'nama' => $a->titik->nama,
+                ] : null,
+                'odo_terkini' => $this->latestOdo($a),
+                'jam_operasional_terkini' => $this->latestHm($a),
+            ])
+            ->values();
+
+        return $this->success($items, 'Daftar master armada.');
+    }
+
+    private function latestOdo(\App\Domain\Fleet\Models\Armada $a): ?float
+    {
+        $akhir = \App\Domain\Fleet\Models\ArmadaChecklistAkhir::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($akhir?->odo_akhir !== null) {
+            return (float) $akhir->odo_akhir;
+        }
+
+        $pengisian = \App\Domain\Fleet\Models\ArmadaPengisianSolar::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($pengisian?->odo_atau_hm !== null) {
+            return (float) $pengisian->odo_atau_hm;
+        }
+
+        $awal = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
+            ->where('checkable_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($awal?->odo_pagi !== null) {
+            return (float) $awal->odo_pagi;
+        }
+
+        $odoAwal = \App\Domain\Fleet\Models\ArmadaOdoAwalProyek::where('armada_id', $a->id)->latest('tanggal')->first();
+
+        return $odoAwal ? (float) $odoAwal->odo_awal : null;
+    }
+
+    private function latestHm(\App\Domain\Fleet\Models\Armada $a): ?float
+    {
+        $akhir = \App\Domain\Fleet\Models\ArmadaChecklistAkhir::where('armada_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+        if ($akhir?->hm_akhir !== null) {
+            return (float) $akhir->hm_akhir;
+        }
+
+        $awal = \App\Domain\Fleet\Models\ArmadaChecklistHarian::where('checkable_type', \App\Domain\Fleet\Models\Armada::class)
+            ->where('checkable_id', $a->id)
+            ->latest('tanggal')
+            ->first();
+
+        return $awal?->hm_odo !== null ? (float) $awal->hm_odo : null;
+    }
 }

@@ -1,21 +1,15 @@
 import React from "react";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { ArrowLeft } from "lucide-react";
+import { formatTanggal } from "@/utils/date";
 
 export default function Stok({ bahanBaku, perTitik, mutasis }) {
     return (
         <AuthenticatedLayout>
             <Head title={`Stok ${bahanBaku.nama}`} />
 
-            <div className="mb-6">
-                <a
-                    href={route("procurement.bahan-baku.show", bahanBaku.id)}
-                    className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-3"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Kembali
-                </a>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
                         Stok {bahanBaku.nama}
@@ -24,6 +18,13 @@ export default function Stok({ bahanBaku, perTitik, mutasis }) {
                         {bahanBaku.kode} · {bahanBaku.satuan}
                     </p>
                 </div>
+                <Link
+                    href={route("procurement.bahan-baku.show", bahanBaku.id)}
+                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700 disabled:opacity-50"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Kembali
+                </Link>
             </div>
 
             {/* Ringkasan stok per titik */}
@@ -71,7 +72,7 @@ export default function Stok({ bahanBaku, perTitik, mutasis }) {
                             mutasis.data.map((m) => (
                                 <tr key={m.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {new Date(m.tanggal).toLocaleDateString("id-ID")}
+                                        {formatTanggal(m.tanggal)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${m.tipe === "masuk" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>

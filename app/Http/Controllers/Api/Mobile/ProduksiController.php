@@ -132,7 +132,15 @@ class ProduksiController extends Controller
      */
     public function riwayat(Request $request)
     {
-        $karyawan = $this->resolveOperator($request);
+        $karyawan = $request->user()->karyawan;
+
+        // Manajer/Owner (ber-permission view production) boleh melihat seluruh
+        // riwayat tanpa harus terhubung ke data karyawan.
+        if (! $karyawan && ! $request->user()->can('view production')) {
+            throw ValidationException::withMessages([
+                'karyawan' => 'Akun Anda belum terhubung ke data karyawan.',
+            ]);
+        }
 
         $validated = $request->validate([
             'tanggal' => 'nullable|date',
@@ -140,7 +148,7 @@ class ProduksiController extends Controller
         ]);
 
         $query = ProductionSession::with(['mesin', 'produk', 'titik'])
-            ->where('operator_karyawan_id', $karyawan->id)
+            ->when($karyawan, fn ($q) => $q->where('operator_karyawan_id', $karyawan->id))
             ->latest('mulai');
 
         if (! empty($validated['tanggal'])) {

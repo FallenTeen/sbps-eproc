@@ -5,32 +5,37 @@ namespace App\Domain\Core\Http\Controllers;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\Core\Models\Titik;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class TitikController extends Controller
 {
+    use FilterableTable;
+
     public function index(Request $request, Proyek $proyek)
     {
         $this->authorize('viewAny', Titik::class);
+        $this->authorize('view', $proyek);
 
         $query = Titik::with(['proyek'])->where('proyek_id', $proyek->id);
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+        $columns = [
+            'nama' => ['type' => 'like'],
+            'radius_presensi_meter' => ['type' => 'exact'],
+            'status' => ['type' => 'exact'],
+        ];
 
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('nama', 'like', "%{$search}%");
-        }
+        $sort = $this->applyTableQuery($query, $request, $columns, ['created_at' => 'desc']);
 
-        $titiks = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $titiks = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Core/Titik/Index', [
             'proyek' => $proyek->load('unitBisnis'),
             'titiks' => $titiks,
-            'filters' => $request->only(['status', 'search']),
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 
@@ -38,7 +43,7 @@ class TitikController extends Controller
     {
         $this->authorize('create', Titik::class);
 
-        $proyeksQuery = Proyek::where('status', 'aktif');
+        $proyeksQuery = Proyek::where('status', 'aktif')->visibleFor($request->user());
         if ($request->user()->unit_bisnis_id) {
             $proyeksQuery->where('unit_bisnis_id', $request->user()->unit_bisnis_id);
         }
@@ -60,7 +65,7 @@ class TitikController extends Controller
             'nama' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'radius_presensi_meter' => 'nullable|integer|min:0',
+            'radius_presensi_meter' => 'nullable|integer|min:1',
             'status' => 'required|in:aktif,nonaktif',
         ]);
 
@@ -85,7 +90,7 @@ class TitikController extends Controller
     {
         $this->authorize('update', $titik);
 
-        $proyeksQuery = Proyek::where('status', 'aktif');
+        $proyeksQuery = Proyek::where('status', 'aktif')->visibleFor(auth()->user());
         if (auth()->user()->unit_bisnis_id) {
             $proyeksQuery->where('unit_bisnis_id', auth()->user()->unit_bisnis_id);
         }
@@ -105,7 +110,7 @@ class TitikController extends Controller
             'nama' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'radius_presensi_meter' => 'nullable|integer|min:0',
+            'radius_presensi_meter' => 'nullable|integer|min:1',
             'status' => 'required|in:aktif,nonaktif',
         ]);
 

@@ -6,15 +6,9 @@ use App\Domain\Fleet\Models\BbmLog;
 use App\Models\User;
 
 /**
- * CATATAN DESAIN (sama seperti ArmadaChecklistHarianPolicy):
- * create/store/update/destroy TIDAK memakai policy ini. Karena BbmLog
- * bersifat polymorphic (serviceable = Armada atau MesinProduksi), otorisasi
- * untuk aksi-aksi itu didelegasikan ke ability yang SUDAH ADA di
- * ArmadaPolicy::recordBbm() / MesinProduksiPolicy::recordBbm() lewat
- * $this->authorize('recordBbm', $serviceable) di controller.
- *
- * Policy ini hanya untuk ability yang tidak terikat ke satu serviceable
- * spesifik: viewAny, view, anomaly.
+ * BbmLog adalah ledger turunan dari armada_pengisian_solars (dan jalur legacy
+ * produksi untuk MesinProduksi). Tabel ini tidak lagi dipakai sebagai form
+ * input armada; write armada hanya lewat RecordPengisianSolarAction.
  */
 class BbmLogPolicy
 {

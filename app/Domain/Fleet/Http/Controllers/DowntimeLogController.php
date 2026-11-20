@@ -8,11 +8,14 @@ use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Production\Models\MesinProduksi;
 use App\Http\Controllers\Controller;
+use App\Traits\FilterableTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DowntimeLogController extends Controller
 {
+    use FilterableTable;
+
     public function __construct()
     {
         $this->authorizeResource(DowntimeLog::class, 'downtime');
@@ -28,14 +31,32 @@ class DowntimeLogController extends Controller
             abort(404, 'Serviceable not found');
         }
 
-        $downtimes = $model->downtimes()
-            ->orderBy('mulai', 'desc')
-            ->paginate(15);
+        $query = $model->downtimes()->getQuery()->with('serviceable');
+
+        $columns = [
+            'mulai' => ['type' => 'date'],
+            'kategori' => ['type' => 'exact'],
+            'selesai' => ['type' => 'date', 'searchable' => false],
+        ];
+
+        $sort = $this->applyTableQuery($query, $request, $columns, ['mulai' => 'desc']);
+
+        $status = $request->input('filters.status');
+        if ($status === 'active') {
+            $query->whereNull('selesai');
+        } elseif ($status === 'done') {
+            $query->whereNotNull('selesai');
+        }
+
+        $downtimes = $query->paginate($this->tablePerPage($request))->withQueryString();
 
         return Inertia::render('Fleet/Downtime/Index', [
             'downtimes' => $downtimes,
             'serviceable' => $model,
             'serviceableType' => $type,
+            'filters' => $request->input('filters', []),
+            'sort' => $sort['sort'],
+            'direction' => $sort['direction'],
         ]);
     }
 

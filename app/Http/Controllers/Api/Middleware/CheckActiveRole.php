@@ -10,7 +10,7 @@ class CheckActiveRole
 {
     /**
      * Menetapkan role aktif user (stateless) dari header X-Active-Role,
-     * fallback ke role pertama — pola sama dengan SetActiveRole (web)
+     * fallback ke role pertama - pola sama dengan SetActiveRole (web)
      * tapi tanpa session.
      *
      * Usage: middleware('active.role') atau middleware('active.role:Kontraktor')

@@ -13,7 +13,7 @@ use Inertia\Response;
 class PortalController extends Controller
 {
     /**
-     * Portal landing page — card grid pilihan portal.
+     * Portal landing page - card grid pilihan portal.
      */
     public function index(): Response
     {
@@ -73,7 +73,7 @@ class PortalController extends Controller
         $matchedRole = null;
 
         foreach ($portalRoles as $portalRole) {
-            if (in_array($portalRole, $userRoles)) {
+            if (\in_array($portalRole, $userRoles, true)) {
                 $matchedRole = $portalRole;
                 break;
             }
@@ -88,10 +88,78 @@ class PortalController extends Controller
         Auth::login($user, $request->boolean('remember'));
 
         $request->session()->regenerate();
+
+        // Hitung semua portal yang role user cocok (urut sesuai config).
+        $matchedPortals = $this->getMatchedPortals($user->getRoleNames()->toArray());
+
+        if (\count($matchedPortals) > 1) {
+            return redirect()->route('portal.pilih.index');
+        }
+
         $request->session()->put('active_role', $matchedRole);
         $request->session()->put('portal', $portal);
 
         return redirect()->intended(route('dashboard'));
+    }
+
+    /**
+     * Halaman pemilihan portal untuk user multi-role.
+     */
+    public function pilihIndex(): Response|RedirectResponse
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            abort(403);
+        }
+
+        $matchedPortals = $this->getMatchedPortals($user->getRoleNames()->toArray());
+
+        // User ternyata hanya cocok 1 portal → langsung set session & masuk dashboard.
+        if (\count($matchedPortals) === 1) {
+            $matched = $matchedPortals[0];
+
+            session(['active_role' => $matched['matchedRole'], 'portal' => $matched['slug']]);
+
+            return redirect()->route('dashboard');
+        }
+
+        return Inertia::render('Portal/Select', [
+            'portals' => $matchedPortals,
+        ]);
+    }
+
+    /**
+     * Set session portal & role yang dipilih user.
+     */
+    public function pilih(Request $request, string $portal): RedirectResponse
+    {
+        $config = $this->resolvePortal($portal);
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(403);
+        }
+
+        $userRoles = $user->getRoleNames()->toArray();
+        $portalRoles = $config['roles'];
+        $matchedRole = null;
+
+        foreach ($portalRoles as $portalRole) {
+            if (\in_array($portalRole, $userRoles, true)) {
+                $matchedRole = $portalRole;
+                break;
+            }
+        }
+
+        if (! $matchedRole) {
+            abort(403, 'Akun Anda tidak memiliki akses ke portal '.$config['name'].'.');
+        }
+
+        $request->session()->put('active_role', $matchedRole);
+        $request->session()->put('portal', $portal);
+
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -109,7 +177,9 @@ class PortalController extends Controller
     }
 
     /**
-     * Format portals untuk frontend (tanpa roles internal).
+     * Format portals untuk frontend.
+     * 'roles' hanya berisi nama jabatan (untuk pencarian & daftar di UI),
+     * bukan permission.
      */
     private function getPortals(): array
     {
@@ -126,7 +196,46 @@ class PortalController extends Controller
                 'icon' => $portal['icon'],
                 'color' => $portal['color'],
                 'colorClasses' => $color,
+                'roles' => array_values($portal['roles']),
             ];
         })->values()->toArray();
+    }
+
+    /**
+     * Daftar portal yang punya role cocok dengan role user
+     * (slug => role pertama yang match per portal, urut sesuai config).
+     */
+    private function getMatchedPortals(array $userRoles): array
+    {
+        $portals = config('portals.portals', []);
+        $colors = config('portals.colors', []);
+        $matched = [];
+
+        foreach ($portals as $slug => $portal) {
+            $matchedRole = null;
+
+            foreach ($portal['roles'] as $portalRole) {
+                if (\in_array($portalRole, $userRoles, true)) {
+                    $matchedRole = $portalRole;
+                    break;
+                }
+            }
+
+            if ($matchedRole) {
+                $color = $colors[$portal['color']] ?? $colors['red'];
+
+                $matched[] = [
+                    'slug' => $slug,
+                    'name' => $portal['name'],
+                    'description' => $portal['description'],
+                    'icon' => $portal['icon'],
+                    'color' => $portal['color'],
+                    'colorClasses' => $color,
+                    'matchedRole' => $matchedRole,
+                ];
+            }
+        }
+
+        return $matched;
     }
 }

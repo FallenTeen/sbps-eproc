@@ -15,6 +15,13 @@ use App\Domain\Finance\Models\PembayaranKlien;
 use App\Domain\Finance\Models\TransferAntarKas;
 use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\ArmadaChecklistHarian;
+use App\Domain\Fleet\Models\ArmadaPenanggungJawab;
+use App\Domain\Fleet\Models\HelperArmada;
+use App\Domain\Fleet\Models\PengajuanServisArmada;
+use App\Domain\Fleet\Models\WorkshopTodo;
+use App\Policies\HelperArmadaPolicy;
+use App\Policies\PengajuanServisPolicy;
+use App\Policies\WorkshopTodoPolicy;
 use App\Domain\Fleet\Models\BbmLog;
 use App\Domain\Fleet\Models\DowntimeLog;
 use App\Domain\Fleet\Models\Ritase;
@@ -23,6 +30,7 @@ use App\Domain\Fleet\Models\ServiceHistory;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\HR\Models\GajiPeriode;
 use App\Domain\HR\Models\Karyawan;
+use App\Domain\Inventory\Models\StokOpname;
 use App\Domain\Procurement\Models\BahanBaku;
 use App\Domain\Procurement\Models\Pembayaran;
 use App\Domain\Procurement\Models\PurchaseOrder;
@@ -31,8 +39,13 @@ use App\Domain\Production\Models\MesinProduksi;
 use App\Domain\Production\Models\ProductionSession;
 use App\Domain\Production\Models\Produk;
 use App\Domain\Production\Models\QCSample;
+use App\Models\AppVersion;
+use App\Models\User;
 use App\Policies\AkunKasBankPolicy;
+use App\Policies\AppVersionPolicy;
+use App\Policies\UserManagementPolicy;
 use App\Policies\ArmadaChecklistHarianPolicy;
+use App\Policies\ArmadaPenanggungJawabPolicy;
 use App\Policies\ArmadaPolicy;
 use App\Policies\BahanBakuPolicy;
 use App\Policies\BbmLogPolicy;
@@ -57,6 +70,7 @@ use App\Policies\RuteTarifPolicy;
 use App\Policies\ServiceHistoryPolicy;
 use App\Policies\SewaAlatPolicy;
 use App\Policies\SupplierPolicy;
+use App\Policies\StokOpnamePolicy;
 use App\Policies\TitikPolicy;
 use App\Policies\TransferKasPolicy;
 use App\Policies\UnitBisnisPolicy;
@@ -65,6 +79,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
+use App\Services\PushNotificationService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -74,7 +89,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PushNotificationService::class);
     }
 
     /**
@@ -139,15 +154,20 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Titik::class, TitikPolicy::class);
         Gate::policy(Rab::class, RabPolicy::class);
         Gate::policy(UnitBisnis::class, UnitBisnisPolicy::class);
+        Gate::policy(AppVersion::class, AppVersionPolicy::class);
+        Gate::policy(User::class, UserManagementPolicy::class);
 
         // Procurement Policies
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(BahanBaku::class, BahanBakuPolicy::class);
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(Pembayaran::class, PembayaranPolicy::class);
+        Gate::policy(StokOpname::class, StokOpnamePolicy::class);
 
         // Fleet Policies
         Gate::policy(Armada::class, ArmadaPolicy::class);
+        Gate::policy(ArmadaPenanggungJawab::class, ArmadaPenanggungJawabPolicy::class);
+        Gate::policy(HelperArmada::class, HelperArmadaPolicy::class);
         Gate::policy(Ritase::class, RitasePolicy::class);
         Gate::policy(SewaAlatJam::class, SewaAlatPolicy::class);
         Gate::policy(ArmadaChecklistHarian::class, ArmadaChecklistHarianPolicy::class);
@@ -155,6 +175,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DowntimeLog::class, DowntimeLogPolicy::class);
         Gate::policy(RuteTarif::class, RuteTarifPolicy::class);
         Gate::policy(ServiceHistory::class, ServiceHistoryPolicy::class);
+        Gate::policy(PengajuanServisArmada::class, PengajuanServisPolicy::class);
+        Gate::policy(WorkshopTodo::class, WorkshopTodoPolicy::class);
+        Gate::policy(User::class, UserManagementPolicy::class);
 
         // Production Policies
         Gate::policy(MesinProduksi::class, MesinProduksiPolicy::class);

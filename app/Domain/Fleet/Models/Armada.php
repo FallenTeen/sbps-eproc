@@ -4,14 +4,18 @@ namespace App\Domain\Fleet\Models;
 
 use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
+use App\Models\User;
 use Database\Factories\ArmadaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Armada extends Model
+class Armada extends Model implements HasMedia
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia;
 
     protected $table = 'armadas';
 
@@ -20,6 +24,7 @@ class Armada extends Model
         'plat_nomor',
         'kode_unit',
         'jenis',
+        'tipe_unit',
         'model_tarif',
         'tahun',
         'kapasitas',
@@ -27,13 +32,53 @@ class Armada extends Model
         'titik_id',
         'tanggal_mulai_pakai',
         'tanggal_servis_terakhir',
+        'data_diperbarui_pada',
+        'data_diperbarui_oleh',
+        'tara_master_kg',
+        'tara_diperbarui_pada',
     ];
 
     protected $casts = [
         'tahun' => 'integer',
         'tanggal_mulai_pakai' => 'date',
         'tanggal_servis_terakhir' => 'date',
+        'data_diperbarui_pada' => 'datetime',
+        'tara_master_kg' => 'decimal:2',
+        'tara_diperbarui_pada' => 'datetime',
     ];
+
+    protected $appends = [
+        'foto_url',
+        'foto_thumb_url',
+    ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('foto_unit')->singleFile();
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(320)
+            ->height(200)
+            ->nonQueued();
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('foto_unit') ?: null;
+    }
+
+    public function getFotoThumbUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('foto_unit', 'thumb') ?: $this->foto_url;
+    }
+
+    public function diperbaruiOleh()
+    {
+        return $this->belongsTo(User::class, 'data_diperbarui_oleh');
+    }
 
     protected static function newFactory()
     {
@@ -62,6 +107,31 @@ class Armada extends Model
         return $this->morphMany(ArmadaChecklistHarian::class, 'checkable');
     }
 
+    public function checklistAkhirs()
+    {
+        return $this->hasMany(ArmadaChecklistAkhir::class);
+    }
+
+    public function dokumenBerkalas()
+    {
+        return $this->hasMany(ArmadaDokumenBerkala::class);
+    }
+
+    public function pengisianSolars()
+    {
+        return $this->hasMany(ArmadaPengisianSolar::class);
+    }
+
+    public function odoAwalProyeks()
+    {
+        return $this->hasMany(ArmadaOdoAwalProyek::class);
+    }
+
+    public function helperArmadas()
+    {
+        return $this->hasMany(HelperArmada::class);
+    }
+
     public function bbmLogs()
     {
         return $this->morphMany(BbmLog::class, 'serviceable');
@@ -88,9 +158,57 @@ class Armada extends Model
         return $this->hasMany(ArmadaDriver::class);
     }
 
+    public function drivers()
+    {
+        return $this->driverAssignments();
+    }
+
     public function currentDriver()
     {
         return $this->hasOne(ArmadaDriver::class)->where('status', 'aktif')->latestOfMany();
+    }
+
+    // v6 (21.2) - riwayat penanggung jawab (utama & cadangan)
+    public function penanggungJawabs()
+    {
+        return $this->hasMany(ArmadaPenanggungJawab::class);
+    }
+
+    /**
+     * PIC aktif = baris peran=utama yang `sampai` null; fallback ke cadangan aktif.
+     * (spec Bagian 21.2 - utama menang, cadangan dipakai kalau utama sedang non-aktif)
+     */
+    public function getActivePenanggungJawabAttribute()
+    {
+        $utama = $this->penanggungJawabs()
+            ->where('peran', 'utama')
+            ->whereNull('sampai')
+            ->latest('mulai_dari')
+            ->first();
+
+        if ($utama) {
+            return $utama;
+        }
+
+        return $this->penanggungJawabs()
+            ->where('peran', 'cadangan')
+            ->whereNull('sampai')
+            ->latest('mulai_dari')
+            ->first();
+    }
+
+    /**
+     * v6 (21.6) - apakah karyawan ini PIC aktif (utama/cadangan) armada saat ini.
+     */
+    public function isActivePicFor($karyawan): bool
+    {
+        if (! $karyawan) {
+            return false;
+        }
+
+        $pic = $this->getActivePenanggungJawabAttribute();
+
+        return $pic && $pic->karyawan_id === $karyawan->id;
     }
 
     // Scope

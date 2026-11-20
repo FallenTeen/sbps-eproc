@@ -4,12 +4,17 @@ namespace Database\Seeders;
 
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Finance\Models\AkunKasBank;
+use Database\Seeders\Concerns\StagingOnly;
 use Illuminate\Database\Seeder;
 
 class AkunKasBankSeeder extends Seeder
 {
+    use StagingOnly;
+
     public function run(): void
     {
+        $this->assertNotProduction();
+
         $gcs = UnitBisnis::where('kode', 'GCS')->firstOrFail();
         $cbp = UnitBisnis::where('kode', 'CBP')->firstOrFail();
         $amp = UnitBisnis::where('kode', 'AMP')->firstOrFail();
