@@ -406,13 +406,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ============================================================
-    // Logistik: antrean verifikasi ritase (timbang + checklist) & Tara Master.
+    // Logistik: antrean verifikasi ritase (timbang + checklist).
     // ============================================================
     Route::prefix('logistik')->name('logistik.')->middleware('permission:verify ritase logistik|manage timbang')->group(function () {
         Route::get('ritase-verifikasi', [LogistikController::class, 'antrean'])->name('ritase-verifikasi.index');
         Route::post('ritase/{ritase}/verifikasi', [LogistikController::class, 'verifikasi'])->name('ritase-verifikasi.verifikasi');
-        Route::get('tara-master', [LogistikController::class, 'taraMaster'])->name('tara-master.index');
-        Route::put('tara-master/{armada}', [LogistikController::class, 'updateTara'])->name('tara-master.update');
     });
 
     // Security: buku tamu (+export), template checklist kantor, laporan darurat.

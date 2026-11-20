@@ -133,7 +133,6 @@ function getAllMenus() {
             permission: ['verify ritase logistik', 'manage timbang'],
             items: [
                 { title: 'Antrean Verifikasi Ritase', href: safeRoute('logistik.ritase-verifikasi.index', {}, '/logistik/ritase-verifikasi'), routeName: 'logistik.ritase-verifikasi.*', permission: ['verify ritase logistik', 'manage timbang'] },
-                { title: 'Tara Master', href: safeRoute('logistik.tara-master.index', {}, '/logistik/tara-master'), routeName: 'logistik.tara-master.*', permission: ['verify ritase logistik', 'manage timbang'] },
             ],
         },
         {

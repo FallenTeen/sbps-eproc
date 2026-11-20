@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Mobile;
 
-use App\Domain\Fleet\Models\Armada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\RitaseTimbang;
 use App\Domain\Fleet\Models\RitaseVerifikasi;
@@ -78,9 +77,9 @@ class LogistikController extends Controller
     {
         $validated = $request->validate([
             'jumlah_verifikasi' => 'required|numeric|min:0',
-            'berat_kosong_kg' => 'required|numeric|min:0',
+            'berat_kosong_kg' => 'nullable|numeric|min:0',
             'berat_isi_kg' => 'required|numeric|min:0',
-            'berat_netto_kg' => 'required|numeric|min:0',
+            'berat_netto_kg' => 'nullable|numeric|min:0',
             'tara_sumber' => 'nullable|in:master,timbang_ulang',
             'checklist' => 'nullable',
             'nomor_tiket' => 'nullable|string|max:100',
@@ -96,14 +95,27 @@ class LogistikController extends Controller
             $fotoTiketPath = $request->file('foto_tiket')->store('logistik/tiket/'.now()->format('Y/m'), 'public');
         }
 
+        $beratKosongDikirim = array_key_exists('berat_kosong_kg', $validated)
+            && $validated['berat_kosong_kg'] !== null;
+        $beratKosong = $beratKosongDikirim
+            ? (float) $validated['berat_kosong_kg']
+            : (float) ($ritase->armada?->tara_master_kg ?? 0);
+        $taraSumber = $beratKosongDikirim
+            ? ($validated['tara_sumber'] ?? 'master')
+            : 'master';
+        $beratNetto = $validated['berat_netto_kg'] ?? max(
+            0,
+            (float) $validated['berat_isi_kg'] - $beratKosong,
+        );
+
         // 1. Simpan data timbang (TD-E5)
         $timbang = RitaseTimbang::updateOrCreate(
             ['ritase_id' => $ritase->id],
             [
-                'berat_kosong_kg' => $validated['berat_kosong_kg'],
+                'berat_kosong_kg' => $beratKosong,
                 'berat_isi_kg' => $validated['berat_isi_kg'],
-                'berat_netto_kg' => $validated['berat_netto_kg'],
-                'tara_sumber' => $validated['tara_sumber'] ?? 'master',
+                'berat_netto_kg' => $beratNetto,
+                'tara_sumber' => $taraSumber,
                 'nomor_tiket' => $validated['nomor_tiket'] ?? null,
                 'foto_tiket' => $fotoTiketPath,
                 'ditimbang_oleh' => $user->id,
@@ -145,40 +157,7 @@ class LogistikController extends Controller
             'status' => 'terverifikasi',
             'ada_selisih' => $adaSelisih,
             'jumlah_verifikasi' => (float) $validated['jumlah_verifikasi'],
-            'berat_netto_kg' => (float) $validated['berat_netto_kg'],
+            'berat_netto_kg' => (float) $beratNetto,
         ], 'Verifikasi ritase logistik berhasil disimpan.');
-    }
-
-    /**
-     * GET /api/mobile/logistik/tara-master
-     * Daftar tara master armada (TD-E2).
-     */
-    public function taraMaster()
-    {
-        $armadas = Armada::select('id', 'plat_nomor', 'kode_unit', 'jenis', 'tara_master_kg', 'tara_diperbarui_pada')
-            ->orderBy('plat_nomor')
-            ->get();
-
-        return $this->success($armadas, 'Daftar tara master armada.');
-    }
-
-    /**
-     * PUT /api/mobile/logistik/tara-master/{armada}
-     * Update tara master armada (TD-E2).
-     */
-    public function updateTaraMaster(Request $request, Armada $armada)
-    {
-        $validated = $request->validate([
-            'tara_master_kg' => 'required|numeric|min:0',
-        ]);
-
-        $armada->update([
-            'tara_master_kg' => $validated['tara_master_kg'],
-            'tara_diperbarui_pada' => now(),
-            'data_diperbarui_pada' => now(),
-            'data_diperbarui_oleh' => $request->user()->id,
-        ]);
-
-        return $this->success($armada->fresh(), 'Tara master armada berhasil diperbarui.');
     }
 }

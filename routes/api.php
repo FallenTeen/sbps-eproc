@@ -211,8 +211,6 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
             Route::get('logistik/ritase/antrean', [LogistikController::class, 'antrean'])->name('logistik.ritase.antrean');
             Route::post('logistik/ritase/{id}/verifikasi', [LogistikController::class, 'verifikasi'])
                 ->name('logistik.ritase.verifikasi')->middleware('idempotency');
-            Route::get('logistik/tara-master', [LogistikController::class, 'taraMaster'])->name('logistik.tara-master');
-            Route::put('logistik/tara-master/{armada}', [LogistikController::class, 'updateTaraMaster'])->name('logistik.tara-master.update');
         });
 
         // TD-F: Modul Security

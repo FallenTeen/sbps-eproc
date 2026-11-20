@@ -218,6 +218,19 @@ class ArmadaController extends Controller
             'armada' => $armada,
             'unitBisnis' => $unitBisnis,
             'titiks' => $titiks,
+            'formDefaults' => [
+                'plat_nomor' => $armada->plat_nomor,
+                'kode_unit' => $armada->kode_unit,
+                'jenis' => $armada->jenis,
+                'tipe_unit' => $armada->tipe_unit,
+                'model_tarif' => $armada->model_tarif,
+                'tahun' => $armada->tahun,
+                'kapasitas' => $armada->kapasitas,
+                'titik_id' => $armada->titik_id,
+                'status' => $armada->status,
+                'tanggal_mulai_pakai' => $armada->tanggal_mulai_pakai?->toDateString(),
+                'tara_master_kg' => $armada->tara_master_kg,
+            ],
         ]);
     }
 

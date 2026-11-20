@@ -159,25 +159,20 @@ test('logistik dapat melakukan verifikasi ritase, catat timbang, dan deteksi sel
     expect($verif->jumlah_verifikasi)->toBe(24.0);
 });
 
-test('logistik dapat mengelola tara master armada', function () {
-    // 1. Get tara master
-    $resList = $this->withToken($this->logistikToken)
+test('tara master tidak lagi dikelola lewat endpoint mobile', function () {
+    $this->withToken($this->logistikToken)
         ->withHeaders(mobileAuthHeaders())
-        ->get('/api/mobile/logistik/tara-master');
+        ->get('/api/mobile/logistik/tara-master')
+        ->assertNotFound();
 
-    $resList->assertOk()
-        ->assertJsonPath('status', 'success');
-
-    // 2. Update tara master
-    $resUpdate = $this->withToken($this->logistikToken)
+    $this->withToken($this->logistikToken)
         ->withHeaders(mobileAuthHeaders())
         ->put("/api/mobile/logistik/tara-master/{$this->armada->id}", [
             'tara_master_kg' => 9200.5,
-        ]);
+        ])
+        ->assertNotFound();
 
-    $resUpdate->assertOk();
-    expect((float) $this->armada->fresh()->tara_master_kg)->toBe(9200.5);
-    expect($this->armada->fresh()->tara_diperbarui_pada)->not->toBeNull();
+    expect((float) $this->armada->fresh()->tara_master_kg)->toBe(8500.0);
 });
 
 // ── TD-F: Security Modul ─────────────────────────────────────────────────────

@@ -3379,6 +3379,38 @@ export default function Show({ armada, options, can }) {
                         </span>
                     </div>
                 </div>
+
+                {/* Tara Master */}
+                <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                                Tara Master
+                            </p>
+                            <p className="mt-1 text-lg font-bold text-emerald-900">
+                                {armada.tara_master_kg != null
+                                    ? `${Number(armada.tara_master_kg).toLocaleString("id-ID")} kg`
+                                    : "Belum diisi"}
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-700/80">
+                                {armada.tara_diperbarui_pada
+                                    ? `Diperbarui ${String(armada.tara_diperbarui_pada).slice(0, 10)}`
+                                    : "Belum pernah diperbarui"}
+                            </p>
+                        </div>
+                        {can.update && (
+                            <Link
+                                href={route("fleet.armada.edit", armada.id)}
+                                className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                            >
+                                <Edit className="h-4 w-4" /> Ubah Tara
+                            </Link>
+                        )}
+                    </div>
+                    <p className="mt-2 text-xs text-emerald-800/70">
+                        Menjadi default berat kosong saat verifikasi timbang.
+                    </p>
+                </div>
             </div>
 
             {/* Navigation Tabs */}

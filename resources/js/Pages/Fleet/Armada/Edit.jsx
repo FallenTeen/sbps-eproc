@@ -9,7 +9,7 @@ import {
     Truck,
 } from "lucide-react";
 
-export default function Edit({ armada, titiks }) {
+export default function Edit({ armada, titiks, formDefaults }) {
     const formatDateForInput = (value) => {
         if (!value) return "";
 
@@ -28,17 +28,21 @@ export default function Edit({ armada, titiks }) {
             .slice(0, 10);
     };
 
+    const defaults = formDefaults ?? {};
     const { data, setData, put, errors, processing } = useForm({
-        plat_nomor: armada.plat_nomor || "",
-        kode_unit: armada.kode_unit || "",
-        jenis: armada.jenis || "dump_truck",
-        tipe_unit: armada.tipe_unit || "armada_jalan",
-        model_tarif: armada.model_tarif || "ritase",
-        tahun: armada.tahun || "",
-        kapasitas: armada.kapasitas || "",
-        titik_id: armada.titik_id || "",
-        status: armada.status || "aktif",
-        tanggal_mulai_pakai: formatDateForInput(armada.tanggal_mulai_pakai),
+        plat_nomor: defaults.plat_nomor ?? armada.plat_nomor ?? "",
+        kode_unit: defaults.kode_unit ?? armada.kode_unit ?? "",
+        jenis: defaults.jenis ?? armada.jenis ?? "dump_truck",
+        tipe_unit: defaults.tipe_unit ?? armada.tipe_unit ?? "armada_jalan",
+        model_tarif: defaults.model_tarif ?? armada.model_tarif ?? "ritase",
+        tahun: defaults.tahun ?? armada.tahun ?? "",
+        kapasitas: defaults.kapasitas ?? armada.kapasitas ?? "",
+        titik_id: defaults.titik_id ?? armada.titik_id ?? "",
+        status: defaults.status ?? armada.status ?? "aktif",
+        tanggal_mulai_pakai:
+            defaults.tanggal_mulai_pakai ??
+            formatDateForInput(armada.tanggal_mulai_pakai),
+        tara_master_kg: defaults.tara_master_kg ?? armada.tara_master_kg ?? "",
         foto_unit: null,
     });
 
@@ -271,6 +275,39 @@ export default function Edit({ armada, titiks }) {
                                         {errors.tahun}
                                     </p>
                                 )}
+                            </div>
+
+                            {/* Tara Master */}
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Tara Master (kg){" "}
+                                    <span className="font-normal text-gray-400">
+                                        (opsional)
+                                    </span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    value={data.tara_master_kg}
+                                    onChange={(e) =>
+                                        setData(
+                                            "tara_master_kg",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Contoh: 8500"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                {errors.tara_master_kg && (
+                                    <p className="mt-1.5 text-sm text-red-600">
+                                        {errors.tara_master_kg}
+                                    </p>
+                                )}
+                                <p className="mt-1.5 text-xs text-gray-500">
+                                    Dipakai sebagai berat kosong default saat
+                                    verifikasi logistik.
+                                </p>
                             </div>
                         </div>
                         {/* Kapasitas */}
