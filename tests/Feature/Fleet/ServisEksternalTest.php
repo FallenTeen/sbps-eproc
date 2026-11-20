@@ -263,7 +263,7 @@ test('GET servis-armada menerima filter status jamak dipisah koma', function () 
     $response->assertOk()->assertJsonPath('status', 'success');
     $items = $response->json('data.data') ?? $response->json('data');
     expect($items)->toHaveCount(2);
-    expect(collect($items)->pluck('status')->all())
+    expect(collect($items)->pluck('status')->sort()->values()->all())
         ->toBe(['diajukan', 'dikerjakan']);
 });
 
@@ -271,7 +271,7 @@ test('filter web belum memakai literal belum dan mengecualikan terverifikasi', f
     Permission::findOrCreate('view fleet service', 'web');
     $this->owner->givePermissionTo('view fleet service');
 
-    foreach (['Bengkel Belum', 'Bengkel Belum Lain', 'Bengkel Verified'] as $nama) {
+    foreach (['Bengkel Belum', 'Bengkel Belum Lain', 'Bengkel Verified', 'Bengkel Bermasalah'] as $nama) {
         $this->withToken($this->ownerToken)
             ->withHeaders(mobileIdemHeaders())
             ->post('/api/mobile/servis-armada/eksternal', [
@@ -284,6 +284,8 @@ test('filter web belum memakai literal belum dan mengecualikan terverifikasi', f
 
     ServisEksternalDetail::where('nama_bengkel', 'Bengkel Verified')
         ->update(['verifikasi_workshop' => 'terverifikasi']);
+    ServisEksternalDetail::where('nama_bengkel', 'Bengkel Bermasalah')
+        ->update(['verifikasi_workshop' => 'bermasalah']);
 
     $this->app['auth']->forgetGuards();
 
