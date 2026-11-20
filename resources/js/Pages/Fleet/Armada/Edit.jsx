@@ -29,7 +29,8 @@ export default function Edit({ armada, titiks, formDefaults }) {
     };
 
     const defaults = formDefaults ?? {};
-    const { data, setData, put, errors, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
+        _method: "put",
         plat_nomor: defaults.plat_nomor ?? armada.plat_nomor ?? "",
         kode_unit: defaults.kode_unit ?? armada.kode_unit ?? "",
         jenis: defaults.jenis ?? armada.jenis ?? "dump_truck",
@@ -59,7 +60,7 @@ export default function Edit({ armada, titiks, formDefaults }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route("fleet.armada.update", armada.id), {
+        post(route("fleet.armada.update", armada.id), {
             forceFormData: true,
             preserveScroll: true,
         });
@@ -67,7 +68,7 @@ export default function Edit({ armada, titiks, formDefaults }) {
 
     return (
         <Layout>
-           <div className="space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="mb-6 flex items-center gap-3">
                     <div>
