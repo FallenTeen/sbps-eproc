@@ -82,7 +82,6 @@ class HandleInertiaRequests extends Middleware
         'fleet.rute-tarif.edit' => 'Edit Rute Tarif',
         'fleet.service-history.index' => 'Service History',
         'fleet.checklist-harian.index' => 'Checklist Harian',
-        'fleet.bbm.index' => 'Log BBM',
         'fleet.pengisian-solar.index' => 'Pengisian Solar',
         'fleet.downtime.index' => 'Downtime Log',
         'fleet.monitoring-armada.index' => 'Monitoring Armada',

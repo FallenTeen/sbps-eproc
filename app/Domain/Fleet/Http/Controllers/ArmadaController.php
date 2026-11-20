@@ -7,7 +7,6 @@ use App\Domain\Core\Models\Titik;
 use App\Domain\Core\Models\UnitBisnis;
 use App\Domain\Fleet\Actions\AssignDriverToArmadaAction;
 use App\Domain\Fleet\Actions\EndDowntimeAction;
-use App\Domain\Fleet\Actions\RecordBBMAction;
 use App\Domain\Fleet\Actions\RecordChecklistAkhirAction;
 use App\Domain\Fleet\Actions\RecordChecklistAwalAction;
 use App\Domain\Fleet\Actions\RecordRitaseAction;
@@ -218,7 +217,6 @@ class ArmadaController extends Controller
                 'update' => $canUpdate,
                 'recordService' => $canUpdate,
                 'recordChecklist' => $canUpdate,
-                'recordBbm' => $canUpdate,
                 'startDowntime' => $canUpdate,
                 'assignDriver' => $canUpdate,
                 'helper' => $canManageHelper,
@@ -483,22 +481,6 @@ class ArmadaController extends Controller
             'hm_akhir' => 'nullable|numeric|min:0',
             'client_uuid' => 'nullable|string|max:36',
         ];
-    }
-
-    public function recordBbm(Request $request, Armada $armada)
-    {
-        $this->authorize('recordBbm', $armada);
-
-        $data = $request->validate([
-            'tanggal' => 'required|date',
-            'liter' => 'required|numeric|min:0.01',
-            'biaya' => 'nullable|numeric|min:0',
-            'jam_operasional_saat_isi' => 'nullable|numeric|min:0',
-            'purchase_order_id' => 'nullable|exists:purchase_orders,id',
-        ]);
-        (new RecordBBMAction)->execute($armada, $data);
-
-        return back()->with('success', 'BBM dicatat.');
     }
 
     public function startDowntime(Request $request, Armada $armada)

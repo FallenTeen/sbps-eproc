@@ -99,7 +99,6 @@ function getAllMenus() {
                     title: 'Bahan Bakar',
                     section: true,
                     items: [
-                        { title: 'BBM & Solar', href: safeRoute('fleet.bbm.index', {}, '/fleet/bbm'), routeName: 'fleet.bbm.*', permission: ['manage fleet', 'view fleet'] },
                         { title: 'Pengisian Solar', href: safeRoute('fleet.pengisian-solar.index', {}, '/fleet/pengisian-solar'), routeName: 'fleet.pengisian-solar.*', permission: ['manage pengisian solar'] },
                     ],
                 },

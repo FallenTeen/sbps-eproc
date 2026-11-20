@@ -115,11 +115,6 @@ class ArmadaPolicy
         return $this->update($user, $armada);
     }
 
-    public function recordBbm(User $user, Armada $armada): bool
-    {
-        return $this->update($user, $armada);
-    }
-
     public function startDowntime(User $user, Armada $armada): bool
     {
         return $this->update($user, $armada);

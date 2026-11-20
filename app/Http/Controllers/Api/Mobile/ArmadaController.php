@@ -21,6 +21,7 @@ use App\Domain\Fleet\Models\HelperArmada;
 use App\Domain\Fleet\Models\Ritase;
 use App\Domain\Fleet\Models\SewaAlatJam;
 use App\Domain\Fleet\Services\ChecklistLockService;
+use App\Domain\Fleet\Services\RitaseTimelineService;
 use App\Domain\Core\Models\Proyek;
 use App\Domain\HR\Models\Karyawan;
 use App\Http\Controllers\Api\ApiResponse;
@@ -215,7 +216,7 @@ class ArmadaController extends Controller
 
         $perPage = $validated['per_page'] ?? 15;
 
-        $query = Ritase::with(['armada', 'ruteTarif', 'proyek', 'titik', 'muatan', 'verifikasiLogistik', 'verifikasiSecurity', 'timbang'])
+        $query = Ritase::with(['armada', 'driver', 'ruteTarif', 'proyek', 'titik', 'muatan', 'verifikasiLogistik', 'verifikasiSecurity', 'timbang'])
             ->when(! $isManager, fn ($q) => $q->where('driver_karyawan_id', $karyawan?->id))
             ->orderByDesc('tanggal');
 
@@ -229,41 +230,90 @@ class ArmadaController extends Controller
         $page = $query->paginate($perPage);
 
         return $this->success([
-            'items' => collect($page->items())->map(fn (Ritase $r) => [
-                'id' => $r->id,
-                'tanggal' => $r->tanggal?->toDateString(),
-                'kategori' => $r->kategori,
-                'material' => $r->material,
-                'jumlah_rit' => $r->jumlah_rit,
-                'tarif_per_rit_snapshot' => (float) $r->tarif_per_rit_snapshot,
-                'total_upah_rit' => $r->totalUpahRit,
-                'status' => $r->status,
-                'catatan' => $r->catatan,
-                'customer' => $r->customer,
-                'armada_plat' => $r->armada?->plat_nomor,
-                'rute' => $r->ruteTarif ? [
-                    'id' => $r->ruteTarif->id,
-                    'asal' => $r->ruteTarif->lokasi_asal,
-                    'tujuan' => $r->ruteTarif->lokasi_tujuan,
-                ] : null,
-                'proyek' => $r->proyek?->nama,
-                'titik' => $r->titik?->nama,
-                'wajib_jembatan_timbang' => (bool) $r->wajib_jembatan_timbang,
-                'status_verifikasi_logistik' => $r->verifikasiLogistik?->status,
-                'status_verifikasi_security' => $r->verifikasiSecurity?->status,
-                'jumlah_driver' => $r->muatan?->jumlah_driver ?? (float) ($r->jumlah_volume ?: $r->jumlah_rit),
-                'jumlah_verifikasi_logistik' => $r->verifikasiLogistik?->jumlah_verifikasi,
-                'satuan_muatan' => $r->muatan?->satuan ?? $r->satuan_volume,
-                'ada_selisih' => (bool) $r->ada_selisih,
-                'tara_master_kg' => (float) ($r->armada?->tara_master_kg ?? 0),
-                'berat_kosong_kg' => $r->timbang?->berat_kosong_kg,
-                'berat_isi_kg' => $r->timbang?->berat_isi_kg,
-                'berat_netto_kg' => $r->timbang?->berat_netto_kg,
-            ]),
+            'items' => collect($page->items())->map(fn (Ritase $r) => $this->ritaseMobilePayload($r)),
             'current_page' => $page->currentPage(),
             'last_page' => $page->lastPage(),
             'total' => $page->total(),
         ], 'Riwayat ritase driver.');
+    }
+
+    private function ritaseMobilePayload(Ritase $ritase): array
+    {
+        return [
+            'id' => $ritase->id,
+            'tanggal' => $ritase->tanggal?->toDateString(),
+            'kategori' => $ritase->kategori,
+            'material' => $ritase->material,
+            'jumlah_rit' => $ritase->jumlah_rit,
+            'tarif_per_rit_snapshot' => (float) $ritase->tarif_per_rit_snapshot,
+            'total_upah_rit' => $ritase->totalUpahRit,
+            'status' => $ritase->status,
+            'catatan' => $ritase->catatan,
+            'customer' => $ritase->customer,
+            'armada_id' => $ritase->armada_id,
+            'armada_plat' => $ritase->armada?->plat_nomor,
+            'driver_nama' => $ritase->driver?->nama,
+            'rute' => $ritase->ruteTarif ? [
+                'id' => $ritase->ruteTarif->id,
+                'asal' => $ritase->ruteTarif->lokasi_asal,
+                'tujuan' => $ritase->ruteTarif->lokasi_tujuan,
+            ] : null,
+            'proyek' => $ritase->proyek?->nama,
+            'titik' => $ritase->titik?->nama,
+            'wajib_jembatan_timbang' => (bool) $ritase->wajib_jembatan_timbang,
+            'sumber_angka_resmi' => $ritase->sumber_angka_resmi,
+            'satuan_volume' => $ritase->satuan_volume,
+            'status_verifikasi_logistik' => $ritase->verifikasiLogistik?->status,
+            'status_verifikasi_security' => $ritase->verifikasiSecurity?->status,
+            'jumlah_driver' => $ritase->muatan?->jumlah_driver ?? (float) ($ritase->jumlah_volume ?: $ritase->jumlah_rit),
+            'jumlah_verifikasi_logistik' => $ritase->verifikasiLogistik?->jumlah_verifikasi,
+            'satuan_muatan' => $ritase->muatan?->satuan ?? $ritase->satuan_volume,
+            'ada_selisih' => (bool) $ritase->ada_selisih,
+            'tara_master_kg' => (float) ($ritase->armada?->tara_master_kg ?? 0),
+            'berat_kosong_kg' => $ritase->timbang?->berat_kosong_kg,
+            'berat_isi_kg' => $ritase->timbang?->berat_isi_kg,
+            'berat_netto_kg' => $ritase->timbang?->berat_netto_kg,
+        ];
+    }
+
+    private function canViewMobileRitase(Request $request, Ritase $ritase): bool
+    {
+        $user = $request->user();
+        $manager = $user && $user->hasAnyRole(['Kepala Divisi Armada', 'Ketua Divisi Armada', 'Ketua Armada', 'Owner', 'Admin Keuangan']);
+
+        if ($manager) {
+            return true;
+        }
+
+        return $this->currentKaryawan($request)?->id === $ritase->driver_karyawan_id;
+    }
+
+    /**
+     * GET /api/mobile/armada/ritase/{ritase}
+     * Detail ritase beserta timeline status yang sama dengan web.
+     */
+    public function showRitase(Request $request, Ritase $ritase)
+    {
+        if (! $this->canViewMobileRitase($request, $ritase)) {
+            return $this->error('Ritase tidak ditemukan atau bukan milik Anda.', 403);
+        }
+
+        $ritase->loadMissing([
+            'armada',
+            'driver',
+            'ruteTarif',
+            'proyek',
+            'titik',
+            'muatan',
+            'timbang',
+            'verifikasiLogistik',
+            'verifikasiSecurity',
+        ]);
+
+        return $this->success([
+            'ritase' => $this->ritaseMobilePayload($ritase),
+            'timeline' => app(RitaseTimelineService::class)->for($ritase, $request->user()),
+        ], 'Detail ritase.');
     }
 
     /**

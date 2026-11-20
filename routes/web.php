@@ -26,7 +26,6 @@ use App\Domain\Finance\Http\Controllers\TransferKasController;
 use App\Domain\Fleet\Http\Controllers\ArmadaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaDokumenBerkalaController;
 use App\Domain\Fleet\Http\Controllers\ArmadaPenanggungJawabController;
-use App\Domain\Fleet\Http\Controllers\BbmLogController;
 use App\Domain\Fleet\Http\Controllers\ChecklistHarianController;
 use App\Domain\Fleet\Http\Controllers\ChecklistSerahTerimaController;
 use App\Domain\Fleet\Http\Controllers\DowntimeLogController;
@@ -196,7 +195,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('armada/{armada}/record-service', [ArmadaController::class, 'recordService'])->name('armada.record-service');
         Route::post('armada/{armada}/record-checklist', [ArmadaController::class, 'recordChecklist'])->name('armada.record-checklist');
         Route::post('armada/{armada}/record-checklist-akhir', [ArmadaController::class, 'recordChecklistAkhir'])->name('armada.record-checklist-akhir');
-        Route::post('armada/{armada}/record-bbm', [ArmadaController::class, 'recordBbm'])->name('armada.record-bbm');
         Route::post('armada/{armada}/start-downtime', [ArmadaController::class, 'startDowntime'])->name('armada.start-downtime');
         Route::post('armada/{armada}/downtime/{downtime}/end', [ArmadaController::class, 'endDowntime'])->name('armada.end-downtime');
 
@@ -224,14 +222,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('checklistable/{type}/{id}/checklists', [ChecklistHarianController::class, 'byCheckable'])->name('checklist-harian.by-checkable');
         Route::resource('checklist-harian', ChecklistHarianController::class)->only(['store', 'show', 'update']);
 
-        // BBM
-        // NOTE: sama seperti checklist-harian, rute custom didaftarkan
-        // SEBELUM Route::resource supaya tidak ketabrak wildcard {bbm}.
-        Route::get('bbm', [BbmLogController::class, 'index'])->name('bbm.index');
-        Route::get('bbm/anomaly', [BbmLogController::class, 'anomaly'])->name('bbm.anomaly');
-        Route::get('bbm/create', [BbmLogController::class, 'create'])->name('bbm.create');
-        Route::get('serviceable/{type}/{id}/bbm', [BbmLogController::class, 'byServiceable'])->name('bbm.by-serviceable');
-        Route::resource('bbm', BbmLogController::class)->only(['store', 'show', 'update', 'destroy']);
+        // BBM legacy: bookmark lama dialihkan ke satu-satunya jalur input solar.
+        // bbm_logs tetap ada sebagai ledger turunan, bukan form input.
+        Route::get('bbm', fn () => redirect()->route('fleet.pengisian-solar.index'))->name('bbm.index');
+        Route::get('bbm/anomaly', fn () => redirect()->route('fleet.pengisian-solar.index'))->name('bbm.anomaly');
 
         Route::get('downtime/active', [DowntimeLogController::class, 'active'])->name('downtime.active');
         Route::get('downtime/create', [DowntimeLogController::class, 'create'])->name('downtime.create');

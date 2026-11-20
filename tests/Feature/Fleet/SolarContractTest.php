@@ -145,7 +145,7 @@ test('Workshop tidak bisa melihat halaman maupun mengisi liter solar', function 
     expect(BbmLog::findOrFail($pengisian->bbm_log_id)->liter)->toBeNull();
 });
 
-test('bbm logs tetap ledger turunan dan halaman BBM tetap bisa dibuka', function () {
+test('bbm logs tetap ledger turunan dan halaman BBM dialihkan ke solar', function () {
     $this->withToken($this->driverToken)
         ->withHeaders(mobileIdemHeaders())
         ->post('/api/mobile/armada/pengisian-solar', [
@@ -167,10 +167,35 @@ test('bbm logs tetap ledger turunan dan halaman BBM tetap bisa dibuka', function
     expect($ledger->pengisianSolar->client_uuid)->toBe('solar-ledger');
 
     $this->actingAs($this->ketua)
-        ->get(route('fleet.bbm.index'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('Fleet/BBM/Index')
-            ->has('bbmLogs.data')
-            ->where('bbmLogs.data.0.id', $ledger->id));
+        ->get('/fleet/bbm')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
+});
+
+test('jalur input BBM legacy tidak tersedia', function () {
+    $this->actingAs($this->ketua)
+        ->get('/fleet/bbm/create')
+        ->assertNotFound();
+
+    $this->actingAs($this->ketua)
+        ->post('/fleet/bbm', [
+            'serviceable_type' => 'armada',
+            'serviceable_id' => $this->armada->id,
+            'liter' => 40,
+            'biaya' => 600000,
+        ])
+        ->assertNotFound();
+
+    $this->actingAs($this->ketua)
+        ->post("/fleet/armada/{$this->armada->id}/record-bbm", [
+            'liter' => 40,
+            'biaya' => 600000,
+        ])
+        ->assertNotFound();
+
+    $this->actingAs($this->ketua)
+        ->get('/fleet/bbm/anomaly')
+        ->assertRedirect(route('fleet.pengisian-solar.index'));
+
+    expect(file_get_contents(resource_path('js/Components/Sidebar.jsx')))
+        ->not->toContain('fleet.bbm.index');
 });
