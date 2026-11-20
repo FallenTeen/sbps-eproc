@@ -81,6 +81,25 @@ class PengajuanServisArmadaController extends Controller
 
         $user = request()->user();
 
+        $relatedLinks = collect([
+            [
+                'label' => 'Detail Armada',
+                'href' => 'fleet.armada.show',
+                'permission' => 'view fleet',
+                'params' => [$pengajuan->armada_id],
+            ],
+            [
+                'label' => 'Riwayat Servis',
+                'href' => 'fleet.workshop.riwayat.index',
+                'permission' => 'view fleet service',
+            ],
+            [
+                'label' => 'Verifikasi Eksternal',
+                'href' => 'fleet.workshop.servis-eksternal.index',
+                'permission' => 'view fleet service',
+            ],
+        ])->filter(fn ($item) => $user && $user->can($item['permission']))->values()->all();
+
         return Inertia::render('Fleet/ServisArmada/Show', [
             'pengajuan' => $pengajuan->load(['armada', 'diajukanOleh', 'disetujuiOleh', 'personels', 'spareparts.bahanBaku']),
             'timeline' => app(ServisTimelineService::class)->for($pengajuan),
@@ -92,6 +111,7 @@ class PengajuanServisArmadaController extends Controller
                 'recordSparepart' => $user->can('recordSparepart', $pengajuan),
                 'complete' => $user->can('complete', $pengajuan),
             ],
+            'related_links' => $relatedLinks,
         ]);
     }
 

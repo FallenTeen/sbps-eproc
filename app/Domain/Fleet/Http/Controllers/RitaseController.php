@@ -183,12 +183,28 @@ class RitaseController extends Controller
         ])->findOrFail($id);
         $this->authorize('view', $ritase);
 
+        $user = $request->user();
+        $relatedLinks = collect([
+            [
+                'label' => 'Detail Armada',
+                'href' => 'fleet.armada.show',
+                'permission' => 'view fleet',
+                'params' => [$ritase->armada_id],
+            ],
+            [
+                'label' => 'Riwayat Servis',
+                'href' => 'fleet.workshop.riwayat.index',
+                'permission' => 'view fleet service',
+            ],
+        ])->filter(fn ($item) => $user && $user->can($item['permission']))->values()->all();
+
         $props = [
             'ritase' => $ritase,
-            'timeline' => app(RitaseTimelineService::class)->for($ritase, $request->user()),
+            'timeline' => app(RitaseTimelineService::class)->for($ritase, $user),
             'can' => [
                 'approve' => false,
             ],
+            'related_links' => $relatedLinks,
         ];
 
         if ($request->wantsJson()) {

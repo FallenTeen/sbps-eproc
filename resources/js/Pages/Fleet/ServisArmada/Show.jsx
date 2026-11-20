@@ -14,6 +14,7 @@ import {
     Check,
 } from "lucide-react";
 import TimelineStrip from "@/Components/Fleet/TimelineStrip";
+import RelatedLinks from "@/Components/Fleet/RelatedLinks";
 import { formatTanggal } from "@/utils/date";
 
 const STATUS_META = {
@@ -106,6 +107,7 @@ export default function Show({
     timeline = [],
     can = {},
     masterSpareparts = [],
+    related_links = [],
 }) {
     const meta = STATUS_META[pengajuan.status] || {
         label: pengajuan.status,
@@ -370,6 +372,7 @@ export default function Show({
                 </div>
 
                 {summaryPanel}
+                <RelatedLinks items={related_links} />
 
                 {activeTab === "timeline" ? (
                     timelinePanel

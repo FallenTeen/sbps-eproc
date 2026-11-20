@@ -174,6 +174,30 @@ class ArmadaController extends Controller
         $canUpdate = $user->can('update', $armada);
         $canManageHelper = $user->can('create', [HelperArmada::class, $armada]);
 
+        $relatedLinks = collect([
+            [
+                'label' => 'Ritase',
+                'href' => 'fleet.ritase.index',
+                'permission' => 'view fleet',
+                'params' => ['filters' => ['armada' => $armada->id]],
+            ],
+            [
+                'label' => 'Servis Armada',
+                'href' => 'fleet.servis-armada.index',
+                'permission' => 'view fleet service',
+            ],
+            [
+                'label' => 'Pengisian Solar',
+                'href' => 'fleet.pengisian-solar.index',
+                'permission' => 'manage pengisian solar',
+            ],
+            [
+                'label' => 'Dokumen Armada',
+                'href' => 'fleet.dokumen-berkala.index',
+                'permission' => 'view fleet',
+            ],
+        ])->filter(fn ($item) => $user->can($item['permission']))->values()->all();
+
         return Inertia::render('Fleet/Armada/Show', [
             'armada' => $armada,
             'options' => [
@@ -195,6 +219,7 @@ class ArmadaController extends Controller
                 'helper' => $canManageHelper,
                 'manageDocuments' => $user->can('manage fleet') || $user->can('manage dokumen armada'),
             ],
+            'related_links' => $relatedLinks,
         ]);
     }
 

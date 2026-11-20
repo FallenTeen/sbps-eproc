@@ -3,6 +3,7 @@ import { Link, useForm, router, usePage } from "@inertiajs/react";
 import Layout from "@/Components/Layout";
 import ImagePreviewModal from "@/Components/ImagePreviewModal";
 import { formatTanggal } from "@/utils/date";
+import RelatedLinks from "@/Components/Fleet/RelatedLinks";
 import {
     ArrowLeft,
     Plus,
@@ -3182,7 +3183,7 @@ function HelperRow({ armada, helper }) {
     );
 }
 
-export default function Show({ armada, options, can }) {
+export default function Show({ armada, options, can, related_links = [] }) {
     const [tab, setTab] = useState("ritase");
     const [fotoPreview, setFotoPreview] = useState(null);
 
@@ -3269,6 +3270,8 @@ export default function Show({ armada, options, can }) {
             </div>
 
             <FlashMessage />
+
+            <RelatedLinks items={related_links} className="mb-6" />
 
             {/* Panel Informasi Unit */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Head } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import RelatedLinks from "@/Components/Fleet/RelatedLinks";
 import {
     Activity,
     AlertTriangle,
@@ -172,6 +173,7 @@ export default function Monitoring({
     kondisi_buruk = [],
     belum_checklist = [],
     stats = {},
+    related_links = [],
 }) {
     const [tab, setTab] = useState("buruk");
 
@@ -188,6 +190,8 @@ export default function Monitoring({
                         </p>
                     </div>
                 </div>
+
+                <RelatedLinks items={related_links} />
 
                 {/* Statistik */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

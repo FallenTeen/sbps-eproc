@@ -2,6 +2,7 @@ import React from "react";
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TimelineStrip from "@/Components/Fleet/TimelineStrip";
+import RelatedLinks from "@/Components/Fleet/RelatedLinks";
 import { ArrowLeft, Truck } from "lucide-react";
 
 function formatDate(value) {
@@ -27,7 +28,7 @@ function SummaryItem({ label, value }) {
     );
 }
 
-export default function RitaseShow({ ritase, timeline = [] }) {
+export default function RitaseShow({ ritase, timeline = [], related_links = [] }) {
     return (
         <AuthenticatedLayout>
             <Head title={`Detail Ritase ${ritase.id}`} />
@@ -112,6 +113,7 @@ export default function RitaseShow({ ritase, timeline = [] }) {
                     </div>
                 </section>
 
+                <RelatedLinks items={related_links} />
                 <TimelineStrip events={timeline} title="Alur Ritase" />
             </div>
         </AuthenticatedLayout>

@@ -109,6 +109,25 @@ class WorkshopController extends Controller
             ->pluck('checkable_id');
         $belumChecklist = $armadas->whereNotIn('id', $checklistTodayIds)->values();
 
+        $user = request()->user();
+        $relatedLinks = collect([
+            [
+                'label' => 'Unit Armada',
+                'href' => 'fleet.armada.index',
+                'permission' => 'view fleet',
+            ],
+            [
+                'label' => 'Riwayat Servis',
+                'href' => 'fleet.workshop.riwayat.index',
+                'permission' => 'view fleet service',
+            ],
+            [
+                'label' => 'Verifikasi Eksternal',
+                'href' => 'fleet.workshop.servis-eksternal.index',
+                'permission' => 'view fleet service',
+            ],
+        ])->filter(fn ($item) => $user && $user->can($item['permission']))->values()->all();
+
         return Inertia::render('Fleet/Workshop/Monitoring', [
             'kondisi_buruk' => $kondisiBuruk,
             'belum_checklist' => $belumChecklist,
@@ -117,6 +136,7 @@ class WorkshopController extends Controller
                 'belum_checklist_hari_ini' => $belumChecklist->count(),
                 'total_armada' => $armadas->count(),
             ],
+            'related_links' => $relatedLinks,
         ]);
     }
 
